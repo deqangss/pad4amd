@@ -1,0 +1,16 @@
+[DEFAULT]
+project_root = /home/deqiangli/projects/Research/fortdroid
+database_dir = /home/deqiangli/data/Android/
+dataset_name = koodous
+
+[drebin]
+malware_dir = %(database_dir)s/%(dataset_name)s/malicious_samples
+benware_dir = %(database_dir)s/%(dataset_name)s/benign_samples
+malware_family = %(database_dir)s/%(dataset_name)s/sha256_family.csv
+intermediate = %(project_root)s/dataset/%(dataset_name)s
+
+[metadata]
+naive_data_pool = %(database_dir)s/naive_data/
+
+[experiments]
+malware_detector = %(project_root)s/save/malware_detector
