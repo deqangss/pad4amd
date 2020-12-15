@@ -70,7 +70,7 @@ del Third_part_libraries_ALL
 TAG_SPLITTER = '#.tag#'
 
 
-def apk2graphs_wrapper(*kwargs):
+def apk2graphs_wrapper(kwargs):
     try:
         return apk2graphs(*kwargs)
     except Exception as e:

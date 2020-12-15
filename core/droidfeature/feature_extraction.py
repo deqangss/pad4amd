@@ -62,20 +62,32 @@ class Apk2graphs(object):
         tasks = []
         result_paths = []
 
-        for i, apk_path in enumerate(sample_path_list):
-            sha256_code = os.path.splitext(os.path.basename(apk_path))[0]  # utils.get_sha256(apk_path)
+        # for i, apk_path in enumerate(sample_path_list):
+        #     sha256_code = os.path.splitext(os.path.basename(apk_path))[0]  # utils.get_sha256(apk_path)
+        #
+        #     save_path = os.path.join(self.naive_data_save_dir, sha256_code + self.file_ext)
+        #     if os.path.exists(save_path) and (not self.update):
+        #         result_paths.append(save_path)
+        #         continue
+        #     tasks.append(apk_path)
+        #     process_results = pool.apply_async(seq_gen.apk2graphs_wrapper,
+        #                                        args=(apk_path,
+        #                                              self.number_of_sequences,
+        #                                              self.depth_of_recursion,
+        #                                              save_path),
+        #                                        callback=pbar.CallbackForProgressBar)
 
+        def get_save_path(a_path):
+            sha256_code = os.path.splitext(os.path.basename(a_path))[0]  # utils.get_sha256(apk_path)
             save_path = os.path.join(self.naive_data_save_dir, sha256_code + self.file_ext)
             if os.path.exists(save_path) and (not self.update):
-                result_paths.append(save_path)
-                continue
-            tasks.append(apk_path)
-            process_results = pool.apply_async(seq_gen.apk2graphs_wrapper,
-                                               args=(apk_path,
-                                                     self.number_of_sequences,
-                                                     self.depth_of_recursion,
-                                                     save_path),
-                                               callback=pbar.CallbackForProgressBar)
+                return save_path
+            else:
+                return
+
+        pargs = [(apk_path, self.number_of_sequences, self.depth_of_recursion, get_save_path(apk_path)) for \
+                 apk_path in sample_path_list if get_save_path(apk_path) is not None]
+        process_results = pool.map_async(seq_gen.apk2graphs_wrapper, pargs, callback=pbar.CallbackForProgressBar)
 
         pool.close()
         if process_results:
@@ -96,7 +108,7 @@ class Apk2graphs(object):
 
         return feature_paths
 
-    def feature2ipt(self, feature_path_list, gt_labels=None, is_adj=False):
+    def feature2ipt(self, feature_jpath_list, gt_labels=None, is_adj=False):
         """
         Mapping features to the numerical representation
         :param feature_path_list, list, a list of paths, each of which directs to a feature file
