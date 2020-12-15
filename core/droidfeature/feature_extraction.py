@@ -81,10 +81,9 @@ class Apk2graphs(object):
         if process_results:
             pbar.DisplayProgressBar(process_results, len(tasks), type='hour')
         pool.join()
-
-        for i, res in enumerate(pbar.TotalResults):
-            if isinstance(res, Exception):
-                logger.error("Fail at : {}".format(str(res)))
+        # for i, res in enumerate(pbar.TotalResults):
+        #     if isinstance(res, Exception):
+        #         logger.error("Fail at : {}".format(str(res)))
 
         feature_paths = []
         for i, apk_path in enumerate(sample_path_list):
@@ -93,8 +92,7 @@ class Apk2graphs(object):
             if os.path.exists(save_path):
                 feature_paths.append(save_path)
             else:
-                import warnings
-                warnings.warn("Fail to perform feature extraction for '{}'".format(apk_path))
+                logger.warning("Fail to perform feature extraction for '{}'".format(apk_path))
 
         return feature_paths
 

@@ -10,10 +10,11 @@ import numpy as np
 
 flags.DEFINE_integer('proc_number', 4,
                      'The number of threads for features extraction')
-flags.DEFINE_integer('number_of_sequences', 15000,
+flags.DEFINE_integer('number_of_sequences', 1000000,
                      'The maximum number of produced sequences for each app')
 flags.DEFINE_integer('depth_of_recursion', 50,
                      'The maximum depth restricted on the depth-first traverse')
+
 
 def _main():
     malware_dir_name = config.get('drebin', 'malware_dir')
@@ -30,6 +31,7 @@ def _main():
     # print('The number of malware files: ', len(malware_features))
     benign_features = feature_extractor.feature_extraction(benware_dir_name)
     print('The number of benign files: ', len(benign_features))
+
 
 if __name__ == '__main__':
     _main()

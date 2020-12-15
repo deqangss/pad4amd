@@ -5,6 +5,9 @@ import scipy.sparse as sp
 import numpy as np
 import torch
 
+#################################################################################
+################################# smali code ####################################
+#################################################################################
 
 def java_class_name2smali_name(cls):
     """
@@ -20,6 +23,14 @@ def java_class_name2smali_name(cls):
 
     return "L" + cls.replace(".", "/") + ";"
 
+
+def remove_duplicate(components):
+    if isinstance(components, list):
+        return ['.'.join(list(filter(None, comp.strip().split('.')))) for comp in components]
+    elif isinstance(components, str):
+        return '.'.join(list(filter(None, components.strip().split('.'))))
+    else:
+        raise TypeError
 
 def retrive_files_set(base_dir, dir_ext, file_ext):
     """

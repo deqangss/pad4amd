@@ -14,7 +14,7 @@ import networkx as nx
 import re
 
 from tools.utils import dump_pickle, read_pickle, java_class_name2smali_name, \
-    read_txt, retrive_files_set
+    read_txt, retrive_files_set, remove_duplicate
 
 ANDROID_LIFE_CIRCLE_METHODS = ['onCreate',
                                'onStart',
@@ -100,7 +100,7 @@ def apk2graphs(apk_path, max_number_of_sequences=15000, max_recursive_depth=50, 
         apk_path = path.abspath(apk_path)
         a, d, dx = AnalyzeAPK(apk_path)
     except Exception as e:
-        raise Exception("Fail to read and analyze the apk {}:{} ".format(apk_path, str(e)))
+        raise ValueError("Fail to read and analyze the apk {}:{} ".format(apk_path, str(e)))
     # get entry points
     # 1. components as entry point
     entry_points_comp = get_comp_entry_points(a, d)
@@ -123,7 +123,7 @@ def apk2graphs(apk_path, max_number_of_sequences=15000, max_recursive_depth=50, 
     # 5. saving the results
     if len(api_sequence_dict) > 0:
         save_to_disk(api_sequence_dict, saving_path)
-        return saving_path
+        return
     else:
         raise ValueError("No graph found: " + apk_path)
 
@@ -179,7 +179,7 @@ def get_comp_entry_points(a, d):
     if not isinstance(a, APK):
         raise ValueError("Expected the object of Androidguard APK")
     xml_comp_name_list = a.get_activities() + a.get_services() + a.get_providers() + a.get_receivers()
-
+    xml_comp_name_list = remove_duplicate(xml_comp_name_list)
     # map the java class name to the smali format
     pkg_name = a.get_package()
     smali_comp_name_list = []
@@ -199,10 +199,10 @@ def get_comp_entry_points(a, d):
     comp_entry_points = []
     for _d in d:
         for encoded_method in _d.get_methods():
-            # note: here neglect the usefulness of arguments
+            # note: here neglect arguments
             class_name = encoded_method.get_class_name()
             method_name = encoded_method.get_name()
-            if class_name in smali_comp_name_list and method_name in ANDROID_LIFE_CIRCLE_METHODS:
+            if (class_name in smali_comp_name_list) and (method_name in ANDROID_LIFE_CIRCLE_METHODS):
                 # method_analysis = dx.get_method(encoded_method)
                 # if method_analysis:
                 comp_entry_points.append(encoded_method)
@@ -313,7 +313,6 @@ def get_api_call_graphs(entry_points, dx, max_number_of_sequences, recursive_dep
         depth += 1
         if depth >= recursive_depth:
             return
-
         # depth first search at the block level and a method can have multiple blocks split by if, for, try...catch,...
         def _block_dfs(block, tag):
             if not block or block in visited_blocks:
@@ -333,9 +332,16 @@ def get_api_call_graphs(entry_points, dx, max_number_of_sequences, recursive_dep
                 arguments = '(' + invoke_match.group('invokeArgument') + ')' + invoke_match.group('invokeReturn')
                 # get the encoded method accordingly
                 encoded_method = dx.get_method_by_name(class_name, method_name, arguments)
-                if encoded_method is None or \
-                        isinstance(encoded_method,
-                                   ExternalMethod):  # todo: 'none' indicates the method is implemented in the parent class
+                if encoded_method is None:  # todo: 'none' indicates the method could be implemented in the parent class
+                    class_name_parent = dx.get_class_analysis(class_name).extends
+                    _api_of_interest('invoke-super',
+                                     class_name_parent,
+                                     method_name,
+                                     arguments,
+                                     tag,
+                                     stack)
+                    continue
+                if isinstance(encoded_method, ExternalMethod):
                     _api_of_interest(invoke_type,
                                      class_name,
                                      method_name,
@@ -343,7 +349,6 @@ def get_api_call_graphs(entry_points, dx, max_number_of_sequences, recursive_dep
                                      tag,
                                      stack)
                     continue
-
                 _dfs(encoded_method, depth)
             # handle child blocks
             stack_size = len(stack)
@@ -363,7 +368,6 @@ def get_api_call_graphs(entry_points, dx, max_number_of_sequences, recursive_dep
                         child_api_seqs.append(stack.copy())
                     for _ in range(changed_stack_size_child):
                         stack.pop()
-
             if len(child_api_seqs) > 0:
                 if len(sub_api_sequences) == 0:
                     sub_api_sequences.extend(child_api_seqs)
@@ -395,10 +399,12 @@ def get_api_call_graphs(entry_points, dx, max_number_of_sequences, recursive_dep
         if isinstance(root_call, ExternalMethod):
             continue
         _dfs(root_call)
-        if len(sub_api_sequences) <= 0:
-            continue
-        for api_seq in sub_api_sequences:
-            _extend_graph(sub_cg, [api_seq[-1:] + stack])
+        if (len(sub_api_sequences) <= 0) and (len(stack) > 0):
+            _extend_graph(sub_cg, [stack])
+        else:
+            for api_seq in sub_api_sequences:
+                _extend_graph(sub_cg, [api_seq[-1:] + stack])
+
         number_of_sequences += len(sub_api_sequences)
         method_tag = _get_method_tag(root_call)
         cgs[method_tag] = sub_cg.copy()
@@ -453,7 +459,7 @@ def sequence_post_processing(dft_api_sequence_list):
 
 def _main():
     rtn_str = apk2graphs(
-        '/home/deqiangli/data/Android/koodous/benign_samples/4598339e8cd3984bf676c153d17ac00e2344b1ac5b325e50fc628659f9015d48',
+        '/home/deqiangli/data/Android/koodous/malicious_samples/10a6038bf3b5862de7eb51c9005d966eff5c139990efdfa1ef28cb3b73661fd9',
         100000,
         50,
         "./abc.cgs")

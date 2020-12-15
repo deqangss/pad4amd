@@ -34,7 +34,8 @@ class Dataset(object):
         self.temp_dir_handle = tempfile.TemporaryDirectory()
         assert self.dataset_name in ['drebin', 'androzoo'], 'Expected either "drebin" or "androzoo".'
         self.feature_extractor = Apk2graphs(config.get('metadata', 'naive_data_pool'),
-                                            config.get(self.dataset_name, 'intermediate'))
+                                            config.get(self.dataset_name, 'intermediate'),
+                                            proc_number=self.process_number)
         mal_feature_paths = self.apk_preprocess(
             config.get(self.dataset_name, 'malware_dir'))
         ben_feature_paths = self.apk_preprocess(
