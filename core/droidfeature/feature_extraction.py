@@ -1,5 +1,7 @@
 import os.path
 import signal
+import time
+from tqdm import tqdm
 import multiprocessing
 
 import collections
@@ -56,11 +58,11 @@ class Apk2graphs(object):
     def feature_extraction(self, sample_dir):
         """ save the android features and return the saved paths """
         sample_path_list = utils.check_dir(sample_dir)
-        pool = multiprocessing.Pool(self.proc_number)
-        pbar = ProgressBar()
-        process_results = []
-        tasks = []
-        result_paths = []
+        pool = multiprocessing.Pool(self.proc_number, initializer=pool_initializer)
+        # pbar = ProgressBar()
+        # process_results = []
+        # tasks = []
+        # result_paths = []
 
         # for i, apk_path in enumerate(sample_path_list):
         #     sha256_code = os.path.splitext(os.path.basename(apk_path))[0]  # utils.get_sha256(apk_path)
@@ -80,18 +82,33 @@ class Apk2graphs(object):
         def get_save_path(a_path):
             sha256_code = os.path.splitext(os.path.basename(a_path))[0]  # utils.get_sha256(apk_path)
             save_path = os.path.join(self.naive_data_save_dir, sha256_code + self.file_ext)
-            if os.path.exists(save_path) and (not self.update):
-                return save_path
-            else:
-                return
 
-        pargs = [(apk_path, self.number_of_sequences, self.depth_of_recursion, get_save_path(apk_path)) for \
+            if os.path.exists(save_path) and (not self.update):
+                return
+            else:
+                return save_path
+
+        params = [(apk_path, self.number_of_sequences, self.depth_of_recursion, get_save_path(apk_path)) for \
                  apk_path in sample_path_list if get_save_path(apk_path) is not None]
-        process_results = pool.map_async(seq_gen.apk2graphs_wrapper, pargs, callback=pbar.CallbackForProgressBar)
+        # for res in tqdm(pool.map_async(seq_gen.apk2graphs_wrapper, params), total=len(params)):
+        #     if isinstance(res, Exception):
+        #         logger.error("Failed processing: {}".format(str(res)))
+        with tqdm(total=len(params)) as pbar:
+            future = pool.map_async(seq_gen.apk2graphs_wrapper, params)
+            pre_remaining_num = len(params)
+            while not future.ready():
+                remaining = future._number_left
+                if pre_remaining_num > remaining:
+                    pbar.update(pre_remaining_num - remaining)
+                    pre_remaining_num = remaining
+                time.sleep(0.1)
+            for res in future.get():
+                if isinstance(res, Exception):
+                    logger.error("Failed processing: {}".format(str(res)))
 
         pool.close()
-        if process_results:
-            pbar.DisplayProgressBar(process_results, len(tasks), type='hour')
+        # if process_results:e
+        #     pbar.DisplayProgressBar(process_results, len(pargs), type='hour')
         pool.join()
         # for i, res in enumerate(pbar.TotalResults):
         #     if isinstance(res, Exception):

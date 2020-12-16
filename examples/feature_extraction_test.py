@@ -25,7 +25,7 @@ def _main():
                                    meta_data_saving_dir,
                                    number_of_sequences=flags.FLAGS.number_of_sequences,
                                    depth_of_recursion=flags.FLAGS.depth_of_recursion,
-                                   update=False,
+                                   update=True,
                                    proc_number=flags.FLAGS.proc_number)
     # malware_features = feature_extractor.feature_extraction(malware_dir_name)
     # print('The number of malware files: ', len(malware_features))

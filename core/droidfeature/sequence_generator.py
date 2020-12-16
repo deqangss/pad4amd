@@ -123,7 +123,7 @@ def apk2graphs(apk_path, max_number_of_sequences=15000, max_recursive_depth=50, 
     # 5. saving the results
     if len(api_sequence_dict) > 0:
         save_to_disk(api_sequence_dict, saving_path)
-        return
+        return saving_path
     else:
         raise ValueError("No graph found: " + apk_path)
 
