@@ -98,10 +98,12 @@ class Apk2graphs(object):
             pre_remaining_num = len(params)
             while not future.ready():
                 remaining = future._number_left
+                print(remaining, pre_remaining_num - remaining)
                 if pre_remaining_num > remaining:
-                    pbar.update(pre_remaining_num - remaining)
+                    pbar.update(n=pre_remaining_num - remaining)
                     pre_remaining_num = remaining
                 time.sleep(0.1)
+
             for res in future.get():
                 if isinstance(res, Exception):
                     logger.error("Failed processing: {}".format(str(res)))
