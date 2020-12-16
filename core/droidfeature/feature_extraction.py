@@ -93,22 +93,27 @@ class Apk2graphs(object):
         # for res in tqdm(pool.map_async(seq_gen.apk2graphs_wrapper, params), total=len(params)):
         #     if isinstance(res, Exception):
         #         logger.error("Failed processing: {}".format(str(res)))
+
         with tqdm(total=len(params)) as pbar:
-            future = pool.map_async(seq_gen.apk2graphs_wrapper, params)
+            results = pool.map_async(seq_gen.apk2graphs_wrapper, params)
+            done_tasks = 0
             pre_remaining_num = len(params)
-            while not future.ready():
-                remaining = future._number_left
-                print(remaining, pre_remaining_num - remaining)
+            while not results.ready():
+                remaining = results._number_left * results._chunksize
                 if pre_remaining_num > remaining:
                     pbar.update(n=pre_remaining_num - remaining)
+                    done_tasks += pre_remaining_num - remaining
                     pre_remaining_num = remaining
                 time.sleep(0.1)
+            if len(params) > done_tasks:
+                pbar.update(n=len(params) - done_tasks)
 
-            for res in future.get():
+            for res in results.get():
                 if isinstance(res, Exception):
                     logger.error("Failed processing: {}".format(str(res)))
 
         pool.close()
+
         # if process_results:e
         #     pbar.DisplayProgressBar(process_results, len(pargs), type='hour')
         pool.join()
