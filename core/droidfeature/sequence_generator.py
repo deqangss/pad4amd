@@ -15,7 +15,7 @@ import time
 import re
 
 from tools.utils import dump_pickle, read_pickle, java_class_name2smali_name, \
-    read_txt, retrive_files_set, remove_duplicate, TimeoutExpection
+    read_txt, retrive_files_set, remove_duplicate
 
 ANDROID_LIFE_CIRCLE_METHODS = ['onCreate',
                                'onStart',

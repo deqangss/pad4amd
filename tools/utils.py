@@ -33,9 +33,6 @@ def remove_duplicate(components):
         raise TypeError
 
 
-class TimeoutExpection(BaseException):
-    pass
-
 def retrive_files_set(base_dir, dir_ext, file_ext):
     """
     get file paths given the directory
