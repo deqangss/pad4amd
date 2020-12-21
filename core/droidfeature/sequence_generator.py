@@ -10,11 +10,12 @@ from androguard.misc import AnalyzeAPK
 from androguard.core.analysis.analysis import Analysis, ExternalMethod
 from androguard.core.bytecodes.apk import APK
 import networkx as nx
+import time
 
 import re
 
 from tools.utils import dump_pickle, read_pickle, java_class_name2smali_name, \
-    read_txt, retrive_files_set, remove_duplicate
+    read_txt, retrive_files_set, remove_duplicate, TimeoutExpection
 
 ANDROID_LIFE_CIRCLE_METHODS = ['onCreate',
                                'onStart',
@@ -77,7 +78,7 @@ def apk2graphs_wrapper(kwargs):
         return e
 
 
-def apk2graphs(apk_path, max_number_of_sequences=15000, max_recursive_depth=50, saving_path=None):
+def apk2graphs(apk_path, max_number_of_sequences=15000, max_recursive_depth=50, timeout=20, saving_path=None):
     """
     extract the api graph.
     Each API is represented by a string that is constructed by
@@ -87,6 +88,7 @@ def apk2graphs(apk_path, max_number_of_sequences=15000, max_recursive_depth=50, 
     :param max_number_of_sequences: integer, the maximum number of searched sequences
     :param max_length_of_sequence: integer, the maximum length of a sequence
     :param saving_path: string, a path directs to saving path
+    :param timeout: integer, the elapsed time in minutes
     """
     if not isinstance(apk_path, str):
         raise ValueError("Expected a path, but got {}".format(type(apk_path)))
@@ -101,6 +103,7 @@ def apk2graphs(apk_path, max_number_of_sequences=15000, max_recursive_depth=50, 
         a, d, dx = AnalyzeAPK(apk_path)
     except Exception as e:
         raise ValueError("Fail to read and analyze the apk {}:{} ".format(apk_path, str(e)))
+
     # get entry points
     # 1. components as entry point
     entry_points_comp = get_comp_entry_points(a, d)
@@ -118,7 +121,8 @@ def apk2graphs(apk_path, max_number_of_sequences=15000, max_recursive_depth=50, 
     api_sequence_dict = get_api_call_graphs(entry_points,
                                             dx,
                                             max_number_of_sequences,
-                                            max_recursive_depth
+                                            max_recursive_depth,
+                                            timeout
                                             )
     # 5. saving the results
     if len(api_sequence_dict) > 0:
@@ -236,17 +240,21 @@ def get_random_entry_points(dx, number=100, seed=2345):
     return entry_points
 
 
-def get_api_call_graphs(entry_points, dx, max_number_of_sequences, recursive_depth):
+def get_api_call_graphs(entry_points, dx, max_number_of_sequences, recursive_depth, timeout):
     """
     construct api call graphs using api sequences
     :param entry_points: list, a list of entry points, each of which is the type of 'androguard.core.analysis.analysis.MethodAnalysis'
     :param dx: an instantiation of 'androguard.core.analysis.analysis.Analysis'
     :param max_number_of_sequences: integer, the number of returned sequences
     :param recursive_depth: the maximum depth permitted by recursion function
+    :param timeout: the elapsed time, in minutes
     :return: a list of api sequences
     """
     if not isinstance(entry_points, list):
         raise TypeError("Expect a list of entry points!")
+
+    assert timeout > 0
+    timeout = int(timeout)
 
     if len(entry_points) <= 0:
         entry_points = get_random_entry_points(dx)
@@ -302,6 +310,7 @@ def get_api_call_graphs(entry_points, dx, max_number_of_sequences, recursive_dep
     stack = []
     visited_non_leaf_nodes = []  # once a leaf node is visited, we do not visit it anymore
     visited_blocks = []  # once a block is visited, we do not visit it anymore
+    start_time = time.time()
 
     # depth first search at the method level
     def _dfs(node, depth=0):
@@ -313,10 +322,16 @@ def get_api_call_graphs(entry_points, dx, max_number_of_sequences, recursive_dep
         depth += 1
         if depth >= recursive_depth:
             return
+        if time.time() - start_time > int(60*timeout):
+            raise TimeoutError
+
         # depth first search at the block level and a method can have multiple blocks split by if, for, try...catch,...
         def _block_dfs(block, tag):
             if not block or block in visited_blocks:
                 return
+            if time.time() - start_time > int(60 * timeout):
+                raise TimeoutError
+
             visited_blocks.append(block)
 
             sz_block_wise = len(stack)
@@ -371,16 +386,18 @@ def get_api_call_graphs(entry_points, dx, max_number_of_sequences, recursive_dep
             if len(child_api_seqs) > 0:
                 if len(sub_api_sequences) == 0:
                     sub_api_sequences.extend(child_api_seqs)
+                    _extend_graph(sub_cg, sub_api_sequences)
+                elif (len(sub_api_sequences) <= max_number_of_sequences) and (len(sub_api_sequences) > 0):
+                    tmp_api_sequences = sub_api_sequences.copy()
+                    sub_api_sequences.clear()
+                    for tmp_api_seq in tmp_api_sequences:
+                        for sub_seq in child_api_seqs:
+                            sub_api_sequences.append(tmp_api_seq[-1:] + sub_seq)
+                    del tmp_api_sequences
+                    _extend_graph(sub_cg, sub_api_sequences)
                 else:
-                    if len(sub_api_sequences) <= max_number_of_sequences:
-                        tmp_api_sequences = sub_api_sequences.copy()
-                        sub_api_sequences.clear()
-                        for tmp_api_seq in tmp_api_sequences:
-                            for sub_seq in child_api_seqs:
-                                sub_api_sequences.append(tmp_api_seq[-1:] + sub_seq)
-                        del tmp_api_sequences
+                    pass
                 # print(child_api_seqs)
-                _extend_graph(sub_cg, sub_api_sequences)
                 del child_api_seqs
                 stack_size_changed = len(stack) - sz_block_wise
                 for _ in range(stack_size_changed):
@@ -398,13 +415,15 @@ def get_api_call_graphs(entry_points, dx, max_number_of_sequences, recursive_dep
     for root_call in entry_points:
         if isinstance(root_call, ExternalMethod):
             continue
-        _dfs(root_call)
+        try:
+            _dfs(root_call)
+        except TimeoutError:
+            pass
         if (len(sub_api_sequences) <= 0) and (len(stack) > 0):
             _extend_graph(sub_cg, [stack])
         else:
             for api_seq in sub_api_sequences:
                 _extend_graph(sub_cg, [api_seq[-1:] + stack])
-
         number_of_sequences += len(sub_api_sequences)
         method_tag = _get_method_tag(root_call)
         cgs[method_tag] = sub_cg.copy()
@@ -459,9 +478,10 @@ def sequence_post_processing(dft_api_sequence_list):
 
 def _main():
     rtn_str = apk2graphs(
-        '/home/deqiangli/data/Android/koodous/malicious_samples/10a6038bf3b5862de7eb51c9005d966eff5c139990efdfa1ef28cb3b73661fd9',
-        100000,
+        '/local_disk/data/Android/koodous/benign_samples/0bd4fdc6b064fa4fa6b2da1576debd18724311713f2b5c5c6735ce2f811661aa',
+        200000,
         50,
+        1,
         "./abc.cgs")
     print(rtn_str)
 
