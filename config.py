@@ -3,7 +3,6 @@ from __future__ import print_function
 import os
 import sys
 import logging
-import multiprocessing_logging
 
 if sys.version_info[0] < 3:
     import ConfigParser as configparser
@@ -35,4 +34,3 @@ logging.basicConfig(level=logging.INFO, filename=os.path.join(config_dir, "log")
                     datefmt='%Y/%m/%d %H:%M:%S')
 ErrorHandler = logging.StreamHandler()
 ErrorHandler.setFormatter(logging.Formatter('%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s: %(message)s'))
-multiprocessing_logging.install_mp_handler()
