@@ -330,10 +330,9 @@ def get_api_call_graphs(entry_points, dx, max_number_of_sequences, recursive_dep
             if not block or block in visited_blocks:
                 return
             if time.time() - start_time > int(60 * timeout):
-                raise TimeoutError
+               raise TimeoutError
 
             visited_blocks.append(block)
-
             sz_block_wise = len(stack)
             for instruction in block.get_instructions():
                 smali_code = instruction.get_name() + ' { ' + instruction.get_output()
@@ -419,22 +418,21 @@ def get_api_call_graphs(entry_points, dx, max_number_of_sequences, recursive_dep
             _dfs(root_call)
         except TimeoutError:
             warnings.warn("Timeout")
-            break
+        finally:
+            if (len(sub_api_sequences) <= 0) and (len(stack) > 0):
+                _extend_graph(sub_cg, [stack])
+            else:
+                for api_seq in sub_api_sequences:
+                    _extend_graph(sub_cg, [api_seq[-1:] + stack])
+            number_of_sequences += len(sub_api_sequences)
+            method_tag = _get_method_tag(root_call)
+            cgs[method_tag] = sub_cg.copy()
+            sub_api_sequences.clear()
+            stack.clear()
+            sub_cg.clear()
 
-        if (len(sub_api_sequences) <= 0) and (len(stack) > 0):
-            _extend_graph(sub_cg, [stack])
-        else:
-            for api_seq in sub_api_sequences:
-                _extend_graph(sub_cg, [api_seq[-1:] + stack])
-        number_of_sequences += len(sub_api_sequences)
-        method_tag = _get_method_tag(root_call)
-        cgs[method_tag] = sub_cg.copy()
-        sub_api_sequences.clear()
-        stack.clear()
-        sub_cg.clear()
-
-        if number_of_sequences > max_number_of_sequences:
-            return cgs
+            if number_of_sequences > max_number_of_sequences:
+                return cgs
     return cgs
 
 

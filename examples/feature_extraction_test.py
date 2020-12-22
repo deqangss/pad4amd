@@ -6,7 +6,6 @@ from core.droidfeature.feature_extraction import Apk2graphs
 from config import config
 
 from tensorflow.compat.v1 import flags
-import numpy as np
 
 flags.DEFINE_integer('proc_number', 2,
                      'The number of threads for features extraction')
