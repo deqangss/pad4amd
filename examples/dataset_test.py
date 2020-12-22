@@ -4,8 +4,7 @@ from __future__ import print_function
 
 from core.defense import Dataset
 
-import numpy as np
-import torch
+
 def main_():
     dataset = Dataset('drebin', is_adj=True)
     train_data, trainy = dataset.train_dataset

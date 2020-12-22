@@ -11,7 +11,7 @@ defense_args_dict = vars(defense_args)
 
 
 def main_():
-    dataset = Dataset('drebin', k=defense_args.k, use_cache=True, process_number=20)
+    dataset = Dataset('drebin', k=defense_args.k, use_cache=True, process_number=2)
     train_data, trainy = dataset.train_dataset
     val_data, valy = dataset.validation_dataset
     train_dataset_producer = dataset.get_input_producer(train_data, trainy, batch_size=4, name='train')

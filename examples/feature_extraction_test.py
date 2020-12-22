@@ -8,7 +8,7 @@ from config import config
 from tensorflow.compat.v1 import flags
 import numpy as np
 
-flags.DEFINE_integer('proc_number', 4,
+flags.DEFINE_integer('proc_number', 2,
                      'The number of threads for features extraction')
 flags.DEFINE_integer('number_of_sequences', 200000,
                      'The maximum number of produced sequences for each app')
@@ -30,8 +30,8 @@ def _main():
                                    time_out=flags.FLAGS.time_out,
                                    update=False,
                                    proc_number=flags.FLAGS.proc_number)
-    # malware_features = feature_extractor.feature_extraction(malware_dir_name)
-    # print('The number of malware files: ', len(malware_features))
+    malware_features = feature_extractor.feature_extraction(malware_dir_name)
+    print('The number of malware files: ', len(malware_features))
     benign_features = feature_extractor.feature_extraction(benware_dir_name)
     print('The number of benign files: ', len(benign_features))
 
