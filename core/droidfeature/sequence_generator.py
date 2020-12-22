@@ -418,7 +418,9 @@ def get_api_call_graphs(entry_points, dx, max_number_of_sequences, recursive_dep
         try:
             _dfs(root_call)
         except TimeoutError:
-            pass
+            warnings.warn("Timeout")
+            break
+
         if (len(sub_api_sequences) <= 0) and (len(stack) > 0):
             _extend_graph(sub_cg, [stack])
         else:
@@ -478,7 +480,7 @@ def sequence_post_processing(dft_api_sequence_list):
 
 def _main():
     rtn_str = apk2graphs(
-        '/local_disk/data/Android/koodous/benign_samples/0bd4fdc6b064fa4fa6b2da1576debd18724311713f2b5c5c6735ce2f811661aa',
+        '/local_disk/data/Android/koodous/benign_samples/a8b37c627407d1444967828bcfe09d4a093dad48b5ebd964633baaf318de7916',
         200000,
         50,
         1,

@@ -1,6 +1,6 @@
 [DEFAULT]
 project_root = /home/deqiangli/projects/Research/fortdroid
-database_dir = /home/deqiangli/data/Android/
+database_dir = /local_disk/data/Android/
 dataset_name = koodous
 
 [drebin]
