@@ -10,9 +10,10 @@ import itertools
 
 from core.droidfeature import sequence_generator as seq_gen
 from tools import utils
-from config import logging
+from config import logging, ErrorHandler
 
 logger = logging.getLogger('core.droidfeature.feature_extraction')
+logger.addHandler(ErrorHandler)
 
 
 class Apk2graphs(object):
