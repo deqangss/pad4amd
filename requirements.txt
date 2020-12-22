@@ -1,4 +1,3 @@
-multiprocessing_logging
 numpy~=1.19.1
 torch
 scipy~=1.5.2
