@@ -335,7 +335,7 @@ def get_api_call_graphs(entry_points, dx, max_number_of_sequences, recursive_dep
             visited_blocks.append(block)
             sz_block_wise = len(stack)
             for instruction in block.get_instructions():
-                smali_code = instruction.get_name() + ' { ' + instruction.get_output()
+                smali_code = instruction.get_name() + ' { ' + instruction.get_output()  # on win32 platform, 'instruction.get_output()' triggers the memory exception 'exit code -1073741571 (0xC00000FD)' sometimes
                 invoke_match = re.search(
                     r'^([ ]*?)(?P<invokeType>invoke\-([^ ]*?)) {(?P<invokeParam>([vp0-9,. ]*?)),? (?P<invokeObject>L(.*?);|\[L(.*?);)->(?P<invokeMethod>(.*?))\((?P<invokeArgument>(.*?))\)(?P<invokeReturn>(.*?))$',
                     smali_code)
