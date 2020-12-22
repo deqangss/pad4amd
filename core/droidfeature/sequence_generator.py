@@ -411,6 +411,7 @@ def get_api_call_graphs(entry_points, dx, max_number_of_sequences, recursive_dep
 
     cgs = collections.defaultdict(nx.DiGraph)  # a set of sub-graphs
     number_of_sequences = 0
+    timeout_flag = False
     for root_call in entry_points:
         if isinstance(root_call, ExternalMethod):
             continue
@@ -418,6 +419,7 @@ def get_api_call_graphs(entry_points, dx, max_number_of_sequences, recursive_dep
             _dfs(root_call)
         except TimeoutError:
             warnings.warn("Timeout")
+            timeout_flag = True
         finally:
             if (len(sub_api_sequences) <= 0) and (len(stack) > 0):
                 _extend_graph(sub_cg, [stack])
@@ -431,7 +433,7 @@ def get_api_call_graphs(entry_points, dx, max_number_of_sequences, recursive_dep
             stack.clear()
             sub_cg.clear()
 
-            if number_of_sequences > max_number_of_sequences:
+            if (number_of_sequences > max_number_of_sequences) and timeout_flag:
                 return cgs
     return cgs
 
