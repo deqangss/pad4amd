@@ -12,22 +12,22 @@ from tools.utils import save_args
 
 all_args_dict = {}
 defense_args = defense_cmd_md.parse_args()
+feat_args = feature_extraction_cmd_md.parse_args()
 defense_args_dict = vars(defense_args)
 all_args_dict.update(defense_args_dict)
-feat_args = feature_extraction_cmd_md.parse_args()
 feat_args_dict = vars(feat_args)
 all_args_dict.update(feat_args_dict)
 
 
-def main_():
+def _main():
     dataset = Dataset('drebin', k=defense_args.k, use_cache=True, feature_ext_args=feat_args_dict)
     train_data, trainy = dataset.train_dataset
     val_data, valy = dataset.validation_dataset
     train_dataset_producer = dataset.get_input_producer(train_data, trainy, batch_size=4, name='train')
-    val_dataset_producer = dataset.get_input_producer(val_data, valy, batch_size=4, name = 'val')
-    assert dataset.n_classes==2
+    val_dataset_producer = dataset.get_input_producer(val_data, valy, batch_size=4, name='val')
+    assert dataset.n_classes == 2
 
-    dv = 'cpu'
+    dv = 'cuda'
     model = MalwareDetector(dataset.vocab_size, dataset.n_classes, device=dv, **defense_args_dict)
     model = model.to(dv)
     # dump hyper-parameters
@@ -36,4 +36,4 @@ def main_():
 
 
 if __name__ == '__main__':
-    main_()
+    _main()
