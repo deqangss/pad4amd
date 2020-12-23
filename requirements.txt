@@ -1,5 +1,4 @@
-numpy~=1.19.1
-torch
+numpy
 tqdm
 androguard
 networkx==2.5

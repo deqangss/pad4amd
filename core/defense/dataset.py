@@ -46,7 +46,7 @@ class Dataset(object):
         gt_labels[:len(mal_feature_paths)] = 1
 
         train_dn, val_dn, test_dn = None, None, None
-        data_split_path = os.path.join(config.get(self.dataset_name, 'dataset_dir'), 'data_name.split')
+        data_split_path = os.path.join(config.get(self.dataset_name, 'dataset_dir'), 'tr_te_va_split.name')
         if os.path.exists(data_split_path):
             train_dn, val_dn, test_dn = utils.read_pickle(data_split_path)
         self.train_dataset, self.validation_dataset, self.test_dataset = \
