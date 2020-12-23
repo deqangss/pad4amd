@@ -55,6 +55,7 @@ def _main():
     val_data, valy = dataset.validation_dataset
     train_dataset_producer = dataset.get_input_producer(train_data, trainy, batch_size=4, name='train')
     val_dataset_producer = dataset.get_input_producer(val_data, valy, batch_size=4, name='val')
+    print(dataset.n_classes)
     assert dataset.n_classes == 2
 
     dv = 'cpu'
