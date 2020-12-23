@@ -26,5 +26,6 @@ def _main():
     benign_features = feature_extractor.feature_extraction(benware_dir_name)
     print('The number of benign files: ', len(benign_features))
 
+
 if __name__ == '__main__':
     _main()

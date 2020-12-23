@@ -1,7 +1,6 @@
 import argparse
 
-
-cmd_md = argparse.ArgumentParser(description='Argparser for feature extraction')
+cmd_md = argparse.ArgumentParser(description='arguments for feature extraction')
 cmd_md.add_argument('--proc_number', type=int, default=2,
                     help='The number of threads for features extraction.')
 cmd_md.add_argument('--number_of_sequences', type=int, default=200000,

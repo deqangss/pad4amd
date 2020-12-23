@@ -1,7 +1,7 @@
 import argparse
 
 
-cmd_md = argparse.ArgumentParser(description='Argparser for malware detector')
+cmd_md = argparse.ArgumentParser(description='arguments for learning malware detector')
 cmd_md.add_argument('--seed', type=int, default=0, help='random seed.')
 cmd_md.add_argument('--embedding_dim', type=int, default=32, help='embedding dimension')
 cmd_md.add_argument('--hidden_units', type=lambda s: [int(u) for u in s.split(',')], default='8',
