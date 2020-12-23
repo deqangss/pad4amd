@@ -1,5 +1,6 @@
 import os.path
 import signal
+import warnings
 from tqdm import tqdm
 import multiprocessing
 
@@ -22,24 +23,25 @@ class Apk2graphs(object):
     def __init__(self,
                  naive_data_save_dir,
                  intermediate_save_dir,
-                 number_of_sequences=15000,
+                 number_of_sequences=200000,
                  depth_of_recursion=50,
-                 time_out = 20,
+                 timeout=20,
                  use_feature_selection=True,
-                 maximum_vocab_size=10000,
+                 vocab_size=10000,
                  file_ext='.gpickle',
                  update=False,
-                 proc_number=2
+                 proc_number=2,
+                 **kwargs
                  ):
         """
         initialization
         :param naive_data_save_dir: a directory for saving intermediates
         :param intermediate_save_dir: a directory for saving meta information
         :param use_feature_selection: use feature selection to filtering out entities with high frequencies
-        :param maximum_vocab_size: the maximum number of words
+        :param vocab_size: the maximum number of words
         :param number_of_sequences: the maximum number on the returned api sequences
         :param depth_of_recursion: the maximum depth when conducting depth-first traverse
-        :param time_out: the elapsed time on analysis an app
+        :param timeout: the elapsed time on analysis an app
         :param file_ext: file extent
         :param update: boolean indicator for recomputing the naive features
         :param proc_number: process number
@@ -47,14 +49,17 @@ class Apk2graphs(object):
         self.naive_data_save_dir = naive_data_save_dir
         self.intermediate_save_dir = intermediate_save_dir
         self.use_feature_selection = use_feature_selection
-        self.maximum_vocab_size = maximum_vocab_size
+        self.maximum_vocab_size = vocab_size
         self.number_of_sequences = number_of_sequences
         self.depth_of_recursion = depth_of_recursion
-        self.time_out = time_out
+        self.time_out = timeout
 
         self.file_ext = file_ext
         self.update = update
         self.proc_number = proc_number
+
+        if len(kwargs) > 0:
+            logger.warning("unused hyper parameters {}.".format(kwargs))
 
     def feature_extraction(self, sample_dir):
         """ save the android features and return the saved paths """

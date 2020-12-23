@@ -182,6 +182,23 @@ def dump_txt(data_str, path, mode='w'):
         f_w.write(data_str)
 
 
+def build_kwargs(keys, arg_dict):
+    st = ''
+    for key in keys:
+        st += '%s:%s\n' % (key, str(arg_dict[key]))
+    return st
+
+
+def save_args(fout, args):
+    if isinstance(args, str):
+        dump_txt(args, fout, mode='w')
+    elif isinstance(args, dict):
+        args_str = build_kwargs(args.keys(), args)
+        dump_txt(args_str, fout, mode='w')
+    else:
+        raise TypeError("Expected str or dict.")
+
+
 def sp_to_symmetric_sp_mat(sparse_mx):
     sparse_mx = sparse_mx + sparse_mx.T.multiply(sparse_mx.T > sparse_mx) - sparse_mx.multiply(sparse_mx.T > sparse_mx)
     sparse_eye = sp.csr_matrix(sparse_mx.sum(axis=0) > 0).T.multiply(sp.eye(sparse_mx.shape[0]))

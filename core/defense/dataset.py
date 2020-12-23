@@ -13,15 +13,15 @@ from tools import utils
 
 
 class Dataset(object):
-    def __init__(self, dataset_name='drebin', k=100, is_adj=False, use_cache=False, process_number=2, seed=0):
+    def __init__(self, dataset_name='drebin', k=100, is_adj=False, use_cache=False, seed=0, feature_ext_args=None):
         """
         build dataset for ml model learning
         :param dataset_name: String, the dataset name, expected 'drebin' or 'androzoo'
         :param k: Integer, the number of subgraphs is sampled for passing through the neural networks
         :param is_adj: Boolean, whether use the actual adjacent matrix or not
         :param use_cache: Boolean, whether to use the cached data or not, the cached data is identified by a string format name
-        :param process_number: Integer, the number of threads for parallel running
         :param seed: Integer, the random seed
+        :param feature_ext_args: Dict, arguments for feature extraction
         """
         self.dataset_name = dataset_name
         self.k = k
@@ -30,12 +30,17 @@ class Dataset(object):
         random.seed(self.seed)
         np.random.seed(self.seed)
         self.use_cache = use_cache
-        self.process_number = process_number
         self.temp_dir_handle = tempfile.TemporaryDirectory()
         assert self.dataset_name in ['drebin', 'androzoo'], 'Expected either "drebin" or "androzoo".'
-        self.feature_extractor = Apk2graphs(config.get('metadata', 'naive_data_pool'),
-                                            config.get(self.dataset_name, 'intermediate'),
-                                            proc_number=self.process_number)
+        if feature_ext_args is None:
+            self.feature_extractor = Apk2graphs(config.get('metadata', 'naive_data_pool'),
+                                                config.get(self.dataset_name, 'intermediate'))
+        else:
+            assert isinstance(feature_ext_args, dict)
+            self.feature_extractor = Apk2graphs(config.get('metadata', 'naive_data_pool'),
+                                                config.get(self.dataset_name, 'intermediate'),
+                                                **feature_ext_args)
+
         mal_feature_paths = self.apk_preprocess(
             config.get(self.dataset_name, 'malware_dir'))
         ben_feature_paths = self.apk_preprocess(
