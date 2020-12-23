@@ -1,6 +1,5 @@
 import os
 import random
-import time
 import tempfile
 
 import numpy as np
@@ -55,26 +54,26 @@ class Dataset(object):
         if os.path.exists(data_split_path):
             train_dn, val_dn, test_dn = utils.read_pickle(data_split_path)
         self.train_dataset, self.validation_dataset, self.test_dataset = \
-            self.data_split(feature_paths, gt_labels, train_dn, val_dn, test_dn)
+            self.data_split(feature_paths, gt_labels, train_dn, val_dn, test_dn, data_split_path)
 
         vocab, _1, = self.feature_extractor.get_vocab(*self.train_dataset)
         self.vocab_size = len(vocab)
         self.n_classes = np.unique(self.train_dataset[1]).size
 
-    def data_split(self, feature_paths, labels, train_dn=None, validation_dn=None, test_dn=None):
+    def data_split(self, feature_paths, labels, train_dn=None, validation_dn=None, test_dn=None, save_path=None):
         assert len(feature_paths) == len(labels)
         if (train_dn is None) or (validation_dn is None) or (test_dn is None):
-            data_names = [os.path.basename(path) for path in feature_paths]
+            data_names = [os.path.splitext(os.path.basename(path))[0] for path in feature_paths]
             train_dn, test_dn = train_test_split(data_names, test_size=0.2, random_state=self.seed, shuffle=True)
             train_dn, validation_dn = train_test_split(train_dn, test_size=0.25, random_state=self.seed, shuffle=True)
             utils.dump_pickle((train_dn, validation_dn, test_dn),
-                              path=os.path.join(config.get(self.dataset_name, 'intermediate'), 'data_name.split'))
+                              path=save_path)
 
         def query_path(data_names):
-            return np.array([path for path in feature_paths if os.path.basename(path) in data_names])
+            return np.array([path for path in feature_paths if os.path.splitext(os.path.basename(path))[0] in data_names])
 
         def query_indicator(data_names):
-            return [True if os.path.basename(path) in data_names else False for path in feature_paths]
+            return [True if os.path.splitext(os.path.basename(path))[0] in data_names else False for path in feature_paths]
 
         train_data = query_path(train_dn)
         train_y = labels[query_indicator(train_dn)]

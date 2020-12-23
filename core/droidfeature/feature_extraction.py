@@ -174,8 +174,9 @@ class Apk2graphs(object):
         selected_words = [all_words[p] for p in pos_selected]
         corresponding_word_info = list(map(api_info_dict.get, selected_words))
         # saving
-        utils.dump_pickle(selected_words, vocab_saving_path)
-        utils.dump_pickle(corresponding_word_info, vocab_extra_info_saving_path)
+        if len(selected_words) > 0:
+            utils.dump_pickle(selected_words, vocab_saving_path)
+            utils.dump_pickle(corresponding_word_info, vocab_extra_info_saving_path)
         return selected_words, corresponding_word_info
 
     def graph2representation(self, feature_path_list, gt_labels, vocabulary=None, is_adj=False):
