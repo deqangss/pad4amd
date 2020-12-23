@@ -34,3 +34,4 @@ logging.basicConfig(level=logging.INFO, filename=os.path.join(config_dir, "log")
                     datefmt='%Y/%m/%d %H:%M:%S')
 ErrorHandler = logging.StreamHandler()
 ErrorHandler.setFormatter(logging.Formatter('%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s: %(message)s'))
+
