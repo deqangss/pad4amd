@@ -18,7 +18,7 @@ def _main():
                                    meta_data_saving_dir,
                                    number_of_sequences=args.number_of_sequences,
                                    depth_of_recursion=args.depth_of_recursion,
-                                   timeout=args.time_out,
+                                   timeout=args.timeout,
                                    update=False,
                                    proc_number=args.proc_number)
     malware_features = feature_extractor.feature_extraction(malware_dir_name)
