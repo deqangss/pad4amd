@@ -199,6 +199,17 @@ def save_args(fout, args):
         raise TypeError("Expected str or dict.")
 
 
+def get_group_args(args, args_parser, title):
+    import argparse
+    assert isinstance(args, argparse.Namespace) and isinstance(args_parser, argparse.ArgumentParser)
+    for group in args_parser._action_groups:
+        if group.title == title:
+            return {action.dest: getattr(args, action.dest, None) for action in group._group_actions}
+        else:
+            continue
+    return
+
+
 def sp_to_symmetric_sp_mat(sparse_mx):
     sparse_mx = sparse_mx + sparse_mx.T.multiply(sparse_mx.T > sparse_mx) - sparse_mx.multiply(sparse_mx.T > sparse_mx)
     sparse_eye = sp.csr_matrix(sparse_mx.sum(axis=0) > 0).T.multiply(sp.eye(sparse_mx.shape[0]))

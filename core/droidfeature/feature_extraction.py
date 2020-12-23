@@ -27,7 +27,7 @@ class Apk2graphs(object):
                  depth_of_recursion=50,
                  timeout=20,
                  use_feature_selection=True,
-                 vocab_size=10000,
+                 max_vocab_size=10000,
                  file_ext='.gpickle',
                  update=False,
                  proc_number=2,
@@ -38,7 +38,7 @@ class Apk2graphs(object):
         :param naive_data_save_dir: a directory for saving intermediates
         :param intermediate_save_dir: a directory for saving meta information
         :param use_feature_selection: use feature selection to filtering out entities with high frequencies
-        :param vocab_size: the maximum number of words
+        :param max_vocab_size: the maximum number of words
         :param number_of_sequences: the maximum number on the returned api sequences
         :param depth_of_recursion: the maximum depth when conducting depth-first traverse
         :param timeout: the elapsed time on analysis an app
@@ -49,7 +49,7 @@ class Apk2graphs(object):
         self.naive_data_save_dir = naive_data_save_dir
         self.intermediate_save_dir = intermediate_save_dir
         self.use_feature_selection = use_feature_selection
-        self.maximum_vocab_size = vocab_size
+        self.maximum_vocab_size = max_vocab_size
         self.number_of_sequences = number_of_sequences
         self.depth_of_recursion = depth_of_recursion
         self.time_out = timeout
