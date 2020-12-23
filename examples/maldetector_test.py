@@ -29,6 +29,7 @@ feature_argparse.add_argument('--update', action='store_true', default=False,
                               help='Whether update the existed features.')
 
 detector_argparse = cmd_md.add_argument_group(title='detector')
+detector_argparse.add_argument('--cuda', action='store_true', default=False, help='whether use cuda enable gpu or cpu.')
 detector_argparse.add_argument('--seed', type=int, default=0, help='random seed.')
 detector_argparse.add_argument('--embedding_dim', type=int, default=32, help='embedding dimension')
 detector_argparse.add_argument('--hidden_units', type=lambda s: [int(u) for u in s.split(',')], default='8',
@@ -57,7 +58,10 @@ def _main():
     val_dataset_producer = dataset.get_input_producer(val_data, valy, batch_size=4, name='val')
     assert dataset.n_classes == 2
 
-    dv = 'cpu'
+    if not args.cuda:
+        dv = 'cpu'
+    else:
+        dv = 'cuda'
     model = MalwareDetector(dataset.vocab_size, dataset.n_classes, device=dv, **vars(args))
     model = model.to(dv)
     save_args(path.join(path.dirname(model.model_save_path), "hparam"), vars(args))
