@@ -54,8 +54,8 @@ def _main():
     dataset = Dataset('drebin', k=args.k, use_cache=True, feature_ext_args=get_group_args(args, cmd_md, 'feature'))
     train_data, trainy = dataset.train_dataset
     val_data, valy = dataset.validation_dataset
-    train_dataset_producer = dataset.get_input_producer(train_data, trainy, batch_size=4, name='train')
-    val_dataset_producer = dataset.get_input_producer(val_data, valy, batch_size=4, name='val')
+    train_dataset_producer = dataset.get_input_producer(train_data, trainy, batch_size=args.batch_size, name='train')
+    val_dataset_producer = dataset.get_input_producer(val_data, valy, batch_size=args.batch_size, name='val')
     assert dataset.n_classes == 2
 
     if not args.cuda:
