@@ -40,14 +40,15 @@ class Dataset(object):
             config.get(self.dataset_name, 'malware_dir'))
         ben_feature_paths = self.apk_preprocess(
             config.get(self.dataset_name, 'benware_dir'))
+
         feature_paths = mal_feature_paths + ben_feature_paths
         gt_labels = np.zeros((len(mal_feature_paths) + len(ben_feature_paths)), dtype=np.int32)
         gt_labels[:len(mal_feature_paths)] = 1
 
         train_dn, val_dn, test_dn = None, None, None
-        path = os.path.join(config.get(self.dataset_name, 'intermediate'), 'data_name.split')
-        if os.path.exists(path):
-            train_dn, val_dn, test_dn = utils.read_pickle(path)
+        data_split_path = os.path.join(config.get(self.dataset_name, 'dataset_dir'), 'data_name.split')
+        if os.path.exists(data_split_path):
+            train_dn, val_dn, test_dn = utils.read_pickle(data_split_path)
         self.train_dataset, self.validation_dataset, self.test_dataset = \
             self.data_split(feature_paths, gt_labels, train_dn, val_dn, test_dn)
 

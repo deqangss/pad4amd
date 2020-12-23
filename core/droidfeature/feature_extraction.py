@@ -89,7 +89,7 @@ class Apk2graphs(object):
 
         return feature_paths
 
-    def feature2ipt(self, feature_jpath_list, gt_labels=None, is_adj=False):
+    def feature2ipt(self, feature_path_list, gt_labels=None, is_adj=False):
         """
         Mapping features to the numerical representation
         :param feature_path_list, list, a list of paths, each of which directs to a feature file
