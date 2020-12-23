@@ -153,19 +153,19 @@ class MalwareDetector(nn.Module):
                           " | training time in %d minutes, %d seconds" % (mins, secs))
                     print(f'\tTraining loss: {loss_train.item():.4f}\t|\t Train accuracy: {acc_train * 100:.2f}')
 
-                self.eval()
-                avg_acc_val = []
-                validation_data_producer.reset_cursor()
-                for idx_batch, x_batch, adj, y_batch, _2 in validation_data_producer.iteration():
-                    x_batch, adj_batch, y_batch = utils.to_tensor(x_batch, adj, y_batch, self.device)
-                    latent_rpst, logits = self.forward(x_batch, adj_batch)
-                    acc_val = (logits.argmax(1) == y_batch).sum().item()
-                    acc_val /= x_batch[0].size()[0]
-                    avg_acc_val.append(acc_val)
-                avg_acc_val = np.mean(avg_acc_val)
-                if verbose:
-                    print(f'\t Validation accuracy: {avg_acc_val * 100:.2f}')
-                if avg_acc_val >= best_acc:
-                    torch.save(self.state_dict(), self.model_save_path)
+                    self.eval()
+                    avg_acc_val = []
+                    validation_data_producer.reset_cursor()
+                    for idx_batch, x_batch, adj, y_batch, _2 in validation_data_producer.iteration():
+                        x_batch, adj_batch, y_batch = utils.to_tensor(x_batch, adj, y_batch, self.device)
+                        latent_rpst, logits = self.forward(x_batch, adj_batch)
+                        acc_val = (logits.argmax(1) == y_batch).sum().item()
+                        acc_val /= x_batch[0].size()[0]
+                        avg_acc_val.append(acc_val)
+                    avg_acc_val = np.mean(avg_acc_val)
                     if verbose:
-                        print(f'\t Model saved at path: {self.model_save_path}')
+                        print(f'\t Validation accuracy: {avg_acc_val * 100:.2f}')
+                    if avg_acc_val >= best_acc:
+                        torch.save(self.state_dict(), self.model_save_path)
+                        if verbose:
+                            print(f'\t Model saved at path: {self.model_save_path}')
