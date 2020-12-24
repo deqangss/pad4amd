@@ -84,9 +84,9 @@ class MalwareDetector(nn.Module):
         self.eval()
         test_data_producer.use_cache = True
         confidences = []
+        gt_labels = []
         for _ in tqdm(range(self.n_sample_times)):
             conf_batchs = []
-            gt_labels = []
             for _1, x, adj, y, _2 in test_data_producer.iteration():
                 x, adj, y = utils.to_tensor(x, adj, y, self.device)
                 _, logits = self.forward(x, adj)
@@ -94,8 +94,9 @@ class MalwareDetector(nn.Module):
                 gt_labels.append(y)
             conf_batchs = torch.vstack(conf_batchs)
             confidences.append(conf_batchs)
+            gt_labels = np.concatenate(gt_labels)
         confidences = torch.mean(torch.stack(confidences).permute([1, 0, 2]), dim=1)
-        return confidences, np.concatenate(gt_labels)
+        return confidences, gt_labels
 
     def predict(self, test_data_producer):
         # load model
