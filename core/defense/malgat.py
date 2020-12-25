@@ -97,8 +97,8 @@ class MalGAT(nn.Module):
             adjs = [torch.stack([torch.matmul(_x_e.unsqueeze(-1), _x_e.unsqueeze(0)).to_sparse() \
                                  for _x_e in _x]) for _x in x]
             # adjs = [torch.matmul(_x.unsqueeze(-1), _x.unsqueeze(1)).to_sparse() for _x in x]
-        # latent_codes = [torch.stack([self.cls_weight] * x[0].size()[0])]
-        latent_codes = []
+        latent_codes = [torch.stack([self.cls_weight] * x[0].size()[0])]
+        # latent_codes = []
         for i in range(self.k):
             adj = adjs[i]  # adj shape is  [batch_size, vocab_size, vocab_size]
             features = torch.unsqueeze(x[i], dim=-1) * embed_features
@@ -114,7 +114,7 @@ class MalGAT(nn.Module):
             latent_codes.append(latent_code)
 
         latent_codes = torch.stack(latent_codes, dim=1)  # the result shape is [batch_size, self.k+1, feature_dim]
-        latent_codes, _2 = torch.max(latent_codes, dim=1)
-        # latent_codes = self.cls_attn_layer(latent_codes)
+        # latent_codes, _2 = torch.max(latent_codes, dim=1)
+        latent_codes = self.cls_attn_layer(latent_codes)
         latent_codes = self.activation(self.dense(latent_codes))
         return latent_codes

@@ -79,10 +79,10 @@ class Dataset(object):
         random.seed(self.seed)
         random.shuffle(train_data)
         train_y = labels[query_indicator(train_dn)]
-        random.seed(self.seed)
-        random.shuffle(train_y)
         val_data = query_path(validation_dn)
         val_y = labels[query_indicator(validation_dn)]
+        random.seed(self.seed)
+        random.shuffle(val_y)
         test_data = query_path(test_dn)
         test_y = labels[query_indicator(test_dn)]
         return (train_data, train_y), (val_data, val_y), (test_data, test_y)
