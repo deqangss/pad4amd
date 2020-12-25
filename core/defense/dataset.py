@@ -76,7 +76,11 @@ class Dataset(object):
             return [True if os.path.splitext(os.path.basename(path))[0] in data_names else False for path in feature_paths]
 
         train_data = query_path(train_dn)
+        random.seed(self.seed)
+        random.shuffle(train_data)
         train_y = labels[query_indicator(train_dn)]
+        random.seed(self.seed)
+        random.shuffle(train_y)
         val_data = query_path(validation_dn)
         val_y = labels[query_indicator(validation_dn)]
         test_data = query_path(test_dn)
@@ -211,7 +215,7 @@ class _DataProducer(object):
             if start_i == end_i:
                 break
             x, adj, y, idx = self.dataset_obj.get_numerical_input(self.dataX[start_i:end_i],
-                                                                  self.datay[start_i: end_i],
+                                                                  self.datay[start_i:end_i],
                                                                   name=self.name + str(self.cursor))
             yield self.cursor, x, adj, y, idx
             self.cursor = self.cursor + 1
