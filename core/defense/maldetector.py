@@ -137,6 +137,7 @@ class MalwareDetector(nn.Module):
             train_data_producer.reset_cursor()
             nbatchs = train_data_producer.mini_batches
             for idx_batch, x_batch, adj, y_batch, _1 in train_data_producer.iteration():
+                print(y_batch)
                 x_batch, adj_batch, y_batch = utils.to_tensor(x_batch, adj, y_batch, self.device)
                 self.train()
                 start_time = time.time()
