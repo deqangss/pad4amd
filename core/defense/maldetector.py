@@ -165,6 +165,7 @@ class MalwareDetector(nn.Module):
                             acc_val = (logits.argmax(1) == y_batch).sum().item()
                             acc_val /= x_batch[0].size()[0]
                             avg_acc_val.append(acc_val)
+                            print('val:', acc_val)
                         avg_acc_val = np.mean(avg_acc_val)
                     if verbose:
                         print(f'\t Validation accuracy: {avg_acc_val * 100:.2f}')
