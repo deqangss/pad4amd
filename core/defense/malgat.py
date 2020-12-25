@@ -94,9 +94,9 @@ class MalGAT(nn.Module):
             assert len(x) == self.k  # x has the shape [self.k, batch_size, vocab_size]
             # RAM saving by exchanging the running speed: 1. adjs = torch.matmul(x.unsqueeze(-1), x_unsqueeze(2)).to_sparse()
             # 2. adjs = [torch.matmul(_x.unsqueeze(-1), _x.unsqueeze(1)).to_sparse() for _x in x]
-            # adjs = [torch.stack([torch.matmul(_x_e.unsqueeze(-1), _x_e.unsqueeze(0)) \
-            #                      for _x_e in _x]) for _x in x]
-            adjs = [torch.matmul(_x.unsqueeze(-1), _x.unsqueeze(1)).to_sparse() for _x in x]
+            adjs = [torch.stack([torch.matmul(_x_e.unsqueeze(-1), _x_e.unsqueeze(0)).to_sparse() \
+                                 for _x_e in _x]) for _x in x]
+            # adjs = [torch.matmul(_x.unsqueeze(-1), _x.unsqueeze(1)).to_sparse() for _x in x]
         latent_codes = [torch.stack([self.cls_weight] * x[0].size()[0])]
         for i in range(self.k):
             adj = adjs[i]  # adj shape is  [batch_size, vocab_size, vocab_size]
