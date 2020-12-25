@@ -148,7 +148,7 @@ class MalwareDetector(nn.Module):
                 total_time = total_time + time.time() - start_time
                 acc_train = (logits.argmax(1) == y_batch).sum().item()
                 acc_train /= x_batch[0].size()[0]
-                if (i * nbatchs + idx_batch + 1) % 2 == 0 and verbose:
+                if (i * nbatchs + idx_batch + 1) % 10 == 0 and verbose:
                     mins, secs = int(total_time) / 60, int(total_time) % 60
                     print('Step: %d/%d' % (i * nbatchs + idx_batch + 1, epochs * nbatchs),
                           " | training time in %d minutes, %d seconds" % (mins, secs))
