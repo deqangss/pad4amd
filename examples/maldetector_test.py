@@ -31,7 +31,7 @@ feature_argparse.add_argument('--update', action='store_true', default=False,
 detector_argparse = cmd_md.add_argument_group(title='detector')
 detector_argparse.add_argument('--cuda', action='store_true', default=False, help='whether use cuda enable gpu or cpu.')
 detector_argparse.add_argument('--seed', type=int, default=0, help='random seed.')
-detector_argparse.add_argument('--embedding_dim', type=int, default=16, help='embedding dimension')
+detector_argparse.add_argument('--embedding_dim', type=int, default=8, help='embedding dimension')
 detector_argparse.add_argument('--hidden_units', type=lambda s: [int(u) for u in s.split(',')], default='8',
                                help='delimited list input, e.g., "32,32"', )
 detector_argparse.add_argument('--penultimate_hidden_dim', type=int, default=64, help='dimension of penultimate layer')
