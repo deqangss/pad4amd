@@ -154,7 +154,7 @@ class MalwareDetector(nn.Module):
                 print(f'\tTraining loss: {loss_train.item():.4f}\t|\t Train accuracy: {acc_train * 100:.2f}')
 
                 self.eval()
-                if (i * nbatchs + idx_batch + 1) % 2 == 0 and verbose:
+                if (i * nbatchs + idx_batch + 1) % 100 == 0 and verbose:
                     avg_acc_val = []
                     validation_data_producer.reset_cursor()
                     with torch.no_grad():
