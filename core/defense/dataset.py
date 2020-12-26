@@ -79,10 +79,10 @@ class Dataset(object):
         random.seed(self.seed)
         random.shuffle(train_data)
         train_y = labels[query_indicator(train_dn)]
+        random.seed(self.seed)
+        random.shuffle(train_y)
         val_data = query_path(validation_dn)
         val_y = labels[query_indicator(validation_dn)]
-        random.seed(self.seed)
-        random.shuffle(val_y)
         test_data = query_path(test_dn)
         test_y = labels[query_indicator(test_dn)]
         return (train_data, train_y), (val_data, val_y), (test_data, test_y)
@@ -112,7 +112,7 @@ class Dataset(object):
             features, adjs, labels_ = utils.read_pickle(file_path)
         else:
             features, adjs, labels_ = self.feature_extractor.feature2ipt(feature_paths, labels, self.is_adj)
-        if (not os.path.exists(file_path)) and self.use_cache:
+        if (not os.path.exists(file_path)) and ('val' in name) and self.use_cache:
             utils.dump_pickle((features, adjs, labels_), file_path)
 
         # sampling subgraphs and list transpose
