@@ -41,10 +41,8 @@ class Dataset(object):
                                                 **feature_ext_args)
 
         data_saving_path = os.path.join(config.get(self.dataset_name, 'intermediate'), 'dataset.idx')
-        print(data_saving_path)
         if os.path.exists(data_saving_path):
-            print('ok')
-            self.train_dataset, self.validation_dataset, self.test_dataset = utils.read_pickle(data_saving_path)
+            (self.train_dataset, self.validation_dataset, self.test_dataset) = utils.read_pickle(data_saving_path)
         else:
             mal_feature_paths = self.apk_preprocess(
                 config.get(self.dataset_name, 'malware_dir'))
