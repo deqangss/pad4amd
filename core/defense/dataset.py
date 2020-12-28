@@ -43,6 +43,13 @@ class Dataset(object):
         data_saving_path = os.path.join(config.get(self.dataset_name, 'intermediate'), 'dataset.idx')
         if os.path.exists(data_saving_path):
             (self.train_dataset, self.validation_dataset, self.test_dataset) = utils.read_pickle(data_saving_path)
+
+            def path_tran(data_paths):
+                return np.array(
+                    [os.path.join(config.get('metadata', 'naive_data_pool'), os.path.basename(name)) for name in data_paths])
+            self.train_dataset = (path_tran(self.train_dataset[0]), self.train_dataset[1])
+            self.validation_dataset = (path_tran(self.validation_dataset[0]), self.validation_dataset[1])
+            self.test_dataset = (path_tran(self.test_dataset[0]), self.test_dataset[1])
         else:
             mal_feature_paths = self.apk_preprocess(
                 config.get(self.dataset_name, 'malware_dir'))
