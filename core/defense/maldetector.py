@@ -138,24 +138,22 @@ class MalwareDetector(nn.Module):
             nbatchs = train_data_producer.mini_batches
             self.train()
             for idx_batch, x_batch, adj, y_batch, _1 in train_data_producer.iteration():
-                print(idx_batch + 1)
-                print(x_batch.shape)
-                # if idx_batch + 1 == 1275:  # running out of memory
-                #     continue
-                # x_batch, adj_batch, y_batch = utils.to_tensor(x_batch, adj, y_batch, self.device)
-                # start_time = time.time()
-                # optimizer.zero_grad()
-                # latent_rpst, logits = self.forward(x_batch, adj_batch)
-                # loss_train = F.cross_entropy(logits, y_batch)
-                # loss_train.backward()
-                # optimizer.step()
-                # total_time = total_time + time.time() - start_time
-                # acc_train = (logits.argmax(1) == y_batch).sum().item()
-                # acc_train /= x_batch[0].size()[0]
-                # mins, secs = int(total_time) / 60, int(total_time) % 60
-                # print('Step: %d/%d' % (i * nbatchs + idx_batch + 1, epochs * nbatchs),
-                #       " | training time in %d minutes, %d seconds" % (mins, secs))
-                # print(f'\tTraining loss: {loss_train.item():.4f}\t|\t Train accuracy: {acc_train * 100:.2f}')
+                if idx_batch + 1 == 1275:  # running out of memory
+                    continue
+                x_batch, adj_batch, y_batch = utils.to_tensor(x_batch, adj, y_batch, self.device)
+                start_time = time.time()
+                optimizer.zero_grad()
+                latent_rpst, logits = self.forward(x_batch, adj_batch)
+                loss_train = F.cross_entropy(logits, y_batch)
+                loss_train.backward()
+                optimizer.step()
+                total_time = total_time + time.time() - start_time
+                acc_train = (logits.argmax(1) == y_batch).sum().item()
+                acc_train /= x_batch[0].size()[0]
+                mins, secs = int(total_time) / 60, int(total_time) % 60
+                print('Step: %d/%d' % (i * nbatchs + idx_batch + 1, epochs * nbatchs),
+                      " | training time in %d minutes, %d seconds" % (mins, secs))
+                print(f'\tTraining loss: {loss_train.item():.4f}\t|\t Train accuracy: {acc_train * 100:.2f}')
 
             self.eval()
             avg_acc_val = []
