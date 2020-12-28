@@ -138,8 +138,6 @@ class MalwareDetector(nn.Module):
             nbatchs = train_data_producer.mini_batches
             self.train()
             for idx_batch, x_batch, adj, y_batch, _1 in train_data_producer.iteration():
-                if idx_batch + 1 == 1275:  # running out of memory
-                    continue
                 x_batch, adj_batch, y_batch = utils.to_tensor(x_batch, adj, y_batch, self.device)
                 start_time = time.time()
                 optimizer.zero_grad()
