@@ -85,7 +85,7 @@ def check_dir(sample_dir):
         elif os.path.isdir(sample_dir):
             sample_path_list = list(retrive_files_set(sample_dir, "", ".apk|"))
             if len(sample_path_list) <= 0:
-                warning.warn('No files')
+                warnings.warn('No files')
         else:
             raise ValueError(" No such path {}".format(sample_dir))
     elif isinstance(sample_dir, list):
