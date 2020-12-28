@@ -153,7 +153,7 @@ class MalwareDetector(nn.Module):
                 acc_train /= x_batch[0].size()[0]
                 mins, secs = int(total_time) / 60, int(total_time) % 60
                 if verbose:
-                    logger.info(f'Step: {i * nbatchs + idx_batch + 1}/{epochs * nbatchs} | training time in {mins} minutes, {secs} seconds.')
+                    logger.info(f'Step: {i * nbatchs + idx_batch + 1}/{epochs * nbatchs} | training time in {mins:.0f} minutes, {secs} seconds.')
                     logger.info(f'\tTraining loss: {loss_train.item():.4f}\t|\t Train accuracy: {acc_train * 100:.2f}')
 
             self.eval()
