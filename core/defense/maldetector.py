@@ -136,9 +136,9 @@ class MalwareDetector(nn.Module):
         for i in range(epochs):
             train_data_producer.reset_cursor()
             nbatchs = train_data_producer.mini_batches
+            self.train()
             for idx_batch, x_batch, adj, y_batch, _1 in train_data_producer.iteration():
                 x_batch, adj_batch, y_batch = utils.to_tensor(x_batch, adj, y_batch, self.device)
-                self.train()
                 start_time = time.time()
                 optimizer.zero_grad()
                 latent_rpst, logits = self.forward(x_batch, adj_batch)
@@ -153,21 +153,21 @@ class MalwareDetector(nn.Module):
                       " | training time in %d minutes, %d seconds" % (mins, secs))
                 print(f'\tTraining loss: {loss_train.item():.4f}\t|\t Train accuracy: {acc_train * 100:.2f}')
 
-                self.eval()
-                if (i * nbatchs + idx_batch + 1) % 100 == 0 and verbose:
-                    avg_acc_val = []
-                    validation_data_producer.reset_cursor()
-                    with torch.no_grad():
-                        for idx_batch, x_batch, adj, y_batch, _2 in validation_data_producer.iteration():
-                            x_batch, adj_batch, y_batch = utils.to_tensor(x_batch, adj, y_batch, self.device)
-                            latent_rpst, logits = self.forward(x_batch, adj_batch)
-                            acc_val = (logits.argmax(1) == y_batch).sum().item()
-                            acc_val /= x_batch[0].size()[0]
-                            avg_acc_val.append(acc_val)
-                        avg_acc_val = np.mean(avg_acc_val)
-                    if verbose:
-                        print(f'\t Validation accuracy: {avg_acc_val * 100:.2f}')
-                    if avg_acc_val >= best_acc:
-                        torch.save(self.state_dict(), self.model_save_path)
-                        if verbose:
-                            print(f'\t Model saved at path: {self.model_save_path}')
+            self.eval()
+            avg_acc_val = []
+            validation_data_producer.reset_cursor()
+            with torch.no_grad():
+                for idx_batch, x_val, adj_val, y_val, _2 in validation_data_producer.iteration():
+                    x_val, adj_val, y_val = utils.to_tensor(x_val, adj_val, y_val, self.device)
+                    latent_rpst, logits = self.forward(x_val, adj_val)
+                    acc_val = (logits.argmax(1) == y_val).sum().item()
+                    acc_val /= x_val[0].size()[0]
+                    avg_acc_val.append(acc_val)
+                avg_acc_val = np.mean(avg_acc_val)
+
+            if verbose:
+                print(f'\t Validation accuracy: {avg_acc_val * 100:.2f}')
+            if avg_acc_val >= best_acc:
+                torch.save(self.state_dict(), self.model_save_path)
+                if verbose:
+                    print(f'\t Model saved at path: {self.model_save_path}')
