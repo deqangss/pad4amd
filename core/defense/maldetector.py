@@ -11,12 +11,15 @@ import torch.nn.functional as F
 import numpy as np
 
 from core.defense.malgat import MalGAT
-from config import config
+from config import config, logging, ErrorHandler
 from tools import utils
+
+logger = logging.getLogger('core.defense.maldetector')
+logger.addHandler(ErrorHandler)
 
 
 class MalwareDetector(nn.Module):
-    def __init__(self, vocab_size, n_classes, n_sample_times= 10, device='cpu', name='MALWARE_DETECTOR', **kwargs):
+    def __init__(self, vocab_size, n_classes, n_sample_times=10, device='cpu', name='MALWARE_DETECTOR', **kwargs):
         """
         Construct malware detector
         :param vocab_size: Interger, the number of words in the vocabulary
@@ -149,9 +152,10 @@ class MalwareDetector(nn.Module):
                 acc_train = (logits.argmax(1) == y_batch).sum().item()
                 acc_train /= x_batch[0].size()[0]
                 mins, secs = int(total_time) / 60, int(total_time) % 60
-                print('Step: %d/%d' % (i * nbatchs + idx_batch + 1, epochs * nbatchs),
-                      " | training time in %d minutes, %d seconds" % (mins, secs))
-                print(f'\tTraining loss: {loss_train.item():.4f}\t|\t Train accuracy: {acc_train * 100:.2f}')
+                if verbose:
+                    logger.info('Step: %d/%d' % (i * nbatchs + idx_batch + 1, epochs * nbatchs),
+                                " | training time in %d minutes, %d seconds" % (mins, secs))
+                    logger.info(f'\tTraining loss: {loss_train.item():.4f}\t|\t Train accuracy: {acc_train * 100:.2f}')
 
             self.eval()
             avg_acc_val = []
@@ -166,8 +170,8 @@ class MalwareDetector(nn.Module):
                 avg_acc_val = np.mean(avg_acc_val)
 
             if verbose:
-                print(f'\t Validation accuracy: {avg_acc_val * 100:.2f}')
+                logger.info(f'\t Validation accuracy: {avg_acc_val * 100:.2f}')
             if avg_acc_val >= best_acc:
                 torch.save(self.state_dict(), self.model_save_path)
                 if verbose:
-                    print(f'\t Model saved at path: {self.model_save_path}')
+                    logger.info(f'\t Model saved at path: {self.model_save_path}')
