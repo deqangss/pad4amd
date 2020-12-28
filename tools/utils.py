@@ -1,4 +1,5 @@
 import os
+import warnings
 import pickle as pkl
 
 import scipy.sparse as sp
@@ -83,7 +84,8 @@ def check_dir(sample_dir):
             sample_path_list = [sample_dir]
         elif os.path.isdir(sample_dir):
             sample_path_list = list(retrive_files_set(sample_dir, "", ".apk|"))
-            assert len(sample_path_list) > 0, 'No files'
+            if len(sample_path_list) <= 0:
+                warning.warn('No files')
         else:
             raise ValueError(" No such path {}".format(sample_dir))
     elif isinstance(sample_dir, list):
