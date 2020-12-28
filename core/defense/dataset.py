@@ -40,34 +40,38 @@ class Dataset(object):
                                                 config.get(self.dataset_name, 'intermediate'),
                                                 **feature_ext_args)
 
-        mal_feature_paths = self.apk_preprocess(
-            config.get(self.dataset_name, 'malware_dir'))
-        ben_feature_paths = self.apk_preprocess(
-            config.get(self.dataset_name, 'benware_dir'))
+        data_saving_path = os.path.join(config.get(self.dataset_name, 'intermediate'), 'dataset.idx')
+        if os.path.exists(data_saving_path):
+            self.train_dataset, self.validation_dataset, self.test_dataset = utils.read_pickle(data_saving_path)
+        else:
+            mal_feature_paths = self.apk_preprocess(
+                config.get(self.dataset_name, 'malware_dir'))
+            ben_feature_paths = self.apk_preprocess(
+                config.get(self.dataset_name, 'benware_dir'))
 
-        feature_paths = mal_feature_paths + ben_feature_paths
-        gt_labels = np.zeros((len(mal_feature_paths) + len(ben_feature_paths)), dtype=np.int32)
-        gt_labels[:len(mal_feature_paths)] = 1
-
-        train_dn, val_dn, test_dn = None, None, None
-        data_split_path = os.path.join(config.get(self.dataset_name, 'dataset_dir'), 'tr_te_va_split.name')
-        if os.path.exists(data_split_path):
-            train_dn, val_dn, test_dn = utils.read_pickle(data_split_path)
-        self.train_dataset, self.validation_dataset, self.test_dataset = \
-            self.data_split(feature_paths, gt_labels, train_dn, val_dn, test_dn, data_split_path)
+            feature_paths = mal_feature_paths + ben_feature_paths
+            gt_labels = np.zeros((len(mal_feature_paths) + len(ben_feature_paths)), dtype=np.int32)
+            gt_labels[:len(mal_feature_paths)] = 1
+            self.train_dataset, self.validation_dataset, self.test_dataset = self.data_split(feature_paths, gt_labels)
+            utils.dump_pickle((self.train_dataset, self.validation_dataset, self.test_dataset), data_saving_path)
 
         vocab, _1, = self.feature_extractor.get_vocab(*self.train_dataset)
         self.vocab_size = len(vocab)
         self.n_classes = np.unique(self.train_dataset[1]).size
 
-    def data_split(self, feature_paths, labels, train_dn=None, validation_dn=None, test_dn=None, save_path=None):
+    def data_split(self, feature_paths, labels):
         assert len(feature_paths) == len(labels)
+        train_dn, validation_dn, test_dn = None, None, None
+        data_split_path = os.path.join(config.get(self.dataset_name, 'dataset_dir'), 'tr_te_va_split.name')
+        if os.path.exists(data_split_path):
+            train_dn, val_dn, test_dn = utils.read_pickle(data_split_path)
+
         if (train_dn is None) or (validation_dn is None) or (test_dn is None):
             data_names = [os.path.splitext(os.path.basename(path))[0] for path in feature_paths]
             train_dn, test_dn = train_test_split(data_names, test_size=0.2, random_state=self.seed, shuffle=True)
             train_dn, validation_dn = train_test_split(train_dn, test_size=0.25, random_state=self.seed, shuffle=True)
             utils.dump_pickle((train_dn, validation_dn, test_dn),
-                              path=save_path)
+                              path=data_split_path)
 
         def query_path(data_names):
             return np.array([path for path in feature_paths if os.path.splitext(os.path.basename(path))[0] in data_names])
