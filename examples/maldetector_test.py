@@ -23,7 +23,7 @@ feature_argparse.add_argument('--timeout', type=int, default=20,
                               help='The maximum elapsed time for analyzing an app')
 feature_argparse.add_argument('--use_feature_selection', action='store_true', default=True,
                               help='Whether use feature selection or not.')
-feature_argparse.add_argument('--max_vocab_size', type=int, default=10000,
+feature_argparse.add_argument('--max_vocab_size', type=int, default=5000,
                               help='The maximum number of vocabulary size')
 feature_argparse.add_argument('--update', action='store_true', default=False,
                               help='Whether update the existed features.')
@@ -31,7 +31,7 @@ feature_argparse.add_argument('--update', action='store_true', default=False,
 detector_argparse = cmd_md.add_argument_group(title='detector')
 detector_argparse.add_argument('--cuda', action='store_true', default=False, help='whether use cuda enable gpu or cpu.')
 detector_argparse.add_argument('--seed', type=int, default=0, help='random seed.')
-detector_argparse.add_argument('--embedding_dim', type=int, default=8, help='embedding dimension')
+detector_argparse.add_argument('--embedding_dim', type=int, default=16, help='embedding dimension')
 detector_argparse.add_argument('--hidden_units', type=lambda s: [int(u) for u in s.split(',')], default='8',
                                help='delimited list input, e.g., "32,32"', )
 detector_argparse.add_argument('--penultimate_hidden_dim', type=int, default=64, help='dimension of penultimate layer')
@@ -41,7 +41,7 @@ detector_argparse.add_argument('--k', type=int, default=10, help='sampling size'
 detector_argparse.add_argument('--alpha', type=float, default=0.2, help='slope coefficient of leaky-relu')
 detector_argparse.add_argument('--sparse', action='store_true', default=True, help='GAT with sparse version or not.')
 
-detector_argparse.add_argument('--batch_size', type=int, default=64, help='minibatch size')
+detector_argparse.add_argument('--batch_size', type=int, default=16, help='minibatch size')
 detector_argparse.add_argument('--epochs', type=int, default=100, help='number of epochs to train.')
 detector_argparse.add_argument('--lr', type=float, default=0.005, help='initial learning rate.')
 detector_argparse.add_argument('--patience', type=int, default=100, help='patience')
