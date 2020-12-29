@@ -89,11 +89,14 @@ class MalGAT(nn.Module):
             [self.embedding_weight] * x.size()[1])  # embed_features shape is [batch_size, vocab_size, vocab_dim]
         assert len(x) == self.k  # x has the shape [self.k, batch_size, vocab_size]
 
-        x_comb = torch.sum(x, dim=0)
+        x_comb = torch.clip(torch.sum(x, dim=0), min=0, max=1.)
         if adjs is None:
-            adj = torch.stack([torch.matmul(_x_e.unsqueeze(-1), _x_e.unsqueeze(0)).to_sparse() for _x_e in x[0]])
-            for i in range(1, self.k):
-                adj += torch.stack([torch.matmul(_x_e.unsqueeze(-1), _x_e.unsqueeze(0)).to_sparse() for _x_e in x[i]])
+            adjs = torch.stack([
+                torch.stack([torch.matmul(_x_e.unsqueeze(-1), _x_e.unsqueeze(0)).to_sparse() for _x_e in _x]) \
+                for _x in x
+            ])
+        if adjs.is_sparse:
+            adj = torch.sparse.sum(adjs, dim=0)
         else:
             adj = torch.sum(adjs, dim=0)
         features = torch.unsqueeze(x_comb, dim=-1) * embed_features
