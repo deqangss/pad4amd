@@ -83,28 +83,27 @@ class MalGAT(nn.Module):
         :param adjs: 4d tensor, adjacent matrices in the mini-batch level, [self.k, batch_size, vocab_dim, vocab_dim]
         :return: None
         """
-        assert len(x) == self.k
+        assert len(x) == self.k and self.k > 0
         # features
         embed_features = torch.stack(
             [self.embedding_weight] * x.size()[1])  # embed_features shape is [batch_size, vocab_size, vocab_dim]
         assert len(x) == self.k  # x has the shape [self.k, batch_size, vocab_size]
+
+        x_comb = torch.sum(x, dim=0)
+        if adjs is None:
+            adj = torch.stack([torch.matmul(_x_e.unsqueeze(-1), _x_e.unsqueeze(0)).to_sparse() for _x_e in x[0]])
+            for i in range(1, self.k):
+                adj += torch.stack([torch.matmul(_x_e.unsqueeze(-1), _x_e.unsqueeze(0)).to_sparse() for _x_e in x[i]])
+        else:
+            adj = torch.sum(adjs, dim=0)
+        features = torch.unsqueeze(x_comb, dim=-1) * embed_features
+        for headers in self.attn_layers:
+            features = F.dropout(features, self.dropout, training=self.training)
+            features = features.to_sparse()
+            features = torch.cat([header(features, adj) for header in headers], dim=-1)
         # latent_codes = [torch.stack([self.cls_weight] * x[0].size()[0])]
         latent_codes = []
         for i in range(self.k):
-            if adjs is None:
-                # the following line aims to construct the adjacent matrix by setting the neighbours
-                # of a node as any other nodes. Each row of x is a binary feature vector (binary bag-of-words),
-                # with shape [batch_size, vocab_size]
-                adj = torch.stack([torch.matmul(_x_e.unsqueeze(-1), _x_e.unsqueeze(0)).to_sparse() for _x_e in x[i]])  # partition the matrix for saving RAM
-                # adj = torch.matmul(x[i].unsqueeze(-1), x[i].unsqueeze(1)).to_sparse()
-            else:
-                adj = adjs[i]  # adj shape is  [batch_size, vocab_size, vocab_size]
-            features = torch.unsqueeze(x[i], dim=-1) * embed_features
-            for headers in self.attn_layers:
-                features = F.dropout(features, self.dropout, training=self.training)
-                features = features.to_sparse()
-                features = torch.cat([header(features, adj) for header in headers], dim=-1)
-
             latent_code = torch.unsqueeze(x[i],
                                           dim=-1) * features  # masking out the unused representations via broadcasting, herein the latent_code shape is [batch_size, vocab_size, feature_dim]
             latent_code, _1 = torch.max(latent_code,

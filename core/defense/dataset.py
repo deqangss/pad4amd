@@ -119,12 +119,12 @@ class Dataset(object):
         # --->> adjs: 2d list [number of files, number of subgraphs], in which each element has
         # a scipy sparse matrix with size [vocab_size, vocab_size]
         file_path = os.path.join(self.temp_dir_handle.name, name + '.pkl')
-        if os.path.exists(file_path) and self.use_cache:
-            features, adjs, labels_ = utils.read_pickle(file_path)
+        if os.path.exists(file_path) and ('val' in name) and self.use_cache:
+            features, adjs, labels_ = utils.read_joblib(file_path)
         else:
             features, adjs, labels_ = self.feature_extractor.feature2ipt(feature_paths, labels, self.is_adj)
-        if (not os.path.exists(file_path)) and self.use_cache:
-            utils.dump_pickle((features, adjs, labels_), file_path)
+        if (not os.path.exists(file_path)) and ('val' in name) and self.use_cache:
+            utils.dump_joblib((features, adjs, labels_), file_path)
 
         # sampling subgraphs and list transpose
         batch_size = len(features)
