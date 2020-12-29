@@ -1,6 +1,8 @@
-numpy
-tqdm
-androguard
+numpy~=1.19.2
+tqdm~=4.54.1
+androguard~=3.3.5
 networkx==2.5
 scipy~=1.5.2
 scikit-learn==0.23.2
+torch~=1.7.0+cpu
+joblib~=1.0.0
