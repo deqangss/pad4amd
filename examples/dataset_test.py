@@ -28,12 +28,12 @@ def main_():
     dataset = Dataset('drebin', is_adj=True, feature_ext_args=args_dict)
     train_data, trainy = dataset.train_dataset
     train_dataset_producer = dataset.get_input_producer(train_data, trainy, batch_size=16, name='train')
-    for _ in range(5):
+    for _ in range(1):
         train_dataset_producer.reset_cursor()
         for idx, x, adj, l, sample_idx in train_dataset_producer.iteration():
             print(x.shape)
             if dataset.is_adj:
-                print(adj.shape)
+                print(str(adj.shape))
 
 
 if __name__ == '__main__':
