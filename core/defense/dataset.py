@@ -1,6 +1,8 @@
 import os
 import random
 import tempfile
+import threading
+from queue import Queue
 
 import numpy as np
 import torch
@@ -12,7 +14,7 @@ from tools import utils
 
 
 class Dataset(object):
-    def __init__(self, dataset_name='drebin', k=100, is_adj=False, use_cache=False, seed=0, feature_ext_args=None):
+    def __init__(self, dataset_name='drebin', k=100, is_adj=False, use_cache=False, seed=0, qmaxsize=10, feature_ext_args=None):
         """
         build dataset for ml model learning
         :param dataset_name: String, the dataset name, expected 'drebin' or 'androzoo'
@@ -20,6 +22,7 @@ class Dataset(object):
         :param is_adj: Boolean, whether use the actual adjacent matrix or not
         :param use_cache: Boolean, whether to use the cached data or not, the cached data is identified by a string format name
         :param seed: Integer, the random seed
+        :param qmaxsize: Integer, the maximum size of queue
         :param feature_ext_args: Dict, arguments for feature extraction
         """
         self.dataset_name = dataset_name
@@ -28,6 +31,7 @@ class Dataset(object):
         self.seed = seed
         random.seed(self.seed)
         np.random.seed(self.seed)
+        self.qmax_size = qmaxsize
         self.use_cache = use_cache
         self.temp_dir_handle = tempfile.TemporaryDirectory()
         assert self.dataset_name in ['drebin', 'androzoo'], 'Expected either "drebin" or "androzoo".'
@@ -65,6 +69,10 @@ class Dataset(object):
         vocab, _1, = self.feature_extractor.get_vocab(*self.train_dataset)
         self.vocab_size = len(vocab)
         self.n_classes = np.unique(self.train_dataset[1]).size
+
+        self.train_data_queue = Queue(maxsize=self.qmax_size)
+        self.validation_data_queue = Queue(maxsize=self.qmax_size)
+        self.test_data_queue = Queue(maxsize=self.qmax_size)
 
     def data_split(self, feature_paths, labels):
         assert len(feature_paths) == len(labels)
@@ -165,7 +173,7 @@ class Dataset(object):
 
 class _DataProducer(object):
     def __init__(self, dataset_obj, dataX, datay, batch_size, n_epochs=1, n_steps=None, name='train'):
-        '''
+        """
         The data factory yield data at designated batch size and steps
         :param dataset_obj, class Dataset
         :param dataX: 2-D array numpy type supported. shape: [num, feat_dims]
@@ -174,7 +182,7 @@ class _DataProducer(object):
         :param n_epochs: setting epoch for training. The default value is None
         :param n_steps: setting global steps for training. The default value is None. If provided, param n_epochs will be neglected.
         :param name: 'train' or 'test'. if the value is 'test', the n_epochs will be set to 1.
-        '''
+        """
         try:
             assert (name == 'train' or name == 'test' or name == 'val')
         except Exception as e:
@@ -208,6 +216,7 @@ class _DataProducer(object):
         if name == 'test' or name == 'val':
             self.steps = None
 
+        self.data_queue = Queue(maxsize=self.dataset_obj.qmax_size)
         self.name = name
         self.cursor = 0
         if self.steps is None:
@@ -236,3 +245,21 @@ class _DataProducer(object):
 
     def get_current_cursor(self):
         return self.cursor
+
+    def run(self):
+        while True:
+            while self.cursor < self.max_iterations:
+                pos_cursor = self.cursor % self.mini_batches
+                start_i = pos_cursor * self.batch_size
+
+                end_i = start_i + self.batch_size
+                if end_i > self.dataX.shape[0]:
+                    end_i = self.dataX.shape[0]
+                if start_i == end_i:
+                    break
+                x, adj, y, idx = self.dataset_obj.get_numerical_input(self.dataX[start_i:end_i],
+                                                                      self.datay[start_i:end_i],
+                                                                      name=self.name + str(self.cursor))
+
+                self.data_queue.put((x, adj, y, idx))
+                self.cursor = self.cursor + 1
