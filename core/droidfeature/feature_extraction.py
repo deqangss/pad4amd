@@ -198,7 +198,7 @@ class Apk2graphs(object):
             cg_dict = seq_gen.read_from_disk(feature_path)
 
             numerical_representation_dict = collections.defaultdict(tuple)
-            cpu_count = multiprocessing.cpu_count() - 2 if multiprocessing.cpu_count() > 2 else 1
+            cpu_count = multiprocessing.cpu_count() // 2 if multiprocessing.cpu_count() // 2 > 1 else 1
             pool = multiprocessing.Pool(cpu_count, initializer=pool_initializer)
             pargs = [(cg, vocabulary, is_adj) for cg in cg_dict.values()]
             for root_call, res in zip(list(cg_dict.keys()), pool.map(_graph2rpst_wrapper, pargs)):
