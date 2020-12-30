@@ -161,6 +161,7 @@ class MalwareDetector(nn.Module):
             validation_data_producer.reset_cursor()
             with torch.no_grad():
                 for idx_batch, x_val, adj_val, y_val, _2 in validation_data_producer.iteration():
+                    print('val:', idx_batch)
                     x_val, adj_val, y_val = utils.to_tensor(x_val, adj_val, y_val, self.device)
                     latent_rpst, logits = self.forward(x_val, adj_val)
                     acc_val = (logits.argmax(1) == y_val).sum().item()
