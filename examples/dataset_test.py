@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import threading
 import argparse
 from core.defense import Dataset
 
@@ -28,13 +29,33 @@ def main_():
     dataset = Dataset('drebin', is_adj=True, feature_ext_args=args_dict)
     train_data, trainy = dataset.train_dataset
     train_dataset_producer = dataset.get_input_producer(train_data, trainy, batch_size=16, name='train')
-    for _ in range(1):
+
+    # for epoch in range(3):
+    #     # Training
+    #     for x, adj, l, sample_idx in train_dataset_producer:
+    #         print(x.shape)
+    #         if dataset.is_adj:
+    #             print(str(adj.shape))
+
+    # for _ in range(1):
+    #     # train_dataset_producer.reset_cursor()
+    #     for idx, x, adj, l, sample_idx in train_dataset_producer.iteration():
+    #         print(x.shape)
+    #         if dataset.is_adj:
+    #             print(str(adj.shape))
+
+
+    thread = threading.Thread(target=train_dataset_producer.run, daemon=True)
+    thread.start()
+    for _ in range(2):
         train_dataset_producer.reset_cursor()
-        for idx, x, adj, l, sample_idx in train_dataset_producer.iteration():
+        for idx in range(train_dataset_producer.max_iterations):
+            x, adj, l, sample_idx = train_dataset_producer.data_queue.get()
             print(x.shape)
             if dataset.is_adj:
                 print(str(adj.shape))
-
+            train_dataset_producer.data_queue.task_done()
+    train_dataset_producer.data_queue.join()
 
 if __name__ == '__main__':
     main_()
