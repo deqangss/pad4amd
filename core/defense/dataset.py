@@ -1,7 +1,6 @@
 import os
 import random
 import tempfile
-import threading
 from queue import Queue
 
 import numpy as np
@@ -13,7 +12,7 @@ from core.droidfeature.feature_extraction import Apk2graphs
 from tools import utils
 
 
-class Dataset(object):
+class Dataset(torch.utils.data.Dataset):
     def __init__(self, dataset_name='drebin', k=100, is_adj=False, use_cache=False, seed=0, qmaxsize=10, feature_ext_args=None):
         """
         build dataset for ml model learning
@@ -33,6 +32,7 @@ class Dataset(object):
         np.random.seed(self.seed)
         self.qmax_size = qmaxsize
         self.use_cache = use_cache
+        self.feature_ext_args = feature_ext_args
         self.temp_dir_handle = tempfile.TemporaryDirectory()
         assert self.dataset_name in ['drebin', 'androzoo'], 'Expected either "drebin" or "androzoo".'
         if feature_ext_args is None:
@@ -128,11 +128,11 @@ class Dataset(object):
         # a scipy sparse matrix with size [vocab_size, vocab_size]
         file_path = os.path.join(self.temp_dir_handle.name, name + '.pkl')
         if os.path.exists(file_path) and ('val' in name) and self.use_cache:
-            features, adjs, labels_ = utils.read_joblib(file_path)
+            features, adjs, labels_ = torch.load(file_path)
         else:
             features, adjs, labels_ = self.feature_extractor.feature2ipt(feature_paths, labels, self.is_adj)
         if (not os.path.exists(file_path)) and ('val' in name) and self.use_cache:
-            utils.dump_joblib((features, adjs, labels_), file_path)
+            torch.save((features, adjs, labels_), file_path)
 
         # sampling subgraphs and list transpose
         batch_size = len(features)
@@ -166,6 +166,8 @@ class Dataset(object):
 
     def get_input_producer(self, data, y, batch_size, name='train'):
         return _DataProducer(self, data, y, batch_size, name=name)
+        # params = {'batch_size': batch_size, 'num_workers': self.feature_ext_args['proc_number']}
+        # return torch.utils.data.DataLoader(DatasetSpec(self, data, y, name=name), **params)
 
     def clean_up(self):
         self.temp_dir_handle.cleanup()
@@ -216,7 +218,7 @@ class _DataProducer(object):
         if name == 'test' or name == 'val':
             self.steps = None
 
-        self.data_queue = Queue(maxsize=self.dataset_obj.qmax_size)
+        self.data_queue = Queue(maxsize=2)
         self.name = name
         self.cursor = 0
         if self.steps is None:
