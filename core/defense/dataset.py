@@ -208,7 +208,6 @@ class DatasetTorch(torch.utils.data.Dataset):
         self.datay = datay
         self.dataset_obj = dataset_obj
         self.name = name
-        self.temp_dir_handle = tempfile.TemporaryDirectory()
 
     def __len__(self):
         'Denotes the total number of samples'
@@ -222,5 +221,6 @@ class DatasetTorch(torch.utils.data.Dataset):
         # Load data and get label
         x, adj, y = \
             self.dataset_obj.get_numerical_input([feature_path], [y], name=self.name + str(index))
+        assert len(x) > 0 and len(adj) > 0, feature_path
         return x[0], adj[0], y[0]
 

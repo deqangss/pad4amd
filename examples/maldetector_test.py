@@ -55,7 +55,7 @@ def _main():
     train_data, trainy = dataset.train_dataset
     val_data, valy = dataset.validation_dataset
     train_dataset_producer = dataset.get_input_producer(train_data, trainy, batch_size=args.batch_size, name='train')
-    val_dataset_producer = dataset.get_input_producer(val_data, valy, batch_size=args.batch_size * 2, name='val')
+    val_dataset_producer = dataset.get_input_producer(val_data, valy, batch_size=args.batch_size * 4, name='val')
     assert dataset.n_classes == 2
 
     if not args.cuda:
@@ -65,7 +65,7 @@ def _main():
     model = MalwareDetector(dataset.vocab_size, dataset.n_classes, device=dv, **vars(args))
     model = model.to(dv)
     save_args(path.join(path.dirname(model.model_save_path), "hparam"), vars(args))
-    model.fit(train_dataset_producer, val_dataset_producer, epochs=2)
+    model.fit(train_dataset_producer, val_dataset_producer, epochs=5)
 
 
 if __name__ == '__main__':
