@@ -51,7 +51,7 @@ args = cmd_md.parse_args()
 
 
 def _main():
-    dataset = Dataset('drebin', k=args.k, use_cache=True, feature_ext_args=get_group_args(args, cmd_md, 'feature'))
+    dataset = Dataset('drebin', k=args.k, use_cache=False, feature_ext_args=get_group_args(args, cmd_md, 'feature'))
     train_data, trainy = dataset.train_dataset
     val_data, valy = dataset.validation_dataset
     train_dataset_producer = dataset.get_input_producer(train_data, trainy, batch_size=args.batch_size, name='train')
@@ -65,7 +65,7 @@ def _main():
     model = MalwareDetector(dataset.vocab_size, dataset.n_classes, device=dv, **vars(args))
     model = model.to(dv)
     save_args(path.join(path.dirname(model.model_save_path), "hparam"), vars(args))
-    model.fit(train_dataset_producer, val_dataset_producer, epochs=5)
+    model.fit(train_dataset_producer, val_dataset_producer, epochs=2)
 
 
 if __name__ == '__main__':
