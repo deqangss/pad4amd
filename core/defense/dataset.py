@@ -30,6 +30,8 @@ class Dataset(torch.utils.data.Dataset):
         self.seed = seed
         random.seed(self.seed)
         np.random.seed(self.seed)
+        torch.manual_seed(self.seed)
+
         self.qmax_size = qmaxsize
         self.use_cache = use_cache
         self.feature_ext_args = feature_ext_args
@@ -182,9 +184,13 @@ class Dataset(torch.utils.data.Dataset):
         return features_sample_t, adjs_sample_tuple, labels_, sample_indices_t
 
     def get_input_producer(self, data, y, batch_size, name='train'):
-        # return _DataProducer(self, data, y, batch_size, name=name)
-        params = {'batch_size': batch_size, 'num_workers': self.feature_ext_args['proc_number'], 'collate_fn': self.collate_fn}
-        return torch.utils.data.DataLoader(DatasetTorch(data, y, self, name=name), **params)
+        params = {'batch_size': batch_size,
+                  'num_workers': self.feature_ext_args['proc_number'],
+                  'collate_fn': self.collate_fn,
+                  'shuffle': False}
+        return torch.utils.data.DataLoader(DatasetTorch(data, y, self, name=name),
+                                           worker_init_fn=lambda x: np.random.seed(torch.randint(0, 2^31, [1,])[0] + x),
+                                           **params)
 
     def clean_up(self):
         self.temp_dir_handle.cleanup()
