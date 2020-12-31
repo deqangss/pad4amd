@@ -121,11 +121,16 @@ class Dataset(torch.utils.data.Dataset):
             return feature_paths, np.array(labels_)
 
     def get_numerical_input(self, feature_paths, labels, name):
-        # --->> mapping features to numerical representations, incorporating cache
+        """
+        loading features for given a list of feature paths
+        # results:
+        # --->> mapping feature paths to numerical representations, incorporating cache
         # --->> features: 2d list [number of files, number of subgraphs], in which each element
         # has a vector with size [vocab_size]
+        # --->> _labels: 1d list [number of files]
         # --->> adjs: 2d list [number of files, number of subgraphs], in which each element has
         # a scipy sparse matrix with size [vocab_size, vocab_size]
+        """
         file_path = os.path.join(self.temp_dir_handle.name, name + '.pkl')
         if os.path.exists(file_path) and ('val' in name) and self.use_cache:
             features, adjs, labels_ = torch.load(file_path)
@@ -134,7 +139,17 @@ class Dataset(torch.utils.data.Dataset):
         if (not os.path.exists(file_path)) and ('val' in name) and self.use_cache:
             torch.save((features, adjs, labels_), file_path)
 
-        # sampling subgraphs and list transpose
+        return features, adjs, labels_
+
+    def collate_fn(self, batch):
+        # 1. Because the number of sub graphs is different between apks, we here align a batch of data
+        # pad the subgraphs if an app has subgraph smaller than self.k
+        # 2. We change the sparse adjacent matrix to its tuple of (indices, values, shape), accommodating the
+        # unsupported issue of dataloader
+        features = [item[0] for item in batch]
+        adjs = [item[1] for item in batch]
+        labels_ = [item[2] for item in batch]
+
         batch_size = len(features)
         sample_indices = []
         features_sample = []
@@ -156,112 +171,50 @@ class Dataset(torch.utils.data.Dataset):
                         utils.sp_to_symmetric_sp_mat(adjs_sample[i][_k])
                     )
             adjs_sample_t = torch.stack([torch.stack(list(adj), dim=0) for adj in zip(*adjs_sample)], dim=0)
+            # dataloader does not support sparse matrix
+            adjs_sample_tuple = utils.tensor_coo_sp_to_ivs(adjs_sample_t)
         else:
-            adjs_sample_t = None
+            adjs_sample_tuple = None
         # A list (with size self.k) of sparse adjacent matrix in the mini-batch level, in which each element
         # has the shape [batch_size, vocab_size, vocab_size]
         sample_indices_t = np.array(sample_indices).T
 
-        return features_sample_t, adjs_sample_t, labels_, sample_indices_t
+        return features_sample_t, adjs_sample_tuple, labels_, sample_indices_t
 
     def get_input_producer(self, data, y, batch_size, name='train'):
-        return _DataProducer(self, data, y, batch_size, name=name)
-        # params = {'batch_size': batch_size, 'num_workers': self.feature_ext_args['proc_number']}
-        # return torch.utils.data.DataLoader(DatasetSpec(self, data, y, name=name), **params)
+        # return _DataProducer(self, data, y, batch_size, name=name)
+        params = {'batch_size': batch_size, 'num_workers': self.feature_ext_args['proc_number'], 'collate_fn': self.collate_fn}
+        return torch.utils.data.DataLoader(DatasetTorch(data, y, self, name=name), **params)
 
     def clean_up(self):
         self.temp_dir_handle.cleanup()
 
 
-class _DataProducer(object):
-    def __init__(self, dataset_obj, dataX, datay, batch_size, n_epochs=1, n_steps=None, name='train'):
-        """
-        The data factory yield data at designated batch size and steps
-        :param dataset_obj, class Dataset
-        :param dataX: 2-D array numpy type supported. shape: [num, feat_dims]
-        :param datay: 2-D or 1-D array.
-        :param batch_size: setting batch size for training or testing. Only integer supported.
-        :param n_epochs: setting epoch for training. The default value is None
-        :param n_steps: setting global steps for training. The default value is None. If provided, param n_epochs will be neglected.
-        :param name: 'train' or 'test'. if the value is 'test', the n_epochs will be set to 1.
-        """
+class DatasetTorch(torch.utils.data.Dataset):
+    'Characterizes a dataset for PyTorch'
+    def __init__(self, dataX, datay, dataset_obj, name='train'):
+        'Initialization'
         try:
             assert (name == 'train' or name == 'test' or name == 'val')
         except Exception as e:
             raise AssertionError("Only support selections: 'train', 'val' or 'test'.\n")
-        self.dataset_obj = dataset_obj
         self.dataX = dataX
         self.datay = datay
-        self.batch_size = batch_size
-        self.mini_batches = self.dataX.shape[0] // self.batch_size
-        if self.dataX.shape[0] % self.batch_size > 0:
-            self.mini_batches = self.mini_batches + 1
-            if (self.dataX.shape[0] > self.batch_size) and \
-                    (name == 'train' or name == 'val'):
-                np.random.seed(0)
-                rdm_idx = np.random.choice(self.dataX.shape[0],
-                                           self.batch_size - self.dataX.shape[0] % self.batch_size,
-                                           replace=False)
-                if len(np.array(dataX).shape) >= 2:
-                    self.dataX = np.vstack([dataX, dataX[rdm_idx]])
-                else:
-                    self.dataX = np.concatenate([dataX, dataX[rdm_idx]])
-                self.datay = np.concatenate([datay, datay[rdm_idx]])
-
-        if name == 'train':
-            if n_epochs is not None:
-                self.steps = n_epochs * self.mini_batches
-            elif n_steps is not None:
-                self.steps = n_steps
-            else:
-                self.steps = None
-        if name == 'test' or name == 'val':
-            self.steps = None
-
-        self.data_queue = Queue(maxsize=2)
+        self.dataset_obj = dataset_obj
         self.name = name
-        self.cursor = 0
-        if self.steps is None:
-            self.max_iterations = self.mini_batches
-        else:
-            self.max_iterations = self.steps
+        self.temp_dir_handle = tempfile.TemporaryDirectory()
 
-    def iteration(self):
-        while self.cursor < self.max_iterations:
-            pos_cursor = self.cursor % self.mini_batches
-            start_i = pos_cursor * self.batch_size
+    def __len__(self):
+        'Denotes the total number of samples'
+        return len(self.datay)
 
-            end_i = start_i + self.batch_size
-            if end_i > self.dataX.shape[0]:
-                end_i = self.dataX.shape[0]
-            if start_i == end_i:
-                break
-            x, adj, y, idx = self.dataset_obj.get_numerical_input(self.dataX[start_i:end_i],
-                                                                  self.datay[start_i:end_i],
-                                                                  name=self.name + str(self.cursor))
-            yield self.cursor, x, adj, y, idx
-            self.cursor = self.cursor + 1
+    def __getitem__(self, index):
+        'Generates one sample of data'
+        # Select sample
+        feature_path = self.dataX[index]
+        y = self.datay[index]
+        # Load data and get label
+        x, adj, y = \
+            self.dataset_obj.get_numerical_input([feature_path], [y], name=self.name + str(index))
+        return x[0], adj[0], y[0]
 
-    def reset_cursor(self):
-        self.cursor = 0
-
-    def get_current_cursor(self):
-        return self.cursor
-
-    def run(self):
-        while True:
-            while self.cursor < self.max_iterations:
-                pos_cursor = self.cursor % self.mini_batches
-                start_i = pos_cursor * self.batch_size
-
-                end_i = start_i + self.batch_size
-                if end_i > self.dataX.shape[0]:
-                    end_i = self.dataX.shape[0]
-                if start_i == end_i:
-                    break
-                x, adj, y, idx = self.dataset_obj.get_numerical_input(self.dataX[start_i:end_i],
-                                                                      self.datay[start_i:end_i],
-                                                                      name=self.name + str(self.cursor))
-
-                self.data_queue.put((x, adj, y, idx))
-                self.cursor = self.cursor + 1

@@ -1,5 +1,6 @@
 import os
 import warnings
+import joblib
 import pickle as pkl
 
 import scipy.sparse as sp
@@ -102,7 +103,6 @@ def dump_joblib(data, path):
         mkdir(os.path.dirname(path))
 
     try:
-        import joblib
         with open(path, 'wb') as wr:
             joblib.dump(data, wr)
         return
@@ -111,7 +111,6 @@ def dump_joblib(data, path):
 
 
 def read_joblib(path):
-    import joblib
     if os.path.isfile(path):
         with open(path, 'rb') as fr:
             return joblib.load(fr)
@@ -212,6 +211,14 @@ def get_group_args(args, args_parser, title):
     return
 
 
+def tensor_coo_sp_to_ivs(sparse_tensor):
+    return sparse_tensor._indices(), sparse_tensor._values(), sparse_tensor.size()
+
+
+def ivs_to_tensor_coo_sp(ivs, device = 'cpu'):
+    return torch.sparse_coo_tensor(ivs[0], ivs[1], ivs[2], device=device)
+
+
 def sp_to_symmetric_sp_mat(sparse_mx):
     sparse_mx = sparse_mx + sparse_mx.T.multiply(sparse_mx.T > sparse_mx) - sparse_mx.multiply(sparse_mx.T > sparse_mx)
     sparse_eye = sp.csr_matrix(sparse_mx.sum(axis=0) > 0).T.multiply(sp.eye(sparse_mx.shape[0]))
@@ -245,6 +252,8 @@ def to_tensor(features=None, adj=None, labels=None, device='cpu'):
     """
 
     def _to_torch_tensor(mat):
+        if isinstance(mat, tuple):
+            mat = ivs_to_tensor_coo_sp(mat, device=device)
         if sp.issparse(mat):
             mat = sparse_mx_to_torch_sparse_tensor(mat)
         elif isinstance(mat, torch.Tensor):

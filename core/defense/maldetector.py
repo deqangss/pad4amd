@@ -137,14 +137,11 @@ class MalwareDetector(nn.Module):
         optimizer = optim.Adam(self.parameters(), lr=lr, weight_decay=weight_decay)
         best_acc = 0.
         total_time = 0.
-        threading.Thread(target=train_data_producer.run, daemon=True).start()
-        threading.Thread(target=validation_data_producer.run, daemon=True).start()
+        nbatchs = len(train_data_producer)
         for i in range(epochs):
-            train_data_producer.reset_cursor()
-            nbatchs = train_data_producer.mini_batches
             self.train()
-            for idx_batch in range(train_data_producer.max_iterations):
-                x_batch, adj, y_batch, _1 = train_data_producer.data_queue.get()
+            for idx_batch, res in enumerate(train_data_producer):
+                x_batch, adj, y_batch, _1 = res
                 x_batch, adj_batch, y_batch = utils.to_tensor(x_batch, adj, y_batch, self.device)
                 start_time = time.time()
                 optimizer.zero_grad()
@@ -152,27 +149,24 @@ class MalwareDetector(nn.Module):
                 loss_train = F.cross_entropy(logits, y_batch)
                 loss_train.backward()
                 optimizer.step()
-                train_data_producer.data_queue.task_done()
                 total_time = total_time + time.time() - start_time
                 acc_train = (logits.argmax(1) == y_batch).sum().item()
                 acc_train /= x_batch[0].size()[0]
                 mins, secs = int(total_time / 60), int(total_time % 60)
                 if verbose:
-                    logger.info(f'Step: {i * nbatchs + idx_batch + 1}/{epochs * nbatchs} | training time in {mins:.0f} minutes, {secs} seconds.')
+                    logger.info(f'Mini batch: {i * nbatchs + idx_batch + 1}/{epochs * nbatchs} | training time in {mins:.0f} minutes, {secs} seconds.')
                     logger.info(f'\tTraining loss: {loss_train.item():.4f}\t|\t Train accuracy: {acc_train * 100:.2f}')
 
             self.eval()
             avg_acc_val = []
-            validation_data_producer.reset_cursor()
             with torch.no_grad():
-                for idx_batch in range(validation_data_producer.max_iterations):
-                    x_val, adj_val, y_val, _2 = validation_data_producer.data_queue.get()
+                for res in validation_data_producer:
+                    x_val, adj_val, y_val, _2 = res
                     x_val, adj_val, y_val = utils.to_tensor(x_val, adj_val, y_val, self.device)
                     latent_rpst, logits = self.forward(x_val, adj_val)
                     acc_val = (logits.argmax(1) == y_val).sum().item()
                     acc_val /= x_val[0].size()[0]
                     avg_acc_val.append(acc_val)
-                    validation_data_producer.data_queue.task_done()
                 avg_acc_val = np.mean(avg_acc_val)
 
             if verbose:
@@ -181,5 +175,3 @@ class MalwareDetector(nn.Module):
                 torch.save(self.state_dict(), self.model_save_path)
                 if verbose:
                     logger.info(f'\t Model saved at path: {self.model_save_path}')
-        train_data_producer.data_queue.join()
-        validation_data_producer.data_queue.join()
