@@ -229,15 +229,6 @@ class Apk2graphs(object):
         return features, adj, labels
 
     @staticmethod
-    def load_vocab(intermediate_save_dir):
-        vocab_saving_path = os.path.join(intermediate_save_dir, 'data.vocab')
-        vocab_extra_info_saving_path = os.path.join(intermediate_save_dir, 'data.vocab_info')
-        if os.path.exists(vocab_saving_path) and os.path.exists(vocab_saving_path) and (not self.update):
-            return utils.read_pickle(vocab_saving_path), utils.read_pickle(vocab_extra_info_saving_path)
-        else:
-            raise FileNotFoundError("No vocabulary found!")
-
-    @staticmethod
     def graph2representation(feature_path_list, gt_labels, vocabulary=None, is_adj=False):
         """
         map graphs to numerical representations :param feature_path_list, list, a list of paths, each of which
@@ -309,7 +300,7 @@ def graph2rpst(g, vocab, is_adj):
     feature = np.zeros((len(vocab), ), dtype=np.float32)
     feature[indices] = 1.
     if is_adj:
-        adj = nx.convert_matrix.to_scipy_sparse_matrix(g, nodelist=vocab, format='csr')
+        adj = nx.convert_matrix.to_scipy_sparse_matrix(g, nodelist=vocab, format='csr', dtype=np.float32)
     else:
         adj = None
     del new_g

@@ -2,7 +2,6 @@ import warnings
 import time
 from tqdm import tqdm
 import os.path as path
-import threading
 
 import torch
 import torch.nn as nn
@@ -86,26 +85,26 @@ class MalwareDetector(nn.Module):
 
     def inference(self, test_data_producer):
         self.eval()
-        test_data_producer.use_cache = True
         confidences = []
         gt_labels = []
-        for _ in tqdm(range(self.n_sample_times)):
-            conf_batchs = []
-            for _1, x, adj, y, _2 in test_data_producer.iteration():
-                x, adj, y = utils.to_tensor(x, adj, y, self.device)
-                _, logits = self.forward(x, adj)
-                conf_batchs.append(F.softmax(logits, dim=-1))
-                gt_labels.append(y)
-            conf_batchs = torch.vstack(conf_batchs)
-            confidences.append(conf_batchs)
-            gt_labels = np.concatenate(gt_labels)
+        with torch.no_grad():
+            for _ in tqdm(range(self.n_sample_times)):
+                conf_batchs = []
+                for res in test_data_producer:
+                    _1, x, adj, y, _2 = res
+                    x, adj, y = utils.to_tensor(x, adj, y, self.device)
+                    _, logits = self.forward(x, adj)
+                    conf_batchs.append(F.softmax(logits, dim=-1))
+                    gt_labels.append(y)
+                conf_batchs = torch.vstack(conf_batchs)
+                confidences.append(conf_batchs)
+                gt_labels = np.concatenate(gt_labels)
         confidences = torch.mean(torch.stack(confidences).permute([1, 0, 2]), dim=1)
         return confidences, gt_labels
 
     def predict(self, test_data_producer):
         # load model
         self.load_state_dict(torch.load(self.model_save_path))
-        self.eval()
         # evaluation
         confidence, y_true = self.inference(test_data_producer)
         y_pred = (confidence.argmax(1) == y_true).item()

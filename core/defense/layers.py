@@ -29,12 +29,13 @@ class GraphAttentionLayerCLS(nn.Module):
         # ...
         # e1 || eN
 
-        all_combinations_matrix = torch.cat([cls_h_repeated, h], dim=-1)  # shape is [batch_size, N, 2 * feature_dim]
+        all_combinations_matrix = torch.cat([cls_h_repeated, h], dim=-1)  # shape is [batch_size, number_of_subgraphs+1, 2 * feature_dim]
         all_combinations_matrix.size()
-        attention = self.leakyrelu(torch.matmul(all_combinations_matrix, self.a)).permute(0, 2, 1) # attention.shape is [batch_size, 1, N]
+        attention = self.leakyrelu(torch.matmul(all_combinations_matrix, self.a)).permute(0, 2, 1) # attention.shape is [batch_size, 1, number_of_subgraphs+1]
         attention = F.softmax(attention, dim=-1)
         attention = F.dropout(attention, self.dropout, training=self.training)
-        h_prime = torch.squeeze(torch.matmul(attention, h))
+
+        h_prime = torch.squeeze(torch.matmul(attention, h), dim=1)
         return F.elu(h_prime)
 
     def __repr__(self):

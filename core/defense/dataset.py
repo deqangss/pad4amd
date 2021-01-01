@@ -31,6 +31,7 @@ class Dataset(torch.utils.data.Dataset):
         random.seed(self.seed)
         np.random.seed(self.seed)
         torch.manual_seed(self.seed)
+        torch.set_default_dtype(torch.float32)
 
         self.qmax_size = qmaxsize
         self.use_cache = use_cache
