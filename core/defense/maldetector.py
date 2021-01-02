@@ -139,6 +139,7 @@ class MalwareDetector(nn.Module):
         nbatchs = len(train_data_producer)
         for i in range(epochs):
             self.train()
+            losses, accuracies = [], []
             for idx_batch, res in enumerate(train_data_producer):
                 x_batch, adj, y_batch, _1 = res
                 x_batch, adj_batch, y_batch = utils.to_tensor(x_batch, adj, y_batch, self.device)
@@ -152,9 +153,11 @@ class MalwareDetector(nn.Module):
                 acc_train = (logits.argmax(1) == y_batch).sum().item()
                 acc_train /= x_batch[0].size()[0]
                 mins, secs = int(total_time / 60), int(total_time % 60)
+                losses.append(loss_train.item())
+                accuracies.append(acc_train)
                 if verbose:
-                    logger.info(f'Mini batch: {i * nbatchs + idx_batch + 1}/{epochs * nbatchs} | training time in {mins:.0f} minutes, {secs} seconds.')
-                    logger.info(f'\tTraining loss: {loss_train.item():.4f}\t|\t Train accuracy: {acc_train * 100:.2f}')
+                    print(f'Mini batch: {i * nbatchs + idx_batch + 1}/{epochs * nbatchs} | training time in {mins:.0f} minutes, {secs} seconds.')
+                    print(f'Training loss: {losses[-1]:.4f}\t|\t Train accuracy: {acc_train * 100:.2f}')
 
             self.eval()
             avg_acc_val = []
@@ -169,8 +172,9 @@ class MalwareDetector(nn.Module):
                 avg_acc_val = np.mean(avg_acc_val)
 
             if verbose:
-                logger.info(f'\t Validation accuracy: {avg_acc_val * 100:.2f}')
+                logger.info(f'Training loss (Epoch level): {np.mean(losses):.4f}\t|\t Train accuracy: {np.mean(accuracies) * 100:.2f}')
+                logger.info(f'Validation accuracy: {avg_acc_val * 100:.2f}')
             if avg_acc_val >= best_acc:
                 torch.save(self.state_dict(), self.model_save_path)
                 if verbose:
-                    logger.info(f'\t Model saved at path: {self.model_save_path}')
+                    logger.info(f'Model saved at path: {self.model_save_path}')
