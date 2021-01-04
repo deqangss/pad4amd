@@ -9,6 +9,10 @@ from core.defense import Dataset
 from core.defense import MalwareDetector
 from tools.utils import save_args,get_group_args,to_tensor
 
+# import os
+# os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+
 
 import argparse
 
@@ -25,7 +29,7 @@ feature_argparse.add_argument('--timeout', type=int, default=20,
                               help='The maximum elapsed time for analyzing an app')
 feature_argparse.add_argument('--use_feature_selection', action='store_true', default=True,
                               help='Whether use feature selection or not.')
-feature_argparse.add_argument('--max_vocab_size', type=int, default=10000,
+feature_argparse.add_argument('--max_vocab_size', type=int, default=5000,
                               help='The maximum number of vocabulary size')
 feature_argparse.add_argument('--update', action='store_true', default=False,
                               help='Whether update the existed features.')
@@ -37,14 +41,14 @@ detector_argparse.add_argument('--embedding_dim', type=int, default=16, help='em
 detector_argparse.add_argument('--hidden_units', type=lambda s: [int(u) for u in s.split(',')], default='8',
                                help='delimited list input, e.g., "32,32"', )
 detector_argparse.add_argument('--penultimate_hidden_dim', type=int, default=64, help='dimension of penultimate layer')
-detector_argparse.add_argument('--n_heads', type=int, default=2, help='number of headers')
+detector_argparse.add_argument('--n_heads', type=int, default=8, help='number of headers')
 detector_argparse.add_argument('--dropout', type=float, default=0.6, help='dropout rate')
 detector_argparse.add_argument('--k', type=int, default=128, help='sampling size')
 detector_argparse.add_argument('--alpha', type=float, default=0.2, help='slope coefficient of leaky-relu')
 detector_argparse.add_argument('--sparse', action='store_true', default=True, help='GAT with sparse version or not.')
 
 detector_argparse.add_argument('--batch_size', type=int, default=16, help='minibatch size')
-detector_argparse.add_argument('--epochs', type=int, default=5, help='number of epochs to train.')
+detector_argparse.add_argument('--epochs', type=int, default=10, help='number of epochs to train.')
 detector_argparse.add_argument('--lr', type=float, default=0.005, help='initial learning rate.')
 detector_argparse.add_argument('--patience', type=int, default=100, help='patience')
 detector_argparse.add_argument('--weight_decay', type=float, default=5e-4, help='weight_decay')
@@ -58,7 +62,7 @@ def _main():
     val_data, valy = dataset.validation_dataset
     test_data, testy = dataset.test_dataset
     train_dataset_producer = dataset.get_input_producer(train_data, trainy, batch_size=args.batch_size, name='train')
-    val_dataset_producer = dataset.get_input_producer(val_data, valy, batch_size=args.batch_size * 4, name='val')
+    val_dataset_producer = dataset.get_input_producer(val_data, valy, batch_size=args.batch_size, name='val')
     test_dataset_producer = dataset.get_input_producer(test_data, testy, batch_size=args.batch_size, name='test')
     assert dataset.n_classes == 2
 
@@ -70,8 +74,11 @@ def _main():
     model = MalwareDetector(dataset.vocab_size, dataset.n_classes, device=dv, **vars(args))
     model = model.to(dv)
     save_args(path.join(path.dirname(model.model_save_path), "hparam"), vars(args))
-    model.fit(train_dataset_producer, val_dataset_producer, epochs=args.epochs)
+    model.fit(train_dataset_producer, val_dataset_producer, epochs=args.epochs, lr=args.lr,
+              weight_decay=args.weight_decay)
 
+    # test: accuracy
+    model.predict(test_dataset_producer)
     # test: gradients of loss w.r.t. input
     for res in test_dataset_producer:
         x_batch, adj, y_batch, _1 = res
