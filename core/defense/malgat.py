@@ -92,11 +92,13 @@ class MalGAT(nn.Module):
         x_comb = torch.clip(torch.sum(x, dim=0), min=0, max=1.)
         if adjs is None:
             # matrix partition for RAM saved, yet time consuming
-            adjs = torch.stack([
-                torch.stack([torch.matmul(_x_e.unsqueeze(-1), _x_e.unsqueeze(0)).to_sparse() for _x_e in _x]) \
-                for _x in x
-            ])
-            # adjs = torch.stack([torch.matmul(_x.unsqueeze(-1), _x.unsqueeze(-2)).to_sparse() for _x in x])
+            if not self.eval():
+                adjs = torch.stack([
+                    torch.stack([torch.matmul(_x_e.unsqueeze(-1), _x_e.unsqueeze(0)).to_sparse() for _x_e in _x]) \
+                    for _x in x
+                ])
+            else:
+                adjs = torch.stack([torch.matmul(_x.unsqueeze(-1), _x.unsqueeze(-2)).to_sparse() for _x in x])
         if adjs.is_sparse:
             adj = torch.sparse.sum(adjs, dim=0)
         else:
@@ -117,5 +119,6 @@ class MalGAT(nn.Module):
 
         latent_codes = torch.stack(latent_codes, dim=1)  # the result shape is [batch_size, self.k+1, feature_dim]
         latent_codes = self.cls_attn_layer(latent_codes)
+        # latent_codes = torch.amax(x.unsqueeze(-1) * features, dim=(0, 2))
         latent_codes = self.activation(self.dense(latent_codes))
         return latent_codes
