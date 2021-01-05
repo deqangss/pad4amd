@@ -48,7 +48,7 @@ detector_argparse.add_argument('--n_sample_times', type=int, default=10, help='t
 detector_argparse.add_argument('--alpha', type=float, default=0.2, help='slope coefficient of leaky-relu')
 detector_argparse.add_argument('--sparse', action='store_true', default=True, help='GAT with sparse version or not.')
 
-detector_argparse.add_argument('--batch_size', type=int, default=8, help='minibatch size')
+detector_argparse.add_argument('--batch_size', type=int, default=16, help='minibatch size')
 detector_argparse.add_argument('--epochs', type=int, default=10, help='number of epochs to train.')
 detector_argparse.add_argument('--lr', type=float, default=0.005, help='initial learning rate.')
 detector_argparse.add_argument('--patience', type=int, default=100, help='patience')
@@ -62,9 +62,9 @@ def _main():
     train_data, trainy = dataset.train_dataset
     val_data, valy = dataset.validation_dataset
     test_data, testy = dataset.test_dataset
-    train_dataset_producer = dataset.get_input_producer(train_data, trainy, batch_size=args.batch_size, name='train')
-    val_dataset_producer = dataset.get_input_producer(val_data, valy, batch_size=args.batch_size, name='val')
-    test_dataset_producer = dataset.get_input_producer(test_data, testy, batch_size=args.batch_size, name='test')
+    train_dataset_producer = dataset.get_input_producer(train_data[-128:], trainy[-128:], batch_size=args.batch_size, name='train')
+    val_dataset_producer = dataset.get_input_producer(val_data[-128:], valy[-128:], batch_size=args.batch_size, name='val')
+    test_dataset_producer = dataset.get_input_producer(test_data[-128:], testy[-128:], batch_size=args.batch_size, name='test')
     assert dataset.n_classes == 2
 
     # test: model training
@@ -78,11 +78,10 @@ def _main():
     model.fit(train_dataset_producer,
               val_dataset_producer,
               epochs=args.epochs,
-              lr=args.lr,
-              weight_decay=args.weight_decay)
+              lr=args.lr)
 
     # test: accuracy
-    model.predict(test_dataset_producer)
+    model.predict(val_dataset_producer)
     # test: gradients of loss w.r.t. input
     for res in test_dataset_producer:
         x_batch, adj, y_batch, _1 = res
