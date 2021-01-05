@@ -94,8 +94,6 @@ class MalwareDetector(nn.Module):
                     x, adj, y, _2 = res
                     x, adj, y = utils.to_tensor(x, adj, y, self.device)
                     _, logits = self.forward(x, adj)
-                    acc_train = (logits.argmax(1) == y).sum().item()
-                    acc_train /= y.size()[0]
                     conf_batchs.append(F.softmax(logits, dim=-1))
                     if ith == 0:
                         gt_labels.append(y)
@@ -110,7 +108,7 @@ class MalwareDetector(nn.Module):
         self.load_state_dict(torch.load(self.model_save_path))
         # evaluation
         confidence, y_true = self.inference(test_data_producer)
-        y_pred = (confidence.argmax(1) == y_true).cpu().numpy()
+        y_pred = confidence.argmax(1).cpu().numpy()
         y_true = y_true.cpu().numpy()
         from sklearn.metrics import f1_score, accuracy_score, confusion_matrix, balanced_accuracy_score
         accuracy = accuracy_score(y_true, y_pred)
@@ -138,10 +136,9 @@ class MalwareDetector(nn.Module):
         :param verbose: Boolean, whether to show verbose logs
         """
         optimizer = optim.Adam(self.parameters(), lr=lr, weight_decay=weight_decay)
-        best_acc = 0.
+        best_avg_acc = 0.
         total_time = 0.
         nbatchs = len(train_data_producer)
-        avg_acc_val = 0
         for i in range(epochs):
             self.train()
             losses, accuracies = [], []
@@ -164,14 +161,25 @@ class MalwareDetector(nn.Module):
                     print(f'Mini batch: {i * nbatchs + idx_batch + 1}/{epochs * nbatchs} | training time in {mins:.0f} minutes, {secs} seconds.')
                     print(f'Training loss: {losses[-1]:.4f} | Train accuracy: {acc_train * 100:.2f}')
 
-            confidence, y_val = self.inference(validation_data_producer)
-            acc_val = (confidence.argmax(1) == y_val).sum().item()
-            acc_val /= y_val.size()[0]
+            self.eval()
+            avg_acc_val = []
+            with torch.no_grad():
+                for res in validation_data_producer:
+                    x_val, adj_val, y_val, _2 = res
+                    x_val, adj_val, y_val = utils.to_tensor(x_val, adj_val, y_val, self.device)
+                    _, logits = self.forward(x_val, adj_val)
+                    acc_val = (logits.argmax(1) == y_val).sum().item()
+                    acc_val /= x_val[0].size()[0]
+                    avg_acc_val.append(acc_val)
+                avg_acc_val = np.mean(avg_acc_val)
 
             if verbose:
-                logger.info(f'Training loss (Epoch level): {np.mean(losses):.4f} | Train accuracy: {np.mean(accuracies) * 100:.2f}')
+                logger.info(
+                    f'Training loss (Epoch level): {np.mean(losses):.4f}\t|\t Train accuracy: {np.mean(accuracies) * 100:.2f}')
                 logger.info(f'Validation accuracy: {avg_acc_val * 100:.2f}')
-            if avg_acc_val >= best_acc:
+            if avg_acc_val >= best_avg_acc:
+                best_avg_acc = avg_acc_val
                 torch.save(self.state_dict(), self.model_save_path)
                 if verbose:
                     logger.info(f'Model saved at path: {self.model_save_path}')
+

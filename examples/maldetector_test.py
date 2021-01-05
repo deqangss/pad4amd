@@ -44,6 +44,7 @@ detector_argparse.add_argument('--penultimate_hidden_dim', type=int, default=64,
 detector_argparse.add_argument('--n_heads', type=int, default=8, help='number of headers')
 detector_argparse.add_argument('--dropout', type=float, default=0.6, help='dropout rate')
 detector_argparse.add_argument('--k', type=int, default=128, help='sampling size')
+detector_argparse.add_argument('--n_sample_times', type=int, default=10, help='times of sampling')
 detector_argparse.add_argument('--alpha', type=float, default=0.2, help='slope coefficient of leaky-relu')
 detector_argparse.add_argument('--sparse', action='store_true', default=True, help='GAT with sparse version or not.')
 
@@ -51,7 +52,7 @@ detector_argparse.add_argument('--batch_size', type=int, default=16, help='minib
 detector_argparse.add_argument('--epochs', type=int, default=10, help='number of epochs to train.')
 detector_argparse.add_argument('--lr', type=float, default=0.005, help='initial learning rate.')
 detector_argparse.add_argument('--patience', type=int, default=100, help='patience')
-detector_argparse.add_argument('--weight_decay', type=float, default=5e-4, help='weight_decay')
+detector_argparse.add_argument('--weight_decay', type=float, default=5e-5, help='weight_decay')
 
 args = cmd_md.parse_args()
 
@@ -62,7 +63,7 @@ def _main():
     val_data, valy = dataset.validation_dataset
     test_data, testy = dataset.test_dataset
     train_dataset_producer = dataset.get_input_producer(train_data, trainy, batch_size=args.batch_size, name='train')
-    val_dataset_producer = dataset.get_input_producer(val_data, valy, batch_size=args.batch_size * 2, name='val')
+    val_dataset_producer = dataset.get_input_producer(val_data, valy, batch_size=args.batch_size, name='val')
     test_dataset_producer = dataset.get_input_producer(test_data, testy, batch_size=args.batch_size, name='test')
     assert dataset.n_classes == 2
 
@@ -88,6 +89,7 @@ def _main():
         loss = F.cross_entropy(logits, y_batch)
         grad = torch.autograd.grad(loss, x_batch)[0]
         print(grad.shape)
+        break
 
 
 if __name__ == '__main__':
