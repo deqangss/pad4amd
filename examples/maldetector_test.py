@@ -29,7 +29,7 @@ feature_argparse.add_argument('--timeout', type=int, default=20,
                               help='The maximum elapsed time for analyzing an app')
 feature_argparse.add_argument('--use_feature_selection', action='store_true', default=True,
                               help='Whether use feature selection or not.')
-feature_argparse.add_argument('--max_vocab_size', type=int, default=5000,
+feature_argparse.add_argument('--max_vocab_size', type=int, default=8000,
                               help='The maximum number of vocabulary size')
 feature_argparse.add_argument('--update', action='store_true', default=False,
                               help='Whether update the existed features.')
@@ -50,9 +50,9 @@ detector_argparse.add_argument('--sparse', action='store_true', default=True, he
 
 detector_argparse.add_argument('--batch_size', type=int, default=16, help='minibatch size')
 detector_argparse.add_argument('--epochs', type=int, default=10, help='number of epochs to train.')
-detector_argparse.add_argument('--lr', type=float, default=0.005, help='initial learning rate.')
+detector_argparse.add_argument('--lr', type=float, default=0.001, help='initial learning rate.')
 detector_argparse.add_argument('--patience', type=int, default=100, help='patience')
-detector_argparse.add_argument('--weight_decay', type=float, default=5e-5, help='weight_decay')
+# detector_argparse.add_argument('--weight_decay', type=float, default=5e-5, help='weight_decay')
 
 args = cmd_md.parse_args()
 
@@ -62,9 +62,9 @@ def _main():
     train_data, trainy = dataset.train_dataset
     val_data, valy = dataset.validation_dataset
     test_data, testy = dataset.test_dataset
-    train_dataset_producer = dataset.get_input_producer(train_data[-128:], trainy[-128:], batch_size=args.batch_size, name='train')
-    val_dataset_producer = dataset.get_input_producer(val_data[-128:], valy[-128:], batch_size=args.batch_size, name='val')
-    test_dataset_producer = dataset.get_input_producer(test_data[-128:], testy[-128:], batch_size=args.batch_size, name='test')
+    train_dataset_producer = dataset.get_input_producer(train_data, trainy, batch_size=args.batch_size, name='train')
+    val_dataset_producer = dataset.get_input_producer(val_data, valy, batch_size=args.batch_size, name='val')
+    test_dataset_producer = dataset.get_input_producer(test_data, testy, batch_size=args.batch_size, name='test')
     assert dataset.n_classes == 2
 
     # test: model training

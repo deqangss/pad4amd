@@ -121,6 +121,5 @@ class MalGAT(nn.Module):
         latent_codes = torch.stack(latent_codes, dim=1)  # the result shape is [batch_size, self.k+1, feature_dim]
         # latent_codes = self.cls_attn_layer(latent_codes)
         latent_codes, _1 = torch.max(latent_codes, dim=1)
-        # latent_codes = torch.amax(x.unsqueeze(-1) * features, dim=(0, 2))
         latent_codes = self.activation(self.dense(latent_codes))
         return latent_codes
