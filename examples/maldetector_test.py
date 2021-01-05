@@ -29,7 +29,7 @@ feature_argparse.add_argument('--timeout', type=int, default=20,
                               help='The maximum elapsed time for analyzing an app')
 feature_argparse.add_argument('--use_feature_selection', action='store_true', default=True,
                               help='Whether use feature selection or not.')
-feature_argparse.add_argument('--max_vocab_size', type=int, default=5000,
+feature_argparse.add_argument('--max_vocab_size', type=int, default=10000,
                               help='The maximum number of vocabulary size')
 feature_argparse.add_argument('--update', action='store_true', default=False,
                               help='Whether update the existed features.')
@@ -48,7 +48,7 @@ detector_argparse.add_argument('--n_sample_times', type=int, default=10, help='t
 detector_argparse.add_argument('--alpha', type=float, default=0.2, help='slope coefficient of leaky-relu')
 detector_argparse.add_argument('--sparse', action='store_true', default=True, help='GAT with sparse version or not.')
 
-detector_argparse.add_argument('--batch_size', type=int, default=16, help='minibatch size')
+detector_argparse.add_argument('--batch_size', type=int, default=4, help='minibatch size')
 detector_argparse.add_argument('--epochs', type=int, default=10, help='number of epochs to train.')
 detector_argparse.add_argument('--lr', type=float, default=0.005, help='initial learning rate.')
 detector_argparse.add_argument('--patience', type=int, default=100, help='patience')
@@ -75,7 +75,10 @@ def _main():
     model = MalwareDetector(dataset.vocab_size, dataset.n_classes, device=dv, **vars(args))
     model = model.to(dv)
     save_args(path.join(path.dirname(model.model_save_path), "hparam"), vars(args))
-    model.fit(train_dataset_producer, val_dataset_producer, epochs=args.epochs, lr=args.lr,
+    model.fit(train_dataset_producer,
+              val_dataset_producer,
+              epochs=args.epochs,
+              lr=args.lr,
               weight_decay=args.weight_decay)
 
     # test: accuracy
