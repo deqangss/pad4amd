@@ -114,13 +114,15 @@ class MalGAT(nn.Module):
             features = F.dropout(features, self.dropout, training=self.training)
             features = torch.cat([header(features, adj) for header in headers], dim=-1)
 
-        latent_codes = []
-        for i in range(self.k):
-            # masking out the unused representations via broadcasting, herein the latent_code shape is [batch_size, vocab_size, feature_dim]
-            # after max pooling, the latent_code shape is [batch_size, feature_dim]
-            latent_code = torch.amax(torch.unsqueeze(x[i], dim=-1) * features, dim=1)
-            latent_codes.append(latent_code)
-        latent_codes = torch.stack(latent_codes, dim=1)  # the result shape is [batch_size, self.k+1, feature_dim]
-        latent_codes = torch.amax(latent_codes, dim=1)
+        # latent_codes = []
+        # for i in range(self.k):
+        #     masking out the unused representations via broadcasting, herein the latent_code shape is [batch_size, vocab_size, feature_dim]
+        #     after max pooling, the latent_code shape is [batch_size, feature_dim]
+        #     latent_code = torch.amax(torch.unsqueeze(x[i], dim=-1) * features, dim=1)
+        #     latent_codes.append(latent_code)
+        # latent_codes = torch.stack(latent_codes, dim=1)  # the result shape is [batch_size, self.k+1, feature_dim]
+        # latent_codes = torch.amax(latent_codes, dim=1)
+
+        latent_codes = torch.amax(torch.unsqueeze(x_comb, dim=-1) * features, dim=1)
         latent_codes = self.activation(self.dense(latent_codes))
         return latent_codes
