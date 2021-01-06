@@ -135,7 +135,7 @@ class MalwareDetector(nn.Module):
         :param validation_data_producer: Object, an iterator for producing validation dataset
         :param verbose: Boolean, whether to show verbose logs
         """
-        optimizer = optim.Adam(self.parameters(), lr=lr)
+        optimizer = optim.Adam(self.parameters(), lr=lr, weight_decay=weight_decay)
         best_avg_acc = 0.
         total_time = 0.
         nbatchs = len(train_data_producer)
