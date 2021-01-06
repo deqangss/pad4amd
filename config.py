@@ -2,6 +2,7 @@ from __future__ import print_function
 
 import os
 import sys
+import time
 import logging
 
 if sys.version_info[0] < 3:
@@ -29,7 +30,7 @@ def parser_config():
 
 parser_config()
 
-logging.basicConfig(level=logging.INFO, filename=os.path.join(config_dir, "log"), filemode="w",
+logging.basicConfig(level=logging.INFO, filename=os.path.join(config_dir, time.strftime("%Y%m%d-%H%M%S") + ".log"), filemode="w",
                     format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s: %(message)s',
                     datefmt='%Y/%m/%d %H:%M:%S')
 ErrorHandler = logging.StreamHandler()
