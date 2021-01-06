@@ -113,33 +113,35 @@ class Apk2graphs(object):
 
         counter_mal, counter_ben = collections.Counter(), collections.Counter()
         api_info_dict = collections.defaultdict(set)
+        num_cg_mal, num_cg_ben = 0, 0
         for feature_path, label in zip(feature_path_list, gt_labels):
             if not os.path.exists(feature_path):
                 continue
             cg_dict = seq_gen.read_from_disk(
                 feature_path)  # each file contains a dict of {root call method: networkx objects}
+            api_occurence = set()
             for root_call, sub_cg in cg_dict.items():
                 node_names = sub_cg.nodes(data=True)
                 api_names = [api_name for api_name, _ in node_names]
                 api_info = [[seq_gen.get_api_info(tag) for tag in api_tag['tag']] for _, api_tag in node_names]
+                api_occurence.update(api_names)
 
                 for an, apii_list in zip(api_names, api_info):
                     for apii in apii_list:
                         api_info_dict[an].add(apii)
-                if label:
-                    counter_mal.update(api_names)
-                else:
-                    counter_ben.update(api_names)
+            if label:
+                counter_mal.update(list(api_occurence))
+            else:
+                counter_ben.update(list(api_occurence))
         all_words = list(set(list(counter_ben.keys()) + list(counter_mal.keys())))
         if not self.use_feature_selection:  # no feature selection applied
             return all_words
-
         mal_feature_frequency = np.array(list(map(counter_mal.get, all_words)))
         mal_feature_frequency[mal_feature_frequency == None] = 0
         mal_feature_frequency /= float(np.sum(gt_labels))
         ben_feature_frequency = np.array(list(map(counter_ben.get, all_words)))
         ben_feature_frequency[ben_feature_frequency == None] = 0
-        ben_feature_frequency /= (len(gt_labels) - np.sum(gt_labels))
+        ben_feature_frequency /= float(len(gt_labels) - np.sum(gt_labels))
         feature_freq_diff = abs(mal_feature_frequency - ben_feature_frequency)
         pos_selected = np.argsort(feature_freq_diff)[::-1][:self.maximum_vocab_size]
         selected_words = [all_words[p] for p in pos_selected]
