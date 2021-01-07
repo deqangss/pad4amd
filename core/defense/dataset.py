@@ -169,6 +169,7 @@ class Dataset(torch.utils.data.Dataset):
             features_sample.append([feature[_i] for _i in indices])
             adjs_sample.append([adjs[i][_i] for _i in indices])
             sample_indices.append(indices)
+
         features_sample_t = np.array([np.stack(list(feat), axis=0) for feat in zip(*features_sample)])
         # A list (with size self.k) of sparse feature vector in the mini-batch level, in which each element
         # has the shape [batch_size, vocab_size]
