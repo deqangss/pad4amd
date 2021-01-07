@@ -89,7 +89,7 @@ class MalGAT(nn.Module):
         """
         assert (len(x) >= self.k) and (self.k >= 0)  # x has the shape [self.k, batch_size, vocab_size]
         x_comb = torch.clip(torch.sum(x, dim=0), min=0, max=1.)
-        cls_code = torch.max(self.activation(self.cls_dense1((x_comb.unsqueeze(-1) * self.embedding_weight).permute(0, 2, 1))), dim=-1)
+        cls_code = torch.amax(self.activation(self.cls_dense1((x_comb.unsqueeze(-1) * self.embedding_weight).permute(0, 2, 1))), dim=-1)
         cls_code = self.activation(self.cls_dense2(cls_code))
         if self.k > 0:
             if adjs is None:
