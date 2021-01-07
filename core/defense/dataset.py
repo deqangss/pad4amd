@@ -157,13 +157,19 @@ class Dataset(torch.utils.data.Dataset):
         sample_indices = []
         features_sample = []
         adjs_sample = []
+
+        n_sg_max = np.max([len(feature) for feature in features])
+        n_sg_used = self.k if self.k > n_sg_max else n_sg_max
         for i, feature in enumerate(features):
-            n_sg = len(feature)
-            replacement = True if n_sg < self.k else False
-            indices = np.random.choice(n_sg, self.k, replacement)
+            indices = list(range(len(feature)))
+            random.shuffle(indices)
+            n_sg_padded = n_sg_used - len(feature)
+            extra_indices = [random.choice(indices) for _ in range(n_sg_padded)]
+            indices += extra_indices
             features_sample.append([feature[_i] for _i in indices])
             adjs_sample.append([adjs[i][_i] for _i in indices])
             sample_indices.append(indices)
+
         features_sample_t = np.array([np.stack(list(feat), axis=0) for feat in zip(*features_sample)])
         # A list (with size self.k) of sparse feature vector in the mini-batch level, in which each element
         # has the shape [batch_size, vocab_size]
