@@ -160,9 +160,12 @@ class Dataset(torch.utils.data.Dataset):
         for i, feature in enumerate(features):
             indices = list(range(len(feature)))
             random.shuffle(indices)
-            n_sg_padded = n_sg_used - len(feature)
-            extra_indices = [random.choice(indices) for _ in range(n_sg_padded)]
-            indices += extra_indices
+            if len(feature) <= n_sg_used:
+                n_sg_padded = n_sg_used - len(feature)
+                extra_indices = [random.choice(indices) for _ in range(n_sg_padded)]
+                indices += extra_indices
+            else:
+                indices = indices[:n_sg_used]
             features_sample.append([feature[_i] for _i in indices])
             adjs_sample.append([adjs[i][_i] for _i in indices])
             sample_indices.append(indices)
