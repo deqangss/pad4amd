@@ -13,7 +13,7 @@ from tools import utils
 
 
 class Dataset(torch.utils.data.Dataset):
-    def __init__(self, dataset_name='drebin', k=100, is_adj=False, use_cache=False, seed=0, qmaxsize=10, feature_ext_args=None):
+    def __init__(self, dataset_name='drebin', k=100, is_adj=False, use_cache=False, seed=0, max_num_sg=1024, feature_ext_args=None):
         """
         build dataset for ml model learning
         :param dataset_name: String, the dataset name, expected 'drebin' or 'androzoo'
@@ -21,7 +21,7 @@ class Dataset(torch.utils.data.Dataset):
         :param is_adj: Boolean, whether use the actual adjacent matrix or not
         :param use_cache: Boolean, whether to use the cached data or not, the cached data is identified by a string format name
         :param seed: Integer, the random seed
-        :param qmaxsize: Integer, the maximum size of queue
+        :param max_num_sg: Integer, the maximum number of subgraphs
         :param feature_ext_args: Dict, arguments for feature extraction
         """
         self.dataset_name = dataset_name
@@ -33,7 +33,7 @@ class Dataset(torch.utils.data.Dataset):
         torch.manual_seed(self.seed)
         torch.set_default_dtype(torch.float32)
 
-        self.qmax_size = qmaxsize
+        self.max_num_sg = max_num_sg
         self.use_cache = use_cache
         self.feature_ext_args = feature_ext_args
         self.temp_dir_handle = tempfile.TemporaryDirectory()
@@ -72,10 +72,6 @@ class Dataset(torch.utils.data.Dataset):
         vocab, _1, = self.feature_extractor.get_vocab(*self.train_dataset)
         self.vocab_size = len(vocab)
         self.n_classes = np.unique(self.train_dataset[1]).size
-
-        self.train_data_queue = Queue(maxsize=self.qmax_size)
-        self.validation_data_queue = Queue(maxsize=self.qmax_size)
-        self.test_data_queue = Queue(maxsize=self.qmax_size)
 
     def data_split(self, feature_paths, labels):
         assert len(feature_paths) == len(labels)
@@ -160,6 +156,7 @@ class Dataset(torch.utils.data.Dataset):
 
         n_sg_max = np.max([len(feature) for feature in features])
         n_sg_used = self.k if self.k > n_sg_max else n_sg_max
+        n_sg_used = n_sg_used if n_sg_used < self.max_num_sg else self.max_num_sg
         for i, feature in enumerate(features):
             indices = list(range(len(feature)))
             random.shuffle(indices)
@@ -169,7 +166,6 @@ class Dataset(torch.utils.data.Dataset):
             features_sample.append([feature[_i] for _i in indices])
             adjs_sample.append([adjs[i][_i] for _i in indices])
             sample_indices.append(indices)
-
         features_sample_t = np.array([np.stack(list(feat), axis=0) for feat in zip(*features_sample)])
         # A list (with size self.k) of sparse feature vector in the mini-batch level, in which each element
         # has the shape [batch_size, vocab_size]
