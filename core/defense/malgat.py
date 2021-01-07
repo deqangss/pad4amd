@@ -75,7 +75,7 @@ class MalGAT(nn.Module):
                                                      self.alpha)
 
         # cls function
-        self.cls_dense = nn.Linear(self.vocab_size, self.n_hidden_units[-1] * self.n_heads)
+        self.cls_dense = nn.Linear(self.embedding_dim, self.n_hidden_units[-1] * self.n_heads)
 
         self.dense = nn.Linear(self.n_hidden_units[-1] * self.n_heads, self.penultimate_hidden_unit)
 
@@ -88,7 +88,7 @@ class MalGAT(nn.Module):
         """
         assert (len(x) >= self.k) and (self.k >= 0)  # x has the shape [self.k, batch_size, vocab_size]
         x_comb = torch.clip(torch.sum(x, dim=0), min=0, max=1.)
-        cls_code = self.activation(self.cls_dense(x_comb))
+        cls_code = self.activation(self.cls_dense(torch.amax(x_comb.unsqueeze(-1) * self.embedding_weight, dim=-2)))
         if self.k > 0:
             if adjs is None:
                 if self.sparse:
