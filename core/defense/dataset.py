@@ -13,7 +13,7 @@ from tools import utils
 
 
 class Dataset(torch.utils.data.Dataset):
-    def __init__(self, dataset_name='drebin', k=100, is_adj=False, use_cache=False, seed=0, max_num_sg=1024, feature_ext_args=None):
+    def __init__(self, dataset_name='drebin', k=100, is_adj=False, use_cache=False, seed=0, n_sgs_max=1024, feature_ext_args=None):
         """
         build dataset for ml model learning
         :param dataset_name: String, the dataset name, expected 'drebin' or 'androzoo'
@@ -21,7 +21,7 @@ class Dataset(torch.utils.data.Dataset):
         :param is_adj: Boolean, whether use the actual adjacent matrix or not
         :param use_cache: Boolean, whether to use the cached data or not, the cached data is identified by a string format name
         :param seed: Integer, the random seed
-        :param max_num_sg: Integer, the maximum number of subgraphs
+        :param n_sgs_max: Integer, the maximum number of subgraphs
         :param feature_ext_args: Dict, arguments for feature extraction
         """
         self.dataset_name = dataset_name
@@ -32,8 +32,8 @@ class Dataset(torch.utils.data.Dataset):
         np.random.seed(self.seed)
         torch.manual_seed(self.seed)
         torch.set_default_dtype(torch.float32)
-
-        self.max_num_sg = max_num_sg
+        assert self.k < n_sgs_max
+        self.n_sgs_max = n_sgs_max
         self.use_cache = use_cache
         self.feature_ext_args = feature_ext_args
         self.temp_dir_handle = tempfile.TemporaryDirectory()
@@ -154,18 +154,11 @@ class Dataset(torch.utils.data.Dataset):
         features_sample = []
         adjs_sample = []
 
-        n_sg_max = np.max([len(feature) for feature in features])
-        n_sg_used = self.k if self.k > n_sg_max else n_sg_max
-        n_sg_used = n_sg_used if n_sg_used < self.max_num_sg else self.max_num_sg
+        batch_n_sg_max = np.max([len(feature) for feature in features])
+        n_sg_used = batch_n_sg_max if batch_n_sg_max < self.n_sgs_max else self.n_sgs_max
         for i, feature in enumerate(features):
-            indices = list(range(len(feature)))
-            random.shuffle(indices)
-            if len(feature) <= n_sg_used:
-                n_sg_padded = n_sg_used - len(feature)
-                extra_indices = [random.choice(indices) for _ in range(n_sg_padded)]
-                indices += extra_indices
-            else:
-                indices = indices[:n_sg_used]
+            replacement = True if len(feature) < n_sg_used else False
+            indices = np.random.choice(len(feature), n_sg_used, replacement)
             features_sample.append([feature[_i] for _i in indices])
             adjs_sample.append([adjs[i][_i] for _i in indices])
             sample_indices.append(indices)

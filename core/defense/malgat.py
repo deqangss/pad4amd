@@ -89,10 +89,6 @@ class MalGAT(nn.Module):
         assert (len(x) >= self.k) and (self.k > 0)  # x has the shape [self.k, batch_size, vocab_size]
         x_comb = torch.clip(torch.sum(x, dim=0), min=0, max=1.)
 
-        # features
-        embed_features = torch.stack(
-            [self.embedding_weight] * x.size()[1])  # embed_features shape is [batch_size, vocab_size, vocab_dim]
-
         if adjs is None:
             if self.sparse:
                 if self.training:
@@ -105,13 +101,10 @@ class MalGAT(nn.Module):
             else:
                 adjs = torch.stack([torch.matmul(_x.unsqueeze(-1), _x.unsqueeze(-2)) for _x in x[:self.k]])
 
-        # if adjs.is_sparse:
-        #     adj = torch.sparse.sum(adjs, dim=0)
-        #     if not self.sparse:
-        #         adj = adj.to_dense()
-        # else:
-        #     adj = torch.sum(adjs, dim=0)
         latent_codes = [self.activation(self.cls_dense(x_comb))]
+        # features
+        embed_features = torch.stack(
+            [self.embedding_weight] * x.size()[1])  # embed_features shape is [batch_size, vocab_size, vocab_dim]
 
         # for i in range(self.k):
         #     features = torch.unsqueeze(x[i], dim=-1) * embed_features
