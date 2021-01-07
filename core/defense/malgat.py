@@ -88,19 +88,17 @@ class MalGAT(nn.Module):
         """
         assert (len(x) >= self.k) and (self.k >= 0)  # x has the shape [self.k, batch_size, vocab_size]
         x_comb = torch.clip(torch.sum(x, dim=0), min=0, max=1.)
+        cls_code = self.activation(self.cls_dense(x_comb))
         if self.k > 0:
             if adjs is None:
                 if self.sparse:
-                    # if self.training:
                     adjs = torch.stack([
                         torch.stack([torch.matmul(_x_e.unsqueeze(-1), _x_e.unsqueeze(0)).to_sparse() for _x_e in _x]) \
                         for _x in x[:self.k]
                     ])
-                    # else:
-                    #     adjs = torch.stack([torch.matmul(_x.unsqueeze(-1), _x.unsqueeze(-2)).to_sparse() for _x in x[:self.k]])
                 else:
                     adjs = torch.stack([torch.matmul(_x.unsqueeze(-1), _x.unsqueeze(-2)) for _x in x[:self.k]])
-            latent_codes = [self.activation(self.cls_dense(x_comb))]
+            latent_codes = [cls_code]
             for i in range(self.k):
                 features = torch.unsqueeze(x[i], dim=-1) * torch.unsqueeze(self.embedding_weight, dim=0)
                 for headers in self.attn_layers:
@@ -110,6 +108,6 @@ class MalGAT(nn.Module):
             latent_codes = torch.stack(latent_codes, dim=1)  # the result shape is [batch_size, self.k+1, feature_dim]
             latent_codes = self.cls_attn_layer(latent_codes)
         else:
-            latent_codes = self.activation(self.cls_dense(x_comb))
+            latent_codes = cls_code
         latent_codes = self.activation(self.dense(latent_codes))
         return latent_codes
