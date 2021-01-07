@@ -78,6 +78,7 @@ class MalGAT(nn.Module):
         self.cls_dense1 = nn.Linear(self.vocab_size, self.embedding_dim)
         self.cls_dense2 = nn.Linear(self.embedding_dim, self.n_hidden_units[-1] * self.n_heads)
 
+        self.dense_attn_compress = nn.Linear(self.vocab_size, self.embedding_dim)
         self.dense = nn.Linear(self.n_hidden_units[-1] * self.n_heads, self.penultimate_hidden_unit)
 
     def forward(self, x, adjs=None):
@@ -106,8 +107,9 @@ class MalGAT(nn.Module):
                 for headers in self.attn_layers:
                     features = F.dropout(features, self.dropout, training=self.training)
                     features = torch.cat([header(features, adjs[i]) for header in headers], dim=-1)
-                latent_codes.append(torch.amax(torch.unsqueeze(x[i], dim=-1) * features, dim=1))
-            latent_codes = torch.stack(latent_codes, dim=1)  # the result shape is [batch_size, self.k+1, feature_dim]
+                attn_code = torch.amax(self.activation(self.dense_attn_compress((x[i].unsqueeze(-1) * features).permute(0, 2, 1))), dim=-1)
+                latent_codes.append(attn_code)
+            latent_codes = torch.stack(latent_codes, dim=1)  # latent_codes: [batch_size, self.k+1, feature_dim]
             latent_codes = self.cls_attn_layer(latent_codes)
         else:
             latent_codes = cls_code
