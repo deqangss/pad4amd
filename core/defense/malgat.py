@@ -68,20 +68,49 @@ class MalGAT(nn.Module):
             for idx_j, header in enumerate(attn_headers):
                 self.add_module('attention_layer_{}_header_{}'.format(idx_i, idx_j), header)
 
-        self.cls_weight = nn.Parameter(torch.empty(size=(self.n_hidden_units[-1] * self.n_heads,)))
-        nn.init.normal_(self.cls_weight.data)
-        self.cls_attn_layer = GraphAttentionLayerCLS(self.n_hidden_units[-1] * self.n_heads,
-                                                     self.dropout,
-                                                     self.alpha)
+        self.attn_out = graph_attn_layer(self.n_hidden_units[-1] * self.n_heads,
+                                         penultimate_hidden_unit,
+                                         self.dropout,
+                                         self.alpha,
+                                         concat=True)
+        self.add_module('attention_layer_out', self.attn_out)
+        # self.attn_layers_out = []
+        # for head_id in range(self.n_heads):
+        #     self.attn_layers_out.append(
+        #         graph_attn_layer(self.n_hidden_units[-1] * self.n_heads,
+        #                          penultimate_hidden_unit,
+        #                          self.dropout,
+        #                          self.alpha,
+        #                          concat=False)
+        #     )
+        # # registration
+        # for idx_i, attn_layer in enumerate(self.attn_layers_out):
+        #     self.add_module('attention_last_layer_header_{}'.format(idx_i), attn_layer)
+
+        # self.cls_weight = nn.Parameter(torch.empty(size=(self.n_hidden_units[-1] * self.n_heads,)))
+        # nn.init.normal_(self.cls_weight.data)
+
+        self.cls_attn_layers = []
+        for head_id in range(self.n_heads):
+            self.cls_attn_layers.append(
+                GraphAttentionLayerCLS(self.penultimate_hidden_unit,
+                                       self.dropout,
+                                       self.alpha)
+            )
+        # registration
+        for idx_i, cls_attn_layer in enumerate(self.cls_attn_layers):
+            self.add_module('attention_cls_layer_header_{}'.format(idx_i), cls_attn_layer)
+
+        # self.cls_attn_layer = GraphAttentionLayerCLS(self.n_hidden_units[-1] * self.n_heads,
+        #                                              self.dropout,
+        #                                              self.alpha)
 
         # cls function
         self.cls_dense1 = nn.Linear(self.vocab_size, self.embedding_dim)
-        self.cls_dense2 = nn.Linear(self.embedding_dim, self.n_hidden_units[-1] * self.n_heads)
-        self.cls_bn = nn.BatchNorm1d(self.n_hidden_units[-1] * self.n_heads)
+        self.cls_dense2 = nn.Linear(self.embedding_dim, self.penultimate_hidden_unit)
 
         self.attn_dense = nn.Linear(self.vocab_size, self.embedding_dim)
-        self.attn_bn = nn.BatchNorm1d(self.n_hidden_units[-1] * self.n_heads)
-        self.dense = nn.Linear(self.n_hidden_units[-1] * self.n_heads, self.penultimate_hidden_unit)
+        # self.dense = nn.Linear(self.n_hidden_units[-1] * self.n_heads, self.penultimate_hidden_unit)
 
     def forward(self, x, adjs=None):
         """
@@ -92,8 +121,9 @@ class MalGAT(nn.Module):
         """
         assert (len(x) >= self.k) and (self.k >= 0)  # x has the shape [self.k, batch_size, vocab_size]
         x_comb = torch.clip(torch.sum(x, dim=0), min=0, max=1.)
-        cls_code = torch.amax(self.activation(self.cls_dense1((x_comb.unsqueeze(-1) * self.embedding_weight).permute(0, 2, 1))), dim=-1)
-        cls_code = self.cls_bn(self.activation(self.cls_dense2(cls_code)))
+        cls_code = torch.amax(
+            self.activation(self.cls_dense1((x_comb.unsqueeze(-1) * self.embedding_weight).permute(0, 2, 1))), dim=-1)
+        cls_code = self.activation(self.cls_dense2(cls_code))
 
         if self.k > 0:
             if adjs is None:
@@ -111,12 +141,17 @@ class MalGAT(nn.Module):
                 for headers in self.attn_layers:
                     features = F.dropout(features, self.dropout, training=self.training)
                     features = torch.cat([header(features, adjs[i]) for header in headers], dim=-1)
-                attn_code = self.cls_bn(
-                    torch.amax(self.activation(self.attn_dense((x[i].unsqueeze(-1) * features).permute(0, 2, 1))), dim=-1))
+                features = F.dropout(features, self.dropout, training=self.training)
+                # features = torch.stack([header_out(features, adjs[i]) for header_out in self.attn_layers_out],
+                #                        dim=-2).sum(dim=-2) / self.n_heads
+                features = self.attn_out(features, adjs[i])
+                attn_code = torch.amax(self.activation(self.attn_dense((x[i].unsqueeze(-1) * features).permute(0, 2, 1))), dim=-1)
                 latent_codes.append(attn_code)
             latent_codes = torch.stack(latent_codes, dim=1)  # latent_codes: [batch_size, self.k+1, feature_dim]
-            latent_codes = self.cls_attn_layer(latent_codes)
+            latent_codes = F.dropout(latent_codes, self.dropout, training=self.training)
+            latent_codes = F.elu(torch.stack([header_cls(latent_codes) for header_cls in self.cls_attn_layers], dim=-2).sum(
+                -2) / self.n_heads)
         else:
             latent_codes = cls_code
-        latent_codes = self.activation(self.dense(latent_codes))
+        # latent_codes = self.activation(self.dense(latent_codes))
         return latent_codes

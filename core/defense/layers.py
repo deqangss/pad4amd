@@ -36,7 +36,7 @@ class GraphAttentionLayerCLS(nn.Module):
         attention = F.dropout(attention, self.dropout, training=self.training)
 
         h_prime = torch.squeeze(torch.matmul(attention, h), dim=1)
-        return F.elu(h_prime)
+        return h_prime
 
     def __repr__(self):
         return self.__class__.__name__ + ' (' + str(self.feature_dim) + ')'
