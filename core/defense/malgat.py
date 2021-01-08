@@ -77,8 +77,10 @@ class MalGAT(nn.Module):
         # cls function
         self.cls_dense1 = nn.Linear(self.vocab_size, self.embedding_dim)
         self.cls_dense2 = nn.Linear(self.embedding_dim, self.n_hidden_units[-1] * self.n_heads)
+        self.cls_bn = nn.BatchNorm1d(self.n_hidden_units[-1] * self.n_heads)
 
-        self.dense_attn_compress = nn.Linear(self.vocab_size, self.embedding_dim)
+        self.attn_dense = nn.Linear(self.vocab_size, self.embedding_dim)
+        self.attn_bn = nn.BatchNorm1d(self.n_hidden_units[-1] * self.n_heads)
         self.dense = nn.Linear(self.n_hidden_units[-1] * self.n_heads, self.penultimate_hidden_unit)
 
     def forward(self, x, adjs=None):
@@ -91,7 +93,8 @@ class MalGAT(nn.Module):
         assert (len(x) >= self.k) and (self.k >= 0)  # x has the shape [self.k, batch_size, vocab_size]
         x_comb = torch.clip(torch.sum(x, dim=0), min=0, max=1.)
         cls_code = torch.amax(self.activation(self.cls_dense1((x_comb.unsqueeze(-1) * self.embedding_weight).permute(0, 2, 1))), dim=-1)
-        cls_code = self.activation(self.cls_dense2(cls_code))
+        cls_code = self.cls_bn(self.activation(self.cls_dense2(cls_code)))
+
         if self.k > 0:
             if adjs is None:
                 if self.sparse:
@@ -101,13 +104,15 @@ class MalGAT(nn.Module):
                     ])
                 else:
                     adjs = torch.stack([torch.matmul(_x.unsqueeze(-1), _x.unsqueeze(-2)) for _x in x[:self.k]])
+
             latent_codes = [cls_code]
             for i in range(self.k):
                 features = torch.unsqueeze(x[i], dim=-1) * torch.unsqueeze(self.embedding_weight, dim=0)
                 for headers in self.attn_layers:
                     features = F.dropout(features, self.dropout, training=self.training)
                     features = torch.cat([header(features, adjs[i]) for header in headers], dim=-1)
-                attn_code = torch.amax(self.activation(self.dense_attn_compress((x[i].unsqueeze(-1) * features).permute(0, 2, 1))), dim=-1)
+                attn_code = self.cls_bn(
+                    torch.amax(self.activation(self.attn_dense((x[i].unsqueeze(-1) * features).permute(0, 2, 1))), dim=-1))
                 latent_codes.append(attn_code)
             latent_codes = torch.stack(latent_codes, dim=1)  # latent_codes: [batch_size, self.k+1, feature_dim]
             latent_codes = self.cls_attn_layer(latent_codes)
