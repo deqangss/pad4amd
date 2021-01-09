@@ -120,7 +120,7 @@ class MalGAT(nn.Module):
                 attn_code = torch.amax(
                     self.activation(self.attn_dense((x[i].unsqueeze(-1) * features).permute(0, 2, 1))), dim=-1)
                 latent_codes.append(attn_code)
-            latent_codes = torch.stack(latent_codes, dim=1)  # latent_codes: [batch_size, self.k+1, feature_dim]
+            latent_codes = torch.stack(latent_codes, dim=1)  # latent_codes: [batch_size, self.k, feature_dim]
             latent_codes = F.dropout(latent_codes, self.dropout, training=self.training)
             latent_codes = self.activation(
                 torch.stack([header_cls(latent_codes, cls_code) for header_cls in self.cls_attn_layers], dim=-2).sum(
