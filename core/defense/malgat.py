@@ -135,11 +135,9 @@ class MalGAT(nn.Module):
                 else:
                     adjs = torch.stack([torch.matmul(_x.unsqueeze(-1), _x.unsqueeze(-2)) for _x in x[:self.k]])
 
-            latent_codes = [cls_code]
+            latent_codes = []
             for i in range(self.k):
                 features = torch.unsqueeze(x[i], dim=-1) * torch.unsqueeze(self.embedding_weight, dim=0)
-                print(x[i])
-                print(features)
                 for headers in self.attn_layers:
                     features = F.dropout(features, self.dropout, training=self.training)
                     features = torch.cat([header(features, adjs[i]) for header in headers], dim=-1)
@@ -151,8 +149,8 @@ class MalGAT(nn.Module):
                 latent_codes.append(attn_code)
             latent_codes = torch.stack(latent_codes, dim=1)  # latent_codes: [batch_size, self.k+1, feature_dim]
             latent_codes = F.dropout(latent_codes, self.dropout, training=self.training)
-            latent_codes = F.elu(torch.stack([header_cls(latent_codes) for header_cls in self.cls_attn_layers], dim=-2).sum(
-                -2) / self.n_heads)
+            latent_codes = F.elu(torch.stack([header_cls(latent_codes, cls_code) for header_cls in self.cls_attn_layers], dim=-2).sum(
+                -2) / self.n_heads) + cls_code
         else:
             latent_codes = cls_code
         # latent_codes = self.activation(self.dense(latent_codes))

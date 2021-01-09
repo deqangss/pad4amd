@@ -62,7 +62,7 @@ def _main():
     train_data, trainy = dataset.train_dataset
     val_data, valy = dataset.validation_dataset
     test_data, testy = dataset.test_dataset
-    train_dataset_producer = dataset.get_input_producer(train_data[8848:8880], trainy[8848:8880], batch_size=args.batch_size, name='train')
+    train_dataset_producer = dataset.get_input_producer(train_data, trainy, batch_size=args.batch_size, name='train')
     val_dataset_producer = dataset.get_input_producer(val_data, valy, batch_size=args.batch_size, name='val')
     test_dataset_producer = dataset.get_input_producer(test_data, testy, batch_size=args.batch_size, name='test')
     assert dataset.n_classes == 2

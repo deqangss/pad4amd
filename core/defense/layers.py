@@ -19,10 +19,10 @@ class GraphAttentionLayerCLS(nn.Module):
         self.a = nn.Parameter(torch.empty(size=(2 * self.feature_dim, 1)))
         nn.init.xavier_uniform_(self.a.data, gain=1.414)
 
-    def forward(self, h, cls_idx=0):
+    def forward(self, h, cls):
 
-        N = h.size()[1] # h.shape = (batch_size, number_of_subgraphs+1, feature_dim)
-        cls_h_repeated = h[:, cls_idx:cls_idx+1].repeat_interleave(N, dim=1)
+        N = h.size()[1] # h.shape = (batch_size, number_of_subgraphs, feature_dim)
+        cls_h_repeated = cls.unsqueeze(dim=1).repeat_interleave(N, dim=1)
         # e1 || e1
         # e1 || e2
         # e1 || e3
