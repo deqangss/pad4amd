@@ -138,6 +138,8 @@ class MalGAT(nn.Module):
             latent_codes = [cls_code]
             for i in range(self.k):
                 features = torch.unsqueeze(x[i], dim=-1) * torch.unsqueeze(self.embedding_weight, dim=0)
+                print(x[i])
+                print(features)
                 for headers in self.attn_layers:
                     features = F.dropout(features, self.dropout, training=self.training)
                     features = torch.cat([header(features, adjs[i]) for header in headers], dim=-1)
