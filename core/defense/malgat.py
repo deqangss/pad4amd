@@ -61,7 +61,7 @@ class MalGAT(nn.Module):
                                                      current_unit,
                                                      self.dropout,
                                                      self.alpha,
-                                                     concat=False))
+                                                     concat=True))
             self.attn_layers.append(attn_headers)
         # registration
         for idx_i, attn_headers in enumerate(self.attn_layers):
@@ -114,12 +114,9 @@ class MalGAT(nn.Module):
             latent_codes = []
             for i in range(self.k):
                 features = torch.unsqueeze(x[i], dim=-1) * torch.unsqueeze(self.embedding_weight, dim=0)
-                for headers in self.attn_layers[:-1]:
+                for headers in self.attn_layers:
                     features = F.dropout(features, self.dropout, training=self.training)
-                    # the activation function if elu, which is used in GAT
-                    features = torch.cat([F.elu(header(features, adjs[i])) for header in headers], dim=-1)
-                features = F.dropout(features, self.dropout, training=self.training)
-                features = F.elu(torch.stack([header(features, adjs[i]) for header in self.attn_layers[-1]], dim=-2).sum(-2) / self.n_heads)
+                    features = torch.cat([header(features, adjs[i]) for header in headers], dim=-1)
                 attn_code = torch.amax(
                     self.activation(self.attn_dense((x[i].unsqueeze(-1) * features).permute(0, 2, 1))), dim=-1)
                 latent_codes.append(attn_code)
@@ -127,7 +124,7 @@ class MalGAT(nn.Module):
             latent_codes = F.dropout(latent_codes, self.dropout, training=self.training)
             latent_codes = self.activation(
                 torch.stack([header_cls(latent_codes, cls_code) for header_cls in self.cls_attn_layers], dim=-2).sum(
-                    -2) / self.n_heads) + self.activation(self.dense(cls_code))
+                    -2) / self.n_heads + self.dense(cls_code))
         else:
             latent_codes = self.activation(self.dense(cls_code))
         return latent_codes
