@@ -85,7 +85,6 @@ class MalGAT(nn.Module):
         self.cls_dense2 = nn.Linear(self.embedding_dim, self.n_hidden_units[-1] * self.n_heads)
 
         self.attn_dense = nn.Linear(self.vocab_size, 8)
-
         self.dense = nn.Linear(self.n_hidden_units[-1] * self.n_heads, self.penultimate_hidden_unit)
 
     def forward(self, x, adjs=None):
