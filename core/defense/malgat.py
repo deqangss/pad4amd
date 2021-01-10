@@ -61,7 +61,7 @@ class MalGAT(nn.Module):
                                                      current_unit,
                                                      self.dropout,
                                                      self.alpha,
-                                                     concat=True))
+                                                     concat=False))
             self.attn_layers.append(attn_headers)
         # registration
         for idx_i, attn_headers in enumerate(self.attn_layers):
@@ -71,7 +71,7 @@ class MalGAT(nn.Module):
         self.cls_attn_layers = []
         for head_id in range(self.n_heads):
             self.cls_attn_layers.append(
-                GraphAttentionLayerCLS(self.n_hidden_units[-1] * self.n_heads,
+                GraphAttentionLayerCLS(self.n_hidden_units[-1],
                                        self.penultimate_hidden_unit,
                                        self.dropout,
                                        self.alpha)
@@ -81,12 +81,12 @@ class MalGAT(nn.Module):
             self.add_module('attention_cls_layer_header_{}'.format(idx_i), cls_attn_layer)
 
         # cls function
-        self.cls_dense1 = nn.Linear(self.vocab_size, self.embedding_dim)
-        self.cls_dense2 = nn.Linear(self.embedding_dim, self.n_hidden_units[-1] * self.n_heads)
+        self.cls_dense1 = nn.Linear(self.vocab_size, 8)
+        self.cls_dense2 = nn.Linear(self.embedding_dim, self.n_hidden_units[-1])
 
-        self.attn_dense = nn.Linear(self.vocab_size, self.embedding_dim)
+        self.attn_dense = nn.Linear(self.vocab_size, 8)
 
-        self.dense = nn.Linear(self.n_hidden_units[-1] * self.n_heads, self.penultimate_hidden_unit)
+        self.dense = nn.Linear(self.n_hidden_units[-1], self.penultimate_hidden_unit)
 
     def forward(self, x, adjs=None):
         """
@@ -114,9 +114,12 @@ class MalGAT(nn.Module):
             latent_codes = []
             for i in range(self.k):
                 features = torch.unsqueeze(x[i], dim=-1) * torch.unsqueeze(self.embedding_weight, dim=0)
-                for headers in self.attn_layers:
+                for headers in self.attn_layers[:-1]:
                     features = F.dropout(features, self.dropout, training=self.training)
-                    features = torch.cat([header(features, adjs[i]) for header in headers], dim=-1)
+                    # the activation function if elu, which is used in GAT
+                    features = torch.cat([F.elu(header(features, adjs[i])) for header in headers], dim=-1)
+                features = F.dropout(features, self.dropout, training=self.training)
+                features = F.elu(torch.stack([header(features, adjs[i]) for header in self.attn_layers[-1]], dim=-2).sum(-2) / self.n_heads)
                 attn_code = torch.amax(
                     self.activation(self.attn_dense((x[i].unsqueeze(-1) * features).permute(0, 2, 1))), dim=-1)
                 latent_codes.append(attn_code)
