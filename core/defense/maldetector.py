@@ -77,6 +77,12 @@ class MalwareDetector(nn.Module):
         if len(kwargs) > 0:
             warnings.warn("Unknown hyper-parameters {}".format(str(kwargs)))
 
+    def adv_eval(self):
+        self.malgat.adv_eval()
+
+    def non_adv_eval(self):
+        self.malgat.non_adv_eval()
+
     def forward(self, feature, adj=None):
         latent_representation = self.malgat(feature, adj)
         latent_representation = F.dropout(latent_representation, self.dropout, training=self.training)

@@ -87,6 +87,16 @@ class MalGAT(nn.Module):
         self.attn_dense = nn.Linear(self.vocab_size, 8)
         self.dense = nn.Linear(self.n_hidden_units[-1] * self.n_heads, self.penultimate_hidden_unit)
 
+    def adv_eval(self):
+        for headers in self.attn_layers:
+            for header in headers:
+                header.adv_eval()
+
+    def non_adv_eval(self):
+        for headers in self.attn_layers:
+            for header in headers:
+                header.disable_adv_eval()
+
     def forward(self, x, adjs=None):
         """
         forward the neural network

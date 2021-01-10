@@ -29,7 +29,7 @@ feature_argparse.add_argument('--timeout', type=int, default=20,
                               help='The maximum elapsed time for analyzing an app')
 feature_argparse.add_argument('--use_feature_selection', action='store_true', default=True,
                               help='Whether use feature selection or not.')
-feature_argparse.add_argument('--max_vocab_size', type=int, default=8000,
+feature_argparse.add_argument('--max_vocab_size', type=int, default=5000,
                               help='The maximum number of vocabulary size')
 feature_argparse.add_argument('--update', action='store_true', default=False,
                               help='Whether update the existed features.')
@@ -43,7 +43,7 @@ detector_argparse.add_argument('--hidden_units', type=lambda s: [int(u) for u in
 detector_argparse.add_argument('--penultimate_hidden_dim', type=int, default=64, help='dimension of penultimate layer')
 detector_argparse.add_argument('--n_heads', type=int, default=2, help='number of headers')
 detector_argparse.add_argument('--dropout', type=float, default=0.6, help='dropout rate')
-detector_argparse.add_argument('--k', type=int, default=32, help='sampling size')
+detector_argparse.add_argument('--k', type=int, default=50, help='sampling size')
 detector_argparse.add_argument('--n_sample_times', type=int, default=5, help='times of sampling')
 detector_argparse.add_argument('--alpha', type=float, default=0.2, help='slope coefficient of leaky-relu')
 detector_argparse.add_argument('--sparse', action='store_true', default=True, help='GAT with sparse version or not.')
@@ -85,6 +85,7 @@ def _main():
     # test: accuracy
     model.predict(test_dataset_producer)
     # test: gradients of loss w.r.t. input
+    model.adv_eval()
     for res in test_dataset_producer:
         x_batch, adj, y_batch, _1 = res
         x_batch, adj, y_batch = to_tensor(x_batch, adj, y_batch, dv)

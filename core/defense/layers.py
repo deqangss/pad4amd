@@ -67,6 +67,14 @@ class GraphAttentionLayer(nn.Module):
 
         self.leakyrelu = nn.LeakyReLU(self.alpha)
 
+        self.adv_testing = None
+
+    def adv_eval(self):
+        self.adv_testing = True
+
+    def non_adv_eval(self):
+        self.adv_testing = False
+
     def forward(self, h, adj):
         Wh = torch.matmul(h, self.W)  # h.shape: (batch_size, vocab_size, in_features), Wh.shape: (batch_size, vocab_size, out_features)
         a_input = self._prepare_attentional_mechanism_input(Wh)
@@ -149,6 +157,14 @@ class SpGraphAttentionLayer(nn.Module):
 
         self.leakyrelu = nn.LeakyReLU(self.alpha)
 
+        self.adv_testing = None
+
+    def adv_eval(self):
+        self.adv_testing = True
+
+    def non_adv_eval(self):
+        self.adv_testing = False
+
     def forward(self, input, adj):
         """
         pass through the sparse graph attention layer
@@ -182,10 +198,11 @@ class SpGraphAttentionLayer(nn.Module):
         # edge_e: E
 
         sp_edge_e = torch.sparse_coo_tensor(edge, edge_e, torch.Size([batch_size, N, N]))
-
-        e_rowsum = torch.stack(
-            [torch.sparse.mm(sp_e, torch.ones(size=(N, 1), dtype=torch.float, device=dv)) for sp_e in sp_edge_e])
-        # e_rowsum = torch.bmm(sp_edge_e, torch.ones(size=(batch_size, N, 1), dtype=torch.float, device=dv)), # encountering error
+        if self.training or self.adv_testing:
+            e_rowsum = torch.stack(
+                [torch.sparse.mm(sp_e, torch.ones(size=(N, 1), dtype=torch.float, device=dv)) for sp_e in sp_edge_e])
+        else:
+            e_rowsum = torch.bmm(sp_edge_e, torch.ones(size=(batch_size, N, 1), dtype=torch.float, device=dv))  # encounter runtime error
         # e_rowsum = self.special_spmm(edge, edge_e, torch.Size([N, N]), torch.ones(size=(N, 1), device=dv))
         # e_rowsum: batch_size x N x 1
 
@@ -193,10 +210,12 @@ class SpGraphAttentionLayer(nn.Module):
         # edge_e: E
         sp_edge_e = torch.sparse_coo_tensor(edge, edge_e, torch.Size([batch_size, N, N]))
 
-        h_prime = torch.stack(
-            [torch.sparse.mm(sp_e, dense_e) for sp_e, dense_e in zip(sp_edge_e, h)]
-        )
-        # h_prime = torch.bmm(sp_edge_e, h)
+        if self.training or self.adv_testing:
+            h_prime = torch.stack(
+                [torch.sparse.mm(sp_e, dense_e) for sp_e, dense_e in zip(sp_edge_e, h)]
+            )
+        else:
+            h_prime = torch.bmm(sp_edge_e, h)
         # h_prime = self.special_spmm(edge, edge_e, torch.Size([N, N]), h)
         assert not torch.isnan(h_prime).any()
         # h_prime: batch_size x N x out
