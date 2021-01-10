@@ -71,7 +71,7 @@ class MalGAT(nn.Module):
         self.cls_attn_layers = []
         for head_id in range(self.n_heads):
             self.cls_attn_layers.append(
-                GraphAttentionLayerCLS(self.n_hidden_units[-1],
+                GraphAttentionLayerCLS(self.n_hidden_units[-1] * self.n_heads,
                                        self.penultimate_hidden_unit,
                                        self.dropout,
                                        self.alpha)
@@ -82,11 +82,11 @@ class MalGAT(nn.Module):
 
         # cls function
         self.cls_dense1 = nn.Linear(self.vocab_size, 8)
-        self.cls_dense2 = nn.Linear(self.embedding_dim, self.n_hidden_units[-1])
+        self.cls_dense2 = nn.Linear(self.embedding_dim, self.n_hidden_units[-1] * self.n_heads)
 
         self.attn_dense = nn.Linear(self.vocab_size, 8)
 
-        self.dense = nn.Linear(self.n_hidden_units[-1], self.penultimate_hidden_unit)
+        self.dense = nn.Linear(self.n_hidden_units[-1] * self.n_heads, self.penultimate_hidden_unit)
 
     def forward(self, x, adjs=None):
         """
