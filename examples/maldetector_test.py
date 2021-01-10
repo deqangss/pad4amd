@@ -74,13 +74,13 @@ def _main():
         dv = 'cuda'
     model = MalwareDetector(dataset.vocab_size, dataset.n_classes, device=dv, **vars(args))
     model = model.to(dv)
-    # save_args(path.join(path.dirname(model.model_save_path), "hparam"), vars(args))
-    # model.fit(train_dataset_producer,
-    #           val_dataset_producer,
-    #           epochs=args.epochs,
-    #           lr=args.lr,
-    #           weight_decay=args.weight_decay
-    #           )
+    save_args(path.join(path.dirname(model.model_save_path), "hparam"), vars(args))
+    model.fit(train_dataset_producer,
+              val_dataset_producer,
+              epochs=args.epochs,
+              lr=args.lr,
+              weight_decay=args.weight_decay
+              )
 
     # test: accuracy
     model.predict(test_dataset_producer)
