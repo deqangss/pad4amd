@@ -39,7 +39,7 @@ class MalwareDetector(nn.Module):
 
         self.malgat = MalGAT(self.vocab_size,
                              self.embedding_dim,
-                             self.n_hidden_units,
+                             self.hidden_units,
                              self.penultimate_hidden_unit,
                              self.n_heads,
                              self.dropout,
@@ -54,7 +54,7 @@ class MalwareDetector(nn.Module):
 
     def parse_args(self,
                    embedding_dim=32,
-                   n_hidden_units=None,
+                   hidden_units=None,
                    penultimate_hidden_unit=64,
                    n_heads=8,
                    dropout=0.6,
@@ -64,10 +64,10 @@ class MalwareDetector(nn.Module):
                    **kwargs
                    ):
         self.embedding_dim = embedding_dim
-        if n_hidden_units is None:
-            self.n_hidden_units = [8]
+        if hidden_units is None:
+            self.hidden_units = [8]
         else:
-            self.n_hidden_units = n_hidden_units
+            self.hidden_units = hidden_units
         self.penultimate_hidden_unit = penultimate_hidden_unit
         self.n_heads = n_heads
         self.dropout = dropout
