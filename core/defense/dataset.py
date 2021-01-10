@@ -13,7 +13,7 @@ from tools import utils
 
 
 class Dataset(torch.utils.data.Dataset):
-    def __init__(self, dataset_name='drebin', k=100, is_adj=False, use_cache=False, seed=0, n_sgs_max=1024, feature_ext_args=None):
+    def __init__(self, dataset_name='drebin', k=100, is_adj=False, use_cache=False, seed=0, n_sgs_max=512, feature_ext_args=None):
         """
         build dataset for ml model learning
         :param dataset_name: String, the dataset name, expected 'drebin' or 'androzoo'
