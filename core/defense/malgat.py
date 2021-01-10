@@ -127,7 +127,7 @@ class MalGAT(nn.Module):
             latent_codes = F.dropout(latent_codes, self.dropout, training=self.training)
             latent_codes = self.activation(
                 torch.stack([header_cls(latent_codes, cls_code) for header_cls in self.cls_attn_layers], dim=-2).sum(
-                    -2) / self.n_heads + self.dense(cls_code))
+                    -2) / self.n_heads) + self.activation(self.dense(cls_code))
         else:
             latent_codes = self.activation(self.dense(cls_code))
         return latent_codes
