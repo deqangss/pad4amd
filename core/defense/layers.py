@@ -198,11 +198,11 @@ class SpGraphAttentionLayer(nn.Module):
         # edge_e: E
 
         sp_edge_e = torch.sparse_coo_tensor(edge, edge_e, torch.Size([batch_size, N, N]))
-        if self.training or self.adv_testing:
-            e_rowsum = torch.stack(
-                [torch.sparse.mm(sp_e, torch.ones(size=(N, 1), dtype=torch.float, device=dv)) for sp_e in sp_edge_e])
-        else:
-            e_rowsum = torch.bmm(sp_edge_e, torch.ones(size=(batch_size, N, 1), dtype=torch.float, device=dv))  # encounter runtime error
+        # if self.training or self.adv_testing:
+        e_rowsum = torch.stack(
+            [torch.sparse.mm(sp_e, torch.ones(size=(N, 1), dtype=torch.float, device=dv)) for sp_e in sp_edge_e])
+        # else:
+        #     e_rowsum = torch.bmm(sp_edge_e, torch.ones(size=(batch_size, N, 1), dtype=torch.float, device=dv))  # encounter runtime error
         # e_rowsum = self.special_spmm(edge, edge_e, torch.Size([N, N]), torch.ones(size=(N, 1), device=dv))
         # e_rowsum: batch_size x N x 1
 
@@ -210,12 +210,12 @@ class SpGraphAttentionLayer(nn.Module):
         # edge_e: E
         sp_edge_e = torch.sparse_coo_tensor(edge, edge_e, torch.Size([batch_size, N, N]))
 
-        if self.training or self.adv_testing:
-            h_prime = torch.stack(
-                [torch.sparse.mm(sp_e, dense_e) for sp_e, dense_e in zip(sp_edge_e, h)]
-            )
-        else:
-            h_prime = torch.bmm(sp_edge_e, h)
+        # if self.training or self.adv_testing:
+        h_prime = torch.stack(
+            [torch.sparse.mm(sp_e, dense_e) for sp_e, dense_e in zip(sp_edge_e, h)]
+        )
+        # else:
+        #     h_prime = torch.bmm(sp_edge_e, h)
         # h_prime = self.special_spmm(edge, edge_e, torch.Size([N, N]), h)
         assert not torch.isnan(h_prime).any()
         # h_prime: batch_size x N x out
