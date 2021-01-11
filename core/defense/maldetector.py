@@ -141,7 +141,20 @@ class MalwareDetector(nn.Module):
         :param validation_data_producer: Object, an iterator for producing validation dataset
         :param verbose: Boolean, whether to show verbose logs
         """
-        optimizer = optim.Adam(self.parameters(), lr=lr, weight_decay=weight_decay)
+        def param_customizing():
+            customized_params_no_decay = []
+            customized_params_decay = []
+
+            for name, param in self.named_parameters():
+                if '.cls_dense' in name:
+                    customized_params_no_decay.append(param)
+                elif 'dense.' in name and 'attn_dense.' not in name:
+                    customized_params_no_decay.append(param)
+                else:
+                    customized_params_decay.append(param)
+            return [{'params': customized_params_no_decay, 'weight_decay': 0.},
+                    {'params': customized_params_decay, 'weight_decay': weight_decay}]
+        optimizer = optim.Adam(param_customizing(), lr=lr)
         best_avg_acc = 0.
         total_time = 0.
         nbatchs = len(train_data_producer)
