@@ -146,9 +146,9 @@ class MalwareDetector(nn.Module):
             customized_params_decay = []
 
             for name, param in self.named_parameters():
-                if '.cls_dense' in name:
+                if '.mod_frq' in name:
                     customized_params_no_decay.append(param)
-                elif 'dense.' in name and 'attn_dense.' not in name:
+                elif 'dense.weight' == name or 'dense.bias' == name:
                     customized_params_no_decay.append(param)
                 elif 'embedding_weight' in name:
                     customized_params_no_decay.append(param)
@@ -157,6 +157,8 @@ class MalwareDetector(nn.Module):
             return [{'params': customized_params_no_decay, 'weight_decay': 0.},
                     {'params': customized_params_decay, 'weight_decay': weight_decay}]
         optimizer = optim.Adam(param_customizing(), lr=lr)
+        import sys
+        sys.exit(1)
         best_avg_acc = 0.
         total_time = 0.
         nbatchs = len(train_data_producer)
