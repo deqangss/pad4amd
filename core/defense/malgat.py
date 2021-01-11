@@ -68,11 +68,17 @@ class MalGAT(nn.Module):
             for idx_j, header in enumerate(attn_headers):
                 self.add_module('attention_layer_{}_header_{}'.format(idx_i, idx_j), header)
 
+        self.attn_out = graph_attn_layer(self.n_hidden_units[-1] * self.n_heads,
+                                         penultimate_hidden_unit,
+                                         self.dropout,
+                                         self.alpha,
+                                         concat=True)
+        self.add_module('attention_layer_out', self.attn_out)
+
         self.cls_attn_layers = []
         for head_id in range(self.n_heads):
             self.cls_attn_layers.append(
-                GraphAttentionLayerCLS(self.n_hidden_units[-1] * self.n_heads,
-                                       self.penultimate_hidden_unit,
+                GraphAttentionLayerCLS(self.penultimate_hidden_unit,
                                        self.dropout,
                                        self.alpha)
             )
@@ -80,16 +86,13 @@ class MalGAT(nn.Module):
         for idx_i, cls_attn_layer in enumerate(self.cls_attn_layers):
             self.add_module('attention_cls_layer_header_{}'.format(idx_i), cls_attn_layer)
 
-        self.cls_weight = nn.Parameter(torch.empty(size=(self.n_hidden_units[-1] * self.n_heads,)))
+        self.cls_weight = nn.Parameter(torch.empty(size=(self.penultimate_hidden_unit,)))
         nn.init.normal_(self.cls_weight.data)
         self.attn_dense = nn.Linear(self.vocab_size, self.embedding_dim)
 
         # another modality function
         self.mod_frq_dense = nn.Linear(self.vocab_size, self.embedding_dim)
-        self.mod_frq_cls_dense = nn.Linear(self.embedding_dim, self.n_hidden_units[-1] * self.n_heads)
-        self.mod_frq_dense_out = nn.Linear(self.embedding_dim, self.penultimate_hidden_unit)
-
-        # self.dense = nn.Linear(self.n_hidden_units[-1] * self.n_heads, self.penultimate_hidden_unit)
+        self.mod_frq_cls_dense = nn.Linear(self.embedding_dim, self.penultimate_hidden_unit)
 
     def adv_eval(self):
         for headers in self.attn_layers:
@@ -129,6 +132,8 @@ class MalGAT(nn.Module):
                 for headers in self.attn_layers:
                     features = F.dropout(features, self.dropout, training=self.training)
                     features = torch.cat([header(features, adjs[i]) for header in headers], dim=-1)
+                features = F.dropout(features, self.dropout, training=self.training)
+                features = self.attn_out(features, adjs[i])
                 attn_code = torch.amax(
                     self.activation(self.attn_dense((x[i].unsqueeze(-1) * features).permute(0, 2, 1))), dim=-1)
                 latent_codes.append(attn_code)

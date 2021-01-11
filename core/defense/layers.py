@@ -9,38 +9,33 @@ import torch.nn.functional as F
 
 
 class GraphAttentionLayerCLS(nn.Module):
-    def __init__(self, in_features, out_features, dropout, alpha):
+    def __init__(self, feature_dim, dropout, alpha):
         super(GraphAttentionLayerCLS, self).__init__()
-        self.in_features = in_features
-        self.out_features = out_features
+        self.feature_dim = feature_dim
         self.dropout = dropout
         self.alpha = alpha
         self.leakyrelu = nn.LeakyReLU(self.alpha)
 
-        self.W = nn.Parameter(torch.empty(size=(self.in_features, self.out_features)))
-        nn.init.xavier_uniform_(self.W.data, gain=1.414)
-        self.a = nn.Parameter(torch.empty(size=(2 * out_features, 1)))
+        self.a = nn.Parameter(torch.empty(size=(2 * self.feature_dim, 1)))
         nn.init.xavier_uniform_(self.a.data, gain=1.414)
 
     def forward(self, h, cls):
-        Wh = torch.matmul(h, self.W)
-        Wcls = torch.matmul(cls, self.W)
 
         N = h.size()[1] # h.shape = (batch_size, number_of_subgraphs, feature_dim)
-        cls_h_repeated = Wcls.unsqueeze(dim=1).repeat_interleave(N, dim=1)
+        cls_h_repeated = cls.unsqueeze(dim=1).repeat_interleave(N, dim=1)
         # e1 || e1
         # e1 || e2
         # e1 || e3
         # ...
         # e1 || eN
 
-        all_combinations_matrix = torch.cat([cls_h_repeated, Wh], dim=-1)  # shape is [batch_size, number_of_subgraphs+1, 2 * feature_dim]
+        all_combinations_matrix = torch.cat([cls_h_repeated, h], dim=-1)  # shape is [batch_size, number_of_subgraphs, 2 * feature_dim]
         all_combinations_matrix.size()
         attention = self.leakyrelu(torch.matmul(all_combinations_matrix, self.a)).permute(0, 2, 1) # attention.shape is [batch_size, 1, number_of_subgraphs+1]
         attention = F.softmax(attention, dim=-1)
         attention = F.dropout(attention, self.dropout, training=self.training)
 
-        h_prime = torch.squeeze(torch.matmul(attention, Wh), dim=1)
+        h_prime = torch.squeeze(torch.matmul(attention, h), dim=1)
         return h_prime
 
     def __repr__(self):
