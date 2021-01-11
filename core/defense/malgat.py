@@ -85,8 +85,9 @@ class MalGAT(nn.Module):
         self.attn_dense = nn.Linear(self.vocab_size, self.embedding_dim)
 
         # another modality function
-        self.dense = nn.Linear(self.vocab_size, self.embedding_dim)
-        self.dense_out = nn.Linear(self.embedding_dim, self.penultimate_hidden_unit)
+        self.mod_frq_dense = nn.Linear(self.vocab_size, self.embedding_dim)
+        self.mod_frq_cls_dense = nn.Linear(self.embedding_dim, self.n_hidden_units[-1] * self.n_heads)
+        self.mod_frq_dense_out = nn.Linear(self.embedding_dim, self.penultimate_hidden_unit)
 
         # self.dense = nn.Linear(self.n_hidden_units[-1] * self.n_heads, self.penultimate_hidden_unit)
 
@@ -109,8 +110,8 @@ class MalGAT(nn.Module):
         """
         assert (len(x) >= self.k) and (self.k >= 0)  # x has the shape [self.k, batch_size, vocab_size]
         x_comb = torch.clip(torch.sum(x, dim=0), min=0, max=1.)
-        dense_mod1 = torch.amax(
-            self.activation(self.dense((x_comb.unsqueeze(-1) * self.embedding_weight).permute(0, 2, 1))), dim=-1)
+        mod1_code = torch.amax(
+            self.activation(self.mod_frq_dense((x_comb.unsqueeze(-1) * self.embedding_weight).permute(0, 2, 1))), dim=-1)
 
         if self.k > 0:
             if adjs is None:
@@ -134,9 +135,10 @@ class MalGAT(nn.Module):
             latent_codes = torch.stack(latent_codes, dim=1)  # latent_codes: [batch_size, self.k, feature_dim]
             latent_codes = F.dropout(latent_codes, self.dropout, training=self.training)
             cls_weights = torch.stack([self.cls_weight] * x[0].size()[0])
+            cls_code = self.activation(self.mod_frq_cls_dense(mod1_code))
             latent_codes = self.activation(
-                torch.stack([header_cls(latent_codes, cls_weights) for header_cls in self.cls_attn_layers], dim=-2).sum(
-                    -2) / self.n_heads + self.dense_out(dense_mod1))
+                torch.stack([header_cls(latent_codes, cls_code) for header_cls in self.cls_attn_layers], dim=-2).sum(
+                    -2) / self.n_heads + self.dense_out(mod1_code))
         else:
-            latent_codes = self.activation(self.dense_out(dense_mod1))
+            latent_codes = self.activation(self.mod_frq_cls_dense(mod1_code))
         return latent_codes
