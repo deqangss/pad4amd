@@ -40,10 +40,10 @@ detector_argparse.add_argument('--seed', type=int, default=0, help='random seed.
 detector_argparse.add_argument('--embedding_dim', type=int, default=8, help='embedding dimension')
 detector_argparse.add_argument('--hidden_units', type=lambda s: [int(u) for u in s.split(',')], default='32',
                                help='delimited list input, e.g., "32,32"', )
-detector_argparse.add_argument('--penultimate_hidden_dim', type=int, default=64, help='dimension of penultimate layer')
+detector_argparse.add_argument('--penultimate_hidden_dim', type=int, default=32, help='dimension of penultimate layer')
 detector_argparse.add_argument('--n_heads', type=int, default=2, help='number of headers')
 detector_argparse.add_argument('--dropout', type=float, default=0.6, help='dropout rate')
-detector_argparse.add_argument('--k', type=int, default=50, help='sampling size')
+detector_argparse.add_argument('--k', type=int, default=32, help='sampling size')
 detector_argparse.add_argument('--n_sample_times', type=int, default=5, help='times of sampling')
 detector_argparse.add_argument('--alpha', type=float, default=0.2, help='slope coefficient of leaky-relu')
 detector_argparse.add_argument('--sparse', action='store_true', default=True, help='GAT with sparse version or not.')
