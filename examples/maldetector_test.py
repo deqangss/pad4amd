@@ -39,8 +39,8 @@ detector_argparse.add_argument('--cuda', action='store_true', default=False, hel
 detector_argparse.add_argument('--seed', type=int, default=0, help='random seed.')
 detector_argparse.add_argument('--embedding_dim', type=int, default=8, help='embedding dimension')
 detector_argparse.add_argument('--hidden_units', type=lambda s: [int(u) for u in s.split(',')], default='32',
-                               help='delimited list input, e.g., "32,32"', )
-detector_argparse.add_argument('--penultimate_hidden_unit', type=int, default=32, help='dimension of penultimate layer')
+                               help='delimited list input, e.g., "32,32"',)
+detector_argparse.add_argument('--penultimate_hidden_unit', type=int, default=64, help='dimension of penultimate layer')
 detector_argparse.add_argument('--n_heads', type=int, default=2, help='number of headers')
 detector_argparse.add_argument('--dropout', type=float, default=0.6, help='dropout rate')
 detector_argparse.add_argument('--k', type=int, default=32, help='sampling size')
