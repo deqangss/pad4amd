@@ -205,7 +205,7 @@ class SpGraphAttentionLayer(nn.Module):
         # edge_e: E
         sp_edge_e = torch.sparse_coo_tensor(edge, edge_e, torch.Size([batch_size, N, N]))
 
-        if self.training or self.adv_testing:
+        if self.training or self.adv_testing or sp_edge_e._nnz() > 10000:
             h_prime = torch.stack(
                 [torch.sparse.mm(sp_e, dense_e) for sp_e, dense_e in zip(sp_edge_e, h)]
             )
