@@ -119,9 +119,10 @@ class MalGAT(nn.Module):
         if self.k > 0:
             if adjs is None:
                 if self.sparse:
+                    x_truncted = F.dropout(x[:self.k], 0.5)  # ensure sparse enough, in case of the torch.bmm throwing runtime error
                     adjs = torch.stack([
                         torch.stack([torch.matmul(_x_e.unsqueeze(-1), _x_e.unsqueeze(0)).to_sparse() for _x_e in _x]) \
-                        for _x in x[:self.k]
+                        for _x in x_truncted
                     ])
                 else:
                     adjs = torch.stack([torch.matmul(_x.unsqueeze(-1), _x.unsqueeze(-2)) for _x in x[:self.k]])
