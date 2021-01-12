@@ -206,8 +206,7 @@ class SpGraphAttentionLayer(nn.Module):
                     flag = (idcs[0, :] == i).cpu().numpy()
                     import numpy as np
                     np.set_printoptions(threshold=100000)
-                    print(d[:, flag, :])
-                    print(d[:, :, flag])
+                    print(d[:, flag])
                     import sys
                     sys.exit(1)
             e_rowsum = torch.bmm(sp_edge_e, torch.ones(size=(batch_size, N, 1), dtype=torch.float, device=dv))  # encounter runtime error
