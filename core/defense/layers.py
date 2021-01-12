@@ -201,6 +201,10 @@ class SpGraphAttentionLayer(nn.Module):
             print('-----')
             for i in range(16):
                 print(torch.sum(idcs[0,:]==i))
+                if torch.sum(idcs[0,:]==i) > 5000:
+                    print(idcs)
+                    import sys
+                    sys.exit(1)
             e_rowsum = torch.bmm(sp_edge_e, torch.ones(size=(batch_size, N, 1), dtype=torch.float, device=dv))  # encounter runtime error
         # e_rowsum = self.special_spmm(edge, edge_e, torch.Size([N, N]), torch.ones(size=(N, 1), device=dv))
         # e_rowsum: batch_size x N x 1
