@@ -86,8 +86,6 @@ class MalGAT(nn.Module):
         for idx_i, cls_attn_layer in enumerate(self.cls_attn_layers):
             self.add_module('attention_cls_layer_header_{}'.format(idx_i), cls_attn_layer)
 
-        self.cls_weight = nn.Parameter(torch.empty(size=(self.penultimate_hidden_unit,)))
-        nn.init.normal_(self.cls_weight.data)
         self.attn_dense = nn.Linear(self.vocab_size, self.embedding_dim)
 
         # another modality function
@@ -139,10 +137,9 @@ class MalGAT(nn.Module):
                 latent_codes.append(attn_code)
             latent_codes = torch.stack(latent_codes, dim=1)  # latent_codes: [batch_size, self.k, feature_dim]
             latent_codes = F.dropout(latent_codes, self.dropout, training=self.training)
-            cls_weights = torch.stack([self.cls_weight] * x[0].size()[0])
             cls_code = self.activation(self.mod_frq_cls_dense(mod1_code))
             latent_codes = self.activation(
-                torch.stack([header_cls(latent_codes, cls_weights) for header_cls in self.cls_attn_layers], dim=-2).sum(
+                torch.stack([header_cls(latent_codes, cls_code) for header_cls in self.cls_attn_layers], dim=-2).sum(
                     -2) / self.n_heads + self.mod_frq_cls_dense(mod1_code))
         else:
             latent_codes = self.activation(self.mod_frq_cls_dense(mod1_code))
