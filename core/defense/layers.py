@@ -193,7 +193,7 @@ class SpGraphAttentionLayer(nn.Module):
         # edge_e: E
 
         sp_edge_e = torch.sparse_coo_tensor(edge, edge_e, torch.Size([batch_size, N, N]))
-        if self.training or self.adv_testing:
+        if self.training or self.adv_testing or sp_edge_e._nnz() > 10000:
             e_rowsum = torch.stack(
                 [torch.sparse.mm(sp_e, torch.ones(size=(N, 1), dtype=torch.float, device=dv)) for sp_e in sp_edge_e])
         else:
