@@ -203,7 +203,7 @@ class SpGraphAttentionLayer(nn.Module):
                 print(torch.sum(idcs[0,:]==i))
                 if torch.sum(idcs[0,:]==i) > 5000:
                     d = idcs.cpu().numpy()
-                    flag = idcs[0, :] == i
+                    flag = (idcs[0, :] == i).cpu().numpy()
                     import numpy as np
                     np.set_printoptions(threshold=100000)
                     print(d[:, flag, :])
