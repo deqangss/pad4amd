@@ -15,7 +15,7 @@ from config import logging, ErrorHandler
 
 logger = logging.getLogger('core.droidfeature.feature_extraction')
 logger.addHandler(ErrorHandler)
-
+NULL_ID = 'null'
 
 class Apk2graphs(object):
     """Construct api graphs using api sequences that are based on the function call graphs"""
@@ -113,7 +113,6 @@ class Apk2graphs(object):
 
         counter_mal, counter_ben = collections.Counter(), collections.Counter()
         api_info_dict = collections.defaultdict(set)
-        num_cg_mal, num_cg_ben = 0, 0
         for feature_path, label in zip(feature_path_list, gt_labels):
             if not os.path.exists(feature_path):
                 continue
@@ -143,9 +142,11 @@ class Apk2graphs(object):
         ben_feature_frequency[ben_feature_frequency == None] = 0
         ben_feature_frequency /= float(len(gt_labels) - np.sum(gt_labels))
         feature_freq_diff = abs(mal_feature_frequency - ben_feature_frequency)
-        pos_selected = np.argsort(feature_freq_diff)[::-1][:self.maximum_vocab_size]
+        pos_selected = np.argsort(feature_freq_diff)[::-1][:self.maximum_vocab_size - 1]
         selected_words = [all_words[p] for p in pos_selected]
         corresponding_word_info = list(map(api_info_dict.get, selected_words))
+        selected_words.append(NULL_ID)
+        corresponding_word_info.append(NULL_ID)
         # saving
         if len(selected_words) > 0:
             utils.dump_pickle(selected_words, vocab_saving_path)
@@ -299,6 +300,7 @@ def graph2rpst(g, vocab, is_adj):
                 new_g.remove_node(node)
         else:
             indices.append(vocab.index(node))
+    indices.append(vocab.index(NULL_ID))
     feature = np.zeros((len(vocab), ), dtype=np.float32)
     feature[indices] = 1.
     if is_adj:
