@@ -160,6 +160,18 @@ class MalwareDetector(nn.Module):
         best_avg_acc = 0.
         total_time = 0.
         nbatchs = len(train_data_producer)
+        self.eval()
+        avg_acc_val = []
+        with torch.no_grad():
+            for res in validation_data_producer:
+                x_val, adj_val, y_val, _2 = res
+                x_val, adj_val, y_val = utils.to_tensor(x_val, adj_val, y_val, self.device)
+                _, logits = self.forward(x_val, adj_val)
+                acc_val = (logits.argmax(1) == y_val).sum().item()
+                acc_val /= x_val[0].size()[0]
+                avg_acc_val.append(acc_val)
+            avg_acc_val = np.mean(avg_acc_val)
+
         for i in range(epochs):
             self.train()
             losses, accuracies = [], []
