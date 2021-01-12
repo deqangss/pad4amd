@@ -171,7 +171,8 @@ class MalwareDetector(nn.Module):
                     acc_val = (logits.argmax(1) == y_val).sum().item()
                     acc_val /= x_val[0].size()[0]
                     avg_acc_val.append(acc_val)
-            avg_acc_val = np.mean(avg_acc_val)
+                    avg_acc_val = np.mean(avg_acc_val)
+            print('ok')
         import sys
         sys.exit(1)
         for i in range(epochs):
