@@ -142,7 +142,7 @@ class MalGAT(nn.Module):
             cls_weights = torch.stack([self.cls_weight] * x[0].size()[0])
             cls_code = self.activation(self.mod_frq_cls_dense(mod1_code))
             latent_codes = self.activation(
-                torch.stack([header_cls(latent_codes, cls_code) for header_cls in self.cls_attn_layers], dim=-2).sum(
+                torch.stack([header_cls(latent_codes, cls_weights) for header_cls in self.cls_attn_layers], dim=-2).sum(
                     -2) / self.n_heads + self.mod_frq_cls_dense(mod1_code))
         else:
             latent_codes = self.activation(self.mod_frq_cls_dense(mod1_code))
