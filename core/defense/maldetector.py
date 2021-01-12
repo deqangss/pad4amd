@@ -171,7 +171,8 @@ class MalwareDetector(nn.Module):
                 acc_val /= x_val[0].size()[0]
                 avg_acc_val.append(acc_val)
             avg_acc_val = np.mean(avg_acc_val)
-
+        import sys
+        sys.exit(1)
         for i in range(epochs):
             self.train()
             losses, accuracies = [], []
