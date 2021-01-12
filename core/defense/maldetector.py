@@ -180,7 +180,7 @@ class MalwareDetector(nn.Module):
                 accuracies.append(acc_train)
                 if verbose:
                     print(f'Mini batch: {i * nbatchs + idx_batch + 1}/{epochs * nbatchs} | training time in {mins:.0f} minutes, {secs} seconds.')
-                    print(f'Training loss: {losses[-1]:.4f} | Train accuracy: {acc_train * 100:.2f}')
+                    logger.info(f'Training loss (batch level): {losses[-1]:.4f} | Train accuracy: {acc_train * 100:.2f}')
 
             self.eval()
             avg_acc_val = []
@@ -196,11 +196,11 @@ class MalwareDetector(nn.Module):
 
             if verbose:
                 logger.info(
-                    f'Training loss (Epoch level): {np.mean(losses):.4f}\t|\t Train accuracy: {np.mean(accuracies) * 100:.2f}')
+                    f'Training loss (epoch level): {np.mean(losses):.4f}\t|\t Train accuracy: {np.mean(accuracies) * 100:.2f}')
                 logger.info(f'Validation accuracy: {avg_acc_val * 100:.2f}')
             if avg_acc_val >= best_avg_acc:
                 best_avg_acc = avg_acc_val
                 torch.save(self.state_dict(), self.model_save_path)
                 if verbose:
-                    logger.info(f'Model saved at path: {self.model_save_path}')
+                    print(f'Model saved at path: {self.model_save_path}')
 
