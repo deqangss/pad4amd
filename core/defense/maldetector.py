@@ -45,6 +45,7 @@ class MalwareDetector(nn.Module):
                              self.dropout,
                              self.alpha,
                              self.k,
+                             self.use_fusion,
                              self.sparse)
 
         self.dense = nn.Linear(self.penultimate_hidden_unit, self.n_classes)
@@ -60,6 +61,7 @@ class MalwareDetector(nn.Module):
                    dropout=0.6,
                    alpha=0.2,
                    k=10,
+                   use_fusion=True,
                    sparse=True,
                    **kwargs
                    ):
@@ -73,9 +75,10 @@ class MalwareDetector(nn.Module):
         self.dropout = dropout
         self.alpha = alpha
         self.k = k
+        self.use_fusion = use_fusion
         self.sparse = sparse
         if len(kwargs) > 0:
-            warnings.warn("Unknown hyper-parameters {}".format(str(kwargs)))
+            logger.warning("Unknown hyper-parameters {}".format(str(kwargs)))
 
     def adv_eval(self):
         self.malgat.adv_eval()

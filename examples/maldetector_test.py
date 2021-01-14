@@ -44,6 +44,7 @@ detector_argparse.add_argument('--penultimate_hidden_unit', type=int, default=64
 detector_argparse.add_argument('--n_heads', type=int, default=2, help='number of headers')
 detector_argparse.add_argument('--dropout', type=float, default=0.6, help='dropout rate')
 detector_argparse.add_argument('--k', type=int, default=32, help='sampling size')
+detector_argparse.add_argument('--use_fusion', action='store_true', help='whether use feature fusion or not')
 detector_argparse.add_argument('--n_sample_times', type=int, default=5, help='times of sampling')
 detector_argparse.add_argument('--alpha', type=float, default=0.2, help='slope coefficient of leaky-relu')
 detector_argparse.add_argument('--sparse', action='store_true', default=True, help='GAT with sparse version or not.')
@@ -51,7 +52,6 @@ detector_argparse.add_argument('--sparse', action='store_true', default=True, he
 detector_argparse.add_argument('--batch_size', type=int, default=16, help='minibatch size')
 detector_argparse.add_argument('--epochs', type=int, default=10, help='number of epochs to train.')
 detector_argparse.add_argument('--lr', type=float, default=0.005, help='initial learning rate.')
-detector_argparse.add_argument('--patience', type=int, default=100, help='patience')
 detector_argparse.add_argument('--weight_decay', type=float, default=5e-4, help='weight_decay')
 
 args = cmd_md.parse_args()

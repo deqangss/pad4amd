@@ -15,6 +15,7 @@ class MalGAT(nn.Module):
                  dropout,
                  alpha,
                  k,
+                 use_fusion,
                  sparse,
                  activation=F.elu):
         """
@@ -27,6 +28,7 @@ class MalGAT(nn.Module):
         :param dropout: Float, dropout rate applied to attention layer
         :param alpha: Float, the slope coefficient of leaky-relu
         :param k: Integer, the sampling size
+        :param use_fusion: Boolean, combing the graph-type feature and binary bag-of-words feature
         :param sparse: GAT in sparse version or not
         :param activation: activation function
         """
@@ -40,6 +42,7 @@ class MalGAT(nn.Module):
         self.dropout = dropout
         self.alpha = alpha
         self.k = k
+        self.use_fusion = use_fusion
         self.sparse = sparse
         self.activation = activation
 
@@ -114,33 +117,38 @@ class MalGAT(nn.Module):
         mod1_code = torch.amax(
             self.activation(self.mod_frq_dense((x_comb.unsqueeze(-1) * self.embedding_weight).permute(0, 2, 1))), dim=-1)
 
-        if self.k > 0:
-            if adjs is None:
-                if self.sparse:
-                    adjs = torch.stack([
-                        torch.stack([torch.matmul(_x_e.unsqueeze(-1), _x_e.unsqueeze(0)).to_sparse() for _x_e in _x]) \
-                        for _x in x[:self.k]
-                    ])
-                else:
-                    adjs = torch.stack([torch.matmul(_x.unsqueeze(-1), _x.unsqueeze(-2)) for _x in x[:self.k]])
+        if self.k <= 0:
+            return self.activation(self.mod_frq_cls_dense(mod1_code))
 
-            latent_codes = []
-            for i in range(self.k):
-                features = torch.unsqueeze(x[i], dim=-1) * torch.unsqueeze(self.embedding_weight, dim=0)
-                for headers in self.attn_layers:
-                    features = F.dropout(features, self.dropout, training=self.training)
-                    features = torch.cat([header(features, adjs[i]) for header in headers], dim=-1)
+        if adjs is None:
+            if self.sparse:
+                adjs = torch.stack([
+                    torch.stack([torch.matmul(_x_e.unsqueeze(-1), _x_e.unsqueeze(0)).to_sparse() for _x_e in _x]) \
+                    for _x in x[:self.k]
+                ])
+            else:
+                adjs = torch.stack([torch.matmul(_x.unsqueeze(-1), _x.unsqueeze(-2)) for _x in x[:self.k]])
+
+        latent_codes = []
+        for i in range(self.k):
+            features = torch.unsqueeze(x[i], dim=-1) * torch.unsqueeze(self.embedding_weight, dim=0)
+            for headers in self.attn_layers:
                 features = F.dropout(features, self.dropout, training=self.training)
-                features = self.attn_out(features, adjs[i])
-                attn_code = torch.amax(
-                    self.activation(self.attn_dense((x[i].unsqueeze(-1) * features).permute(0, 2, 1))), dim=-1)
-                latent_codes.append(attn_code)
-            latent_codes = torch.stack(latent_codes, dim=1)  # latent_codes: [batch_size, self.k, feature_dim]
-            latent_codes = F.dropout(latent_codes, self.dropout, training=self.training)
-            cls_code = self.activation(self.mod_frq_cls_dense(mod1_code))
+                features = torch.cat([header(features, adjs[i]) for header in headers], dim=-1)
+            features = F.dropout(features, self.dropout, training=self.training)
+            features = self.attn_out(features, adjs[i])
+            attn_code = torch.amax(
+                self.activation(self.attn_dense((x[i].unsqueeze(-1) * features).permute(0, 2, 1))), dim=-1)
+            latent_codes.append(attn_code)
+        latent_codes = torch.stack(latent_codes, dim=1)  # latent_codes: [batch_size, self.k, feature_dim]
+        latent_codes = F.dropout(latent_codes, self.dropout, training=self.training)
+        cls_code = self.activation(self.mod_frq_cls_dense(mod1_code))
+        if self.use_fusion:
             latent_codes = self.activation(
                 torch.stack([header_cls(latent_codes, cls_code) for header_cls in self.cls_attn_layers], dim=-2).sum(
                     -2) / self.n_heads + self.mod_frq_cls_dense(mod1_code))
         else:
-            latent_codes = self.activation(self.mod_frq_cls_dense(mod1_code))
+            latent_codes = self.activation(
+                torch.stack([header_cls(latent_codes, cls_code) for header_cls in self.cls_attn_layers], dim=-2).sum(
+                    -2) / self.n_heads)
         return latent_codes
