@@ -19,7 +19,7 @@ logger.addHandler(ErrorHandler)
 
 
 class MalwareDetector(nn.Module):
-    def __init__(self, vocab_size, n_classes, n_sample_times=10, device='cpu', name='MALWARE_DETECTOR', **kwargs):
+    def __init__(self, vocab_size, n_classes, n_sample_times=10, device='cpu', name='PRO', **kwargs):
         """
         Construct malware detector
         :param vocab_size: Interger, the number of words in the vocabulary
@@ -49,7 +49,8 @@ class MalwareDetector(nn.Module):
                              self.sparse)
 
         self.dense = nn.Linear(self.penultimate_hidden_unit, self.n_classes)
-        self.model_save_path = path.join(config.get('experiments', self.name.lower()), 'model.pth')
+        self.model_save_path = path.join(config.get('experiments', 'malware_detector') + '_' + self.name,
+                                         'model.pth')
         if not path.exists(self.model_save_path):
             utils.mkdir(path.dirname(self.model_save_path))
 
@@ -199,7 +200,7 @@ class MalwareDetector(nn.Module):
 
             if verbose:
                 logger.info(
-                    f'Training loss (epoch level): {np.mean(losses):.4f}\t|\t Train accuracy: {np.mean(accuracies) * 100:.2f}')
+                    f'Training loss (epoch level): {np.mean(losses):.4f} | Train accuracy: {np.mean(accuracies) * 100:.2f}')
                 logger.info(f'Validation accuracy: {avg_acc_val * 100:.2f}')
             if avg_acc_val >= best_avg_acc:
                 best_avg_acc = avg_acc_val

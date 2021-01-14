@@ -219,10 +219,10 @@ def ivs_to_tensor_coo_sp(ivs, device = 'cpu'):
     return torch.sparse_coo_tensor(ivs[0], ivs[1], ivs[2], device=device)
 
 
-def sp_to_symmetric_sp_mat(sparse_mx):
+def sp_to_symmetric_sp(sparse_mx):
     sparse_mx = sparse_mx + sparse_mx.T.multiply(sparse_mx.T > sparse_mx) - sparse_mx.multiply(sparse_mx.T > sparse_mx)
-    sparse_eye = sp.csr_matrix(sparse_mx.sum(axis=0) > 0).T.multiply(sp.eye(sparse_mx.shape[0]))
-    return sparse_mx + sparse_eye
+    sparse_eye = sp.csr_matrix(sparse_mx.sum(axis=0) > 1e-8).T.multiply(sp.eye(sparse_mx.shape[0]))
+    return (sparse_mx.multiply(1. - np.eye(*sparse_eye.shape))).tocsr() + sparse_eye
 
 
 def sparse_mx_to_torch_sparse_tensor(sparse_mx):

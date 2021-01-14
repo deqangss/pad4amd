@@ -287,6 +287,8 @@ def _graph2rpst_wrapper(args):
 def graph2rpst(g, vocab, is_adj):
     new_g = g.copy()
     indices = []
+    from scipy.sparse import csr_matrix
+    rear = csr_matrix(([1], ([len(vocab) - 1], [len(vocab) - 1])), shape=(len(vocab), len(vocab)))
     for node in g.nodes():
         if node not in vocab:
             if is_adj:
@@ -305,6 +307,7 @@ def graph2rpst(g, vocab, is_adj):
     feature[indices] = 1.
     if is_adj:
         adj = nx.convert_matrix.to_scipy_sparse_matrix(g, nodelist=vocab, format='csr', dtype=np.float32)
+        adj += rear
     else:
         adj = None
     del new_g

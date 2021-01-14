@@ -2,6 +2,9 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 import os.path as path
+import argparse
+import time
+
 import torch
 import torch.nn.functional as F
 
@@ -9,12 +12,6 @@ from core.defense import Dataset
 from core.defense import MalwareDetector
 from tools.utils import save_args,get_group_args,to_tensor
 
-# import os
-# os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-# os.environ["CUDA_VISIBLE_DEVICES"] = "1"
-
-
-import argparse
 
 cmd_md = argparse.ArgumentParser(description='arguments for learning malware detector')
 
@@ -54,11 +51,21 @@ detector_argparse.add_argument('--epochs', type=int, default=10, help='number of
 detector_argparse.add_argument('--lr', type=float, default=0.005, help='initial learning rate.')
 detector_argparse.add_argument('--weight_decay', type=float, default=5e-4, help='weight_decay')
 
+dataset_argparse = cmd_md.add_argument_group(title='data_producer')
+dataset_argparse.add_argument('--dataset_name', type=str, default= 'drebin',
+                              choices=['drebin', 'androzoo'], required=False, help='select dataset with "drebin" or "androzoo" expected ')
+detector_argparse.add_argument('--is_adj', action='store_true', help='incorporate branches instruction information.')
+
 args = cmd_md.parse_args()
 
 
 def _main():
-    dataset = Dataset('drebin', k=args.k, use_cache=False, feature_ext_args=get_group_args(args, cmd_md, 'feature'))
+    dataset = Dataset(args.dataset_name,
+                      k=args.k,
+                      use_cache=False,
+                      is_adj=args.is_adj,
+                      feature_ext_args=get_group_args(args, cmd_md, 'feature')
+                      )
     train_data, trainy = dataset.train_dataset
     val_data, valy = dataset.validation_dataset
     test_data, testy = dataset.test_dataset
@@ -72,7 +79,12 @@ def _main():
         dv = 'cpu'
     else:
         dv = 'cuda'
-    model = MalwareDetector(dataset.vocab_size, dataset.n_classes, device=dv, **vars(args))
+    model = MalwareDetector(dataset.vocab_size,
+                            dataset.n_classes,
+                            device=dv,
+                            name=time.strftime("%Y%m%d-%H%M%S"),
+                            **vars(args)
+                            )
     model = model.to(dv)
     save_args(path.join(path.dirname(model.model_save_path), "hparam"), vars(args))
     model.fit(train_dataset_producer,

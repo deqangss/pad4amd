@@ -151,28 +151,29 @@ class Dataset(torch.utils.data.Dataset):
 
         batch_size = len(features)
         sample_indices = []
-        features_sample = []
-        adjs_sample = []
+        features_sampled = []
+        adjs_sampled = []
 
         batch_n_sg_max = np.max([len(feature) for feature in features])
         n_sg_used = batch_n_sg_max if batch_n_sg_max < self.n_sgs_max else self.n_sgs_max
         for i, feature in enumerate(features):
             replacement = True if len(feature) < n_sg_used else False
             indices = np.random.choice(len(feature), n_sg_used, replacement)
-            features_sample.append([feature[_i] for _i in indices])
-            adjs_sample.append([adjs[i][_i] for _i in indices])
+            features_sampled.append([feature[_i] for _i in indices])
+            adjs_sampled.append([adjs[i][_i] for _i in indices])
             sample_indices.append(indices)
 
-        features_sample_t = np.array([np.stack(list(feat), axis=0) for feat in zip(*features_sample)])
+        features_sample_t = np.array([np.stack(list(feat), axis=0) for feat in zip(*features_sampled)])
         # A list (with size self.k) of sparse feature vector in the mini-batch level, in which each element
         # has the shape [batch_size, vocab_size]
         if self.is_adj:
             for i in range(batch_size):
-                for _k in range(self.k):
-                    adjs_sample[i][_k] = utils.sparse_mx_to_torch_sparse_tensor(
-                        utils.sp_to_symmetric_sp_mat(adjs_sample[i][_k])
+                for j in range(self.k):
+                    adjs_sampled[i][j] = utils.sparse_mx_to_torch_sparse_tensor(
+                        utils.sp_to_symmetric_sp(adjs_sampled[i][j])
                     )
-            adjs_sample_t = torch.stack([torch.stack(list(adj), dim=0) for adj in zip(*adjs_sample)], dim=0)
+
+            adjs_sample_t = torch.stack([torch.stack(list(adj)) for adj in list(zip(*adjs_sampled))[:self.k]])
             # dataloader does not support sparse matrix
             adjs_sample_tuple = utils.tensor_coo_sp_to_ivs(adjs_sample_t)
         else:
