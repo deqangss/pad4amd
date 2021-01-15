@@ -160,8 +160,6 @@ class MalwareDetector(nn.Module):
                     customized_params_no_decay.append(param)
                 elif 'dense.weight' == name or 'dense.bias' == name:
                     customized_params_no_decay.append(param)
-                elif 'embedding_weight' in name:
-                    customized_params_no_decay.append(param)
                 else:
                     customized_params_decay.append(param)
             return [{'params': customized_params_no_decay, 'weight_decay': 0.},

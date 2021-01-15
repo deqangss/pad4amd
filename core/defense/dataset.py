@@ -156,6 +156,7 @@ class Dataset(torch.utils.data.Dataset):
 
         batch_n_sg_max = np.max([len(feature) for feature in features])
         n_sg_used = batch_n_sg_max if batch_n_sg_max < self.n_sgs_max else self.n_sgs_max
+        n_sg_used = n_sg_used if n_sg_used > self.k else self.k
         for i, feature in enumerate(features):
             replacement = True if len(feature) < n_sg_used else False
             indices = np.random.choice(len(feature), n_sg_used, replacement)
