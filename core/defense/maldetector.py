@@ -1,4 +1,7 @@
-import warnings
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import time
 from tqdm import tqdm
 import os.path as path
@@ -125,9 +128,9 @@ class MalwareDetector(nn.Module):
         b_accuracy = balanced_accuracy_score(y_true, y_pred)
 
         MSG = "The accuracy on the test dataset is {:.5f}%"
-        print(MSG.format(accuracy * 100))
+        logger.info(MSG.format(accuracy * 100))
         MSG = "The balanced accuracy on the test dataset is {:.5f}%"
-        print(MSG.format(b_accuracy * 100))
+        logger.info(MSG.format(b_accuracy * 100))
         tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
 
         fpr = fp / float(tn + fp)
@@ -136,7 +139,7 @@ class MalwareDetector(nn.Module):
 
         print("Other evaluation metrics we may need:")
         MSG = "False Negative Rate (FNR) is {:.5f}%, False Positive Rate (FPR) is {:.5f}%, F1 score is {:.5f}%"
-        print(MSG.format(fnr * 100, fpr * 100, f1 * 100))
+        logger.info(MSG.format(fnr * 100, fpr * 100, f1 * 100))
 
     def fit(self, train_data_producer, validation_data_producer, epochs=100, lr=0.005, weight_decay=5e-4, verbose=True):
         """

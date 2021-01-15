@@ -52,7 +52,7 @@ detector_argparse.add_argument('--lr', type=float, default=0.005, help='initial 
 detector_argparse.add_argument('--weight_decay', type=float, default=5e-4, help='weight_decay')
 
 dataset_argparse = cmd_md.add_argument_group(title='data_producer')
-dataset_argparse.add_argument('--dataset_name', type=str, default= 'drebin',
+dataset_argparse.add_argument('--dataset_name', type=str, default='drebin',
                               choices=['drebin', 'androzoo'], required=False, help='select dataset with "drebin" or "androzoo" expected ')
 detector_argparse.add_argument('--is_adj', action='store_true', help='incorporate branches instruction information.')
 
