@@ -81,7 +81,6 @@ def _main():
         dv = 'cuda'
     model = MalwareDetector(dataset.vocab_size,
                             dataset.n_classes,
-                            args.n_sample_times,
                             device=dv,
                             name=time.strftime("%Y%m%d-%H%M%S"),
                             **vars(args)
