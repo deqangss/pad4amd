@@ -165,6 +165,7 @@ class MalwareDetector(nn.Module):
                     {'params': customized_params_decay, 'weight_decay': weight_decay}]
         optimizer = optim.Adam(param_customizing(), lr=lr)
         best_avg_acc = 0.
+        best_epoch = 0
         total_time = 0.
         nbatchs = len(train_data_producer)
         for i in range(epochs):
@@ -204,9 +205,10 @@ class MalwareDetector(nn.Module):
             if verbose:
                 logger.info(
                     f'Training loss (epoch level): {np.mean(losses):.4f} | Train accuracy: {np.mean(accuracies) * 100:.2f}')
-                logger.info(f'Validation accuracy: {avg_acc_val * 100:.2f}')
+                logger.info(f'Validation accuracy: {avg_acc_val * 100:.2f} | The best validation accuracy: {best_avg_acc * 100:.2f} at epoch: {best_epoch}')
             if avg_acc_val >= best_avg_acc:
                 best_avg_acc = avg_acc_val
+                best_epoch = i
                 torch.save(self.state_dict(), self.model_save_path)
                 if verbose:
                     print(f'Model saved at path: {self.model_save_path}')
