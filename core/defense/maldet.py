@@ -22,7 +22,7 @@ logger.addHandler(ErrorHandler)
 
 
 class MalwareDetector(nn.Module):
-    def __init__(self, vocab_size, n_classes, n_sample_times=10, device='cpu', name='PRO', **kwargs):
+    def __init__(self, vocab_size, n_classes, n_sample_times=5, device='cpu', name='PRO', **kwargs):
         """
         Construct malware detector
         :param vocab_size: Interger, the number of words in the vocabulary
@@ -46,7 +46,7 @@ class MalwareDetector(nn.Module):
                              self.penultimate_hidden_unit,
                              self.n_heads,
                              self.dropout,
-                             self.alpha,
+                             self.beta,
                              self.k,
                              self.use_fusion,
                              self.sparse)
@@ -77,7 +77,7 @@ class MalwareDetector(nn.Module):
         self.penultimate_hidden_unit = penultimate_hidden_unit
         self.n_heads = n_heads
         self.dropout = dropout
-        self.alpha = alpha
+        self.beta = alpha
         self.k = k
         self.use_fusion = use_fusion
         self.sparse = sparse
@@ -141,6 +141,9 @@ class MalwareDetector(nn.Module):
         MSG = "False Negative Rate (FNR) is {:.5f}%, False Positive Rate (FPR) is {:.5f}%, F1 score is {:.5f}%"
         logger.info(MSG.format(fnr * 100, fpr * 100, f1 * 100))
 
+    def customize_loss(self, logits, gt_labels, representation, mini_batch_idx):
+        return F.cross_entropy(logits, gt_labels)
+
     def fit(self, train_data_producer, validation_data_producer, epochs=100, lr=0.005, weight_decay=5e-4, verbose=True):
         """
         Train the malware detector, pick the best model according to the cross-entropy loss on validation set
@@ -177,7 +180,7 @@ class MalwareDetector(nn.Module):
                 start_time = time.time()
                 optimizer.zero_grad()
                 latent_rpst, logits = self.forward(x_batch, adj_batch)
-                loss_train = F.cross_entropy(logits, y_batch)
+                loss_train = self.customize_loss(logits, y_batch, latent_rpst, idx_batch)
                 loss_train.backward()
                 optimizer.step()
                 total_time = total_time + time.time() - start_time

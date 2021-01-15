@@ -47,7 +47,7 @@ detector_argparse.add_argument('--alpha', type=float, default=0.2, help='slope c
 detector_argparse.add_argument('--sparse', action='store_true', default=True, help='GAT with sparse version or not.')
 
 detector_argparse.add_argument('--batch_size', type=int, default=16, help='minibatch size')
-detector_argparse.add_argument('--epochs', type=int, default=10, help='number of epochs to train.')
+detector_argparse.add_argument('--epochs', type=int, default=1, help='number of epochs to train.')
 detector_argparse.add_argument('--lr', type=float, default=0.005, help='initial learning rate.')
 detector_argparse.add_argument('--weight_decay', type=float, default=5e-4, help='weight_decay')
 
@@ -81,6 +81,7 @@ def _main():
         dv = 'cuda'
     model = MalwareDetector(dataset.vocab_size,
                             dataset.n_classes,
+                            args.n_sample_times,
                             device=dv,
                             name=time.strftime("%Y%m%d-%H%M%S"),
                             **vars(args)
