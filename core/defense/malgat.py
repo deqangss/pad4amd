@@ -99,11 +99,13 @@ class MalGAT(nn.Module):
         for headers in self.attn_layers:
             for header in headers:
                 header.adv_eval()
+        self.attn_out.adv_eval()
 
     def non_adv_eval(self):
         for headers in self.attn_layers:
             for header in headers:
                 header.disable_adv_eval()
+        self.attn_out.non_adv_eval()
 
     def forward(self, x, adjs=None):
         """
