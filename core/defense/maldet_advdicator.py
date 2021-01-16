@@ -46,6 +46,9 @@ class MalwareDetectorIndicator(MalwareDetector):
                                        torch.ones(size=(latent_representation.shape[0], 1), dtype=torch.float32, device=self.device)])
         return latent_rep_ext, self.dense(latent_rep_ext)
 
+    def forward_g(self, representation):
+        return torch.sum(self.gaussian_prob(representation) * self.phi, dim=1)
+
     def update_phi(self, logits, mini_batch_idx):
         prob = torch.mean(torch.softmax(logits, dim=1), dim=0)
 
@@ -68,19 +71,16 @@ class MalwareDetectorIndicator(MalwareDetector):
 
     def energy(self, representation, logits):
         exp_over_flow = 1e-12
-        prob_n = self.gaussian_prob(representation)
         gamma_z = torch.softmax(logits, dim=1)
-        print(prob_n)
-        print(self.phi)
-        print(torch.sum(prob_n * self.phi / gamma_z, dim=1))
-        E_z = torch.log(torch.sum(prob_n * self.phi / gamma_z, dim=1) + exp_over_flow)
+        prob_n = self.gaussian_prob(representation)
+        print(torch.sum(prob_n * self.phi, dim=1))
+        E_z = torch.sum(gamma_z * torch.log(prob_n * self.phi / gamma_z + exp_over_flow), dim=1)
         energies = -torch.mean(E_z, dim=0)
         return energies
 
     def customize_loss(self, logits, gt_labels, representation,  mini_batch_idx):
         self.update_phi(logits, mini_batch_idx)
         de = self.energy(representation, logits) * self.beta
-        print(de)
         ce = F.cross_entropy(logits, gt_labels)
         return de + ce
 
