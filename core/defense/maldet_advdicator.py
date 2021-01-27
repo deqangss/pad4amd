@@ -2,13 +2,12 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import time
-from tqdm import tqdm
 import os.path as path
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.utils.checkpoint import checkpoint
 
 import numpy as np
 
@@ -21,10 +20,11 @@ logger.addHandler(ErrorHandler)
 
 
 class MalwareDetectorIndicator(MalwareDetector):
-    def __init__(self, vocab_size, n_classes, beta=1., sigma=0.15916, n_sample_times=5, device='cpu', name='PRO', **kwargs):
+    def __init__(self, vocab_size, n_classes, beta=1., sigma=0.15916, n_sample_times=5, device='cpu', name='PRO', enable_gd_ckpt=False, **kwargs):
         self.beta = beta
         self.sigma = sigma
         self.device = device
+        self.enable_gd_ckpt = enable_gd_ckpt
         super(MalwareDetectorIndicator, self).__init__(vocab_size,
                                                        n_classes,
                                                        n_sample_times,
@@ -40,7 +40,13 @@ class MalwareDetectorIndicator(MalwareDetector):
             utils.mkdir(path.dirname(self.model_save_path))
 
     def forward(self, feature, adj=None):
-        latent_representation = self.malgat(feature, adj)
+        if self.enable_gd_ckpt:
+            feature.requires_grad = True
+            if adj is not None:
+                adj.requires_grad = True
+            latent_representation = checkpoint(self.malgat, feature, adj)  # saving RAM dramatically
+        else:
+            latent_representation = self.malgat(feature, adj)
         latent_representation = F.dropout(latent_representation, self.dropout, training=self.training)
         latent_rep_ext = torch.hstack([latent_representation,
                                        torch.ones(size=(latent_representation.shape[0], 1), dtype=torch.float32, device=self.device)])
