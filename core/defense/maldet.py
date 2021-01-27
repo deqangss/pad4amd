@@ -10,6 +10,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
+from torch.utils.checkpoint import checkpoint
 
 import numpy as np
 
@@ -67,6 +68,7 @@ class MalwareDetector(nn.Module):
                    k=10,
                    use_fusion=True,
                    sparse=True,
+                   enable_gd_ckpt=False,
                    **kwargs
                    ):
         self.embedding_dim = embedding_dim
@@ -81,6 +83,7 @@ class MalwareDetector(nn.Module):
         self.k = k
         self.use_fusion = use_fusion
         self.sparse = sparse
+        self.enable_gd_ckpt = enable_gd_ckpt
         if len(kwargs) > 0:
             logger.warning("Unknown hyper-parameters {}".format(str(kwargs)))
 
@@ -91,7 +94,10 @@ class MalwareDetector(nn.Module):
         self.malgat.non_adv_eval()
 
     def forward(self, feature, adj=None):
-        latent_representation = self.malgat(feature, adj)
+        if self.enable_gd_ckpt:
+            latent_representation = checkpoint(self.malgat, feature, adj)  # saving RAM dramatically
+        else:
+            latent_representation = self.malgat(feature, adj)
         latent_representation = F.dropout(latent_representation, self.dropout, training=self.training)
         logits = self.dense(latent_representation)
         return latent_representation, logits

@@ -50,6 +50,7 @@ detector_argparse.add_argument('--batch_size', type=int, default=16, help='minib
 detector_argparse.add_argument('--epochs', type=int, default=10, help='number of epochs to train.')
 detector_argparse.add_argument('--lr', type=float, default=0.005, help='initial learning rate.')
 detector_argparse.add_argument('--weight_decay', type=float, default=5e-4, help='weight_decay')
+detector_argparse.add_argument('--enable_gd_ckpt', action='store_true', default=False, help='gradients checkpoint for saving GPU RAM')
 
 dataset_argparse = cmd_md.add_argument_group(title='data_producer')
 dataset_argparse.add_argument('--dataset_name', type=str, default='drebin',
