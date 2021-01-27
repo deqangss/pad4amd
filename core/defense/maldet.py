@@ -55,8 +55,6 @@ class MalwareDetector(nn.Module):
         self.dense = nn.Linear(self.penultimate_hidden_unit, self.n_classes)
         self.model_save_path = path.join(config.get('experiments', 'malware_detector') + '_' + self.name,
                                          'model.pth')
-        if not path.exists(self.model_save_path):
-            utils.mkdir(path.dirname(self.model_save_path))
 
     def parse_args(self,
                    embedding_dim=32,
@@ -212,14 +210,17 @@ class MalwareDetector(nn.Module):
                     avg_acc_val.append(acc_val)
                 avg_acc_val = np.mean(avg_acc_val)
 
+            if avg_acc_val >= best_avg_acc:
+                best_avg_acc = avg_acc_val
+                best_epoch = i
+                if not path.exists(self.model_save_path):
+                    utils.mkdir(path.dirname(self.model_save_path))
+                torch.save(self.state_dict(), self.model_save_path)
+                if verbose:
+                    print(f'Model saved at path: {self.model_save_path}')
+
             if verbose:
                 logger.info(
                     f'Training loss (epoch level): {np.mean(losses):.4f} | Train accuracy: {np.mean(accuracies) * 100:.2f}')
                 logger.info(f'Validation accuracy: {avg_acc_val * 100:.2f} | The best validation accuracy: {best_avg_acc * 100:.2f} at epoch: {best_epoch}')
-            if avg_acc_val >= best_avg_acc:
-                best_avg_acc = avg_acc_val
-                best_epoch = i
-                torch.save(self.state_dict(), self.model_save_path)
-                if verbose:
-                    print(f'Model saved at path: {self.model_save_path}')
 
