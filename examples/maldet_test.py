@@ -58,10 +58,9 @@ dataset_argparse.add_argument('--dataset_name', type=str, default='drebin',
                               choices=['drebin', 'androzoo'], required=False, help='select dataset with "drebin" or "androzoo" expected ')
 detector_argparse.add_argument('--is_adj', action='store_true', help='incorporate branches instruction information.')
 
-args = cmd_md.parse_args()
-
 
 def _main():
+    args = cmd_md.parse_args()
     dataset = Dataset(args.dataset_name,
                       k=args.k,
                       use_cache=False,

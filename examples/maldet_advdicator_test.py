@@ -19,10 +19,9 @@ indicator_argparse.add_argument('--beta', type=float, default=1., help='balance 
 indicator_argparse.add_argument('--sigma', type=float, default=0.15916,
                                 help='standard deviation of isotropic Gaussian distribution, default value 1/sqrt(2)')
 
-args = cmd_md.parse_args()
-
 
 def _main():
+    args = cmd_md.parse_args()
     dataset = Dataset(args.dataset_name,
                       k=args.k,
                       use_cache=False,
