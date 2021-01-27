@@ -95,6 +95,9 @@ class MalwareDetector(nn.Module):
 
     def forward(self, feature, adj=None):
         if self.enable_gd_ckpt:
+            feature.requires_grad = True
+            if adj is not None:
+                adj.requires_grad = True
             latent_representation = checkpoint(self.malgat, feature, adj)  # saving RAM dramatically
         else:
             latent_representation = self.malgat(feature, adj)
