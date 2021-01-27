@@ -16,7 +16,7 @@ from examples.maldet_test import cmd_md
 #  alpha=1., sigma=0.7071,
 indicator_argparse = cmd_md.add_argument_group(title='adv indicator')
 indicator_argparse.add_argument('--beta', type=float, default=1., help='balance factor.')
-indicator_argparse.add_argument('--sigma', type=float, default=0.1592,
+indicator_argparse.add_argument('--sigma', type=float, default=0.15916,
                                 help='standard deviation of isotropic Gaussian distribution, default value 1/sqrt(2)')
 
 args = cmd_md.parse_args()

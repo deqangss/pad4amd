@@ -21,7 +21,7 @@ logger.addHandler(ErrorHandler)
 
 
 class MalwareDetectorIndicator(MalwareDetector):
-    def __init__(self, vocab_size, n_classes, beta=1., sigma=0.7071, n_sample_times=5, device='cpu', name='PRO', **kwargs):
+    def __init__(self, vocab_size, n_classes, beta=1., sigma=0.15916, n_sample_times=5, device='cpu', name='PRO', **kwargs):
         self.beta = beta
         self.sigma = sigma
         self.device = device
@@ -74,7 +74,8 @@ class MalwareDetectorIndicator(MalwareDetector):
         gamma_z = torch.softmax(logits, dim=1)
         prob_n = self.gaussian_prob(representation)
         print(torch.sum(prob_n * self.phi, dim=1))
-        E_z = torch.sum(gamma_z * torch.log(prob_n * self.phi / gamma_z + exp_over_flow), dim=1)
+        E_z = torch.sum(torch.log(prob_n * self.phi + exp_over_flow), dim=1)
+        # E_z = torch.sum(gamma_z * torch.log(prob_n * self.phi / gamma_z + exp_over_flow), dim=1)  # ELBO
         energies = -torch.mean(E_z, dim=0)
         return energies
 
