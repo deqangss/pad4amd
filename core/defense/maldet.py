@@ -79,7 +79,7 @@ class MalwareDetector(nn.Module):
         self.penultimate_hidden_unit = penultimate_hidden_unit
         self.n_heads = n_heads
         self.dropout = dropout
-        self.beta = alpha
+        self.alpha = alpha
         self.k = k
         self.use_fusion = use_fusion
         self.sparse = sparse
