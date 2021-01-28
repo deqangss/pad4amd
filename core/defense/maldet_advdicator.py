@@ -80,12 +80,13 @@ class MalwareDetectorIndicator(MalwareDetector):
         gamma_z = torch.softmax(logits, dim=1)
         prob_n = self.gaussian_prob(representation)
         print(torch.sum(prob_n * self.phi, dim=1))
-        E_z = torch.sum(torch.log(prob_n * self.phi + exp_over_flow), dim=1)
-        # E_z = torch.sum(gamma_z * torch.log(prob_n * self.phi / gamma_z + exp_over_flow), dim=1)  # ELBO
+        # E_z = torch.sum(torch.log(prob_n * self.phi + exp_over_flow), dim=1)
+        E_z = torch.sum(gamma_z * torch.log(prob_n * self.phi / gamma_z + exp_over_flow), dim=1)  # ELBO
         energies = -torch.mean(E_z, dim=0)
         return energies
 
     def customize_loss(self, logits, gt_labels, representation,  mini_batch_idx):
+        print(gt_labels)
         self.update_phi(logits, mini_batch_idx)
         de = self.energy(representation, logits) * self.beta
         ce = F.cross_entropy(logits, gt_labels)
