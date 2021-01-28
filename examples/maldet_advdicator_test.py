@@ -45,17 +45,17 @@ def _main():
     model = MalwareDetectorIndicator(vocab_size=dataset.vocab_size,
                                      n_classes=dataset.n_classes,
                                      device=dv,
-                                     name=time.strftime("%Y%m%d-%H%M%S"),
+                                     name='20210128-171855',
                                      **vars(args)
                                      )
     model = model.to(dv)
-    save_args(path.join(path.dirname(model.model_save_path), "hparam"), vars(args))
-    model.fit(train_dataset_producer,
-              val_dataset_producer,
-              epochs=args.epochs,
-              lr=args.lr,
-              weight_decay=args.weight_decay
-              )
+    # save_args(path.join(path.dirname(model.model_save_path), "hparam"), vars(args))
+    # model.fit(train_dataset_producer,
+    #           val_dataset_producer,
+    #           epochs=args.epochs,
+    #           lr=args.lr,
+    #           weight_decay=args.weight_decay
+    #           )
 
     # test: accuracy
     model.predict(test_dataset_producer)

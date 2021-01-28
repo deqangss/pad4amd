@@ -79,6 +79,9 @@ class MalwareDetectorIndicator(MalwareDetector):
         exp_over_flow = 1e-12
         gamma_z = torch.softmax(logits, dim=1)
         prob_n = self.gaussian_prob(representation)
+
+        print(prob_n)
+        print(self.phi)
         print(torch.sum(prob_n * self.phi, dim=1))
         # E_z = torch.sum(torch.log(prob_n * self.phi + exp_over_flow), dim=1)
         E_z = torch.sum(gamma_z * torch.log(prob_n * self.phi / gamma_z + exp_over_flow), dim=1)  # ELBO
