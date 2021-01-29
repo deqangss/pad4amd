@@ -13,12 +13,13 @@ from tools import utils
 
 
 class Dataset(torch.utils.data.Dataset):
-    def __init__(self, dataset_name='drebin', k=32, is_adj=False, use_cache=False, seed=0, n_sgs_max=1000, feature_ext_args=None):
+    def __init__(self, dataset_name='drebin', k=32, is_adj=False, undersampling_ratio=0., use_cache=False, seed=0, n_sgs_max=1000, feature_ext_args=None):
         """
         build dataset for ml model learning
         :param dataset_name: String, the dataset name, expected 'drebin' or 'androzoo'
         :param k: Integer, the number of subgraphs is sampled for passing through the neural networks
         :param is_adj: Boolean, whether use the actual adjacent matrix or not
+        :param undersampling_ratio: Float, whether use the undersampling based on the ratio
         :param use_cache: Boolean, whether to use the cached data or not, the cached data is identified by a string format name
         :param seed: Integer, the random seed
         :param n_sgs_max: Integer, the maximum number of subgraphs
@@ -27,6 +28,11 @@ class Dataset(torch.utils.data.Dataset):
         self.dataset_name = dataset_name
         self.k = k
         self.is_adj = is_adj
+        self.undersampling_ratio = undersampling_ratio
+        if self.undersampling_ratio <= 0:
+            self.use_undersampling = False
+        else:
+            self.use_undersampling = True
         self.seed = seed
         random.seed(self.seed)
         np.random.seed(self.seed)
@@ -68,10 +74,36 @@ class Dataset(torch.utils.data.Dataset):
             gt_labels[:len(mal_feature_paths)] = 1
             self.train_dataset, self.validation_dataset, self.test_dataset = self.data_split(feature_paths, gt_labels)
             utils.dump_pickle((self.train_dataset, self.validation_dataset, self.test_dataset), data_saving_path)
+        if self.use_undersampling:
+            self.train_dataset = self.undersampling(self.train_dataset, self.undersampling_ratio)
 
         vocab, _1, = self.feature_extractor.get_vocab(*self.train_dataset)
         self.vocab_size = len(vocab)
         self.n_classes = np.unique(self.train_dataset[1]).size
+
+    def undersampling(self, dataset, ratio=3.0):
+        """ only support for number of benign samples is bigger than malware ones"""
+        feature_paths, labels = dataset
+        num_of_mal = np.sum(labels)
+        assert num_of_mal > 0, 'No malware, exit!'
+        num_of_ben = len(labels) - np.sum(labels)
+        ep_ratio = ratio if num_of_ben / num_of_mal > ratio else num_of_ben / num_of_mal
+        if ep_ratio <= 1.:
+            return dataset
+
+        num_of_selected = num_of_mal * ep_ratio
+        _flag = labels == 0
+        feature_paths_selected = feature_paths[_flag][:num_of_selected]
+        gt_labels_selected = labels[_flag][:num_of_selected]
+        new_features = np.concatenate([feature_paths_selected, feature_paths[~_flag]], dim=0)
+        new_gt_labels = np.concatenate([gt_labels_selected, labels[~_flag]], dim=0)
+        print(len(new_features))
+        print(len(new_gt_labels))
+        np.random.seed(self.seed)
+        np.random.shuffle(new_features)
+        np.random.seed(self.seed)
+        np.random.shuffle(new_gt_labels)
+        return new_features, new_gt_labels
 
     def data_split(self, feature_paths, labels):
         assert len(feature_paths) == len(labels)

@@ -57,6 +57,7 @@ dataset_argparse = cmd_md.add_argument_group(title='data_producer')
 dataset_argparse.add_argument('--dataset_name', type=str, default='drebin',
                               choices=['drebin', 'androzoo'], required=False, help='select dataset with "drebin" or "androzoo" expected ')
 detector_argparse.add_argument('--is_adj', action='store_true', help='incorporate branches instruction information.')
+detector_argparse.add_argument('--undersampling_ratio', type=float, default=0., help='undersamling the benign samples, default: no undersampling')
 
 
 def _main():
