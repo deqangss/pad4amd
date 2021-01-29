@@ -86,16 +86,16 @@ class MalwareDetectorIndicator(MalwareDetector):
         prob_n = self.gaussian_prob(representation)
         weights = torch.from_numpy(np.array([1, 10.])).to(self.device)
 
-        print(prob_n)
-        print(self.phi)
-        print(torch.sum(prob_n * self.phi, dim=1))
+        # print(prob_n)
+        # print(self.phi)
+        print(torch.sum(-torch.log(prob_n * self.phi + exp_over_flow), dim=1))
         # E_z = torch.sum(torch.log(prob_n * self.phi + exp_over_flow), dim=1)
         E_z = torch.sum(gamma_z * torch.log(prob_n * self.phi / gamma_z + exp_over_flow) * weights, dim=1)  # ELBO
         energies = -torch.mean(E_z, dim=0)
         return energies
 
     def customize_loss(self, logits, gt_labels, representation,  mini_batch_idx):
-        print(gt_labels)
+        # print(gt_labels)
         self.update_phi(logits, mini_batch_idx)
         de = self.energy(representation, logits) * self.beta
         ce = F.cross_entropy(logits, gt_labels)
