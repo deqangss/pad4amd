@@ -90,7 +90,7 @@ class MalwareDetectorIndicator(MalwareDetector):
         return energies
 
     def customize_loss(self, logits, gt_labels, representation,  mini_batch_idx):
-        # print(gt_labels)
+        print(gt_labels)
         self.update_phi(logits, mini_batch_idx)
         de = self.energy(representation, logits) * self.beta
         ce = F.cross_entropy(logits, gt_labels)
