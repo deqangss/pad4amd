@@ -45,7 +45,7 @@ def _main():
     model = MalwareDetectorIndicator(vocab_size=dataset.vocab_size,
                                      n_classes=dataset.n_classes,
                                      device=dv,
-                                     name='20210129-065716',
+                                     name='20210129-065717',
                                      **vars(args)
                                      )
     model = model.to(dv)
