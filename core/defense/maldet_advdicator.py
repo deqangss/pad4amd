@@ -20,9 +20,10 @@ logger.addHandler(ErrorHandler)
 
 
 class MalwareDetectorIndicator(MalwareDetector):
-    def __init__(self, vocab_size, n_classes, beta=1., sigma=0.15916, n_sample_times=5, device='cpu', name='PRO', enable_gd_ckpt=False, **kwargs):
+    def __init__(self, vocab_size, n_classes, beta=1., sigma=0.15916, sample_weights=None, n_sample_times=5, device='cpu', name='PRO', enable_gd_ckpt=False, **kwargs):
         self.beta = beta
         self.sigma = sigma
+        self.sample_weights = sample_weights
         self.device = device
         self.enable_gd_ckpt = enable_gd_ckpt
         super(MalwareDetectorIndicator, self).__init__(vocab_size,
@@ -34,6 +35,10 @@ class MalwareDetectorIndicator(MalwareDetector):
 
         self.dense = nn.Linear(self.penultimate_hidden_unit + 1, self.n_classes, bias=False)
         self.phi = nn.Parameter(torch.zeros(size=(self.n_classes,)), requires_grad=False)
+        if self.sample_weights is None:
+            self.sample_weights = torch.ones((n_classes,), dtype=torch.float, device=self.dense)
+        else:
+            self.sample_weights = torch.from_numpy(np.array(self.sample_weights)).to(self.device)
         self.model_save_path = path.join(config.get('experiments', 'malware_detector_indicator') + '_' + self.name,
                                          'model.pth')
         if not path.exists(self.model_save_path):

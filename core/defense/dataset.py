@@ -77,6 +77,12 @@ class Dataset(torch.utils.data.Dataset):
         if self.use_undersampling:
             self.train_dataset = self.undersampling(self.train_dataset, self.undersampling_ratio)
 
+        _labels, counts = np.unique(self.train_dataset[1], return_counts=True)
+        self.sample_weights = np.ones_like(_labels).astype(np.float32)
+        _weights = counts / float(np.min(counts))
+        for i in range(_labels.shape[0]):
+            self.sample_weights[_labels[i]] = _weights[i]
+
         vocab, _1, = self.feature_extractor.get_vocab(*self.train_dataset)
         self.vocab_size = len(vocab)
         self.n_classes = np.unique(self.train_dataset[1]).size
