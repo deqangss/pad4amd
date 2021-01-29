@@ -79,7 +79,7 @@ class Dataset(torch.utils.data.Dataset):
 
         _labels, counts = np.unique(self.train_dataset[1], return_counts=True)
         self.sample_weights = np.ones_like(_labels).astype(np.float32)
-        _weights = counts / float(np.min(counts))
+        _weights = float(np.max(counts)) / counts
         for i in range(_labels.shape[0]):
             self.sample_weights[_labels[i]] = _weights[i]
 
