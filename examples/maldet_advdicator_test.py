@@ -45,12 +45,12 @@ def _main():
                                      n_classes=dataset.n_classes,
                                      device=dv,
                                      sample_weights=dataset.sample_weights,
-                                     name='20210130-102323',
+                                     name=time.strftime("%Y%m%d-%H%M%S"),
                                      **vars(args)
                                      )
     model = model.to(dv)
     save_args(path.join(path.dirname(model.model_save_path), "hparam"), vars(args))
-    model.load_state_dict(torch.load(model.model_save_path))
+    # model.load_state_dict(torch.load(model.model_save_path))
     model.fit(train_dataset_producer,
               val_dataset_producer,
               epochs=args.epochs,
