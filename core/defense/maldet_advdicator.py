@@ -80,7 +80,7 @@ class MalwareDetectorIndicator(MalwareDetector):
             (x.unsqueeze(1) - self.dense.weight) * reverse_sigma * (x.unsqueeze(1) - self.dense.weight), dim=-1))
         return prob
 
-    def energy(self, representation, logits):
+    def energy(self, representation, logits, sample_weights):
         exp_over_flow = 1e-12
         gamma_z = torch.softmax(logits, dim=1)
         prob_n = self.gaussian_prob(representation)
@@ -90,15 +90,28 @@ class MalwareDetectorIndicator(MalwareDetector):
         # print(self.sample_weights)
         # print(torch.sum(prob_n * self.phi + exp_over_flow, dim=1))
         print(torch.sum(-torch.log(prob_n * self.phi + exp_over_flow), dim=1))
-        # E_z = torch.sum(torch.log(prob_n * self.phi + exp_over_flow) * self.sample_weights, dim=1)
-        E_z = torch.sum(gamma_z * torch.log(prob_n * self.phi / gamma_z + exp_over_flow) * self.sample_weights, dim=1)  # ELBO
+        E_z = torch.sum(torch.log(prob_n * self.phi + exp_over_flow) * sample_weights, dim=1)
+        # E_z = torch.sum(gamma_z * torch.log(prob_n * self.phi / gamma_z + exp_over_flow) * sample_weights, dim=1)  # ELBO
         energies = -torch.mean(E_z, dim=0)
         return energies
+
+    def get_sample_weights(self, labels):
+        _labels = labels.numpy()
+        _labels, counts = np.unique(_labels, return_counts=True)
+        if _labels.shape[0] < self.n_classes:
+            return torch.zeros((self.n_classes, ), dtype=torch.float, device=self.device)
+        else:
+            sample_weights = np.ones_like(_labels).astype(np.float32)
+            _weights = float(np.max(counts)) / counts
+            for i in range(_labels.shape[0]):
+                sample_weights[_labels[i]] = _weights[i]
+            return torch.from_numpy(sample_weights).to(self.device)
 
     def customize_loss(self, logits, gt_labels, representation,  mini_batch_idx):
         print(gt_labels)
         self.update_phi(logits, mini_batch_idx)
-        de = self.energy(representation, logits) * self.beta
+        sample_weights = self.get_sample_weights(gt_labels)
+        de = self.energy(representation, logits, sample_weights) * self.beta
         ce = F.cross_entropy(logits, gt_labels)
         return de + ce
 
