@@ -97,7 +97,7 @@ class MalwareDetectorIndicator(MalwareDetector):
         return energies
 
     def get_sample_weights(self, labels):
-        _labels = labels.numpy()
+        _labels = labels.cpu().numpy()
         _labels, counts = np.unique(_labels, return_counts=True)
         if _labels.shape[0] < self.n_classes:
             return torch.zeros((self.n_classes, ), dtype=torch.float, device=self.device)
