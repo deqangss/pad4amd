@@ -89,6 +89,7 @@ class MalwareDetectorIndicator(MalwareDetector):
         # print(self.phi)
         # print(self.sample_weights)
         # print(torch.sum(prob_n * self.phi + exp_over_flow, dim=1))
+        print(sample_weights)
         print(torch.sum(-torch.log(prob_n * self.phi + exp_over_flow), dim=1))
         E_z = torch.sum(torch.log(prob_n * self.phi + exp_over_flow) * sample_weights, dim=1)
         # E_z = torch.sum(gamma_z * torch.log(prob_n * self.phi / gamma_z + exp_over_flow) * sample_weights, dim=1)  # ELBO
