@@ -16,7 +16,7 @@ from examples.maldet_test import cmd_md
 #  alpha=1., sigma=0.7071,
 indicator_argparse = cmd_md.add_argument_group(title='adv indicator')
 indicator_argparse.add_argument('--beta', type=float, default=1., help='balance factor.')
-indicator_argparse.add_argument('--sigma', type=float, default=0.18,
+indicator_argparse.add_argument('--sigma', type=float, default=0.16,
                                 help='standard deviation of isotropic Gaussian distribution, default value 1/sqrt(2)')
 
 
@@ -41,7 +41,6 @@ def _main():
         dv = 'cpu'
     else:
         dv = 'cuda'
-    #  beta, sigma, vocab_size, n_classes, n_sample_times=10, device='cpu', name='PRO',
     model = MalwareDetectorIndicator(vocab_size=dataset.vocab_size,
                                      n_classes=dataset.n_classes,
                                      device=dv,
