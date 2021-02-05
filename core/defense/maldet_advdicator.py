@@ -85,7 +85,8 @@ class MalwareDetectorIndicator(MalwareDetector):
         gamma_z = torch.softmax(logits, dim=1)
         prob_n = self.gaussian_prob(representation)
 
-        # print(prob_n)
+        print(prob_n)
+        print(logits)
         # print(self.phi)
         # print(self.sample_weights)
         # print(torch.sum(prob_n * self.phi + exp_over_flow, dim=1))
