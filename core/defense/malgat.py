@@ -43,6 +43,9 @@ class MalGAT(nn.Module):
         self.n_heads = n_heads
         self.dropout = dropout
         self.alpha = alpha_
+        print(self.alpha)
+        import sys
+        sys.exit(1)
         self.k = k
         self.use_fusion = use_fusion
         self.sparse = sparse
