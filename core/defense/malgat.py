@@ -13,10 +13,11 @@ class MalGAT(nn.Module):
                  penultimate_hidden_unit,
                  n_heads,
                  dropout,
-                 alpha,
+                 alpha_,
                  k,
                  use_fusion,
                  sparse,
+                 smooth=False,
                  activation=F.elu):
         """
         Graph ATtention networks for malware detection
@@ -30,6 +31,7 @@ class MalGAT(nn.Module):
         :param k: Integer, the sampling size
         :param use_fusion: Boolean, combing the graph-type feature and binary bag-of-words feature
         :param sparse: GAT in sparse version or not
+        :param smooth: replace lrelu of elu
         :param activation: activation function
         """
         super(MalGAT, self).__init__()
@@ -40,12 +42,12 @@ class MalGAT(nn.Module):
         self.penultimate_hidden_unit = penultimate_hidden_unit
         self.n_heads = n_heads
         self.dropout = dropout
-        self.alpha = alpha
+        self.alpha = alpha_
         self.k = k
         self.use_fusion = use_fusion
         self.sparse = sparse
+        self.smooth = smooth
         self.activation = activation
-
         # instantiated trainable parameters (layers)
         self.embedding_weight = nn.Parameter(torch.empty(size=(self.vocab_size, self.embedding_dim)))
         nn.init.normal_(self.embedding_weight.data)  # default initialization method in torch
@@ -64,6 +66,7 @@ class MalGAT(nn.Module):
                                                      current_unit,
                                                      self.dropout,
                                                      self.alpha,
+                                                     smooth=self.smooth,
                                                      concat=True))
             self.attn_layers.append(attn_headers)
         # registration
@@ -75,6 +78,7 @@ class MalGAT(nn.Module):
                                          penultimate_hidden_unit,
                                          self.dropout,
                                          self.alpha,
+                                         smooth=self.smooth,
                                          concat=True)
         self.add_module('attention_layer_out', self.attn_out)
 

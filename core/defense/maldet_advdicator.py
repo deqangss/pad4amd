@@ -20,9 +20,10 @@ logger.addHandler(ErrorHandler)
 
 
 class MalwareDetectorIndicator(MalwareDetector):
-    def __init__(self, vocab_size, n_classes, beta=1., sigma=0.15916, sample_weights=None, n_sample_times=5, device='cpu', name='PRO', enable_gd_ckpt=False, **kwargs):
+    def __init__(self, vocab_size, n_classes, beta=1., sigma=0.1416, percentage=0.99, sample_weights=None, n_sample_times=5, device='cpu', name='PRO', enable_gd_ckpt=False, **kwargs):
         self.beta = beta
         self.sigma = sigma
+        self.percentage = percentage
         self.sample_weights = sample_weights
         self.device = device
         self.enable_gd_ckpt = enable_gd_ckpt
@@ -35,6 +36,7 @@ class MalwareDetectorIndicator(MalwareDetector):
 
         self.dense = nn.Linear(self.penultimate_hidden_unit + 1, self.n_classes, bias=False)
         self.phi = nn.Parameter(torch.zeros(size=(self.n_classes,)), requires_grad=False)
+        self.tau = nn.Parameter(torch.zeros(size=(1,), dtype=torch.float), requires_grad=False)
         if self.sample_weights is None:
             self.sample_weights = torch.ones((n_classes,), dtype=torch.float, device=self.dense)
         else:
@@ -43,6 +45,25 @@ class MalwareDetectorIndicator(MalwareDetector):
                                          'model.pth')
         if not path.exists(self.model_save_path):
             utils.mkdir(path.dirname(self.model_save_path))
+
+    def get_threshold(self, validation_data_producer):
+        """
+        get the threshold for density estimation
+        :param validation_data_producer: Object, an iterator for producing validation dataset
+        """
+        self.eval()
+        probabilities = []
+        with torch.no_grad():
+            for res in validation_data_producer:
+                x_val, adj_val, y_val, _2 = res
+                x_val, adj_val, y_val = utils.to_tensor(x_val, adj_val, y_val, self.device)
+                p_representation, logits = self.forward(x_val, adj_val)
+                x_prob = self.forward_g(p_representation)
+                probabilities.append(x_prob)
+            s, _ = torch.sort(torch.hstack(probabilities))
+            i = int((s.shape[0]-1)*self.percentage)
+            assert i >= 0
+            self.tau = s[i]
 
     def forward(self, feature, adj=None):
         if self.enable_gd_ckpt:
@@ -90,8 +111,9 @@ class MalwareDetectorIndicator(MalwareDetector):
         # print(self.sample_weights)
         # print(torch.sum(prob_n * self.phi + exp_over_flow, dim=1))
         print(torch.sum(-torch.log(prob_n * self.phi + exp_over_flow), dim=1))
-        # E_z = torch.sum(torch.log(prob_n * self.phi + exp_over_flow) * sample_weights, dim=1)
-        E_z = torch.sum(gamma_z * torch.log(prob_n * self.phi / gamma_z + exp_over_flow) * sample_weights, dim=1)  # ELBO
+        # E_z = torch.sum(torch.log(prob_n * self.phi + exp_over_flow) * self.sample_weights, dim=1)
+        print(self.sample_weights)
+        E_z = torch.sum(gamma_z * torch.log(prob_n * self.phi / gamma_z + exp_over_flow) * self.sample_weights, dim=1)  # ELBO
         energies = -torch.mean(E_z, dim=0)
         return energies
 

@@ -47,10 +47,11 @@ class MalwareDetector(nn.Module):
                              self.penultimate_hidden_unit,
                              self.n_heads,
                              self.dropout,
-                             self.beta,
+                             self.alpha_,
                              self.k,
                              self.use_fusion,
-                             self.sparse)
+                             self.sparse,
+                             self.smooth)
 
         self.dense = nn.Linear(self.penultimate_hidden_unit, self.n_classes)
         self.model_save_path = path.join(config.get('experiments', 'malware_detector') + '_' + self.name,
@@ -62,10 +63,11 @@ class MalwareDetector(nn.Module):
                    penultimate_hidden_unit=64,
                    n_heads=8,
                    dropout=0.6,
-                   alpha=0.2,
+                   alpha_=0.2,
                    k=10,
                    use_fusion=True,
                    sparse=True,
+                   smooth=False,
                    enable_gd_ckpt=False,
                    **kwargs
                    ):
@@ -77,10 +79,11 @@ class MalwareDetector(nn.Module):
         self.penultimate_hidden_unit = penultimate_hidden_unit
         self.n_heads = n_heads
         self.dropout = dropout
-        self.alpha = alpha
+        self.alpha_ = alpha_
         self.k = k
         self.use_fusion = use_fusion
         self.sparse = sparse
+        self.smooth = smooth
         self.enable_gd_ckpt = enable_gd_ckpt
         if len(kwargs) > 0:
             logger.warning("Unknown hyper-parameters {}".format(str(kwargs)))

@@ -2,7 +2,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 import os.path as path
-import argparse
 import time
 
 import torch
@@ -13,15 +12,17 @@ from core.defense import MalwareDetectorIndicator
 from tools.utils import save_args, get_group_args, to_tensor
 from examples.maldet_test import cmd_md
 
-#  alpha=1., sigma=0.7071,
 indicator_argparse = cmd_md.add_argument_group(title='adv indicator')
 indicator_argparse.add_argument('--beta', type=float, default=1., help='balance factor.')
-indicator_argparse.add_argument('--sigma', type=float, default=0.16,
+indicator_argparse.add_argument('--sigma', type=float, default=0.1416,
                                 help='standard deviation of isotropic Gaussian distribution, default value 1/sqrt(2)')
+indicator_argparse.add_argument('--percentage', type=float, default=0.99,
+                                help='the percentage of reminded validation examples')
 
 
 def _main():
     args = cmd_md.parse_args()
+
     dataset = Dataset(args.dataset_name,
                       k=args.k,
                       use_cache=False,
@@ -41,6 +42,7 @@ def _main():
         dv = 'cpu'
     else:
         dv = 'cuda'
+
     model = MalwareDetectorIndicator(vocab_size=dataset.vocab_size,
                                      n_classes=dataset.n_classes,
                                      device=dv,

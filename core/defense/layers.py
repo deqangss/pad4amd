@@ -9,12 +9,15 @@ import torch.nn.functional as F
 
 
 class GraphAttentionLayerCLS(nn.Module):
-    def __init__(self, feature_dim, dropout, alpha):
+    def __init__(self, feature_dim, dropout, alpha, smooth=False):
         super(GraphAttentionLayerCLS, self).__init__()
         self.feature_dim = feature_dim
         self.dropout = dropout
         self.alpha = alpha
-        self.leakyrelu = nn.LeakyReLU(self.alpha)
+        if not smooth:
+            self.activation = nn.LeakyReLU(self.alpha)
+        else:
+            self.activation = nn.ELU(self.alpha)
 
         self.a = nn.Parameter(torch.empty(size=(2 * self.feature_dim, 1)))
         nn.init.xavier_uniform_(self.a.data, gain=1.414)
@@ -31,7 +34,7 @@ class GraphAttentionLayerCLS(nn.Module):
 
         all_combinations_matrix = torch.cat([cls_h_repeated, h], dim=-1)  # shape is [batch_size, number_of_subgraphs, 2 * feature_dim]
         all_combinations_matrix.size()
-        attention = self.leakyrelu(torch.matmul(all_combinations_matrix, self.a)).permute(0, 2, 1) # attention.shape is [batch_size, 1, number_of_subgraphs+1]
+        attention = self.activation(torch.matmul(all_combinations_matrix, self.a)).permute(0, 2, 1) # attention.shape is [batch_size, 1, number_of_subgraphs+1]
         attention = F.softmax(attention, dim=-1)
         attention = F.dropout(attention, self.dropout, training=self.training)
 
@@ -47,12 +50,13 @@ class GraphAttentionLayer(nn.Module):
     Simple GAT layer, similar to https://arxiv.org/abs/1710.10903
     """
 
-    def __init__(self, in_features, out_features, dropout, alpha, concat=True):
+    def __init__(self, in_features, out_features, dropout, alpha, smooth=False, concat=True):
         super(GraphAttentionLayer, self).__init__()
         self.dropout = dropout
         self.in_features = in_features
         self.out_features = out_features
         self.alpha = alpha
+        self.smooth = smooth
         self.concat = concat
 
         self.W = nn.Parameter(torch.empty(size=(in_features, out_features)))
@@ -60,7 +64,10 @@ class GraphAttentionLayer(nn.Module):
         self.a = nn.Parameter(torch.empty(size=(2 * out_features, 1)))
         nn.init.xavier_uniform_(self.a.data, gain=1.414)
 
-        self.leakyrelu = nn.LeakyReLU(self.alpha)
+        if not self.smooth:
+            self.activation = nn.LeakyReLU(self.alpha)
+        else:
+            self.activation = nn.ELU(self.alpha)
 
         self.adv_testing = None
 
@@ -73,7 +80,7 @@ class GraphAttentionLayer(nn.Module):
     def forward(self, h, adj):
         Wh = torch.matmul(h, self.W)  # h.shape: (batch_size, vocab_size, in_features), Wh.shape: (batch_size, vocab_size, out_features)
         a_input = self._prepare_attentional_mechanism_input(Wh)
-        e = self.leakyrelu(torch.matmul(a_input, self.a).squeeze(-1))
+        e = self.activation(torch.matmul(a_input, self.a).squeeze(-1))
 
         zero_vec = -9e15 * torch.ones_like(e)
         attention = torch.where(adj > 0, e, zero_vec)
@@ -136,12 +143,13 @@ class SpGraphAttentionLayer(nn.Module):
     Sparse version GAT layer, similar to https://arxiv.org/abs/1710.10903
     """
 
-    def __init__(self, in_features, out_features, dropout, alpha, concat=True):
+    def __init__(self, in_features, out_features, dropout, alpha, smooth=False, concat=True):
         super(SpGraphAttentionLayer, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
         self.alpha = alpha
         self.dropout = dropout
+        self.smooth = smooth
         self.concat = concat
 
         self.W = nn.Parameter(torch.zeros(size=(in_features, out_features)))
@@ -150,7 +158,10 @@ class SpGraphAttentionLayer(nn.Module):
         self.a = nn.Parameter(torch.zeros(size=(1, 2 * out_features)))
         nn.init.xavier_normal_(self.a.data, gain=1.414)
 
-        self.leakyrelu = nn.LeakyReLU(self.alpha)
+        if not self.smooth:
+            self.activation = nn.LeakyReLU(self.alpha)
+        else:
+            self.activation = nn.ELU(self.alpha)
 
         self.adv_testing = None
 
@@ -188,7 +199,7 @@ class SpGraphAttentionLayer(nn.Module):
         edge_h = torch.cat((h[edge[0, :], edge[1, :], :], h[edge[0, :], edge[2, :], :]), dim=1).t()
         # edge: 2*D x E (note: no batch size here)
 
-        edge_e = torch.exp(-self.leakyrelu(self.a.matmul(edge_h).squeeze()))
+        edge_e = torch.exp(-self.activation(self.a.matmul(edge_h).squeeze()))
         assert not torch.isnan(edge_e).any()
         # edge_e: E
 
