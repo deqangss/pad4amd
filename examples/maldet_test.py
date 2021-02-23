@@ -61,7 +61,7 @@ detector_argparse.add_argument('--is_adj', action='store_true', help='incorporat
 detector_argparse.add_argument('--undersampling_ratio', type=float, default=0., help='undersamling the benign samples, default: no undersampling')
 
 mode_argparse = cmd_md.add_argument_group(title='mode')
-mode_argparse.add_argument('--mode', type=str, default='train', choices=['train', 'eval'], required=False,
+mode_argparse.add_argument('--mode', type=str, default='train', choices=['train', 'test'], required=False,
                            help='learn a model or test it.')
 mode_argparse.add_argument('--test_model_name', type=str, default='pro', required=False, help='suffix of a tested model name.')
 
