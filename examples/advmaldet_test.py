@@ -16,7 +16,7 @@ indicator_argparse = cmd_md.add_argument_group(title='adv indicator')
 indicator_argparse.add_argument('--beta', type=float, default=1., help='balance factor.')
 indicator_argparse.add_argument('--sigma', type=float, default=0.1416,
                                 help='standard deviation of isotropic Gaussian distribution, default value 1/sqrt(2)')
-indicator_argparse.add_argument('--percentage', type=float, default=0.99,
+indicator_argparse.add_argument('--percentage', type=float, default=0.9,
                                 help='the percentage of reminded validation examples')
 
 
@@ -43,25 +43,33 @@ def _main():
     else:
         dv = 'cuda'
 
+    model_name = args.test_model_name if args.mode == 'test' else time.strftime("%Y%m%d-%H%M%S")
     model = MalwareDetectorIndicator(vocab_size=dataset.vocab_size,
                                      n_classes=dataset.n_classes,
                                      device=dv,
                                      sample_weights=dataset.sample_weights,
-                                     name=time.strftime("%Y%m%d-%H%M%S"),
+                                     name=model_name,
                                      **vars(args)
                                      )
     model = model.to(dv)
-    save_args(path.join(path.dirname(model.model_save_path), "hparam"), vars(args))
-    # model.load_state_dict(torch.load(model.model_save_path))
-    model.fit(train_dataset_producer,
-              val_dataset_producer,
-              epochs=args.epochs,
-              lr=args.lr,
-              weight_decay=args.weight_decay
-              )
 
+    if args.mode == 'train':
+        save_args(path.join(path.dirname(model.model_save_path), "hparam"), vars(args))
+        # model.load_state_dict(torch.load(model.model_save_path))
+        model.fit(train_dataset_producer,
+                  val_dataset_producer,
+                  epochs=args.epochs,
+                  lr=args.lr,
+                  weight_decay=args.weight_decay
+                  )
+
+    # get threshold
+    model.get_threshold(val_dataset_producer)
+    print(model.tau)
+    model.save_to_disk()
     # test: accuracy
-    model.predict(test_dataset_producer)
+    model.predict(test_dataset_producer, use_indicator=True)
+
     # test: gradients of loss w.r.t. input
     model.adv_eval()
     for res in test_dataset_producer:

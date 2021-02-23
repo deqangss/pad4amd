@@ -27,7 +27,7 @@ class MalGAT(nn.Module):
         :param penultimate_hidden_unit: Integer, the number of neurons in the penultimate layer
         :param n_heads: Integer, the number of headers to learn a sub-graph
         :param dropout: Float, dropout rate applied to attention layer
-        :param alpha: Float, the slope coefficient of leaky-relu
+        :param alpha_: Float, the slope coefficient of leaky-relu or elu
         :param k: Integer, the sampling size
         :param use_fusion: Boolean, combing the graph-type feature and binary bag-of-words feature
         :param sparse: GAT in sparse version or not

@@ -1,7 +1,1 @@
-# set -e
-
-python -m examples.feature_extraction_test -proc_number 2
-
-# python -m examples.maldetector_test
-
-# read
+python -m examples.maldetector_test --cuda --seed 0 --proc_number 30 --k 30

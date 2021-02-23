@@ -60,6 +60,10 @@ dataset_argparse.add_argument('--dataset_name', type=str, default='drebin',
 detector_argparse.add_argument('--is_adj', action='store_true', help='incorporate branches instruction information.')
 detector_argparse.add_argument('--undersampling_ratio', type=float, default=0., help='undersamling the benign samples, default: no undersampling')
 
+mode_argparse = cmd_md.add_argument_group(title='mode')
+mode_argparse.add_argument('--mode', type=str, default='train', choices=['train', 'eval'], required=False,
+                           help='learn a model or test it.')
+mode_argparse.add_argument('--test_model_name', type=str, default='pro', required=False, help='suffix of a tested model name.')
 
 def _main():
     args = cmd_md.parse_args()
@@ -82,20 +86,24 @@ def _main():
         dv = 'cpu'
     else:
         dv = 'cuda'
+
+    model_name = args.test_model_name if args.mode == 'test' else time.strftime("%Y%m%d-%H%M%S")
     model = MalwareDetector(dataset.vocab_size,
                             dataset.n_classes,
                             device=dv,
-                            name=time.strftime("%Y%m%d-%H%M%S"),
+                            name=model_name,
                             **vars(args)
                             )
     model = model.to(dv)
-    save_args(path.join(path.dirname(model.model_save_path), "hparam"), vars(args))
-    model.fit(train_dataset_producer,
-              val_dataset_producer,
-              epochs=args.epochs,
-              lr=args.lr,
-              weight_decay=args.weight_decay
-              )
+
+    if args.mode == 'train':
+        save_args(path.join(path.dirname(model.model_save_path), "hparam"), vars(args))
+        model.fit(train_dataset_producer,
+                  val_dataset_producer,
+                  epochs=args.epochs,
+                  lr=args.lr,
+                  weight_decay=args.weight_decay
+                  )
 
     # test: accuracy
     model.predict(test_dataset_producer)

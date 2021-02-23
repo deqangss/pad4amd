@@ -3,6 +3,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os.path as path
+from tqdm import tqdm
 
 import torch
 import torch.nn as nn
@@ -36,7 +37,7 @@ class MalwareDetectorIndicator(MalwareDetector):
 
         self.dense = nn.Linear(self.penultimate_hidden_unit + 1, self.n_classes, bias=False)
         self.phi = nn.Parameter(torch.zeros(size=(self.n_classes,)), requires_grad=False)
-        self.tau = nn.Parameter(torch.zeros(size=(1,), dtype=torch.float), requires_grad=False)
+        self.tau = nn.Parameter(torch.zeros(size=[], dtype=torch.float), requires_grad=False)
         if self.sample_weights is None:
             self.sample_weights = torch.ones((n_classes,), dtype=torch.float, device=self.dense)
         else:
@@ -46,24 +47,90 @@ class MalwareDetectorIndicator(MalwareDetector):
         if not path.exists(self.model_save_path):
             utils.mkdir(path.dirname(self.model_save_path))
 
+    def predict(self, test_data_producer, use_indicator=True):
+        # load model
+        self.load_state_dict(torch.load(self.model_save_path))
+        # evaluation on detector & indicator
+        confidence, probability, y_true = self.inference(test_data_producer)
+        y_pred = confidence.argmax(1).cpu().numpy()
+        y_true = y_true.cpu().numpy()
+        x_prob = probability.cpu().numpy()
+        # filter out examples with low likelihood
+        if use_indicator:
+            indicator_flag = x_prob >= self.tau.cpu().numpy()
+            y_pred = y_pred[indicator_flag]
+            y_true = y_true[indicator_flag]
+            logger.info('The indicator is turning on...')
+        from sklearn.metrics import f1_score, accuracy_score, confusion_matrix, balanced_accuracy_score
+        accuracy = accuracy_score(y_true, y_pred)
+        b_accuracy = balanced_accuracy_score(y_true, y_pred)
+
+        MSG = "The accuracy on the test dataset is {:.5f}%"
+        logger.info(MSG.format(accuracy * 100))
+        MSG = "The balanced accuracy on the test dataset is {:.5f}%"
+        logger.info(MSG.format(b_accuracy * 100))
+        tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
+
+        fpr = fp / float(tn + fp)
+        fnr = fn / float(tp + fn)
+        f1 = f1_score(y_true, y_pred, average='binary')
+
+        print("Other evaluation metrics we may need:")
+        MSG = "False Negative Rate (FNR) is {:.5f}%, False Positive Rate (FPR) is {:.5f}%, F1 score is {:.5f}%"
+        logger.info(MSG.format(fnr * 100, fpr * 100, f1 * 100))
+
+    def inference(self, test_data_producer):
+        confidences = []
+        x_probabilities = []
+        gt_labels = []
+        self.eval()
+        with torch.no_grad():
+            for ith in tqdm(range(self.n_sample_times)):
+                conf_batches = []
+                x_prob_batches = []
+                for res in test_data_producer:
+                    x, adj, y, _2 = res
+                    x, adj, y = utils.to_tensor(x, adj, y, self.device)
+                    p_representation, logits = self.forward(x, adj)
+                    conf_batches.append(F.softmax(logits, dim=-1))
+                    x_prob_batches.append(self.forward_g(p_representation))
+                    if ith == 0:
+                        gt_labels.append(y)
+                conf_batches = torch.vstack(conf_batches)
+                confidences.append(conf_batches)
+                x_probabilities.append(torch.hstack(x_prob_batches))
+        gt_labels = torch.cat(gt_labels, dim=0)
+        confidences = torch.mean(torch.stack(confidences).permute([1, 0, 2]), dim=1)
+        probabilities = torch.mean(torch.stack(x_probabilities), dim=0)
+        return confidences, probabilities, gt_labels
+
     def get_threshold(self, validation_data_producer):
         """
         get the threshold for density estimation
         :param validation_data_producer: Object, an iterator for producing validation dataset
         """
+        self.load_state_dict(torch.load(self.model_save_path))
         self.eval()
         probabilities = []
         with torch.no_grad():
-            for res in validation_data_producer:
-                x_val, adj_val, y_val, _2 = res
-                x_val, adj_val, y_val = utils.to_tensor(x_val, adj_val, y_val, self.device)
-                p_representation, logits = self.forward(x_val, adj_val)
-                x_prob = self.forward_g(p_representation)
-                probabilities.append(x_prob)
-            s, _ = torch.sort(torch.hstack(probabilities))
+            for _ in tqdm(range(self.n_sample_times)):
+                prob_ = []
+                for res in validation_data_producer:
+                    x_val, adj_val, y_val, _2 = res
+                    x_val, adj_val, y_val = utils.to_tensor(x_val, adj_val, y_val, self.device)
+                    p_representation, logits = self.forward(x_val, adj_val)
+                    x_prob = self.forward_g(p_representation)
+                    prob_.append(x_prob)
+                prob_ = torch.hstack(prob_)
+                probabilities.append(prob_)
+            s, _ = torch.sort(torch.mean(torch.stack(probabilities), dim=0), descending=True)
             i = int((s.shape[0]-1)*self.percentage)
             assert i >= 0
-            self.tau = s[i]
+            self.tau = nn.Parameter(s[i], requires_grad=False)
+
+    def save_to_disk(self):
+        assert path.exists(self.model_save_path), 'train model first'
+        torch.save(self.state_dict(), self.model_save_path)
 
     def forward(self, feature, adj=None):
         if self.enable_gd_ckpt:

@@ -47,7 +47,7 @@ class MalwareDetector(nn.Module):
                              self.penultimate_hidden_unit,
                              self.n_heads,
                              self.dropout,
-                             self.alpha_,
+                             self.alpha_,  # slope coefficient of leaky relu
                              self.k,
                              self.use_fusion,
                              self.sparse,
@@ -112,16 +112,16 @@ class MalwareDetector(nn.Module):
         self.eval()
         with torch.no_grad():
             for ith in tqdm(range(self.n_sample_times)):
-                conf_batchs = []
+                conf_batches = []
                 for res in test_data_producer:
                     x, adj, y, _2 = res
                     x, adj, y = utils.to_tensor(x, adj, y, self.device)
                     _, logits = self.forward(x, adj)
-                    conf_batchs.append(F.softmax(logits, dim=-1))
+                    conf_batches.append(F.softmax(logits, dim=-1))
                     if ith == 0:
                         gt_labels.append(y)
-                conf_batchs = torch.vstack(conf_batchs)
-                confidences.append(conf_batchs)
+                conf_batches = torch.vstack(conf_batches)
+                confidences.append(conf_batches)
         gt_labels = torch.cat(gt_labels, dim=0)
         confidences = torch.mean(torch.stack(confidences).permute([1, 0, 2]), dim=1)
         return confidences, gt_labels
