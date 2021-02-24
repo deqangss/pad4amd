@@ -54,7 +54,6 @@ def _main():
     model = model.to(dv)
 
     if args.mode == 'train':
-        save_args(path.join(path.dirname(model.model_save_path), "hparam"), vars(args))
         # model.load_state_dict(torch.load(model.model_save_path))
         model.fit(train_dataset_producer,
                   val_dataset_producer,
@@ -62,6 +61,7 @@ def _main():
                   lr=args.lr,
                   weight_decay=args.weight_decay
                   )
+        save_args(path.join(path.dirname(model.model_save_path), "hparam"), vars(args))
 
     # get threshold
     model.get_threshold(val_dataset_producer)

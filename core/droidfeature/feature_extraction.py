@@ -27,8 +27,11 @@ class Apk2graphs(object):
                  number_of_sequences=200000,
                  depth_of_recursion=50,
                  timeout=20,
-                 use_feature_selection=True,
                  max_vocab_size=10000,
+                 use_feature_selection=True,
+                 use_graph_merge=True,
+                 minimum_graphs_of_leaf=16,
+                 maximum_graphs_of_leaf=32,
                  file_ext='.gpickle',
                  update=False,
                  proc_number=2,
@@ -38,21 +41,27 @@ class Apk2graphs(object):
         initialization
         :param naive_data_save_dir: a directory for saving intermediates
         :param intermediate_save_dir: a directory for saving meta information
-        :param use_feature_selection: use feature selection to filtering out entities with high frequencies
         :param max_vocab_size: the maximum number of words
         :param number_of_sequences: the maximum number on the returned api sequences
         :param depth_of_recursion: the maximum depth when conducting depth-first traverse
         :param timeout: the elapsed time on analysis an app
-        :param file_ext: file extent
+        :param use_feature_selection: use feature selection to filtering out entities with high frequencies
+        :param use_graph_merge: boolean, merge graphs or not
+        :param minimum_graphs_of_leaf: integer, the minimum graphs in a node if merging graphs,
+        :param maximum_graphs_of_leaf: integer, the maximum graphs in a node
+        :param file_ext: file extension
         :param update: boolean indicator for recomputing the naive features
         :param proc_number: process number
         """
         self.naive_data_save_dir = naive_data_save_dir
         self.intermediate_save_dir = intermediate_save_dir
         self.use_feature_selection = use_feature_selection
+        self.use_graph_merge = use_graph_merge
         self.maximum_vocab_size = max_vocab_size
         self.number_of_sequences = number_of_sequences
         self.depth_of_recursion = depth_of_recursion
+        self.minimum_graphs_of_leaf = minimum_graphs_of_leaf
+        self.maximum_graphs_of_leaf = maximum_graphs_of_leaf
         self.time_out = timeout
 
         self.file_ext = file_ext
@@ -76,7 +85,9 @@ class Apk2graphs(object):
             else:
                 return save_path
 
-        params = [(apk_path, self.number_of_sequences, self.depth_of_recursion, self.time_out, get_save_path(apk_path)) for \
+        params = [(apk_path, self.number_of_sequences, self.depth_of_recursion, self.time_out,
+                   self.use_graph_merge, self.minimum_graphs_of_leaf, self.maximum_graphs_of_leaf,
+                   get_save_path(apk_path)) for \
                  apk_path in sample_path_list if get_save_path(apk_path) is not None]
         for res in tqdm(pool.imap_unordered(seq_gen.apk2graphs_wrapper, params), total=len(params)):
             if isinstance(res, Exception):

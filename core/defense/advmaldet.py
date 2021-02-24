@@ -44,8 +44,6 @@ class MalwareDetectorIndicator(MalwareDetector):
             self.sample_weights = torch.from_numpy(np.array(self.sample_weights)).to(self.device)
         self.model_save_path = path.join(config.get('experiments', 'malware_detector_indicator') + '_' + self.name,
                                          'model.pth')
-        if not path.exists(self.model_save_path):
-            utils.mkdir(path.dirname(self.model_save_path))
 
     def predict(self, test_data_producer, use_indicator=True):
         # load model

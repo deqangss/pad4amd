@@ -94,16 +94,17 @@ def _main():
                             name=model_name,
                             **vars(args)
                             )
+
     model = model.to(dv)
 
     if args.mode == 'train':
-        save_args(path.join(path.dirname(model.model_save_path), "hparam"), vars(args))
         model.fit(train_dataset_producer,
                   val_dataset_producer,
                   epochs=args.epochs,
                   lr=args.lr,
                   weight_decay=args.weight_decay
                   )
+        save_args(path.join(path.dirname(model.model_save_path), "hparam"), vars(args))
 
     # test: accuracy
     model.predict(test_dataset_producer)
