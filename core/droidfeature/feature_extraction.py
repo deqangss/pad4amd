@@ -17,6 +17,7 @@ logger = logging.getLogger('core.droidfeature.feature_extraction')
 logger.addHandler(ErrorHandler)
 NULL_ID = 'null'
 
+
 class Apk2graphs(object):
     """Construct api graphs using api sequences that are based on the function call graphs"""
 

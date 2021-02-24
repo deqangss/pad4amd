@@ -78,7 +78,9 @@ def apk2graphs_wrapper(kwargs):
         return e
 
 
-def apk2graphs(apk_path, max_number_of_sequences=15000, max_recursive_depth=50, timeout=20, saving_path=None):
+def apk2graphs(apk_path, max_number_of_sequences=15000, max_recursive_depth=50, timeout=20,
+               use_graph_merging = True, minimum_graphs_of_leaf=16, maximum_graphs_of_leaf=32,
+               saving_path=None):
     """
     extract the api graph.
     Each API is represented by a string that is constructed by
@@ -86,47 +88,54 @@ def apk2graphs(apk_path, max_number_of_sequences=15000, max_recursive_depth=50, 
 
     :param apk_path: string, a path directs to an apk file, and otherwise an error is raised
     :param max_number_of_sequences: integer, the maximum number of searched sequences
-    :param max_length_of_sequence: integer, the maximum length of a sequence
-    :param saving_path: string, a path directs to saving path
+    :param max_recursive_depth: integer, the maximum depth of visited methods
     :param timeout: integer, the elapsed time in minutes
+    :param use_graph_merging: boolean, merge graphs or not
+    :param minimum_graphs_of_leaf: integer, the minimum graphs in a node if merging graphs,
+    :param maximum_graphs_of_leaf: integer, the maximum graphs in a node
+    :param saving_path: string, a path directs to saving path
     """
-    if not isinstance(apk_path, str):
-        raise ValueError("Expected a path, but got {}".format(type(apk_path)))
-    if not path.exists(apk_path):
-        raise FileNotFoundError("Cannot find an apk file by following the path {}.".format(apk_path))
-    if saving_path is None:
-        warnings.warn("Save the features in current direction:{}".format(getcwd()))
-        saving_path = path.join(getcwd(), 'api-graph')
+    # if not isinstance(apk_path, str):
+    #     raise ValueError("Expected a path, but got {}".format(type(apk_path)))
+    # if not path.exists(apk_path):
+    #     raise FileNotFoundError("Cannot find an apk file by following the path {}.".format(apk_path))
+    # if saving_path is None:
+    #     warnings.warn("Save the features in current direction:{}".format(getcwd()))
+    #     saving_path = path.join(getcwd(), 'api-graph')
+    #
+    # try:
+    #     apk_path = path.abspath(apk_path)
+    #     a, d, dx = AnalyzeAPK(apk_path)
+    # except Exception as e:
+    #     raise ValueError("Fail to read and analyze the apk {}:{} ".format(apk_path, str(e)))
+    #
+    # # get entry points
+    # # 1. components as entry point
+    # entry_points_comp = get_comp_entry_points(a, d)
+    #
+    # # 2. build function caller-callee graph, this is used for find another kind of entry points
+    # entry_points_no_callers = get_no_caller_entry_points(dx)
+    # entry_points = entry_points_comp.copy()
+    # entry_points.extend([p for p in entry_points_no_callers if p not in entry_points_comp])
+    #
+    # # 3. if no entry points, randomly choose ones
+    # if len(entry_points) <= 0:
+    #     entry_points = get_random_entry_points(dx)
+    #
+    # # 4. get system API graphs that are artificially made from API call sequences
+    # api_sequence_dict = get_api_call_graphs(entry_points,
+    #                                         dx,
+    #                                         max_number_of_sequences,
+    #                                         max_recursive_depth,
+    #                                         timeout
+    #                                         )
 
-    try:
-        apk_path = path.abspath(apk_path)
-        a, d, dx = AnalyzeAPK(apk_path)
-    except Exception as e:
-        raise ValueError("Fail to read and analyze the apk {}:{} ".format(apk_path, str(e)))
-
-    # get entry points
-    # 1. components as entry point
-    entry_points_comp = get_comp_entry_points(a, d)
-
-    # 2. build function caller-callee graph, this is used for find another kind of entry points
-    entry_points_no_callers = get_no_caller_entry_points(dx)
-    entry_points = entry_points_comp.copy()
-    entry_points.extend([p for p in entry_points_no_callers if p not in entry_points_comp])
-
-    # 3. if no entry points, randomly choose ones
-    if len(entry_points) <= 0:
-        entry_points = get_random_entry_points(dx)
-
-    # 4. get system API graphs that are artificially made from API call sequences
-    api_sequence_dict = get_api_call_graphs(entry_points,
-                                            dx,
-                                            max_number_of_sequences,
-                                            max_recursive_depth,
-                                            timeout
-                                            )
-    # 5. saving the results
-    if len(api_sequence_dict) > 0:
-        save_to_disk(api_sequence_dict, saving_path)
+    api_sequence_dict = read_from_disk(saving_path)
+    # 5. merger graphs based on class name
+    new_seq_dict = merge_graphs(api_sequence_dict, minimum_graphs_of_leaf, maximum_graphs_of_leaf)
+    # 6. saving the results
+    if len(new_seq_dict) > 0:
+        save_to_disk(new_seq_dict, saving_path)
         return saving_path
     else:
         raise ValueError("No graph found: " + apk_path)
@@ -466,16 +475,74 @@ def get_api_info(node_tag):
     return api_info
 
 
-def sequence_post_processing(dft_api_sequence_list):
-    if not isinstance(dft_api_sequence_list, list):
-        raise TypeError("A list of api sequences is expected.")
+def merge_graphs(api_seq_dict, minimum_points=16, maximum_points=32):
+    """
+    merge graphs based on class names
+    :param api_seq_dict: collections.defaultdict, keys: entry points, values: call graphs
+    :param minimum_points: Integer, the minimum number of root points in a leaf node
+    :param maximum_points: Integer, the maximum number of root points in a leaf node
+    """
+    assert minimum_points <= maximum_points
 
-    # removing duplication
-    api_sequences_list = list(map(list, set(map(tuple, dft_api_sequence_list))))
+    root_nodes = list(api_seq_dict.keys())
+    # remove abundant information and sub-class
+    class_names = [root_node.split(';')[0].split('$')[0].split('/') for root_node in root_nodes]
 
-    # others handling
+    # category
+    reminded_node_indices = list(range(len(class_names)))
+    new_cg_dict = collections.defaultdict(nx.DiGraph)
+    for i in range(1, 16):
+        c = collections.Counter()
+        d = collections.defaultdict(list)
+        c_child = collections.Counter()
+        r = reminded_node_indices.copy()
+        for idx in r:
+            c['/'.join(class_names[idx][:i])] += 1
+            d['/'.join(class_names[idx][:i])].append(root_nodes[idx])
+            if len(class_names[idx][i:]) == 1:
+                c_child['/'.join(class_names[idx][:i + 1])] += 1
+                d['/'.join(class_names[idx][:i + 1])].append(root_nodes[idx])
 
-    return api_sequences_list
+        def merge_graph(root_nodes_of_category):
+            assert len(root_nodes_of_category) > 0
+            g = api_seq_dict[root_nodes_of_category[0]]
+            for n in root_nodes_of_category[1:]:
+                g = nx.compose(g, api_seq_dict[n])
+            return g
+
+        def remove_node(nodes):
+            for n in nodes:
+                reminded_node_indices.remove(root_nodes.index(n))
+
+        for e, k in c.items():
+            # 1. the number of successor is less than maximum number
+            if k <= maximum_points:
+                new_root_nodes = d[e]
+                new_cg_dict[tuple(new_root_nodes)] = merge_graph(new_root_nodes)
+                remove_node(new_root_nodes)
+            # 2. the number of successor is greater than maximum number
+            else:
+                child_count = 0
+                child_root_nodes = []
+                for e_c, k_c in c_child.items():
+                    if e == e_c.rsplit('/', 1)[0]:
+                        if minimum_points <= k_c:
+                            new_root_nodes = list(d[e_c])
+                            new_cg_dict[tuple(new_root_nodes)] = merge_graph(new_root_nodes)
+                            remove_node(new_root_nodes)
+                        else:
+                            child_count += k_c
+                            child_root_nodes += list(d[e_c])
+                        if minimum_points <= child_count:
+                            # a category
+                            new_cg_dict[tuple(child_root_nodes)] = merge_graph(child_root_nodes)
+                            remove_node(child_root_nodes)
+                            child_count = 0
+                            child_root_nodes = []
+                if 0 < child_count:
+                    new_cg_dict[tuple(child_root_nodes)] = merge_graph(child_root_nodes)
+                    remove_node(child_root_nodes)
+    return new_cg_dict
 
 
 def _main():

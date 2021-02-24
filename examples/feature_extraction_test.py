@@ -35,12 +35,13 @@ def _main():
                                    number_of_sequences=args.number_of_sequences,
                                    depth_of_recursion=args.depth_of_recursion,
                                    timeout=args.timeout,
-                                   update=False,
+                                   update=True,
                                    proc_number=args.proc_number)
     malware_features = feature_extractor.feature_extraction(malware_dir_name)
     print('The number of malware files: ', len(malware_features))
     benign_features = feature_extractor.feature_extraction(benware_dir_name)
     print('The number of benign files: ', len(benign_features))
+
 
 
 if __name__ == '__main__':
