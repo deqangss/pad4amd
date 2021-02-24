@@ -485,7 +485,6 @@ def merge_graphs(api_seq_dict, minimum_points=16, maximum_points=32):
     assert minimum_points <= maximum_points
 
     root_nodes = list(api_seq_dict.keys())
-    print(type(root_nodes[0]))
     if isinstance(root_nodes[0], tuple):
         return api_seq_dict
     # remove abundant information and sub-class
