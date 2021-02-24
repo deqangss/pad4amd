@@ -79,7 +79,7 @@ def apk2graphs_wrapper(kwargs):
 
 
 def apk2graphs(apk_path, max_number_of_sequences=15000, max_recursive_depth=50, timeout=20,
-               use_graph_merging = True, minimum_graphs_of_leaf=16, maximum_graphs_of_leaf=32,
+               use_graph_merging=True, minimum_graphs_of_leaf=16, maximum_graphs_of_leaf=32,
                saving_path=None):
     """
     extract the api graph.
@@ -330,7 +330,7 @@ def get_api_call_graphs(entry_points, dx, max_number_of_sequences, recursive_dep
         depth += 1
         if depth >= recursive_depth:
             return
-        if time.time() - start_time > int(60*timeout):
+        if time.time() - start_time > int(60 * timeout):
             raise TimeoutError
 
         # depth first search at the block level and a method can have multiple blocks split by if, for, try...catch,...
@@ -338,7 +338,7 @@ def get_api_call_graphs(entry_points, dx, max_number_of_sequences, recursive_dep
             if not block or block in visited_blocks:
                 return
             if time.time() - start_time > int(60 * timeout):
-               raise TimeoutError
+                raise TimeoutError
 
             visited_blocks.append(block)
             sz_block_wise = len(stack)

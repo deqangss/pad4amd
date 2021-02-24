@@ -32,7 +32,7 @@ def remove_duplicate(components):
     elif isinstance(components, str):
         return '.'.join(list(filter(None, components.strip().split('.'))))
     else:
-        raise TypeError
+        raise TypeError("Types of 'list' and 'str' are expected, but got {}.".format(type(components)))
 
 
 def retrive_files_set(base_dir, dir_ext, file_ext):
