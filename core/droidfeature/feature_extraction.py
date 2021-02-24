@@ -29,7 +29,7 @@ class Apk2graphs(object):
                  timeout=20,
                  max_vocab_size=10000,
                  use_feature_selection=True,
-                 use_graph_merge=True,
+                 use_graph_merging=True,
                  minimum_graphs_of_leaf=16,
                  maximum_graphs_of_leaf=32,
                  file_ext='.gpickle',
@@ -46,7 +46,7 @@ class Apk2graphs(object):
         :param depth_of_recursion: the maximum depth when conducting depth-first traverse
         :param timeout: the elapsed time on analysis an app
         :param use_feature_selection: use feature selection to filtering out entities with high frequencies
-        :param use_graph_merge: boolean, merge graphs or not
+        :param use_graph_merging: boolean, merge graphs or not
         :param minimum_graphs_of_leaf: integer, the minimum graphs in a node if merging graphs,
         :param maximum_graphs_of_leaf: integer, the maximum graphs in a node
         :param file_ext: file extension
@@ -56,7 +56,7 @@ class Apk2graphs(object):
         self.naive_data_save_dir = naive_data_save_dir
         self.intermediate_save_dir = intermediate_save_dir
         self.use_feature_selection = use_feature_selection
-        self.use_graph_merge = use_graph_merge
+        self.use_graph_merge = use_graph_merging
         self.maximum_vocab_size = max_vocab_size
         self.number_of_sequences = number_of_sequences
         self.depth_of_recursion = depth_of_recursion

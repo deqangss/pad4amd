@@ -8,19 +8,21 @@ from config import config
 
 cmd_md = argparse.ArgumentParser(description='arguments for feature extraction')
 cmd_md.add_argument('--proc_number', type=int, default=2,
-                    help='The number of threads for features extraction.')
+                    help='number of threads for features extraction.')
 cmd_md.add_argument('--number_of_sequences', type=int, default=200000,
-                    help='The maximum number of produced sequences for each app')
+                    help='maximum number of produced sequences for each app')
 cmd_md.add_argument('--depth_of_recursion', type=int, default=50,
-                    help='The maximum depth restricted on the depth-first traverse')
+                    help='maximum depth restricted on the depth-first traverse')
 cmd_md.add_argument('--timeout', type=int, default=20,
-                    help='The maximum elapsed time for analyzing an app')
+                    help='maximum elapsed time for analyzing an app')
 cmd_md.add_argument('--use_feature_selection', action='store_true', default=True,
-                    help='Whether use feature selection or not.')
+                    help='use feature selection or not.')
+cmd_md.add_argument('--use_graph_merging', action='store_true', default=True,
+                    help='merge graph or not.')
 cmd_md.add_argument('--max_vocab_size', type=int, default=10000,
-                    help='The maximum number of vocabulary size')
+                    help='maximum number of vocabulary size')
 cmd_md.add_argument('--update', action='store_true', default=False,
-                    help='Whether update the existed features.')
+                    help='update the existed features.')
 
 args = cmd_md.parse_args()
 
@@ -35,7 +37,9 @@ def _main():
                                    number_of_sequences=args.number_of_sequences,
                                    depth_of_recursion=args.depth_of_recursion,
                                    timeout=args.timeout,
-                                   update=True,
+                                   use_feature_selection=args.use_feature_selection,
+                                   use_graph_merging=args.use_graph_merging,
+                                   update=args.update,
                                    proc_number=args.proc_number)
     malware_features = feature_extractor.feature_extraction(malware_dir_name)
     print('The number of malware files: ', len(malware_features))
