@@ -95,42 +95,41 @@ def apk2graphs(apk_path, max_number_of_sequences=15000, max_recursive_depth=50, 
     :param maximum_graphs_of_leaf: integer, the maximum graphs in a node
     :param saving_path: string, a path directs to saving path
     """
-    # if not isinstance(apk_path, str):
-    #     raise ValueError("Expected a path, but got {}".format(type(apk_path)))
-    # if not path.exists(apk_path):
-    #     raise FileNotFoundError("Cannot find an apk file by following the path {}.".format(apk_path))
-    # if saving_path is None:
-    #     warnings.warn("Save the features in current direction:{}".format(getcwd()))
-    #     saving_path = path.join(getcwd(), 'api-graph')
-    #
-    # try:
-    #     apk_path = path.abspath(apk_path)
-    #     a, d, dx = AnalyzeAPK(apk_path)
-    # except Exception as e:
-    #     raise ValueError("Fail to read and analyze the apk {}:{} ".format(apk_path, str(e)))
-    #
-    # # get entry points
-    # # 1. components as entry point
-    # entry_points_comp = get_comp_entry_points(a, d)
-    #
-    # # 2. build function caller-callee graph, this is used for find another kind of entry points
-    # entry_points_no_callers = get_no_caller_entry_points(dx)
-    # entry_points = entry_points_comp.copy()
-    # entry_points.extend([p for p in entry_points_no_callers if p not in entry_points_comp])
-    #
-    # # 3. if no entry points, randomly choose ones
-    # if len(entry_points) <= 0:
-    #     entry_points = get_random_entry_points(dx)
-    #
-    # # 4. get system API graphs that are artificially made from API call sequences
-    # api_sequence_dict = get_api_call_graphs(entry_points,
-    #                                         dx,
-    #                                         max_number_of_sequences,
-    #                                         max_recursive_depth,
-    #                                         timeout
-    #                                         )
+    if not isinstance(apk_path, str):
+        raise ValueError("Expected a path, but got {}".format(type(apk_path)))
+    if not path.exists(apk_path):
+        raise FileNotFoundError("Cannot find an apk file by following the path {}.".format(apk_path))
+    if saving_path is None:
+        warnings.warn("Save the features in current direction:{}".format(getcwd()))
+        saving_path = path.join(getcwd(), 'api-graph')
 
-    api_sequence_dict = read_from_disk(saving_path)
+    try:
+        apk_path = path.abspath(apk_path)
+        a, d, dx = AnalyzeAPK(apk_path)
+    except Exception as e:
+        raise ValueError("Fail to read and analyze the apk {}:{} ".format(apk_path, str(e)))
+
+    # get entry points
+    # 1. components as entry point
+    entry_points_comp = get_comp_entry_points(a, d)
+
+    # 2. build function caller-callee graph, this is used for find another kind of entry points
+    entry_points_no_callers = get_no_caller_entry_points(dx)
+    entry_points = entry_points_comp.copy()
+    entry_points.extend([p for p in entry_points_no_callers if p not in entry_points_comp])
+
+    # 3. if no entry points, randomly choose ones
+    if len(entry_points) <= 0:
+        entry_points = get_random_entry_points(dx)
+
+    # 4. get system API graphs that are artificially made from API call sequences
+    api_sequence_dict = get_api_call_graphs(entry_points,
+                                            dx,
+                                            max_number_of_sequences,
+                                            max_recursive_depth,
+                                            timeout
+                                            )
+
     # 5. merger graphs based on class name
     new_seq_dict = merge_graphs(api_sequence_dict, minimum_graphs_of_leaf, maximum_graphs_of_leaf)
     # 6. saving the results
