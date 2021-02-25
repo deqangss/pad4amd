@@ -354,10 +354,12 @@ def get_api_call_graphs(entry_points, dx, max_number_of_sequences, recursive_dep
                 arguments = '(' + invoke_match.group('invokeArgument') + ')' + invoke_match.group('invokeReturn')
                 # get the encoded method accordingly
                 encoded_method = dx.get_method_by_name(class_name, method_name, arguments)
-                if encoded_method is None:  # todo: 'none' indicates the method could be implemented in the parent class
-                    class_name_parent = dx.get_class_analysis(class_name).extends
+                if encoded_method is None:
+                    # todo: 'none' indicates the method could be implemented in the parent class
+                    # the following lines over-estimate the call references
+                    parent_class_name = dx.get_class_analysis(class_name).extends
                     _api_of_interest('invoke-super',
-                                     class_name_parent,
+                                     parent_class_name,
                                      method_name,
                                      arguments,
                                      tag,
