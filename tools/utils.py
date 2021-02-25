@@ -1,4 +1,5 @@
 import os
+import signal
 import warnings
 import joblib
 import pickle as pkl
@@ -33,6 +34,11 @@ def remove_duplicate(components):
         return '.'.join(list(filter(None, components.strip().split('.'))))
     else:
         raise TypeError("Types of 'list' and 'str' are expected, but got {}.".format(type(components)))
+
+
+def pool_initializer():
+    """Ignore CTRL+C in the worker process."""
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
 
 
 def retrive_files_set(base_dir, dir_ext, file_ext):

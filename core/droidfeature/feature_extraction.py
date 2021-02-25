@@ -1,5 +1,4 @@
 import os.path
-import signal
 import warnings
 from tqdm import tqdm
 import multiprocessing
@@ -74,7 +73,7 @@ class Apk2graphs(object):
     def feature_extraction(self, sample_dir):
         """ save the android features and return the saved paths """
         sample_path_list = utils.check_dir(sample_dir)
-        pool = multiprocessing.Pool(self.proc_number, initializer=pool_initializer)
+        pool = multiprocessing.Pool(self.proc_number, initializer=utils.pool_initializer)
 
         def get_save_path(a_path):
             sha256_code = os.path.splitext(os.path.basename(a_path))[0]  # utils.get_sha256(apk_path)
@@ -282,11 +281,6 @@ class Apk2graphs(object):
             # if len(numerical_representation_dict) > 0:
             #     numerical_representation_container.append([numerical_representation_dict, label, feature_path])
         return numerical_representation_container
-
-
-def pool_initializer():
-    """Ignore CTRL+C in the worker process."""
-    signal.signal(signal.SIGINT, signal.SIG_IGN)
 
 
 def _graph2rpst_wrapper(args):
