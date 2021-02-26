@@ -114,10 +114,11 @@ class MalGAT(nn.Module):
     def forward(self, x, adjs=None):
         """
         forward the neural network
-        :param x: 3d tensor,  feature representations in the mini-batch level, [self.k, batch_size, vocab_dim]
-        :param adjs: 4d tensor, adjacent matrices in the mini-batch level, [self.k, batch_size, vocab_dim, vocab_dim]
+        :param x: 3d tensor,  feature representations in the mini-batch level, [batch_size, self.k, vocab_dim]
+        :param adjs: 4d tensor, adjacent matrices in the mini-batch level, note that shape is [self.k, batch_size,  vocab_dim, vocab_dim] because sparse tensor has no stride
         :return: None
         """
+        x = x.permute(1, 0, 2)  # [batch_size, k, vocab_dim] --> [k, batch_size, vocab_dim]
         assert (len(x) >= self.k) and (self.k >= 0)  # x has the shape [self.k, batch_size, vocab_size]
         x_comb = torch.clip(torch.sum(x, dim=0), min=0, max=1.)
         mod1_code = torch.amax(

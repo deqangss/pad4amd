@@ -227,3 +227,8 @@ class MalwareDetector(nn.Module):
                     f'Training loss (epoch level): {np.mean(losses):.4f} | Train accuracy: {np.mean(accuracies) * 100:.2f}')
                 logger.info(f'Validation accuracy: {avg_acc_val * 100:.2f} | The best validation accuracy: {best_avg_acc * 100:.2f} at epoch: {best_epoch}')
 
+    def load(self):
+        """
+        load model parameters from disk
+        """
+        self.load_state_dict(torch.load(self.model_save_path))
