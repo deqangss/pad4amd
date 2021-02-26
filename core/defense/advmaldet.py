@@ -166,7 +166,7 @@ class MalwareDetectorIndicator(MalwareDetector):
             (x.unsqueeze(1) - self.dense.weight) * reverse_sigma * (x.unsqueeze(1) - self.dense.weight), dim=-1))
         return prob
 
-    def energy(self, representation, logits, sample_weights):
+    def energy(self, representation, logits):
         exp_over_flow = 1e-12
         gamma_z = torch.softmax(logits, dim=1)
         prob_n = self.gaussian_prob(representation)
@@ -196,8 +196,7 @@ class MalwareDetectorIndicator(MalwareDetector):
     def customize_loss(self, logits, gt_labels, representation,  mini_batch_idx):
         print(gt_labels)
         self.update_phi(logits, mini_batch_idx)
-        sample_weights = self.get_sample_weights(gt_labels)
-        de = self.energy(representation, logits, sample_weights) * self.beta
+        de = self.energy(representation, logits) * self.beta
         ce = F.cross_entropy(logits, gt_labels)
         return de + ce
 
