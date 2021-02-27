@@ -35,7 +35,7 @@ def main_():
             x, adj, l, sampling_idx = res
             if dataset.is_adj is not None:
                 adjs = ivs_to_tensor_coo_sp(adj)
-                adj = adjs[5,1].to_dense().numpy()
+                adj = adjs[5, 1].to_dense().numpy()
                 assert np.all(adj.diagonal() == np.clip(np.sum(adj, axis=0), a_min=0., a_max=1))
                 assert np.all(np.abs(adj-adj.T) < 1e-8)
 
