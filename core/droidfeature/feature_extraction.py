@@ -212,7 +212,6 @@ class Apk2graphs(object):
         """
         raise NotImplementedError
 
-
     def feature2ipt(self, feature_path_list, gt_labels=None, is_adj=False):
         """
         Mapping features to the numerical representation
@@ -228,7 +227,7 @@ class Apk2graphs(object):
 
         features, adj, labels = [], [], []
         vocab, _ = self.get_vocab()
-        representation_container = Apk2graphs.graph2representation(feature_path_list, gt_labels, vocab, is_adj)
+        representation_container = self.graph2representation(feature_path_list, gt_labels, vocab, is_adj)
         for rpst in representation_container:
             rpst_dict, label, feature_path = rpst
             sub_features = []
