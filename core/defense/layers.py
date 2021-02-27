@@ -208,6 +208,7 @@ class SpGraphAttentionLayer(nn.Module):
             e_rowsum = torch.stack(
                 [torch.sparse.mm(sp_e, torch.ones(size=(N, 1), dtype=torch.float, device=dv)) for sp_e in sp_edge_e])
         else:
+            print(sp_edge_e._nnz())
             e_rowsum = torch.bmm(sp_edge_e, torch.ones(size=(batch_size, N, 1), dtype=torch.float, device=dv))  # encounter runtime error sometimes
         # e_rowsum = self.special_spmm(edge, edge_e, torch.Size([N, N]), torch.ones(size=(N, 1), device=dv))
         # e_rowsum: batch_size x N x 1
