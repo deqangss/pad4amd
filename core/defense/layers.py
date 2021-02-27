@@ -203,6 +203,7 @@ class SpGraphAttentionLayer(nn.Module):
         assert not torch.isnan(edge_e).any()
         # edge_e: E
 
+        sp_edge_e = torch.sparse_coo_tensor(edge, edge_e, torch.Size([batch_size, N, N]))
         e_rowsum = torch.stack(
             [torch.sparse.mm(sp_e, torch.ones(size=(N, 1), dtype=torch.float, device=dv)) for sp_e in sp_edge_e])
         # e_rowsum: batch_size x N x 1
