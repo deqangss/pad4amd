@@ -203,14 +203,8 @@ class SpGraphAttentionLayer(nn.Module):
         assert not torch.isnan(edge_e).any()
         # edge_e: E
 
-        sp_edge_e = torch.sparse_coo_tensor(edge, edge_e, torch.Size([batch_size, N, N]))
-        if self.training or self.adv_testing or sp_edge_e._nnz() > 50000:
-            e_rowsum = torch.stack(
-                [torch.sparse.mm(sp_e, torch.ones(size=(N, 1), dtype=torch.float, device=dv)) for sp_e in sp_edge_e])
-        else:
-            print(sp_edge_e._nnz())
-            e_rowsum = torch.bmm(sp_edge_e, torch.ones(size=(batch_size, N, 1), dtype=torch.float, device=dv))  # encounter runtime error sometimes
-        # e_rowsum = self.special_spmm(edge, edge_e, torch.Size([N, N]), torch.ones(size=(N, 1), device=dv))
+        e_rowsum = torch.stack(
+            [torch.sparse.mm(sp_e, torch.ones(size=(N, 1), dtype=torch.float, device=dv)) for sp_e in sp_edge_e])
         # e_rowsum: batch_size x N x 1
 
         edge_e = F.dropout(edge_e, self.dropout, training=self.training)
