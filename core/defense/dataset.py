@@ -178,7 +178,7 @@ class Dataset(torch.utils.data.Dataset):
                     adjs_padded.append(adjs[i])
 
         # shape [batch_size, self.n_sg_used, vocab_size]
-        features_padded_t = np.array([np.stack(list(feat), axis=0) for feat in zip(*features_padded)]).transpose([1, 0, 2])
+        features_padded = np.array([np.stack(list(feat), axis=0) for feat in zip(*features_padded)]).transpose(1,0,2)
 
         if self.is_adj:
             # A list (with size self.k) of sparse adjacent matrix in the mini-batch level, in which each element
@@ -195,7 +195,7 @@ class Dataset(torch.utils.data.Dataset):
         else:
             adjs_padded_tuple = None
 
-        return features_padded_t, adjs_padded_tuple, labels_
+        return features_padded, adjs_padded_tuple, labels_
 
     def get_input_producer(self, data, y, batch_size, name='train'):
         params = {'batch_size': batch_size,

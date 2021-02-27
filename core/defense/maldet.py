@@ -193,7 +193,7 @@ class MalwareDetector(nn.Module):
                 optimizer.step()
                 total_time = total_time + time.time() - start_time
                 acc_train = (logits.argmax(1) == y_batch).sum().item()
-                acc_train /= x_batch[0].size()[0]
+                acc_train /= x_batch.size()[0]
                 mins, secs = int(total_time / 60), int(total_time % 60)
                 losses.append(loss_train.item())
                 accuracies.append(acc_train)

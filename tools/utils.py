@@ -278,22 +278,15 @@ def to_tensor(features=None, adj=None, labels=None, device='cpu'):
         return features, adj, labels
 
 
-def to_tensors(features, adj=None, labels=None, device='cpu'):
-    """
-    Sample as 'to_tensor' but work on list of features
-    """
-    assert isinstance(features, list)
+def to_device(x=None, adj=None, labels=None, device='cpu'):
+    if x is not None:
+        assert isinstance(x, torch.Tensor)
+        x = x.to(device)
     if adj is not None:
-        assert len(features) == len(adj)
-    if adj is None:
-        for i in range(len(features)):
-            features[i], _ = to_tensor(features[i], adj, device=device)
-    else:
-        for i in range(len(features)):
-            features[i], adj[i] = to_tensor(features[i], adj[i], device=device)
+        assert isinstance(adj, torch.Tensor)
+        adj = adj.to(device)
+    if labels is not None:
+        assert isinstance(labels, torch.Tensor)
+        labels = labels.to(device)
+    return x, adj, labels
 
-    if labels is None:
-        return features, adj
-    else:
-        labels = torch.LongTensor(labels).to(device)
-        return features, adj, labels
