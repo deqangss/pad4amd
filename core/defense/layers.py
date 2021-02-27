@@ -210,14 +210,11 @@ class SpGraphAttentionLayer(nn.Module):
 
         edge_e = F.dropout(edge_e, self.dropout, training=self.training)
         # edge_e: E
-        sp_edge_e = torch.sparse_coo_tensor(edge, edge_e, torch.Size([batch_size, N, N]))
 
-        if self.training or self.adv_testing or sp_edge_e._nnz() > 50000:
-            h_prime = torch.stack(
-                [torch.sparse.mm(sp_e, dense_e) for sp_e, dense_e in zip(sp_edge_e, h)]
-            )
-        else:
-            h_prime = torch.bmm(sp_edge_e, h)
+        sp_edge_e = torch.sparse_coo_tensor(edge, edge_e, torch.Size([batch_size, N, N]))
+        h_prime = torch.stack(
+            [torch.sparse.mm(sp_e, dense_e) for sp_e, dense_e in zip(sp_edge_e, h)]
+        )
         # h_prime = self.special_spmm(edge, edge_e, torch.Size([N, N]), h)
         assert not torch.isnan(h_prime).any()
         # h_prime: batch_size x N x out
