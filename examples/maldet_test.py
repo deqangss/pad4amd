@@ -109,7 +109,6 @@ def _main():
     # test: accuracy
     model.predict(test_dataset_producer)
     # test: gradients of loss w.r.t. input
-    model.adv_eval()
     for res in test_dataset_producer:
         x_batch, adj, y_batch = res
         x_batch, adj, y_batch = to_tensor(x_batch, adj, y_batch, dv)

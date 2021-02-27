@@ -99,18 +99,6 @@ class MalGAT(nn.Module):
         self.mod_frq_dense = nn.Linear(self.vocab_size, self.embedding_dim)
         self.mod_frq_cls_dense = nn.Linear(self.embedding_dim, self.penultimate_hidden_unit)
 
-    def adv_eval(self):
-        for headers in self.attn_layers:
-            for header in headers:
-                header.adv_eval()
-        self.attn_out.adv_eval()
-
-    def non_adv_eval(self):
-        for headers in self.attn_layers:
-            for header in headers:
-                header.disable_adv_eval()
-        self.attn_out.non_adv_eval()
-
     def forward(self, x, adjs=None):
         """
         forward the neural network

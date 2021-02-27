@@ -69,14 +69,6 @@ class GraphAttentionLayer(nn.Module):
         else:
             self.activation = nn.ELU(self.alpha)
 
-        self.adv_testing = None
-
-    def adv_eval(self):
-        self.adv_testing = True
-
-    def non_adv_eval(self):
-        self.adv_testing = False
-
     def forward(self, h, adj):
         Wh = torch.matmul(h, self.W)  # h.shape: (batch_size, vocab_size, in_features), Wh.shape: (batch_size, vocab_size, out_features)
         a_input = self._prepare_attentional_mechanism_input(Wh)
@@ -162,14 +154,6 @@ class SpGraphAttentionLayer(nn.Module):
             self.activation = nn.LeakyReLU(self.alpha)
         else:
             self.activation = nn.ELU(self.alpha)
-
-        self.adv_testing = None
-
-    def adv_eval(self):
-        self.adv_testing = True
-
-    def non_adv_eval(self):
-        self.adv_testing = False
 
     def forward(self, input, adj):
         """
