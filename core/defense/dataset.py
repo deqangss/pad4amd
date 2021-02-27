@@ -170,10 +170,12 @@ class Dataset(torch.utils.data.Dataset):
             adjs_sampled.append([adjs[i][_i] for _i in indices])
             sample_indices.append(indices)
 
+        # shape [batch_size, self.n_sg_used, vocab_size]
         features_sample_t = np.array([np.stack(list(feat), axis=0) for feat in zip(*features_sampled)]).transpose([1, 0, 2])
-        # A list (with size self.k) of sparse feature vector in the mini-batch level, in which each element
-        # has the shape [batch_size, vocab_size]
+
         if self.is_adj:
+            # A list (with size self.k) of sparse adjacent matrix in the mini-batch level, in which each element
+            # has the shape [batch_size, vocab_size, vocab_size]
             for i in range(batch_size):
                 for j in range(self.k):
                     adjs_sampled[i][j] = utils.sparse_mx_to_torch_sparse_tensor(
@@ -185,11 +187,8 @@ class Dataset(torch.utils.data.Dataset):
             adjs_sample_tuple = utils.tensor_coo_sp_to_ivs(adjs_sample_t)
         else:
             adjs_sample_tuple = None
-        # A list (with size self.k) of sparse adjacent matrix in the mini-batch level, in which each element
-        # has the shape [batch_size, vocab_size, vocab_size]
-        sample_indices_t = np.array(sample_indices).T
 
-        return features_sample_t, adjs_sample_tuple, labels_, sample_indices_t
+        return features_sample_t, adjs_sample_tuple, labels_, np.array(sample_indices)
 
     def get_input_producer(self, data, y, batch_size, name='train'):
         params = {'batch_size': batch_size,
