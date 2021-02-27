@@ -1,10 +1,10 @@
 import os
 import random
 import tempfile
-from queue import Queue
 
 import numpy as np
 import torch
+from scipy.sparse import csr_matrix
 from sklearn.model_selection import train_test_split
 
 from config import config
@@ -13,7 +13,7 @@ from tools import utils
 
 
 class Dataset(torch.utils.data.Dataset):
-    def __init__(self, dataset_name='drebin', k=32, is_adj=False, use_cache=False, seed=0, n_sgs_max=1000, feature_ext_args=None):
+    def __init__(self, dataset_name='drebin', k=8, is_adj=False, use_cache=False, seed=0, n_sgs_max=1000, feature_ext_args=None):
         """
         build dataset for ml model learning
         :param dataset_name: String, the dataset name, expected 'drebin' or 'androzoo'
@@ -156,39 +156,46 @@ class Dataset(torch.utils.data.Dataset):
         labels_ = [item[2] for item in batch]
 
         batch_size = len(features)
-        sample_indices = []
-        features_sampled = []
-        adjs_sampled = []
+        features_padded = []
+        adjs_padded = []
 
         batch_n_sg_max = np.max([len(feature) for feature in features])
         n_sg_used = batch_n_sg_max if batch_n_sg_max < self.n_sgs_max else self.n_sgs_max
         n_sg_used = n_sg_used if n_sg_used > self.k else self.k
         for i, feature in enumerate(features):
-            replacement = True if len(feature) < n_sg_used else False
-            indices = np.random.choice(len(feature), n_sg_used, replacement)
-            features_sampled.append([feature[_i] for _i in indices])
-            adjs_sampled.append([adjs[i][_i] for _i in indices])
-            sample_indices.append(indices)
+            is_padding = True if len(feature) < n_sg_used else False
+            if not is_padding:
+                indices = np.random.choice(len(feature), n_sg_used, replace=False)
+                features_padded.append([feature[_i] for _i in indices])
+                if self.is_adj:
+                    adjs_padded.append([adjs[i][_i] for _i in indices])
+            else:
+                n = n_sg_used - len(feature)
+                feature.extend([np.zeros_like((feature[0]), dtype=np.float32) for _ in range(n)])
+                features_padded.append(feature)
+                if self.is_adj:
+                    adjs[i].extend([csr_matrix(adjs[i][0].shape, dtype=np.float32) for _ in range(n)])
+                    adjs_padded.append(adjs[i])
 
         # shape [batch_size, self.n_sg_used, vocab_size]
-        features_sample_t = np.array([np.stack(list(feat), axis=0) for feat in zip(*features_sampled)]).transpose([1, 0, 2])
+        features_padded_t = np.array([np.stack(list(feat), axis=0) for feat in zip(*features_padded)]).transpose([1, 0, 2])
 
         if self.is_adj:
             # A list (with size self.k) of sparse adjacent matrix in the mini-batch level, in which each element
             # has the shape [batch_size, vocab_size, vocab_size]
             for i in range(batch_size):
                 for j in range(self.k):
-                    adjs_sampled[i][j] = utils.sparse_mx_to_torch_sparse_tensor(
-                        utils.sp_to_symmetric_sp(adjs_sampled[i][j])
+                    adjs_padded[i][j] = utils.sparse_mx_to_torch_sparse_tensor(
+                        utils.sp_to_symmetric_sp(adjs_padded[i][j])
                     )
 
-            adjs_sample_t = torch.stack([torch.stack(list(adj)) for adj in list(zip(*adjs_sampled))[:self.k]])
+            adjs_padded_t = torch.stack([torch.stack(list(adj)) for adj in list(zip(*adjs_padded))[:self.k]])
             # dataloader does not support sparse matrix
-            adjs_sample_tuple = utils.tensor_coo_sp_to_ivs(adjs_sample_t)
+            adjs_padded_tuple = utils.tensor_coo_sp_to_ivs(adjs_padded_t)
         else:
-            adjs_sample_tuple = None
+            adjs_padded_tuple = None
 
-        return features_sample_t, adjs_sample_tuple, labels_, np.array(sample_indices)
+        return features_padded_t, adjs_padded_tuple, labels_
 
     def get_input_producer(self, data, y, batch_size, name='train'):
         params = {'batch_size': batch_size,

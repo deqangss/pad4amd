@@ -32,7 +32,7 @@ def main_():
     val_dataset_producer = dataset.get_input_producer(validation_data, valy, batch_size=16, name='train')
     for epoch in range(1):
         for idx, res in enumerate(val_dataset_producer):
-            x, adj, l, sampling_idx = res
+            x, adj, l = res
             if dataset.is_adj is not None:
                 adjs = ivs_to_tensor_coo_sp(adj)
                 adj = adjs[5, 1].to_dense().numpy()

@@ -87,7 +87,7 @@ class MalwareDetectorIndicator(MalwareDetector):
                 conf_batches = []
                 x_prob_batches = []
                 for res in test_data_producer:
-                    x, adj, y, _2 = res
+                    x, adj, y = res
                     x, adj, y = utils.to_tensor(x, adj, y, self.device)
                     p_representation, logits = self.forward(x, adj)
                     conf_batches.append(F.softmax(logits, dim=-1))
@@ -114,7 +114,7 @@ class MalwareDetectorIndicator(MalwareDetector):
             for _ in tqdm(range(self.n_sample_times)):
                 prob_ = []
                 for res in validation_data_producer:
-                    x_val, adj_val, y_val, _2 = res
+                    x_val, adj_val, y_val = res
                     x_val, adj_val, y_val = utils.to_tensor(x_val, adj_val, y_val, self.device)
                     p_representation, logits = self.forward(x_val, adj_val)
                     x_prob = self.forward_g(p_representation)

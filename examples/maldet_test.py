@@ -111,7 +111,7 @@ def _main():
     # test: gradients of loss w.r.t. input
     model.adv_eval()
     for res in test_dataset_producer:
-        x_batch, adj, y_batch, _1 = res
+        x_batch, adj, y_batch = res
         x_batch, adj, y_batch = to_tensor(x_batch, adj, y_batch, dv)
         x_batch.requires_grad = True
         logits = model(x_batch, adj)[1]
