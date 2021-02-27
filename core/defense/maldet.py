@@ -209,7 +209,7 @@ class MalwareDetector(nn.Module):
                     x_val, adj_val, y_val = utils.to_tensor(x_val, adj_val, y_val, self.device)
                     _, logits = self.forward(x_val, adj_val)
                     acc_val = (logits.argmax(1) == y_val).sum().item()
-                    acc_val /= x_val[0].size()[0]
+                    acc_val /= x_val.size()[0]
                     avg_acc_val.append(acc_val)
                 avg_acc_val = np.mean(avg_acc_val)
 
