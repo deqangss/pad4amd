@@ -88,9 +88,6 @@ class MalwareDetector(nn.Module):
         if len(kwargs) > 0:
             logger.warning("Unknown hyper-parameters {}".format(str(kwargs)))
 
-    def adv_eval(self):
-        self.malgat.adv_eval()
-
     def non_adv_eval(self):
         self.malgat.non_adv_eval()
 
