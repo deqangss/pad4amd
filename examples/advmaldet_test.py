@@ -63,12 +63,11 @@ def _main():
                   )
         save_args(path.join(path.dirname(model.model_save_path), "hparam"), vars(args))
 
-    # get threshold
-    model.get_threshold(val_dataset_producer)
-    print(model.tau)
-    model.save_to_disk()
+        # get threshold
+        model.get_threshold(val_dataset_producer)
+        model.save_to_disk()
     # test: accuracy
-    model.predict(test_dataset_producer, use_indicator=True)
+    model.predict(test_dataset_producer, use_indicator=False)
 
     # test: gradients of loss w.r.t. input
     for res in test_dataset_producer:
