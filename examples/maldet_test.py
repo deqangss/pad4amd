@@ -45,7 +45,8 @@ detector_argparse.add_argument('--use_fusion', action='store_true', help='whethe
 detector_argparse.add_argument('--n_sample_times', type=int, default=5, help='times of sampling')
 detector_argparse.add_argument('--alpha_', type=float, default=0.2, help='slope coefficient of leaky-relu')
 detector_argparse.add_argument('--sparse', action='store_true', default=True, help='GAT with sparse version or not.')
-detector_argparse.add_argument('--smooth', action='store_true', default=False, help='use activation of smooth.')
+detector_argparse.add_argument('--smooth', action='store_true', default=False,
+                               help='use smooth activation in the attention layer.')
 
 detector_argparse.add_argument('--batch_size', type=int, default=16, help='minibatch size')
 detector_argparse.add_argument('--epochs', type=int, default=10, help='number of epochs to train.')
