@@ -75,7 +75,7 @@ class Dataset(torch.utils.data.Dataset):
         for i in range(_labels.shape[0]):
             self.sample_weights[_labels[i]] = _weights[i]
 
-        vocab, _1, = self.feature_extractor.get_vocab(*self.train_dataset)
+        vocab, _1 = self.feature_extractor.get_vocab(*self.train_dataset)
         self.vocab_size = len(vocab)
         self.n_classes = np.unique(self.train_dataset[1]).size
 
