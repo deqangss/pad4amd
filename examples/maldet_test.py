@@ -64,7 +64,7 @@ detector_argparse.add_argument('--undersampling_ratio', type=float, default=0., 
 mode_argparse = cmd_md.add_argument_group(title='mode')
 mode_argparse.add_argument('--mode', type=str, default='train', choices=['train', 'test'], required=False,
                            help='learn a model or test it.')
-mode_argparse.add_argument('--test_model_name', type=str, default='pro', required=False, help='suffix of a tested model name.')
+mode_argparse.add_argument('--model_name', type=str, default='pro', required=False, help='suffix of a tested model name.')
 
 
 def _main():
@@ -89,7 +89,7 @@ def _main():
     else:
         dv = 'cuda'
 
-    model_name = args.test_model_name if args.mode == 'test' else time.strftime("%Y%m%d-%H%M%S")
+    model_name = args.model_name if args.mode == 'test' else time.strftime("%Y%m%d-%H%M%S")
     model = MalwareDetector(dataset.vocab_size,
                             dataset.n_classes,
                             device=dv,
@@ -106,24 +106,13 @@ def _main():
                   lr=args.lr,
                   weight_decay=args.weight_decay
                   )
+        # developer readable
         save_args(path.join(path.dirname(model.model_save_path), "hparam"), vars(args))
+        # serialization
+        dump_pickle(vars(args), path.join(path.dirname(model.model_save_path), "hparam.pkl"))
 
-    dump_pickle(vars(args), path.join(path.dirname(model.model_save_path), "hparam.pkl"))
-    print(read_pickle(path.join(path.dirname(model.model_save_path), "hparam.pkl")))
-    import sys
-    sys.exit(1)
     # test: accuracy
     model.predict(test_dataset_producer)
-    # test: gradients of loss w.r.t. input
-    for res in test_dataset_producer:
-        x_batch, adj, y_batch = res
-        x_batch, adj, y_batch = to_tensor(x_batch, adj, y_batch, dv)
-        x_batch.requires_grad = True
-        logits = model(x_batch, adj)[1]
-        loss = F.cross_entropy(logits, y_batch)
-        grad = torch.autograd.grad(loss, x_batch)[0]
-        print(grad.shape)
-        break
 
 
 if __name__ == '__main__':
