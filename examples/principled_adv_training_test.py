@@ -66,7 +66,7 @@ def _main():
         print(principled_adv_training_model.model.tau)
         principled_adv_training_model.model.save_to_disk()
     # test: accuracy
-    dump_pickle(var(args), path.join(path.dirname(principled_adv_training_model.model_save_path), "hparam.pkl"))
+    dump_pickle(vars(args), path.join(path.dirname(principled_adv_training_model.model_save_path), "hparam.pkl"))
     print(read_pickle(path.join(path.dirname(principled_adv_training_model.model_save_path), "hparam.pkl")))
     # principled_adv_training_model.model.predict(test_dataset_producer, use_indicator=True)
 
