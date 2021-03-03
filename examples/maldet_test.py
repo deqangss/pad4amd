@@ -10,7 +10,7 @@ import torch.nn.functional as F
 
 from core.defense import Dataset
 from core.defense import MalwareDetector
-from tools.utils import save_args,get_group_args,to_tensor
+from tools.utils import save_args, get_group_args, to_tensor, dump_pickle, read_pickle
 
 
 cmd_md = argparse.ArgumentParser(description='arguments for learning malware detector')
@@ -66,6 +66,7 @@ mode_argparse.add_argument('--mode', type=str, default='train', choices=['train'
                            help='learn a model or test it.')
 mode_argparse.add_argument('--test_model_name', type=str, default='pro', required=False, help='suffix of a tested model name.')
 
+
 def _main():
     args = cmd_md.parse_args()
     dataset = Dataset(args.dataset_name,
@@ -107,11 +108,10 @@ def _main():
                   )
         save_args(path.join(path.dirname(model.model_save_path), "hparam"), vars(args))
 
-    # model.load()
-    # torch.save(model, model.model_save_path)
-    # model.save()
-    # import sys
-    # sys.exit(1)
+    dump_pickle(vars(args), path.join(path.dirname(model.model_save_path), "hparam.pkl"))
+    print(read_pickle(path.join(path.dirname(model.model_save_path), "hparam.pkl")))
+    import sys
+    sys.exit(1)
     # test: accuracy
     model.predict(test_dataset_producer)
     # test: gradients of loss w.r.t. input
