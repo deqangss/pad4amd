@@ -128,7 +128,6 @@ class MalwareDetector(nn.Module):
 
     def predict(self, test_data_producer):
         # load model
-        # self.load_state_dict(torch.load(self.model_save_path))
         self.load()
         # evaluation
         confidence, y_true = self.inference(test_data_producer)
