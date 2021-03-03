@@ -9,7 +9,7 @@ import torch.nn.functional as F
 
 from core.defense import Dataset
 from core.defense import MalwareDetectorIndicator
-from tools.utils import save_args, get_group_args, to_tensor
+from tools.utils import save_args, get_group_args, to_tensor, read_pickle, dump_pickle
 from examples.maldet_test import cmd_md
 
 indicator_argparse = cmd_md.add_argument_group(title='adv indicator')
@@ -66,20 +66,12 @@ def _main():
         # get threshold
         model.get_threshold(val_dataset_producer)
         model.save_to_disk()
+
+    dump_pickle(vars(args), path.join(path.dirname(model.model_save_path), "hparam.pkl"))
+    import sys
+    sys.exit(1)
     # test: accuracy
     model.predict(test_dataset_producer, use_indicator=True)
-
-    # test: gradients of loss w.r.t. input
-    for res in test_dataset_producer:
-        x_batch, adj, y_batch = res
-        x_batch, adj, y_batch = to_tensor(x_batch, adj, y_batch, dv)
-        x_batch.requires_grad = True
-        logits = model(x_batch, adj)[1]
-        loss = F.cross_entropy(logits, y_batch)
-        grad = torch.autograd.grad(loss, x_batch)[0]
-        print(grad.shape)
-        break
-
 
 if __name__ == '__main__':
     _main()
