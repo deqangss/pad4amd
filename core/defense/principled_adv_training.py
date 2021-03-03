@@ -66,13 +66,14 @@ class PrincipledAdvTraining(object):
                 # perturb malware feature vectors
                 x_batch, adj_batch, y_batch = utils.to_tensor(x_batch, adj, y_batch, self.model.device)
                 mal_x_batch, mal_adj_batch, mal_y_batch = self.get_mal_data(x_batch, adj_batch, y_batch)
-                start_time = time.time()
-                adv_x_batch = self.attack_model.perturb(self.model, mal_x_batch, mal_adj_batch, mal_y_batch)
-                total_time += time.time() - start_time
                 batch_size = x_batch.shape[0]
-                x_batch = torch.vstack([x_batch, adv_x_batch])
-                if adj is not None:
-                    adj_batch = torch.vstack([adj_batch, mal_adj_batch])
+                if len(mal_y_batch) > 0:
+                    start_time = time.time()
+                    adv_x_batch = self.attack_model.perturb(self.model, mal_x_batch, mal_adj_batch, mal_y_batch)
+                    total_time += time.time() - start_time
+                    x_batch = torch.vstack([x_batch, adv_x_batch])
+                    if adj is not None:
+                        adj_batch = torch.vstack([adj_batch, mal_adj_batch])
 
                 # start training
                 start_time = time.time()
@@ -101,10 +102,11 @@ class PrincipledAdvTraining(object):
                 x_val, adj_val, y_val = res
                 x_val, adj_val, y_val = utils.to_tensor(x_val, adj_val, y_val, self.model.device)
                 mal_x_val, mal_adj_val, mal_y_val = self.get_mal_data(x_val, adj_val, y_val)
-                adv_x_val = self.attack_model.perturb(self.model, mal_x_val, mal_adj_val, mal_y_val)
-                x_val = torch.cat([x_val, adv_x_val])
-                if adj_val is not None:
-                    adj_val = torch.vstack([adj_val, mal_adj_val])
+                if len(mal_x_val) > 0:
+                    adv_x_val = self.attack_model.perturb(self.model, mal_x_val, mal_adj_val, mal_y_val)
+                    x_val = torch.cat([x_val, adv_x_val])
+                    if adj_val is not None:
+                        adj_val = torch.vstack([adj_val, mal_adj_val])
 
                 _, logits = self.model.forward(x_val, adj_val)
                 acc_val = (logits.argmax(1) == torch.cat([y_val, mal_y_val])).sum().item()
