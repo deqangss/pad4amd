@@ -60,15 +60,13 @@ def _main():
                                           weight_decay=args.weight_decay
                                           )
         save_args(path.join(path.dirname(principled_adv_training_model.model_save_path), "hparam"), vars(args))
-
+        dump_pickle(vars(args), path.join(path.dirname(principled_adv_training_model.model_save_path), "hparam.pkl"))
         # get threshold
         principled_adv_training_model.model.get_threshold(val_dataset_producer)
         print(principled_adv_training_model.model.tau)
         principled_adv_training_model.model.save_to_disk()
     # test: accuracy
-    dump_pickle(vars(args), path.join(path.dirname(principled_adv_training_model.model_save_path), "hparam.pkl"))
-    print(read_pickle(path.join(path.dirname(principled_adv_training_model.model_save_path), "hparam.pkl")))
-    # principled_adv_training_model.model.predict(test_dataset_producer, use_indicator=True)
+    principled_adv_training_model.model.predict(test_dataset_producer, use_indicator=True)
 
 
 if __name__ == '__main__':
