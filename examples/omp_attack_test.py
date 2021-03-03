@@ -20,8 +20,7 @@ ompa_argparse.add_argument('--step_length', type=float, default=1., help='step l
 ompa_argparse.add_argument('--n_pertb', type=int, default=10, help='maximum number of perturbations.')
 ompa_argparse.add_argument('--n_sample_times', type=int, default=1, help='sample times for producing data.')
 ompa_argparse.add_argument('--model', type=str, choices=['advmaldet',
-                                                         'prip_adv'
-                                                         ], help='model type, maldet or advmaldet.')
+                                                         'prip_adv'], help='model type, maldet or advmaldet.')
 ompa_argparse.add_argument('--model_name', type=str, default='pro', help='model name.')
 
 
@@ -43,7 +42,7 @@ def _main():
                       )
     test_data, testy = dataset.test_dataset
     test_dataset_producer = dataset.get_input_producer(test_data, testy,
-                                                       batch_size=2 * hp_params['batch_size'],
+                                                       batch_size= hp_params['batch_size'],
                                                        name='test')
     assert dataset.n_classes == 2
 
