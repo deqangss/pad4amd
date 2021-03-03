@@ -61,15 +61,15 @@ def _main():
                   lr=args.lr,
                   weight_decay=args.weight_decay
                   )
+        # developer readable
         save_args(path.join(path.dirname(model.model_save_path), "hparam"), vars(args))
+        # serialization
+        dump_pickle(vars(args), path.join(path.dirname(model.model_save_path), "hparam.pkl"))
 
         # get threshold
         model.get_threshold(val_dataset_producer)
         model.save_to_disk()
 
-    dump_pickle(vars(args), path.join(path.dirname(model.model_save_path), "hparam.pkl"))
-    import sys
-    sys.exit(1)
     # test: accuracy
     model.predict(test_dataset_producer, use_indicator=True)
 
