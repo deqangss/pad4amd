@@ -113,7 +113,7 @@ class PrincipledAdvTraining(object):
                 acc_val = (logits.argmax(1) == torch.cat([y_val, mal_y_val])).sum().item()
                 acc_val /= x_val.size()[0]
                 avg_acc_val.append(acc_val)
-                avg_acc_val = np.mean(avg_acc_val)
+            avg_acc_val = np.mean(avg_acc_val)
 
             if avg_acc_val >= best_avg_acc:
                 best_avg_acc = avg_acc_val
