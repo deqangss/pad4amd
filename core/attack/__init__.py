@@ -1,0 +1,1 @@
+from core.attack.omp_attack import OMPA
