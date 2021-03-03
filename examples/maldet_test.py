@@ -107,10 +107,10 @@ def _main():
                   )
         save_args(path.join(path.dirname(model.model_save_path), "hparam"), vars(args))
 
-    model.load()
-    torch.save(model, model.model_save_path)
-    import sys
-    sys.exit(1)
+    # model.load()
+    # torch.save(model, model.model_save_path)
+    # import sys
+    # sys.exit(1)
     # test: accuracy
     model.predict(test_dataset_producer)
     # test: gradients of loss w.r.t. input
