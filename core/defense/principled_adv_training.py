@@ -31,11 +31,11 @@ class PrincipledAdvTraining(object):
     @attack_model: Object, adversary's model for generating adversarial malware on the feature space
     """
 
-    def __init__(self, model, attack_model):
+    def __init__(self, model, attack_model=None):
         self.model = model
         self.attack_model = attack_model
 
-        self.name = self.model.name + '_prin_adv'
+        self.name = self.model.name
         self.model_save_path = path.join(config.get('experiments', 'prip_adv_training') + '_' + self.name,
                                          'model.pth')
         self.model.model_save_path = self.model_save_path
