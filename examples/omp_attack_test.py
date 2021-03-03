@@ -86,6 +86,7 @@ def _main():
                 )
                 adv_mal_adj.append(adj_batch)
 
+        print([x.shape for x in adv_mal_x])
         adv_mal_x = torch.vstack(adv_mal_x)
         assert adv_mal_x.size()[0] > 1
         if dataset.is_adj:
