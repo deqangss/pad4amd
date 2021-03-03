@@ -191,8 +191,10 @@ class MalwareDetector(nn.Module):
                 losses.append(loss_train.item())
                 accuracies.append(acc_train)
                 if verbose:
-                    print(f'Mini batch: {i * nbatchs + idx_batch + 1}/{epochs * nbatchs} | training time in {mins:.0f} minutes, {secs} seconds.')
-                    logger.info(f'Training loss (batch level): {losses[-1]:.4f} | Train accuracy: {acc_train * 100:.2f}')
+                    print(
+                        f'Mini batch: {i * nbatchs + idx_batch + 1}/{epochs * nbatchs} | training time in {mins:.0f} minutes, {secs} seconds.')
+                    logger.info(
+                        f'Training loss (batch level): {losses[-1]:.4f} | Train accuracy: {acc_train * 100:.2f}')
 
             self.eval()
             avg_acc_val = []
@@ -218,7 +220,8 @@ class MalwareDetector(nn.Module):
             if verbose:
                 logger.info(
                     f'Training loss (epoch level): {np.mean(losses):.4f} | Train accuracy: {np.mean(accuracies) * 100:.2f}')
-                logger.info(f'Validation accuracy: {avg_acc_val * 100:.2f} | The best validation accuracy: {best_avg_acc * 100:.2f} at epoch: {best_epoch}')
+                logger.info(
+                    f'Validation accuracy: {avg_acc_val * 100:.2f} | The best validation accuracy: {best_avg_acc * 100:.2f} at epoch: {best_epoch}')
 
     def param_customizing(self, weight_decay):
         customized_params_no_decay = []

@@ -196,6 +196,11 @@ def build_kwargs(keys, arg_dict):
     return st
 
 
+def inverse_kwargs(vars):
+    assert isinstance(vars, list)
+    return dict(var.split(':') for var in vars)
+
+
 def save_args(fout, args):
     if isinstance(args, str):
         dump_txt(args, fout, mode='w')
@@ -204,6 +209,13 @@ def save_args(fout, args):
         dump_txt(args_str, fout, mode='w')
     else:
         raise TypeError("Expected str or dict.")
+
+
+def load_args(fout):
+    if os.path.exists(fout):
+        return inverse_kwargs(read_txt(fout))
+    else:
+        raise FileNotFoundError("No such file {}".format(fout))
 
 
 def get_group_args(args, args_parser, title):
