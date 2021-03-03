@@ -157,7 +157,7 @@ class Apk2graphs(object):
         selected_words = [all_words[p] for p in pos_selected]
         corresponding_word_info = list(map(api_info_dict.get, selected_words))
         selected_words.append(NULL_ID)
-        corresponding_word_info.append(NULL_ID)
+        corresponding_word_info.append({NULL_ID})
         # saving
         if len(selected_words) > 0:
             utils.dump_pickle(selected_words, vocab_saving_path)

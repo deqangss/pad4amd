@@ -67,7 +67,7 @@ def _main():
         model.get_threshold(val_dataset_producer)
         model.save_to_disk()
     # test: accuracy
-    model.predict(test_dataset_producer, use_indicator=False)
+    model.predict(test_dataset_producer, use_indicator=True)
 
     # test: gradients of loss w.r.t. input
     for res in test_dataset_producer:

@@ -26,11 +26,14 @@ class MalwareDetector(nn.Module):
     def __init__(self, vocab_size, n_classes, n_sample_times=5, device='cpu', name='PRO', **kwargs):
         """
         Construct malware detector
-        :param vocab_size: Interger, the number of words in the vocabulary
-        :param n_classes: Integer, the number of classes, n=2
-        :param n_sample_times: Integer, the number of sampling times for predicting
-        :param device: String, 'cpu' or 'cuda'
-        :param name: String, model name
+
+        Parameters
+        ----------
+        @param vocab_size: Integer, the number of words in the vocabulary
+        @param n_classes: Integer, the number of classes, n=2
+        @param n_sample_times: Integer, the number of sampling times for predicting
+        @param device: String, 'cpu' or 'cuda'
+        @param name: String, model name
         """
         super(MalwareDetector, self).__init__()
 
@@ -154,24 +157,17 @@ class MalwareDetector(nn.Module):
     def fit(self, train_data_producer, validation_data_producer, epochs=100, lr=0.005, weight_decay=5e-4, verbose=True):
         """
         Train the malware detector, pick the best model according to the cross-entropy loss on validation set
-        :param train_data_producer: Object, an iterator for producing a batch of training data
-        :param validation_data_producer: Object, an iterator for producing validation dataset
-        :param verbose: Boolean, whether to show verbose logs
-        """
-        def param_customizing():
-            customized_params_no_decay = []
-            customized_params_decay = []
 
-            for name, param in self.named_parameters():
-                if '.mod_frq' in name:
-                    customized_params_no_decay.append(param)
-                elif 'dense.weight' == name or 'dense.bias' == name:
-                    customized_params_no_decay.append(param)
-                else:
-                    customized_params_decay.append(param)
-            return [{'params': customized_params_no_decay, 'weight_decay': 0.},
-                    {'params': customized_params_decay, 'weight_decay': weight_decay}]
-        optimizer = optim.Adam(param_customizing(), lr=lr)
+        Parameters
+        ----------
+        @param train_data_producer: Object, an iterator for producing a batch of training data
+        @param validation_data_producer: Object, an iterator for producing validation dataset
+        @param epochs, Integer, epochs
+        @param lr, Float, learning rate for Adam optimizer
+        @param weight_decay, Float, penalty factor, default value 5e-4 in graph attention layer
+        @param verbose: Boolean, whether to show verbose logs
+        """
+        optimizer = optim.Adam(self.param_customizing(weight_decay), lr=lr)
         best_avg_acc = 0.
         best_epoch = 0
         total_time = 0.
@@ -223,6 +219,20 @@ class MalwareDetector(nn.Module):
                 logger.info(
                     f'Training loss (epoch level): {np.mean(losses):.4f} | Train accuracy: {np.mean(accuracies) * 100:.2f}')
                 logger.info(f'Validation accuracy: {avg_acc_val * 100:.2f} | The best validation accuracy: {best_avg_acc * 100:.2f} at epoch: {best_epoch}')
+
+    def param_customizing(self, weight_decay):
+        customized_params_no_decay = []
+        customized_params_decay = []
+
+        for name, param in self.named_parameters():
+            if '.mod_frq' in name:
+                customized_params_no_decay.append(param)
+            elif 'dense.weight' == name or 'dense.bias' == name:
+                customized_params_no_decay.append(param)
+            else:
+                customized_params_decay.append(param)
+        return [{'params': customized_params_no_decay, 'weight_decay': 0.},
+                {'params': customized_params_decay, 'weight_decay': weight_decay}]
 
     def load(self):
         """

@@ -175,7 +175,7 @@ class MalwareDetectorIndicator(MalwareDetector):
         # print(self.phi)
         # print(self.sample_weights)
         # print(torch.sum(prob_n * self.phi + exp_over_flow, dim=1))
-        print(torch.sum(-torch.log(prob_n * self.phi + exp_over_flow), dim=1))
+        # print(torch.sum(-torch.log(prob_n * self.phi + exp_over_flow), dim=1))
         # E_z = torch.sum(torch.log(prob_n * self.phi + exp_over_flow) * self.sample_weights, dim=1)
         E_z = torch.sum(gamma_z * torch.log(prob_n * self.phi / gamma_z + exp_over_flow) * self.sample_weights, dim=1)  # ELBO
         energies = -torch.mean(E_z, dim=0)
@@ -194,7 +194,7 @@ class MalwareDetectorIndicator(MalwareDetector):
             return torch.from_numpy(sample_weights).to(self.device)
 
     def customize_loss(self, logits, gt_labels, representation,  mini_batch_idx):
-        print(gt_labels)
+        # print(gt_labels)
         self.update_phi(logits, mini_batch_idx)
         de = self.energy(representation, logits) * self.beta
         ce = F.cross_entropy(logits, gt_labels)
