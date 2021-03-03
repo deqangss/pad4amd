@@ -18,7 +18,7 @@ ompa_argparse = argparse.ArgumentParser(description='arguments for orthogonal ma
 ompa_argparse.add_argument('--lambda_', type=float, default=1., help='balance factor for waging attack.')
 ompa_argparse.add_argument('--step_length', type=float, default=1., help='step length.')
 ompa_argparse.add_argument('--n_pertb', type=int, default=10, help='maximum number of perturbations.')
-ompa_argparse.add_argument('--n_sample_times', type=int, default=5, help='sample times for producing data.')
+ompa_argparse.add_argument('--n_sample_times', type=int, default=1, help='sample times for producing data.')
 ompa_argparse.add_argument('--model', type=str, choices=['advmaldet',
                                                          'prip_adv'
                                                          ], help='model type, maldet or advmaldet.')
@@ -73,28 +73,20 @@ def _main():
     # test: accuracy
     acc = []
     for i in range(args.n_sample_times):
-        adv_mal_x = []
-        adv_mal_adj = []
+        mal_count = 0
+        cor_pred_count = 0.
         for res in test_dataset_producer:
             x_batch, adj, y_batch = res
             x_batch, adj_batch, y_batch = utils.to_tensor(x_batch, adj, y_batch, model.device)
             mal_x_batch, mal_adj_batch, mal_y_batch, null_flag = PrincipledAdvTraining.get_mal_data(x_batch, adj_batch,
                                                                                                     y_batch)
             if not null_flag:
-                adv_mal_x.append(
-                    attack.perturb(model, mal_x_batch, mal_adj_batch, mal_y_batch, args.step_length, verbose=True)
-                )
-                adv_mal_adj.append(adj_batch)
-
-        print([x.shape for x in adv_mal_x])
-        adv_mal_x = torch.vstack(adv_mal_x)
-        assert adv_mal_x.size()[0] > 1
-        if dataset.is_adj:
-            _, logit = model.forward(adv_mal_x, torch.vstack(adv_mal_adj))
-        else:
-            _, logit = model.forward(adv_mal_x, None)
-        acc.append((logit.argmax(1) == 1.).sum().item() / adv_mal_x.size()[0])
-        print(f'Sampling index {i + 1}: the accuracy of malware on adversarial malware is {acc[-1] * 100}%.')
+                adv_mal_x = attack.perturb(model, mal_x_batch, mal_adj_batch, mal_y_batch, args.step_length, verbose=True)
+                _, logit = model.forward(adv_mal_x, mal_adj_batch)
+                cor_pred_count += (logit.argmax(1) == 1.).sum().item()
+                mal_count += adv_mal_x.size()[0]
+        acc.append(cor_pred_count/float(mal_count))
+        print(f'Sampling index {i + 1}: the accuracy of malware on adversarial malware is {acc[-1] * 100:.3f}%.')
     print(f'The mean accuracy is {sum(acc) / args.n_sample_times}.')
 
 
