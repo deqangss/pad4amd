@@ -214,7 +214,7 @@ class MalwareDetector(nn.Module):
                 best_epoch = i
                 if not path.exists(self.model_save_path):
                     utils.mkdir(path.dirname(self.model_save_path))
-                torch.save(self.state_dict(), self.model_save_path)
+                torch.save(self, self.model_save_path)
                 if verbose:
                     print(f'Model saved at path: {self.model_save_path}')
 
