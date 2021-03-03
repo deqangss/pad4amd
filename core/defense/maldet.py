@@ -241,4 +241,5 @@ class MalwareDetector(nn.Module):
         """
         load model parameters from disk
         """
-        self = torch.load(self.model_save_path)
+        # self = torch.load(self.model_save_path)
+        self.load_state_dict(torch.load(self.model_save_path))
