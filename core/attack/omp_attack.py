@@ -18,15 +18,13 @@ class OMPA(BaseAttack):
     @manipulation_z, manipulations
     @param omega, list of 4 sets, each set contains the indices of interdependent apis corresponding to each api
     @param device, 'cpu' or 'cuda'
-    @param use_indicator, incorporating adversarial indicator or not
     """
 
-    def __init__(self, lambda_=1., n_perturbations=10, use_indicator=True, manipulation_z=None, omega=None, device=None):
+    def __init__(self, lambda_=1., n_perturbations=10, manipulation_z=None, omega=None, device=None):
         super(OMPA, self).__init__(n_perturbations, manipulation_z, omega, device)
         self.lambda_ = lambda_
-        self.use_indicator = use_indicator
 
-    def perturb(self, model, node, adj=None, label=None, step_length=1., **kwargs):
+    def perturb(self, model, node, adj=None, label=None, step_length=1., verbose=False):
         """
         perturb node feature vectors
 
@@ -45,7 +43,7 @@ class OMPA(BaseAttack):
         adv_node = node.detach().clone().to(torch.float)
         model.eval()
         self.padding_mask = torch.sum(node, dim=-1, keepdim=True) > 1  # we set a graph contains two apis at least
-        for _ in tqdm(range(self.n_perturbations)):
+        for iter_i in tqdm(range(self.n_perturbations)):
             var_adv_node = torch.autograd.Variable(adv_node, requires_grad=True)
             rpst, logit = model.forward(var_adv_node, adj)
             adv_loss = self.get_losses(model, logit, label, rpst)
@@ -66,15 +64,14 @@ class OMPA(BaseAttack):
                     adv_node = _adv_node.reshape(b, steps, k, v)[torch.arange(b), _worst_pos]
             else:
                 adv_node = torch.clip(adv_node + perturbation * direction, min=0., max=1.)
+            if verbose:
+                print(f"\n Iteration {iter_i}: the accuracy is {(logit.argmax(1) == 1.).sum().item() / adv_node.size()[0]} with the loss {torch.mean(adv_loss).detach().cpu().numpy()}.")
         return adv_node
 
     def get_losses(self, model, logit, label, representation=None):
         ce = F.cross_entropy(logit, label, reduction='none')
-        if self.use_indicator:
-            g = model.forward_g(representation)
-            return ce + self.lambda_ * (model.tau - g)
-        else:
-            return ce
+        g = model.forward_g(representation)
+        return ce + self.lambda_ * (model.tau - g)
 
     def get_perturbation(self, features, adv_features, gradients):
         # 1. mask paddings
