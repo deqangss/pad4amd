@@ -109,6 +109,7 @@ class MalGAT(nn.Module):
         x = x.permute(1, 0, 2)  # [batch_size, k, vocab_dim] --> [k, batch_size, vocab_dim]
         assert (len(x) >= self.k) and (self.k >= 0)  # x has the shape [self.k, batch_size, vocab_size]
         x_comb = torch.clip(torch.sum(x, dim=0), min=0, max=1.)
+        print(x_comb)
         mod1_code = torch.amax(
             self.activation(self.mod_frq_dense((x_comb.unsqueeze(-1) * self.embedding_weight).permute(0, 2, 1))), dim=-1)
 
