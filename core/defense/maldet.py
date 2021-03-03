@@ -243,3 +243,6 @@ class MalwareDetector(nn.Module):
         """
         # self = torch.load(self.model_save_path)
         self.load_state_dict(torch.load(self.model_save_path))
+
+    def save(self):
+        torch.save(self, self.model_save_path)
