@@ -43,7 +43,7 @@ def _main():
     else:
         dv = 'cuda'
 
-    model_name = args.test_model_name if args.mode == 'test' else time.strftime("%Y%m%d-%H%M%S")
+    model_name = args.model_name if args.mode == 'test' else time.strftime("%Y%m%d-%H%M%S")
     model = MalwareDetectorIndicator(vocab_size=dataset.vocab_size,
                                      n_classes=dataset.n_classes,
                                      device=dv,
