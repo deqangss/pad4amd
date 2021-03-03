@@ -65,9 +65,9 @@ class PrincipledAdvTraining(object):
 
                 # perturb malware feature vectors
                 x_batch, adj_batch, y_batch = utils.to_tensor(x_batch, adj, y_batch, self.model.device)
-                mal_x_batch, mal_adj_batch, mal_y_batch = self.get_mal_data(x_batch, adj_batch, y_batch)
+                mal_x_batch, mal_adj_batch, mal_y_batch, null_flag = self.get_mal_data(x_batch, adj_batch, y_batch)
                 batch_size = x_batch.shape[0]
-                if len(mal_y_batch) > 0:
+                if not null_flag:
                     start_time = time.time()
                     adv_x_batch = self.attack_model.perturb(self.model, mal_x_batch, mal_adj_batch, mal_y_batch)
                     total_time += time.time() - start_time
@@ -81,7 +81,8 @@ class PrincipledAdvTraining(object):
                 optimizer.zero_grad()
                 latent_rpst, logits = self.model.forward(x_batch, adj_batch)
                 loss_train = self.model.customize_loss(logits[:batch_size], y_batch, latent_rpst[:batch_size], idx_batch)
-                loss_train += F.cross_entropy(logits[batch_size:], mal_y_batch)
+                if not null_flag:
+                    loss_train += F.cross_entropy(logits[batch_size:], mal_y_batch)
                 loss_train.backward()
                 optimizer.step()
                 total_time += time.time() - start_time
@@ -101,8 +102,8 @@ class PrincipledAdvTraining(object):
             for res in validation_data_producer:
                 x_val, adj_val, y_val = res
                 x_val, adj_val, y_val = utils.to_tensor(x_val, adj_val, y_val, self.model.device)
-                mal_x_val, mal_adj_val, mal_y_val = self.get_mal_data(x_val, adj_val, y_val)
-                if len(mal_x_val) > 0:
+                mal_x_val, mal_adj_val, mal_y_val, _flag = self.get_mal_data(x_val, adj_val, y_val)
+                if not _flag:
                     adv_x_val = self.attack_model.perturb(self.model, mal_x_val, mal_adj_val, mal_y_val)
                     x_val = torch.cat([x_val, adv_x_val])
                     if adj_val is not None:
@@ -136,4 +137,5 @@ class PrincipledAdvTraining(object):
         mal_adj_batch = None
         if adj_batch is not None:
             mal_adj_batch = torch.stack([adj for i, adj in enumerate(adj_batch) if y_batch[i] == 1], dim=0)
-        return mal_x_batch, mal_adj_batch, mal_y_batch
+        null_flag = len(mal_x_batch) <= 0
+        return mal_x_batch, mal_adj_batch, mal_y_batch, null_flag
