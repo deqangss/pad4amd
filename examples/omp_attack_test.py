@@ -43,7 +43,7 @@ def _main():
                       )
     test_data, testy = dataset.test_dataset
     test_dataset_producer = dataset.get_input_producer(test_data, testy,
-                                                       batch_size=hp_params['batch_size'],
+                                                       batch_size=2 * hp_params['batch_size'],
                                                        name='test')
     assert dataset.n_classes == 2
 
@@ -71,23 +71,29 @@ def _main():
                   device=model.device
                   )
     # test: accuracy
-    acc = []
+    adv_acc = []
+    prist_acc = []
     for i in range(args.n_sample_times):
         mal_count = 0
-        cor_pred_count = 0.
+        prist_pred_count = 0.
+        adv_pred_count = 0.
         for res in test_dataset_producer:
             x_batch, adj, y_batch = res
             x_batch, adj_batch, y_batch = utils.to_tensor(x_batch, adj, y_batch, model.device)
             mal_x_batch, mal_adj_batch, mal_y_batch, null_flag = PrincipledAdvTraining.get_mal_data(x_batch, adj_batch,
                                                                                                     y_batch)
             if not null_flag:
-                adv_mal_x = attack.perturb(model, mal_x_batch, mal_adj_batch, mal_y_batch, args.step_length, verbose=True)
+                _, logit = model.forward(mal_x_batch, mal_adj_batch)
+                prist_pred_count += (logit.argmax(1) == 1.).sum().item()
+                mal_count += mal_x_batch.size()[0]
+
+                adv_mal_x = attack.perturb(model, mal_x_batch, mal_adj_batch, mal_y_batch, args.step_length, verbose=False)
                 _, logit = model.forward(adv_mal_x, mal_adj_batch)
-                cor_pred_count += (logit.argmax(1) == 1.).sum().item()
-                mal_count += adv_mal_x.size()[0]
-        acc.append(cor_pred_count/float(mal_count))
-        print(f'Sampling index {i + 1}: the accuracy of malware on adversarial malware is {acc[-1] * 100:.3f}%.')
-    print(f'The mean accuracy is {sum(acc) / args.n_sample_times}.')
+                adv_pred_count += (logit.argmax(1) == 1.).sum().item()
+        adv_acc.append(adv_pred_count/mal_count)
+        prist_acc.append(prist_pred_count / mal_count)
+        print(f'Sampling index {i + 1}: the accuracy on pristine vs. adversarial malware is {prist_acc[-1] * 100:.3f}% : {adv_acc[-1] * 100:.3f}%.')
+    print(f'The mean accuracy on pristine vs. adversarial malware is {sum(prist_acc) / args.n_sample_times * 100:.3f}% : {sum(adv_acc) / args.n_sample_times * 100:.3f}%.')
 
 
 if __name__ == '__main__':

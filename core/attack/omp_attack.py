@@ -65,7 +65,7 @@ class OMPA(BaseAttack):
             else:
                 adv_node = torch.clip(adv_node + perturbation * direction, min=0., max=1.)
             if verbose:
-                print(f"\n Iteration {iter_i}: the accuracy is {(logit.argmax(1) == 1.).sum().item() / adv_node.size()[0]} with the loss {torch.mean(adv_loss).detach().cpu().numpy()}.")
+                print(f"\n Iteration {iter_i}: the accuracy is {(logit.argmax(1) == 1.).sum().item() / adv_node.size()[0]*100:.3f} with the loss {torch.mean(adv_loss).detach().cpu().numpy():.5f}.")
         return adv_node
 
     def get_losses(self, model, logit, label, representation=None):
