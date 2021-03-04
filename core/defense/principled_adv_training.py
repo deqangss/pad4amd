@@ -104,7 +104,9 @@ class PrincipledAdvTraining(object):
                         f'Training loss (batch level): {losses[-1]:.4f} | Train accuracy: {acc_train * 100:.2f}')
 
             self.model.eval()
-            avg_acc_val = []
+            y_pred = []
+            x_prob = []
+            y_gt = []
             for res in validation_data_producer:
                 x_val, adj_val, y_val = res
                 x_val, adj_val, y_val = utils.to_tensor(x_val, adj_val, y_val, self.model.device)
@@ -115,14 +117,19 @@ class PrincipledAdvTraining(object):
                     if adj_val is not None:
                         adj_val = torch.vstack([adj_val, mal_adj_val])
 
-                _, logits = self.model.forward(x_val, adj_val)
-                acc_val = (logits.argmax(1) == torch.cat([y_val, mal_y_val])).sum().item()
-                acc_val /= x_val.size()[0]
-                avg_acc_val.append(acc_val)
-            avg_acc_val = np.mean(avg_acc_val)
+                rpst_val, logit_val = self.model.forward(x_val, adj_val)
+                y_pred.append(logit_val.argmax(1))
+                x_prob.append(self.model.forward_g(rpst_val))
+                y_gt.append(torch.cat([y_val, mal_y_val]))
 
-            if avg_acc_val >= best_avg_acc:
-                best_avg_acc = avg_acc_val
+            x_prob = torch.cat(x_prob)
+            s, _ = torch.sort(x_prob, descending=True)
+            tau_ = s[int((s.shape[0] - 1) * self.model.percentage)]
+            acc_val = (torch.cat(y_pred)[x_prob >= tau_] == torch.cat(y_gt)[x_prob >= tau_]).sum().item()
+            acc_val /= (x_prob >= tau_).sum().item()
+
+            if acc_val >= best_avg_acc:
+                best_avg_acc = acc_val
                 best_epoch = i
                 if not path.exists(self.model_save_path):
                     utils.mkdir(path.dirname(self.model_save_path))
@@ -134,7 +141,7 @@ class PrincipledAdvTraining(object):
                 logger.info(
                     f'Training loss (epoch level): {np.mean(losses):.4f} | Train accuracy: {np.mean(accuracies) * 100:.2f}')
                 logger.info(
-                    f'Validation accuracy: {avg_acc_val * 100:.2f} | The best validation accuracy: {best_avg_acc * 100:.2f} at epoch: {best_epoch}')
+                    f'Validation accuracy: {acc_val * 100:.2f} | The best validation accuracy: {best_avg_acc * 100:.2f} at epoch: {best_epoch}')
 
     @staticmethod
     def get_mal_data(x_batch, adj_batch, y_batch):

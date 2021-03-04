@@ -136,7 +136,7 @@ class MalwareDetectorIndicator(MalwareDetector):
                     p_representation, logits = self.forward(x_val, adj_val)
                     x_prob = self.forward_g(p_representation)
                     prob_.append(x_prob)
-                prob_ = torch.hstack(prob_)
+                prob_ = torch.cat(prob_)
                 probabilities.append(prob_)
             s, _ = torch.sort(torch.mean(torch.stack(probabilities), dim=0), descending=True)
             i = int((s.shape[0]-1)*self.percentage)
