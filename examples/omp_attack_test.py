@@ -81,7 +81,7 @@ def _main():
         interval = 10
     else:
         interval = args.n_pertb
-    for m in range(interval, args.n_pertb+1):
+    for m in range(interval, args.n_pertb+1, interval):
         logger.info("\nThe maximum number of perturbations for each example is {}:".format(m))
         prist_acc = []
         adv_acc = []
