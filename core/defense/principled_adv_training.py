@@ -31,9 +31,10 @@ class PrincipledAdvTraining(object):
     @attack_model: Object, adversary's model for generating adversarial malware on the feature space
     """
 
-    def __init__(self, model, attack_model=None):
+    def __init__(self, model, attack_model=None, attack_param=None):
         self.model = model
         self.attack_model = attack_model
+        self.attack_param = attack_param
 
         self.name = self.model.name
         self.model_save_path = path.join(config.get('experiments', 'prip_adv_training') + '_' + self.name,
@@ -69,7 +70,11 @@ class PrincipledAdvTraining(object):
                 batch_size = x_batch.shape[0]
                 if not null_flag:
                     start_time = time.time()
-                    adv_x_batch = self.attack_model.perturb(self.model, mal_x_batch, mal_adj_batch, mal_y_batch)
+                    adv_x_batch = self.attack_model.perturb(self.model, mal_x_batch, mal_adj_batch, mal_y_batch,
+                                                            self.attack_param['m'],
+                                                            self.attack_param['step_length'],
+                                                            self.attack_param['verbose']
+                                                            )
                     total_time += time.time() - start_time
                     x_batch = torch.vstack([x_batch, adv_x_batch])
                     if adj is not None:

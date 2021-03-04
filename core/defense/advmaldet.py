@@ -52,10 +52,11 @@ class MalwareDetectorIndicator(MalwareDetector):
         confidence, probability, y_true = self.inference(test_data_producer)
         y_pred = confidence.argmax(1).cpu().numpy()
         y_true = y_true.cpu().numpy()
-        x_prob = probability.cpu().numpy()
+        indicator_flag = self.indicator(probability).cpu().numpy()
+        # x_prob = probability.cpu().numpy()
         # filter out examples with low likelihood
         if use_indicator:
-            indicator_flag = x_prob >= self.tau.cpu().numpy()
+            # indicator_flag = x_prob >= self.tau.cpu().numpy()
             y_pred = y_pred[indicator_flag]
             y_true = y_true[indicator_flag]
             logger.info('The indicator is turning on...')
@@ -101,6 +102,22 @@ class MalwareDetectorIndicator(MalwareDetector):
         confidences = torch.mean(torch.stack(confidences).permute([1, 0, 2]), dim=1)
         probabilities = torch.mean(torch.stack(x_probabilities), dim=0)
         return confidences, probabilities, gt_labels
+
+    def inference_batch_wise(self, x, a, y, use_indicator=True):
+        assert isinstance(x, torch.Tensor) and isinstance(y, torch.Tensor)
+        if a is not None:
+            assert isinstance(a, torch.Tensor)
+        p_representation, logit = self.forward(x, a)
+        y_pred = logit.argmax(1)
+        x_prob = self.forward_g(p_representation)
+        if use_indicator:
+            flag = self.indicator(x_prob)
+            return (y_pred[flag] == y[flag]).cpu().numpy()
+        else:
+            return (y_pred == y).cpu().numpy()
+
+    def indicator(self, x_probability):
+        return x_probability >= self.tau
 
     def get_threshold(self, validation_data_producer):
         """

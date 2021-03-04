@@ -15,6 +15,8 @@ from examples.advmaldet_test import cmd_md
 indicator_argparse = cmd_md.add_argument_group(title='principled adv training')
 indicator_argparse.add_argument('--lambda_', type=float, default=1., help='balance factor for waging attack.')
 indicator_argparse.add_argument('--n_pertb', type=int, default=10, help='maximum number of perturbations.')
+ompa_argparse.add_argument('--step_length', type=float, default=1., help='step length.')
+ompa_argparse.add_argument('--n_pertb', type=int, default=100, help='maximum number of perturbations.')
 
 
 def _main():
@@ -49,8 +51,13 @@ def _main():
                                      **vars(args)
                                      )
     model = model.to(dv)
-    attack = OMPA(lambda_=args.lambda_, n_perturbations=args.n_pertb, device=model.device)
-    principled_adv_training_model = PrincipledAdvTraining(model, attack)
+    attack = OMPA(lambda_=args.lambda_, device=model.device)
+    attack_param = {
+        'm': args.n_pertb,
+        'step_length': args.step_length,
+        'verbose': False
+    }
+    principled_adv_training_model = PrincipledAdvTraining(model, attack, attack_param)
 
     if args.mode == 'train':
         principled_adv_training_model.fit(train_dataset_producer,

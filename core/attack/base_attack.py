@@ -19,14 +19,12 @@ class BaseAttack(Module):
 
     Parameters
     ---------
-    @param n_perturbations: Integer, number of perturbations
     @param manipulation_z, boolean vector shows the modifiable apis
     @param omega, list of 4 sets, each set contains the indices of interdependent apis corresponding to each api
     @param device, 'cpu' or 'cuda'
     """
-    def __init__(self, n_perturbations=10, manipulation_z=None, omega=None, device=None):
+    def __init__(self, manipulation_z=None, omega=None, device=None):
         super(BaseAttack, self).__init__()
-        self.n_perturbations = n_perturbations
         self.manipulation_z = manipulation_z
         self.device = device
         self.omega = omega
