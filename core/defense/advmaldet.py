@@ -53,7 +53,6 @@ class MalwareDetectorIndicator(MalwareDetector):
         y_pred = confidence.argmax(1).cpu().numpy()
         y_true = y_true.cpu().numpy()
         indicator_flag = self.indicator(probability).cpu().numpy()
-        print(probability)
         # filter out examples with low likelihood
         if use_indicator:
             # indicator_flag = x_prob >= self.tau.cpu().numpy()
@@ -161,6 +160,9 @@ class MalwareDetectorIndicator(MalwareDetector):
         return latent_rep_ext, self.dense(latent_rep_ext)
 
     def forward_g(self, representation):
+        print(representation)
+        print(self.gaussian_prob(representation))
+        print(self.phi)
         return torch.sum(self.gaussian_prob(representation) * self.phi, dim=1)
 
     def update_phi(self, logits, mini_batch_idx):

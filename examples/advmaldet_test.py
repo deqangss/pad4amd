@@ -70,9 +70,9 @@ def _main():
         model.get_threshold(val_dataset_producer)
         model.save_to_disk()
 
+    print(model.tau)
     # test: accuracy
     model.predict(test_dataset_producer, use_indicator=True)
-    print(model.tau)
 
 if __name__ == '__main__':
     _main()
