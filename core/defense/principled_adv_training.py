@@ -54,11 +54,12 @@ class PrincipledAdvTraining(object):
         @param weight_decay: Float, penalty factor, default value 5e-4 in graph attention layer
         @param verbose: Boolean, whether to show verbose logs
         """
-        optimizer = optim.Adam(self.model.param_customizing(weight_decay), lr=lr)
+        optimizer = optim.Adam(lr=lr, weight_decay=weight_decay)
         best_avg_acc = 0.
         best_epoch = 0
         total_time = 0.
         nbatchs = len(train_data_producer)
+        self.model.sample_weights[0] /= 2.  # owing to the adversarial malware
         for i in range(epochs):
             losses, accuracies = [], []
             for idx_batch, res in enumerate(train_data_producer):

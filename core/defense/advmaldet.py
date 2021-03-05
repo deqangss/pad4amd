@@ -160,9 +160,9 @@ class MalwareDetectorIndicator(MalwareDetector):
         return latent_rep_ext, self.dense(latent_rep_ext)
 
     def forward_g(self, representation):
-        print(representation)
-        print(self.gaussian_prob(representation))
-        print(self.phi)
+        # print(representation)
+        # print(self.gaussian_prob(representation))
+        # print(self.phi)
         return torch.sum(self.gaussian_prob(representation) * self.phi, dim=1)
 
     def update_phi(self, logits, mini_batch_idx):
@@ -190,7 +190,7 @@ class MalwareDetectorIndicator(MalwareDetector):
         gamma_z = torch.softmax(logits, dim=1)
         prob_n = self.gaussian_prob(representation)
 
-        # print(prob_n)
+        print(prob_n)
         # print(self.phi)
         # print(self.sample_weights)
         # print(torch.sum(prob_n * self.phi + exp_over_flow, dim=1))
