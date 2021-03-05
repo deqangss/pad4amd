@@ -127,6 +127,7 @@ class PrincipledAdvTraining(object):
             s, _ = torch.sort(x_prob, descending=True)
             tau_ = s[int((s.shape[0] - 1) * self.model.percentage)]
             acc_val = (torch.cat(y_pred)[x_prob >= tau_] == torch.cat(y_gt)[x_prob >= tau_]).sum().item()
+            assert acc_val.size()[0] > 0
             acc_val /= (x_prob >= tau_).sum().item()
             self.model.tau = nn.Parameter(tau_, requires_grad=False)
 
