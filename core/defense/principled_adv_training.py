@@ -106,6 +106,7 @@ class PrincipledAdvTraining(object):
 
             self.model.eval()
             y_pred = []
+            pri_x_prob = []
             x_prob = []
             y_gt = []
             for res in validation_data_producer:
@@ -120,19 +121,20 @@ class PrincipledAdvTraining(object):
 
                 rpst_val, logit_val = self.model.forward(x_val, adj_val)
                 y_pred.append(logit_val.argmax(1))
+                pri_x_prob.append(self.model.forward_g(rpst_val[:x_val.size()[0]]))
                 x_prob.append(self.model.forward_g(rpst_val))
                 y_gt.append(torch.cat([y_val, mal_y_val]))
 
-            x_prob = torch.cat(x_prob)
-            s, _ = torch.sort(x_prob, descending=True)
+            pri_x_prob = torch.cat(pri_x_prob)
+            s, _ = torch.sort(pri_x_prob, descending=True)
             tau_ = s[int((s.shape[0] - 1) * self.model.percentage)]
+            x_prob = torch.cat(x_prob)
             acc_val = (torch.cat(y_pred)[x_prob >= tau_] == torch.cat(y_gt)[x_prob >= tau_]).sum().item()
-            assert acc_val.size()[0] > 0
             acc_val /= (x_prob >= tau_).sum().item()
-            self.model.tau = nn.Parameter(tau_, requires_grad=False)
 
             if acc_val >= best_avg_acc:
                 best_avg_acc = acc_val
+                self.model.tau = nn.Parameter(tau_, requires_grad=False)
                 best_epoch = i
                 if not path.exists(self.model_save_path):
                     utils.mkdir(path.dirname(self.model_save_path))

@@ -53,6 +53,7 @@ def _main():
     attack = OMPA(lambda_=args.lambda_, device=model.device)
     attack_param = {
         'm': args.n_pertb,
+        'lambda_': args.lambda_,
         'step_length': args.step_length,
         'verbose': False
     }
