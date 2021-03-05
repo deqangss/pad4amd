@@ -167,7 +167,7 @@ class MalwareDetector(nn.Module):
         @param weight_decay, Float, penalty factor, default value 5e-4 in graph attention layer
         @param verbose: Boolean, whether to show verbose logs
         """
-        optimizer = optim.Adam(lr=lr, weight_decay=weight_decay)
+        optimizer = optim.Adam(self.parameters(), lr=lr, weight_decay=weight_decay)
         best_avg_acc = 0.
         best_epoch = 0
         total_time = 0.
