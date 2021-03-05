@@ -53,7 +53,7 @@ class MalwareDetectorIndicator(MalwareDetector):
         y_pred = confidence.argmax(1).cpu().numpy()
         y_true = y_true.cpu().numpy()
         indicator_flag = self.indicator(probability).cpu().numpy()
-        # x_prob = probability.cpu().numpy()
+        print(probability)
         # filter out examples with low likelihood
         if use_indicator:
             # indicator_flag = x_prob >= self.tau.cpu().numpy()
