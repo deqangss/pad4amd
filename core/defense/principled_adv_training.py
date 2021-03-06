@@ -115,7 +115,7 @@ class PrincipledAdvTraining(object):
                 accuracies.append(acc_train)
                 if verbose:
                     print(
-                        f'Mini batch: {i * nbatchs + idx_batch + 1}/{epochs * nbatchs} | training time in {mins:.0f} minutes, {secs} seconds.')
+                        f'Mini batch: {i * nbatchs + idx_batch + 1}/{adv_epochs * nbatchs} | training time in {mins:.0f} minutes, {secs} seconds.')
                     logger.info(
                         f'Training loss (batch level): {losses[-1]:.4f} | Train accuracy: {acc_train * 100:.2f}')
 
@@ -124,6 +124,7 @@ class PrincipledAdvTraining(object):
             pri_x_prob = []
             x_prob = []
             y_gt = []
+            y_adv = []
             for res in validation_data_producer:
                 x_val, adj_val, y_val = res
                 x_val, adj_val, y_val = utils.to_tensor(x_val, adj_val, y_val, self.model.device)
@@ -139,14 +140,18 @@ class PrincipledAdvTraining(object):
                 pri_x_prob.append(self.model.forward_g(rpst_val[:x_val.size()[0]]))
                 x_prob.append(self.model.forward_g(rpst_val))
                 y_gt.append(torch.cat([y_val, mal_y_val]))
+                y_adv.append(torch.cat([torch.zeros_like(y_val), mal_y_val]))
 
             pri_x_prob = torch.cat(pri_x_prob)
             s, _ = torch.sort(pri_x_prob, descending=True)
             tau_ = s[int((s.shape[0] - 1) * self.model.percentage)]
             x_prob = torch.cat(x_prob)
-            acc_val = (torch.cat(y_pred)[x_prob >= tau_] == torch.cat(y_gt)[x_prob >= tau_]).sum().item()
-            acc_val /= (x_prob >= tau_).sum().item()
-
+            acc_prst_val = (torch.cat(y_pred)[x_prob >= tau_] == torch.cat(y_gt)[x_prob >= tau_]).sum().item()
+            acc_prst_val /= (x_prob >= tau_).sum().item()
+            acc_adv_val = ((x_prob <= tau_) * torch.cat(y_adv)).sum().item()
+            acc_adv_val /= (x_prob <= tau_).sum().item()
+            acc_val = acc_prst_val + acc_adv_val
+            print('threshod:', tau_)
             if acc_val >= best_avg_acc:
                 best_avg_acc = acc_val
                 self.model.tau = nn.Parameter(tau_, requires_grad=False)
