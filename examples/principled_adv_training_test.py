@@ -42,8 +42,7 @@ def _main():
     else:
         dv = 'cuda'
 
-    model_name = args.model_name
-    # if args.mode == 'test' else time.strftime("%Y%m%d-%H%M%S")
+    model_name = args.model_name if args.mode == 'test' else time.strftime("%Y%m%d-%H%M%S")
     model = MalwareDetectorIndicator(vocab_size=dataset.vocab_size,
                                      n_classes=dataset.n_classes,
                                      device=dv,
@@ -62,7 +61,6 @@ def _main():
     principled_adv_training_model = PrincipledAdvTraining(model, attack, attack_param)
 
     if args.mode == 'train':
-        principled_adv_training_model.model.load_state_dict(torch.load(principled_adv_training_model.model_save_path))
         principled_adv_training_model.fit(train_dataset_producer,
                                           val_dataset_producer,
                                           epochs=args.epochs,
