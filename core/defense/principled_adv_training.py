@@ -102,10 +102,8 @@ class PrincipledAdvTraining(object):
                                                        y_batch,
                                                        latent_rpst[:batch_size],
                                                        idx_batch)
-
-                loss_train += F.cross_entropy(logits[batch_size:], mal_y_batch) - \
-                              self.model.energy(latent_rpst[batch_size:], logits[batch_size:]) * \
-                              self.attack_param['lambda_']
+                # F.cross_entropy(logits[batch_size:], mal_y_batch)
+                loss_train -= self.model.energy(latent_rpst[batch_size:], logits[batch_size:]) * self.attack_param['lambda_']
                 loss_train.backward()
                 optimizer.step()
                 total_time += time.time() - start_time
