@@ -90,6 +90,8 @@ class MalwareDetectorIndicator(MalwareDetector):
                     x, adj, y = res
                     x, adj, y = utils.to_tensor(x, adj, y, self.device)
                     p_representation, logits = self.forward(x, adj)
+                    print(p_representation)
+                    print(logits)
                     conf_batches.append(F.softmax(logits, dim=-1))
                     x_prob_batches.append(self.forward_g(p_representation))
                     if ith == 0:
