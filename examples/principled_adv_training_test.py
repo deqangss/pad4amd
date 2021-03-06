@@ -13,6 +13,7 @@ from tools.utils import save_args, get_group_args, dump_pickle, read_pickle
 from examples.advmaldet_test import cmd_md
 
 indicator_argparse = cmd_md.add_argument_group(title='principled adv training')
+indicator_argparse.add_argument('--adv_epochs', type=int, default=20, help='epochs for adversarial training.')
 indicator_argparse.add_argument('--lambda_', type=float, default=1., help='balance factor for waging attack.')
 indicator_argparse.add_argument('--n_pertb', type=int, default=10, help='maximum number of perturbations.')
 indicator_argparse.add_argument('--step_length', type=float, default=1., help='step length.')
@@ -63,6 +64,7 @@ def _main():
         principled_adv_training_model.fit(train_dataset_producer,
                                           val_dataset_producer,
                                           epochs=args.epochs,
+                                          adv_epochs=args.adv_epochs,
                                           lr=args.lr,
                                           weight_decay=args.weight_decay
                                           )

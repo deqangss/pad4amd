@@ -41,7 +41,7 @@ class PrincipledAdvTraining(object):
                                          'model.pth')
         self.model.model_save_path = self.model_save_path
 
-    def fit(self, train_data_producer, validation_data_producer, epochs=100, lr=0.005, weight_decay=5e-4, verbose=True):
+    def fit(self, train_data_producer, validation_data_producer, epochs=100, adv_epochs=20, lr=0.005, weight_decay=5e-4, verbose=True):
         """
         Train the malware detector, pick the best model according to the cross-entropy loss on validation set
 
@@ -54,42 +54,58 @@ class PrincipledAdvTraining(object):
         @param weight_decay: Float, penalty factor, default value 5e-4 in graph attention layer
         @param verbose: Boolean, whether to show verbose logs
         """
+        # normal training
+        logger.info("Training is starting...")
+        self.model.fit(train_data_producer,
+                       validation_data_producer,
+                       epochs=epochs,
+                       lr=lr,
+                       weight_decay=weight_decay)
+        # get tau
+        self.model.get_threshold(validation_data_producer)
+        logger.info(f"The threshold is {self.model.tau:.3f}.")
+
         optimizer = optim.Adam(self.model.parameters(), lr=lr, weight_decay=weight_decay)
         best_avg_acc = 0.
         best_epoch = 0
         total_time = 0.
         nbatchs = len(train_data_producer)
-        self.model.sample_weights[0] /= 2.  # owing to the adversarial malware
-        for i in range(epochs):
+        # self.model.sample_weights[0] /= 2.  # owing to the adversarial malware
+        logger.info("Adversarial training is starting ...")
+        for i in range(adv_epochs):
             losses, accuracies = [], []
             for idx_batch, res in enumerate(train_data_producer):
                 x_batch, adj, y_batch = res
-
-                # perturb malware feature vectors
                 x_batch, adj_batch, y_batch = utils.to_tensor(x_batch, adj, y_batch, self.model.device)
-                mal_x_batch, mal_adj_batch, mal_y_batch, null_flag = self.get_mal_data(x_batch, adj_batch, y_batch)
                 batch_size = x_batch.shape[0]
-                if not null_flag:
-                    start_time = time.time()
-                    adv_x_batch = self.attack_model.perturb(self.model, mal_x_batch, mal_adj_batch, mal_y_batch,
-                                                            self.attack_param['m'],
-                                                            self.attack_param['step_length'],
-                                                            self.attack_param['verbose']
-                                                            )
-                    total_time += time.time() - start_time
-                    x_batch = torch.vstack([x_batch, adv_x_batch])
-                    if adj is not None:
-                        adj_batch = torch.vstack([adj_batch, mal_adj_batch])
+                # perturb malware feature vectors
+                mal_x_batch, mal_adj_batch, mal_y_batch, null_flag = self.get_mal_data(x_batch, adj_batch, y_batch)
+                if null_flag:
+                    continue
+                start_time = time.time()
+                adv_x_batch = self.attack_model.perturb(self.model, mal_x_batch, mal_adj_batch, mal_y_batch,
+                                                        self.attack_param['m'],
+                                                        self.attack_param['step_length'],
+                                                        self.attack_param['verbose']
+                                                        )
+                total_time += time.time() - start_time
+                x_batch = torch.vstack([x_batch, adv_x_batch])
+                if adj is not None:
+                    adj_batch = torch.vstack([adj_batch, mal_adj_batch])
 
                 # start training
                 start_time = time.time()
                 self.model.train()
                 optimizer.zero_grad()
                 latent_rpst, logits = self.model.forward(x_batch, adj_batch)
-                loss_train = self.model.customize_loss(logits[:batch_size], y_batch, latent_rpst[:batch_size], idx_batch)
-                if not null_flag:
-                    loss_train += F.cross_entropy(logits[batch_size:], mal_y_batch) - \
-                                  self.model.energy(latent_rpst[batch_size:], logits[batch_size:]) * self.attack_param['lambda_']
+                loss_train = self.model.customize_loss(logits[:batch_size],
+                                                       y_batch,
+                                                       latent_rpst[:batch_size],
+                                                       idx_batch)
+
+                loss_train += F.cross_entropy(logits[batch_size:], mal_y_batch) - \
+                              self.model.energy(latent_rpst[batch_size:], logits[batch_size:]) * \
+                              self.attack_param['lambda_']
                 loss_train.backward()
                 optimizer.step()
                 total_time += time.time() - start_time
