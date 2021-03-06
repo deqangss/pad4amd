@@ -55,15 +55,15 @@ class PrincipledAdvTraining(object):
         @param verbose: Boolean, whether to show verbose logs
         """
         # normal training
-        # logger.info("Training is starting...")
-        # self.model.fit(train_data_producer,
-        #                validation_data_producer,
-        #                epochs=epochs,
-        #                lr=lr,
-        #                weight_decay=weight_decay)
-        # # get tau
-        # self.model.get_threshold(validation_data_producer)
-        # logger.info(f"The threshold is {self.model.tau:.3f}.")
+        logger.info("Training is starting...")
+        self.model.fit(train_data_producer,
+                       validation_data_producer,
+                       epochs=epochs,
+                       lr=lr,
+                       weight_decay=weight_decay)
+        # get tau
+        self.model.get_threshold(validation_data_producer)
+        logger.info(f"The threshold is {self.model.tau:.3f}.")
 
         optimizer = optim.Adam(self.model.parameters(), lr=lr, weight_decay=weight_decay)
         best_avg_acc = 0.
