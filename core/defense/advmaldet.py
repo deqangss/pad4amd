@@ -193,6 +193,7 @@ class MalwareDetectorIndicator(MalwareDetector):
         # print(prob_n)
         # print(self.phi)
         # print(self.sample_weights)
+        print(self.phi)
         debug = torch.sum(prob_n * self.phi + exp_over_flow, dim=1)
         assert not torch.isnan(debug).any()
         # print(torch.sum(-torch.log(prob_n * self.phi + exp_over_flow), dim=1))

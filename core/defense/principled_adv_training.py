@@ -55,15 +55,15 @@ class PrincipledAdvTraining(object):
         @param verbose: Boolean, whether to show verbose logs
         """
         # normal training
-        logger.info("Training is starting...")
-        self.model.fit(train_data_producer,
-                       validation_data_producer,
-                       epochs=epochs,
-                       lr=lr,
-                       weight_decay=weight_decay)
-        # get tau
-        self.model.get_threshold(validation_data_producer)
-        logger.info(f"The threshold is {self.model.tau:.3f}.")
+        # logger.info("Training is starting...")
+        # self.model.fit(train_data_producer,
+        #                validation_data_producer,
+        #                epochs=epochs,
+        #                lr=lr,
+        #                weight_decay=weight_decay)
+        # # get tau
+        # self.model.get_threshold(validation_data_producer)
+        # logger.info(f"The threshold is {self.model.tau:.3f}.")
 
         optimizer = optim.Adam(self.model.parameters(), lr=lr, weight_decay=weight_decay)
         best_avg_acc = 0.
@@ -98,11 +98,14 @@ class PrincipledAdvTraining(object):
                 self.model.train()
                 optimizer.zero_grad()
                 latent_rpst, logits = self.model.forward(x_batch, adj_batch)
+                print(latent_rpst)
+                print(logits)
                 loss_train = self.model.customize_loss(logits[:batch_size],
                                                        y_batch,
                                                        latent_rpst[:batch_size],
                                                        idx_batch)
                 # F.cross_entropy(logits[batch_size:], mal_y_batch)
+                print(self.model.energy(latent_rpst[batch_size:], logits[batch_size:]))
                 loss_train -= \
                     torch.clamp(self.model.energy(latent_rpst[batch_size:], logits[batch_size:]), min=-100.) * self.attack_param['lambda_']
                 loss_train.backward()
