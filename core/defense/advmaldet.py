@@ -90,7 +90,6 @@ class MalwareDetectorIndicator(MalwareDetector):
                     x, adj, y = res
                     x, adj, y = utils.to_tensor(x, adj, y, self.device)
                     p_representation, logits = self.forward(x, adj)
-                    print(p_representation)
                     conf_batches.append(F.softmax(logits, dim=-1))
                     x_prob_batches.append(self.forward_g(p_representation))
                     if ith == 0:
@@ -195,7 +194,6 @@ class MalwareDetectorIndicator(MalwareDetector):
         # print(self.phi)
         # print(self.sample_weights)
         debug = torch.sum(prob_n * self.phi + exp_over_flow, dim=1)
-        print(debug)
         assert not torch.isnan(debug).any()
         # print(torch.sum(-torch.log(prob_n * self.phi + exp_over_flow), dim=1))
         # E_z = torch.sum(torch.log(prob_n * self.phi + exp_over_flow) * self.sample_weights, dim=1)
