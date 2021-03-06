@@ -218,6 +218,8 @@ class MalwareDetectorIndicator(MalwareDetector):
         self.update_phi(logits, mini_batch_idx)
         de = self.energy(representation, logits) * self.beta
         ce = F.cross_entropy(logits, gt_labels)
+        print('density: ', de)
+        print('cross: ', ce)
         return de + ce
 
 
