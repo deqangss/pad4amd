@@ -98,13 +98,11 @@ class PrincipledAdvTraining(object):
                 self.model.train()
                 optimizer.zero_grad()
                 latent_rpst, logits = self.model.forward(x_batch, adj_batch)
-                print('logit:', logits)
                 loss_train = self.model.customize_loss(logits[:batch_size],
                                                        y_batch,
                                                        latent_rpst[:batch_size],
                                                        idx_batch)
                 # F.cross_entropy(logits[batch_size:], mal_y_batch)
-                print('loss1: ', loss_train)
                 loss_train -= \
                     torch.clamp(self.model.energy(latent_rpst[batch_size:], logits[batch_size:]), max=100.) * self.attack_param['lambda_']
                 loss_train.backward()

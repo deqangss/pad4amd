@@ -197,6 +197,8 @@ class MalwareDetectorIndicator(MalwareDetector):
         assert not torch.isnan(debug).any()
         # print(torch.sum(-torch.log(prob_n * self.phi + exp_over_flow), dim=1))
         # E_z = torch.sum(torch.log(prob_n * self.phi + exp_over_flow) * self.sample_weights, dim=1)
+        print('gamma_z:', gamma_z)
+        print('log:', torch.log(prob_n * self.phi / gamma_z + exp_over_flow))
         E_z = torch.sum(gamma_z * torch.log(prob_n * self.phi / gamma_z + exp_over_flow) * self.sample_weights, dim=1)  # ELBO
         energies = -torch.mean(E_z, dim=0)
         return energies
@@ -216,10 +218,10 @@ class MalwareDetectorIndicator(MalwareDetector):
     def customize_loss(self, logits, gt_labels, representation,  mini_batch_idx):
         # print(gt_labels)
         self.update_phi(logits, mini_batch_idx)
+
         de = self.energy(representation, logits) * self.beta
         ce = F.cross_entropy(logits, gt_labels)
         print('density: ', de)
-        print('cross: ', ce)
         return de + ce
 
 
