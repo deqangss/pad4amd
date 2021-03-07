@@ -110,10 +110,10 @@ class PrincipledAdvTraining(object):
                     loss_train += F.cross_entropy(logits[batch_size:][adv_reg_flag], mal_y_batch[adv_reg_flag])
                 if torch.any(~adv_reg_flag):
                     # the following is problematic, owing to energy <= ELOB, but not versus versa
-                    # loss_train -= \
-                    #     torch.clamp(self.model.energy(latent_rpst[batch_size:], logits[batch_size:]), max=-torch.log(self.model.tau)) * self.model.beta
+                    # loss_train -= self.model.energy(latent_rpst[batch_size:][~adv_reg_flag], logits[batch_size:][~adv_reg_flag],
+                    #                                 clip_max=-2 * self.model.tau / torch.exp(torch.tensor(1.))) * self.model.beta
                     loss_train += torch.mean(torch.clamp(self.model.forward_g(latent_rpst[batch_size:][~adv_reg_flag]),
-                                                         max=self.model.tau / 2.)) * self.model.beta
+                                                         min=self.model.tau / 2.)) * self.model.beta
                 loss_train.backward()
                 optimizer.step()
                 total_time += time.time() - start_time
