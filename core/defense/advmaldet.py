@@ -111,8 +111,9 @@ class MalwareDetectorIndicator(MalwareDetector):
         x_prob = self.forward_g(p_representation)
         if use_indicator:
             flag = self.indicator(x_prob)
-            print((y_pred[flag] == y[flag]).cpu().numpy() / y[flag].size()[0])
-            return ((y_pred[flag] == y[flag]) | (~flag)).cpu().numpy()
+            print((y_pred[flag] == y[flag]).sum().item() / y[flag].size()[0])
+            print((~flag).sum().item()/flag.size()[0])
+            return ((y_pred == y) | (~flag)).cpu().numpy()
         else:
             return (y_pred == y).cpu().numpy()
 
