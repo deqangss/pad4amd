@@ -113,7 +113,7 @@ class PrincipledAdvTraining(object):
                     # loss_train -= \
                     #     torch.clamp(self.model.energy(latent_rpst[batch_size:], logits[batch_size:]), max=-torch.log(self.model.tau)) * self.model.beta
                     loss_train += torch.mean(torch.clamp(self.model.forward_g(latent_rpst[batch_size:][~adv_reg_flag]),
-                                                         max=self.model.tau-1e-6)) * self.model.beta
+                                                         max=self.model.tau / 2.)) * self.model.beta
                 loss_train.backward()
                 optimizer.step()
                 total_time += time.time() - start_time
@@ -156,10 +156,8 @@ class PrincipledAdvTraining(object):
             tau_ = s[int((s.shape[0] - 1) * self.model.percentage)]
             x_prob = torch.cat(x_prob)
             acc_prst_val = (torch.cat(y_pred)[x_prob >= tau_] == torch.cat(y_gt)[x_prob >= tau_]).sum().item()
-            acc_prst_val /= (x_prob >= tau_).sum().item()
             acc_adv_val = ((x_prob <= tau_) * torch.cat(y_adv)).sum().item()
-            acc_adv_val /= (x_prob <= tau_).sum().item()
-            acc_val = acc_prst_val + acc_adv_val
+            acc_val = (acc_prst_val + acc_adv_val) / x_val.size()[0]
 
             if acc_val >= best_avg_acc:
                 best_avg_acc = acc_val
