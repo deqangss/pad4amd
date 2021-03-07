@@ -41,7 +41,7 @@ class PrincipledAdvTraining(object):
                                          'model.pth')
         self.model.model_save_path = self.model_save_path
 
-    def fit(self, train_data_producer, validation_data_producer, epochs=100, adv_epochs=20, lr=0.005, weight_decay=5e-4, verbose=True):
+    def fit(self, train_data_producer, validation_data_producer, epochs=100, adv_epochs=20, epsilon=1, lr=0.005, weight_decay=5e-4, verbose=True):
         """
         Train the malware detector, pick the best model according to the cross-entropy loss on validation set
 
@@ -50,6 +50,8 @@ class PrincipledAdvTraining(object):
         @param train_data_producer: Object, an iterator for producing a batch of training data
         @param validation_data_producer: Object, an iterator for producing validation dataset
         @param epochs: Integer, epochs
+        @param adv_epochs: Integer, epochs for adversarial training
+        @param epsilon: Float, a small number of perturbations
         @param lr: Float, learning rate for Adam optimizer
         @param weight_decay: Float, penalty factor, default value 5e-4 in graph attention layer
         @param verbose: Boolean, whether to show verbose logs
@@ -89,6 +91,8 @@ class PrincipledAdvTraining(object):
                                                         self.attack_param['verbose']
                                                         )
                 total_time += time.time() - start_time
+                perturbations = torch.sum(torch.abs(adv_x_batch - mal_x_batch), dim=(1, 2))
+                adv_reg_flag = (perturbations <= epsilon)
                 x_batch = torch.vstack([x_batch, adv_x_batch])
                 if adj is not None:
                     adj_batch = torch.vstack([adj_batch, mal_adj_batch])
@@ -102,9 +106,14 @@ class PrincipledAdvTraining(object):
                                                        y_batch,
                                                        latent_rpst[:batch_size],
                                                        idx_batch)
-                # F.cross_entropy(logits[batch_size:], mal_y_batch)
-                loss_train -= \
-                    torch.clamp(self.model.energy(latent_rpst[batch_size:], logits[batch_size:]), max=100.) * self.model.beta
+                if torch.any(adv_reg_flag):
+                    loss_train += F.cross_entropy(logits[batch_size:][adv_reg_flag], mal_y_batch[adv_reg_flag])
+                if not torch.any(adv_reg_flag):
+                    # the following is problematic, owing to energy <= ELOB, but not versus versa
+                    # loss_train -= \
+                    #     torch.clamp(self.model.energy(latent_rpst[batch_size:], logits[batch_size:]), max=-torch.log(self.model.tau)) * self.model.beta
+                    loss_train += torch.mean(torch.clamp(self.model.forward_g(latent_rpst[batch_size:][~adv_reg_flag]),
+                                                         max=torch.log(self.model.tau)-1e-6)) * self.model.beta
                 loss_train.backward()
                 optimizer.step()
                 total_time += time.time() - start_time
