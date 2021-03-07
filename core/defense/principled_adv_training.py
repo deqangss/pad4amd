@@ -108,7 +108,7 @@ class PrincipledAdvTraining(object):
                                                        idx_batch)
                 if torch.any(adv_reg_flag):
                     loss_train += F.cross_entropy(logits[batch_size:][adv_reg_flag], mal_y_batch[adv_reg_flag])
-                if not torch.any(adv_reg_flag):
+                if torch.any(~adv_reg_flag):
                     # the following is problematic, owing to energy <= ELOB, but not versus versa
                     # loss_train -= \
                     #     torch.clamp(self.model.energy(latent_rpst[batch_size:], logits[batch_size:]), max=-torch.log(self.model.tau)) * self.model.beta
