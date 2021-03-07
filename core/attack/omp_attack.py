@@ -43,7 +43,6 @@ class OMPA(BaseAttack):
         # node, adj, label = utils.to_device(node, adj, label, self.device)
         adv_node = node.detach().clone().to(torch.float)
         model.eval()
-        rpst, logit = model.forward(adv_node, adj=None)
         self.padding_mask = torch.sum(node, dim=-1, keepdim=True) > 1  # we set a graph contains two apis at least
         for iter_i in range(n_perturbations):
             var_adv_node = torch.autograd.Variable(adv_node, requires_grad=True)
@@ -75,10 +74,10 @@ class OMPA(BaseAttack):
 
     def get_losses(self, model, logit, label, representation=None):
         ce = F.cross_entropy(logit, label, reduction='none')
-        g = model.forward_g(representation)
-        loss_no_reduction = ce + self.lambda_ * (model.tau - g)
-        not_done = (logit.argmax(1) == 0.) & (g >= model.tau)
-        return loss_no_reduction, not_done
+        de = model.forward_g(representation)
+        loss_no_reduction = ce + self.lambda_ * (model.tau - de)
+        done = (logit.argmax(1) == 0.) & (de >= model.tau)
+        return loss_no_reduction, done
 
     def get_perturbation(self, features, adv_features, gradients):
         # 1. mask paddings

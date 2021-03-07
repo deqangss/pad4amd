@@ -113,7 +113,7 @@ class PrincipledAdvTraining(object):
                     # loss_train -= \
                     #     torch.clamp(self.model.energy(latent_rpst[batch_size:], logits[batch_size:]), max=-torch.log(self.model.tau)) * self.model.beta
                     loss_train += torch.mean(torch.clamp(self.model.forward_g(latent_rpst[batch_size:][~adv_reg_flag]),
-                                                         max=torch.log(self.model.tau)-1e-6)) * self.model.beta
+                                                         max=self.model.tau-1e-6)) * self.model.beta
                 loss_train.backward()
                 optimizer.step()
                 total_time += time.time() - start_time
