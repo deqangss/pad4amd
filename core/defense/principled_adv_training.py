@@ -151,7 +151,7 @@ class PrincipledAdvTraining(object):
             acc_adv_val = ((x_prob <= tau_) * torch.cat(y_adv)).sum().item()
             acc_adv_val /= (x_prob <= tau_).sum().item()
             acc_val = acc_prst_val + acc_adv_val
-            print('threshod:', tau_)
+
             if acc_val >= best_avg_acc:
                 best_avg_acc = acc_val
                 self.model.tau = nn.Parameter(tau_, requires_grad=False)
@@ -167,6 +167,9 @@ class PrincipledAdvTraining(object):
                     f'Training loss (epoch level): {np.mean(losses):.4f} | Train accuracy: {np.mean(accuracies) * 100:.2f}')
                 logger.info(
                     f'Validation accuracy: {acc_val * 100:.2f} | The best validation accuracy: {best_avg_acc * 100:.2f} at epoch: {best_epoch}')
+                logger.info(
+                    f'The threshold is {self.model.tau}.'
+                )
 
     @staticmethod
     def get_mal_data(x_batch, adj_batch, y_batch):
