@@ -185,7 +185,7 @@ class MalwareDetectorIndicator(MalwareDetector):
             (x.unsqueeze(1) - self.dense.weight) * reverse_sigma * (x.unsqueeze(1) - self.dense.weight), dim=-1))
         return prob
 
-    def energy(self, representation, logits, clip_min=-500, clip_max=500):
+    def energy(self, representation, logits):
         exp_over_flow = 1e-12
         gamma_z = torch.softmax(logits, dim=1)
         prob_n = self.gaussian_prob(representation)
@@ -198,8 +198,7 @@ class MalwareDetectorIndicator(MalwareDetector):
         # E_z = torch.sum(torch.log(prob_n * self.phi + exp_over_flow) * self.sample_weights, dim=1)
         E_z = torch.sum(gamma_z * torch.log(prob_n * self.phi / (gamma_z + exp_over_flow) + \
                                             exp_over_flow) * self.sample_weights, dim=1)  # ELBO
-        energies = torch.mean(torch.clamp(-E_z, min=clip_min, max=clip_max), dim=0)
-        return energies
+        return torch.mean(-E_z, dim=0)
 
     def get_sample_weights(self, labels):
         _labels = labels.cpu().numpy()

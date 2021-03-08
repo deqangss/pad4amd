@@ -91,8 +91,8 @@ class PrincipledAdvTraining(object):
                                                         self.attack_param['verbose']
                                                         )
                 total_time += time.time() - start_time
-                perturbations = torch.sum(torch.abs(adv_x_batch - mal_x_batch), dim=(1, 2))
-                adv_reg_flag = (perturbations <= epsilon)
+                # perturbations = torch.sum(torch.abs(adv_x_batch - mal_x_batch), dim=(1, 2))
+                # adv_reg_flag = (perturbations <= epsilon)
                 x_batch = torch.vstack([x_batch, adv_x_batch])
                 if adj is not None:
                     adj_batch = torch.vstack([adj_batch, mal_adj_batch])
@@ -106,16 +106,18 @@ class PrincipledAdvTraining(object):
                                                        y_batch,
                                                        latent_rpst[:batch_size],
                                                        idx_batch)
-                if torch.any(adv_reg_flag):
-                    loss_train += F.cross_entropy(logits[batch_size:][adv_reg_flag], mal_y_batch[adv_reg_flag])
-                if torch.any(~adv_reg_flag):
-                    # the following is problematic, owing to energy <= ELOB, but not versus versa
-                    assert self.model.tau > 0.
-                    # loss_train -= self.model.energy(latent_rpst[batch_size:][~adv_reg_flag], logits[batch_size:][~adv_reg_flag],
-                    #                                 clip_max=-torch.log(self.model.tau)) * self.model.beta
-                    debug = self.model.forward_g(latent_rpst[batch_size:][~adv_reg_flag])
-                    print(debug)
-                    loss_train += torch.mean(debug) * self.model.beta
+                loss_train += F.cross_entropy(logits[batch_size:], mal_y_batch)
+                loss_train -=  self.model.beta * self.model.energy(latent_rpst[batch_size:], logits[batch_size:])
+                # if torch.any(adv_reg_flag):
+                #     loss_train += F.cross_entropy(logits[batch_size:][adv_reg_flag], mal_y_batch[adv_reg_flag])
+                # if torch.any(~adv_reg_flag):
+                #     # the following is problematic, owing to energy <= ELOB, but not versus versa
+                #     assert self.model.tau > 0.
+                #     # loss_train -= self.model.energy(latent_rpst[batch_size:][~adv_reg_flag], logits[batch_size:][~adv_reg_flag],
+                #     #                                 clip_max=-torch.log(self.model.tau)) * self.model.beta
+                #     debug = self.model.forward_g(latent_rpst[batch_size:][~adv_reg_flag])
+                #     print(debug)
+                #     loss_train += torch.mean(debug) * self.model.beta
 
                 loss_train.backward()
                 optimizer.step()
