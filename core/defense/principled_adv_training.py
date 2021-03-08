@@ -65,7 +65,7 @@ class PrincipledAdvTraining(object):
         #                weight_decay=weight_decay)
         # # get tau
         # self.model.get_threshold(validation_data_producer)
-        # logger.info(f"The threshold is {self.model.tau:.3f}.")
+        logger.info(f"The threshold is {self.model.tau:.3f}.")
 
         optimizer = optim.Adam(self.model.parameters(), lr=lr, weight_decay=weight_decay)
         best_avg_acc = 0.
