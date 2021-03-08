@@ -111,10 +111,12 @@ class PrincipledAdvTraining(object):
                 if torch.any(~adv_reg_flag):
                     # the following is problematic, owing to energy <= ELOB, but not versus versa
                     assert self.model.tau > 0.
-                    loss_train -= self.model.energy(latent_rpst[batch_size:][~adv_reg_flag], logits[batch_size:][~adv_reg_flag],
-                                                    clip_max=-torch.log(self.model.tau)) * self.model.beta
-                    # loss_train += torch.mean(torch.clamp(self.model.forward_g(latent_rpst[batch_size:][~adv_reg_flag]),
-                    #                                      min=self.model.tau / 2.)) * self.model.beta
+                    # loss_train -= self.model.energy(latent_rpst[batch_size:][~adv_reg_flag], logits[batch_size:][~adv_reg_flag],
+                    #                                 clip_max=-torch.log(self.model.tau)) * self.model.beta
+                    debug = self.model.forward_g(latent_rpst[batch_size:][~adv_reg_flag])
+                    print(debug)
+                    loss_train += torch.mean(debug) * self.model.beta
+
                 loss_train.backward()
                 optimizer.step()
                 total_time += time.time() - start_time
