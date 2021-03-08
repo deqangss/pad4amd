@@ -187,7 +187,7 @@ class MalwareDetectorIndicator(MalwareDetector):
 
     def energy(self, representation, logits, clip_min=-500, clip_max=500):
         exp_over_flow = 1e-12
-        gamma_z = torch.softmax(logits, dim=1).detach()
+        gamma_z = torch.softmax(logits, dim=1)
         prob_n = self.gaussian_prob(representation)
 
         # print(prob_n)
