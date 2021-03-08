@@ -60,7 +60,7 @@ def _main():
         'verbose': False
     }
     principled_adv_training_model = PrincipledAdvTraining(model, attack, attack_param)
-    principled_adv_training_model.model.load()
+
     if args.mode == 'train':
         principled_adv_training_model.fit(train_dataset_producer,
                                           val_dataset_producer,
