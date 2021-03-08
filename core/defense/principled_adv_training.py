@@ -57,13 +57,13 @@ class PrincipledAdvTraining(object):
         @param verbose: Boolean, whether to show verbose logs
         """
         # normal training
-        # logger.info("Training is starting...")
-        # self.model.fit(train_data_producer,
-        #                validation_data_producer,
-        #                epochs=epochs,
-        #                lr=lr,
-        #                weight_decay=weight_decay)
-        # # get tau
+        logger.info("Training is starting...")
+        self.model.fit(train_data_producer,
+                       validation_data_producer,
+                       epochs=epochs,
+                       lr=lr,
+                       weight_decay=weight_decay)
+        # get tau
         self.model.get_threshold(validation_data_producer)
         logger.info(f"The threshold is {self.model.tau:.3f}.")
 
@@ -107,7 +107,7 @@ class PrincipledAdvTraining(object):
                                                        latent_rpst[:batch_size],
                                                        idx_batch)
                 loss_train += F.cross_entropy(logits[batch_size:], mal_y_batch)
-                loss_train -=  self.model.beta * self.model.energy(latent_rpst[batch_size:], logits[batch_size:])
+                # loss_train -= self.model.beta * self.model.energy(latent_rpst[batch_size:], logits[batch_size:])
                 # if torch.any(adv_reg_flag):
                 #     loss_train += F.cross_entropy(logits[batch_size:][adv_reg_flag], mal_y_batch[adv_reg_flag])
                 # if torch.any(~adv_reg_flag):
@@ -163,10 +163,10 @@ class PrincipledAdvTraining(object):
             acc_prst_val = (torch.cat(y_pred)[x_prob >= tau_] == torch.cat(y_gt)[x_prob >= tau_]).sum().item()
             acc_adv_val = ((x_prob < tau_) * torch.cat(y_adv)).sum().item()
             acc_val = (acc_prst_val + acc_adv_val) / x_prob.size()[0]
+            self.model.tau = nn.Parameter(tau_, requires_grad=False)
 
             if acc_val >= best_avg_acc:
                 best_avg_acc = acc_val
-                self.model.tau = nn.Parameter(tau_, requires_grad=False)
                 best_epoch = i
                 if not path.exists(self.model_save_path):
                     utils.mkdir(path.dirname(self.model_save_path))

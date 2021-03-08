@@ -43,8 +43,7 @@ def _main():
     else:
         dv = 'cuda'
 
-    model_name = args.model_name
-    # if args.mode == 'test' else time.strftime("%Y%m%d-%H%M%S")
+    model_name = args.model_name if args.mode == 'test' else time.strftime("%Y%m%d-%H%M%S")
     model = MalwareDetectorIndicator(vocab_size=dataset.vocab_size,
                                      n_classes=dataset.n_classes,
                                      device=dv,
@@ -74,7 +73,7 @@ def _main():
         save_args(path.join(path.dirname(principled_adv_training_model.model_save_path), "hparam"), vars(args))
         dump_pickle(vars(args), path.join(path.dirname(principled_adv_training_model.model_save_path), "hparam.pkl"))
         # get threshold
-        # principled_adv_training_model.model.get_threshold(val_dataset_producer)
+        principled_adv_training_model.model.get_threshold(val_dataset_producer)
         print(principled_adv_training_model.model.tau)
         principled_adv_training_model.model.save_to_disk()
     # test: accuracy
