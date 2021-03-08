@@ -74,7 +74,7 @@ def _main():
         save_args(path.join(path.dirname(principled_adv_training_model.model_save_path), "hparam"), vars(args))
         dump_pickle(vars(args), path.join(path.dirname(principled_adv_training_model.model_save_path), "hparam.pkl"))
         # get threshold
-        principled_adv_training_model.model.get_threshold(val_dataset_producer)
+        # principled_adv_training_model.model.get_threshold(val_dataset_producer)
         print(principled_adv_training_model.model.tau)
         principled_adv_training_model.model.save_to_disk()
     # test: accuracy
