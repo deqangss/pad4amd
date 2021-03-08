@@ -57,15 +57,15 @@ class PrincipledAdvTraining(object):
         @param verbose: Boolean, whether to show verbose logs
         """
         # normal training
-        logger.info("Training is starting...")
-        self.model.fit(train_data_producer,
-                       validation_data_producer,
-                       epochs=epochs,
-                       lr=lr,
-                       weight_decay=weight_decay)
-        # get tau
-        self.model.get_threshold(validation_data_producer)
-        logger.info(f"The threshold is {self.model.tau:.3f}.")
+        # logger.info("Training is starting...")
+        # self.model.fit(train_data_producer,
+        #                validation_data_producer,
+        #                epochs=epochs,
+        #                lr=lr,
+        #                weight_decay=weight_decay)
+        # # get tau
+        # self.model.get_threshold(validation_data_producer)
+        # logger.info(f"The threshold is {self.model.tau:.3f}.")
 
         optimizer = optim.Adam(self.model.parameters(), lr=lr, weight_decay=weight_decay)
         best_avg_acc = 0.
@@ -156,8 +156,8 @@ class PrincipledAdvTraining(object):
             tau_ = s[int((s.shape[0] - 1) * self.model.percentage)]
             x_prob = torch.cat(x_prob)
             acc_prst_val = (torch.cat(y_pred)[x_prob >= tau_] == torch.cat(y_gt)[x_prob >= tau_]).sum().item()
-            acc_adv_val = ((x_prob <= tau_) * torch.cat(y_adv)).sum().item()
-            acc_val = (acc_prst_val + acc_adv_val) / x_val.size()[0]
+            acc_adv_val = ((x_prob < tau_) * torch.cat(y_adv)).sum().item()
+            acc_val = (acc_prst_val + acc_adv_val) / x_prob.size()[0]
 
             if acc_val >= best_avg_acc:
                 best_avg_acc = acc_val
