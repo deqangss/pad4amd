@@ -72,7 +72,7 @@ def _main():
         PrincipledAdvTraining(model)
     model.load()
     print("Load model parameters from {}.".format(model.model_save_path))
-
+    logger.info(f"\n The threshold is {model.tau}.")
     attack = OMPA(lambda_=args.lambda_,
                   device=model.device
                   )

@@ -57,15 +57,15 @@ class PrincipledAdvTraining(object):
         @param verbose: Boolean, whether to show verbose logs
         """
         # normal training
-        logger.info("Training is starting...")
-        self.model.fit(train_data_producer,
-                       validation_data_producer,
-                       epochs=epochs,
-                       lr=lr,
-                       weight_decay=weight_decay)
-        # get tau
-        self.model.get_threshold(validation_data_producer)
-        logger.info(f"The threshold is {self.model.tau:.3f}.")
+        # logger.info("Training is starting...")
+        # self.model.fit(train_data_producer,
+        #                validation_data_producer,
+        #                epochs=epochs,
+        #                lr=lr,
+        #                weight_decay=weight_decay)
+        # # get tau
+        # self.model.get_threshold(validation_data_producer)
+        # logger.info(f"The threshold is {self.model.tau:.3f}.")
 
         optimizer = optim.Adam(self.model.parameters(), lr=lr, weight_decay=weight_decay)
         best_avg_acc = 0.
@@ -106,8 +106,8 @@ class PrincipledAdvTraining(object):
                                                        y_batch,
                                                        latent_rpst[:batch_size],
                                                        idx_batch)
-                loss_train += F.cross_entropy(logits[batch_size:], mal_y_batch)
-                # loss_train -= self.model.beta * self.model.energy(latent_rpst[batch_size:], logits[batch_size:])
+                # loss_train += F.cross_entropy(logits[batch_size:], mal_y_batch)
+                loss_train -= self.model.beta * self.model.energy(latent_rpst[batch_size:], logits[batch_size:])
                 # if torch.any(adv_reg_flag):
                 #     loss_train += F.cross_entropy(logits[batch_size:][adv_reg_flag], mal_y_batch[adv_reg_flag])
                 # if torch.any(~adv_reg_flag):
