@@ -143,6 +143,7 @@ class PrincipledAdvTraining(object):
             for res in validation_data_producer:
                 x_val, adj_val, y_val = res
                 x_val, adj_val, y_val = utils.to_tensor(x_val, adj_val, y_val, self.model.device)
+                bs_val = x_val.size()[0]
                 mal_x_val, mal_adj_val, mal_y_val, _flag = self.get_mal_data(x_val, adj_val, y_val)
                 if not _flag:
                     adv_x_val = self.attack_model.perturb(self.model, mal_x_val, mal_adj_val, mal_y_val)
@@ -152,7 +153,7 @@ class PrincipledAdvTraining(object):
 
                 rpst_val, logit_val = self.model.forward(x_val, adj_val)
                 y_pred.append(logit_val.argmax(1))
-                pri_x_prob.append(self.model.forward_g(rpst_val[:x_val.size()[0]]))
+                pri_x_prob.append(self.model.forward_g(rpst_val[:bs_val]))
                 x_prob.append(self.model.forward_g(rpst_val))
                 y_gt.append(torch.cat([y_val, mal_y_val]))
                 y_adv.append(torch.cat([torch.zeros_like(y_val), mal_y_val]))
