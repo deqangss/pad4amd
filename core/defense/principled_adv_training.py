@@ -149,7 +149,8 @@ class PrincipledAdvTraining(object):
                 bs_val = x_val.size()[0]
                 mal_x_val, mal_adj_val, mal_y_val, _flag = self.get_mal_data(x_val, adj_val, y_val)
                 if not _flag:
-                    adv_x_val = self.attack_model.perturb(self.model, mal_x_val, mal_adj_val, mal_y_val)
+                    adv_x_val = self.attack_model.perturb(self.model, mal_x_val, mal_adj_val, mal_y_val,
+                                                          self.attack_param['m'])
                     x_val = torch.cat([x_val, adv_x_val])
                     if adj_val is not None:
                         adj_val = torch.vstack([adj_val, mal_adj_val])
