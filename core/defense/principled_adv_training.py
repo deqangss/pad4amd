@@ -164,11 +164,15 @@ class PrincipledAdvTraining(object):
             pri_x_prob = torch.cat(pri_x_prob)
             s, _ = torch.sort(pri_x_prob, descending=True)
             tau_ = s[int((s.shape[0] - 1) * self.model.percentage)]
+
             x_prob = torch.cat(x_prob)
-            acc_prst_val = (torch.cat(y_pred)[x_prob >= tau_] == torch.cat(y_gt)[x_prob >= tau_]).sum().item()
-            acc_adv_val = ((x_prob < tau_) * torch.cat(y_adv)).sum().item()
-            acc_val = acc_prst_val / (x_prob >= tau_).sum().item() + acc_adv_val / (x_prob < tau_).sum().item()
-            acc_val /= 2.
+            y_pred = torch.cat(y_pred)
+            y_gt = torch.cat(y_gt)
+            y_adv = torch.cat(y_adv)
+
+            acc_prst_val = (y_pred[x_prob >= tau_] == y_gt[x_prob >= tau_]).sum().item() / (x_prob >= tau_).sum().item()
+            acc_adv_val = (x_prob[y_adv == 1] < tau_).sum().item() / y_adv.sum().item()
+            acc_val = (acc_prst_val + acc_adv_val) / 2.
             self.model.tau = nn.Parameter(tau_, requires_grad=False)
 
             if acc_val >= best_avg_acc:
