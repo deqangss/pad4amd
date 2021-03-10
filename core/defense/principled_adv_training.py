@@ -172,7 +172,8 @@ class PrincipledAdvTraining(object):
             y_adv = torch.cat(y_adv)
 
             acc_prst_val = (y_pred[x_prob >= tau_] == y_gt[x_prob >= tau_]).sum().item() / (x_prob >= tau_).sum().item()
-            acc_adv_val = (x_prob[y_adv == 1] < tau_).sum().item() / y_adv.sum().item()
+            adv_clf = ((x_prob >= tau_) * y_adv).sum().item()
+            acc_adv_val = (x_prob[y_adv == 1] < tau_).sum().item() / (y_adv.sum().item() - adv_clf)
             acc_val = (acc_prst_val + acc_adv_val) / 2.  # lead to imbalanced issue
             self.model.tau = nn.Parameter(tau_, requires_grad=False)
 
