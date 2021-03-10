@@ -107,7 +107,7 @@ class PrincipledAdvTraining(object):
                                                        latent_rpst[:batch_size],
                                                        idx_batch)
                 # if torch.any(adv_ce_flag):
-                #     loss_train += F.cross_entropy(logits[batch_size:][adv_ce_flag], mal_y_batch[adv_ce_flag])
+                loss_train += F.cross_entropy(logits[batch_size:], mal_y_batch)
                 # if torch.any(~adv_ce_flag):
                 loss_train += self.model.beta * torch.mean(
                     self.model.forward_g(latent_rpst[batch_size:]))
