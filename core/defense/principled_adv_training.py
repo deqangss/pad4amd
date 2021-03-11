@@ -57,15 +57,15 @@ class PrincipledAdvTraining(object):
         @param verbose: Boolean, whether to show verbose logs
         """
         # normal training
-        # logger.info("Training is starting...")
-        # self.model.fit(train_data_producer,
-        #                validation_data_producer,
-        #                epochs=epochs,
-        #                lr=lr,
-        #                weight_decay=weight_decay)
-        # # get tau
-        # self.model.get_threshold(validation_data_producer)
-        # logger.info(f"The threshold is {self.model.tau:.3f}.")
+        logger.info("Training is starting...")
+        self.model.fit(train_data_producer,
+                       validation_data_producer,
+                       epochs=epochs,
+                       lr=lr,
+                       weight_decay=weight_decay)
+        # get tau
+        self.model.get_threshold(validation_data_producer)
+        logger.info(f"The threshold is {self.model.tau:.3f}.")
 
         optimizer = optim.Adam(self.model.parameters(), lr=lr, weight_decay=weight_decay)
         best_avg_acc = 0.
@@ -91,8 +91,8 @@ class PrincipledAdvTraining(object):
                                                         self.attack_param['verbose']
                                                         )
                 total_time += time.time() - start_time
-                # perturbations = torch.sum(torch.abs(adv_x_batch - mal_x_batch), dim=(1, 2))
-                # adv_ce_flag = (perturbations <= epsilon)
+                perturbations = torch.sum(torch.abs(adv_x_batch - mal_x_batch), dim=(1, 2))
+                adv_ce_flag = (perturbations <= epsilon)
                 x_batch = torch.vstack([x_batch, adv_x_batch])
                 if adj is not None:
                     adj_batch = torch.vstack([adj_batch, mal_adj_batch])
@@ -106,11 +106,11 @@ class PrincipledAdvTraining(object):
                                                        y_batch,
                                                        latent_rpst[:batch_size],
                                                        idx_batch)
-                # if torch.any(adv_ce_flag):
-                loss_train += F.cross_entropy(logits[batch_size:], mal_y_batch)
-                # if torch.any(~adv_ce_flag):
-                loss_train += self.model.beta * torch.mean(
-                    self.model.forward_g(latent_rpst[batch_size:]))
+                if torch.any(adv_ce_flag):
+                    loss_train += F.cross_entropy(logits[batch_size:], mal_y_batch)
+                if torch.any(~adv_ce_flag):
+                    loss_train += self.model.beta * torch.mean(
+                        self.model.forward_g(latent_rpst[batch_size:]))
                 # loss_train -= self.model.beta * self.model.energy(latent_rpst[batch_size:], logits[batch_size:])
                 # if torch.any(adv_reg_flag):
                 #     loss_train += F.cross_entropy(logits[batch_size:][adv_reg_flag], mal_y_batch[adv_reg_flag])
