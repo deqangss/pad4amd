@@ -137,54 +137,58 @@ class PrincipledAdvTraining(object):
                     logger.info(
                         f'Training loss (batch level): {losses[-1]:.4f} | Train accuracy: {acc_train * 100:.2f}')
 
-            self.model.eval()
-            y_pred = []
-            pri_x_prob = []
-            x_prob = []
-            y_gt = []
-            y_adv = []
-            for res in validation_data_producer:
-                x_val, adj_val, y_val = res
-                x_val, adj_val, y_val = utils.to_tensor(x_val, adj_val, y_val, self.model.device)
-                bs_val = x_val.size()[0]
-                mal_x_val, mal_adj_val, mal_y_val, _flag = self.get_mal_data(x_val, adj_val, y_val)
-                if not _flag:
-                    adv_x_val = self.attack_model.perturb(self.model, mal_x_val, mal_adj_val, mal_y_val,
-                                                          self.attack_param['m'])
-                    x_val = torch.cat([x_val, adv_x_val])
-                    if adj_val is not None:
-                        adj_val = torch.vstack([adj_val, mal_adj_val])
+            # self.model.eval()
+            # y_pred = []
+            # pri_x_prob = []
+            # x_prob = []
+            # y_gt = []
+            # y_adv = []
+            # for res in validation_data_producer:
+            #     x_val, adj_val, y_val = res
+            #     x_val, adj_val, y_val = utils.to_tensor(x_val, adj_val, y_val, self.model.device)
+            #     bs_val = x_val.size()[0]
+            #     mal_x_val, mal_adj_val, mal_y_val, _flag = self.get_mal_data(x_val, adj_val, y_val)
+            #     if not _flag:
+            #         adv_x_val = self.attack_model.perturb(self.model, mal_x_val, mal_adj_val, mal_y_val,
+            #                                               self.attack_param['m'])
+            #         x_val = torch.cat([x_val, adv_x_val])
+            #         if adj_val is not None:
+            #             adj_val = torch.vstack([adj_val, mal_adj_val])
+            #
+            #     rpst_val, logit_val = self.model.forward(x_val, adj_val)
+            #     y_pred.append(logit_val.argmax(1))
+            #     pri_x_prob.append(self.model.forward_g(rpst_val[:bs_val]))
+            #     x_prob.append(self.model.forward_g(rpst_val))
+            #     y_gt.append(torch.cat([y_val, mal_y_val]))
+            #     y_adv.append(torch.cat([torch.zeros_like(y_val), mal_y_val]))
+            #
+            # pri_x_prob = torch.cat(pri_x_prob)
+            # s, _ = torch.sort(pri_x_prob, descending=True)
+            # tau_ = s[int((s.shape[0] - 1) * self.model.percentage)]
+            #
+            # x_prob = torch.cat(x_prob)
+            # y_pred = torch.cat(y_pred)
+            # y_gt = torch.cat(y_gt)
+            # y_adv = torch.cat(y_adv)
+            #
+            # acc_prst_val = (y_pred[x_prob >= tau_] == y_gt[x_prob >= tau_]).sum().item() / (x_prob >= tau_).sum().item()
+            # adv_clf = ((x_prob >= tau_) * y_adv).sum().item()
+            # acc_adv_val = (x_prob[y_adv == 1] < tau_).sum().item() / (y_adv.sum().item() - adv_clf+1)
+            # acc_val = (acc_prst_val + acc_adv_val) / 2.  # lead to imbalanced issue
+            # self.model.tau = nn.Parameter(tau_, requires_grad=False)
 
-                rpst_val, logit_val = self.model.forward(x_val, adj_val)
-                y_pred.append(logit_val.argmax(1))
-                pri_x_prob.append(self.model.forward_g(rpst_val[:bs_val]))
-                x_prob.append(self.model.forward_g(rpst_val))
-                y_gt.append(torch.cat([y_val, mal_y_val]))
-                y_adv.append(torch.cat([torch.zeros_like(y_val), mal_y_val]))
-
-            pri_x_prob = torch.cat(pri_x_prob)
-            s, _ = torch.sort(pri_x_prob, descending=True)
-            tau_ = s[int((s.shape[0] - 1) * self.model.percentage)]
-
-            x_prob = torch.cat(x_prob)
-            y_pred = torch.cat(y_pred)
-            y_gt = torch.cat(y_gt)
-            y_adv = torch.cat(y_adv)
-
-            acc_prst_val = (y_pred[x_prob >= tau_] == y_gt[x_prob >= tau_]).sum().item() / (x_prob >= tau_).sum().item()
-            adv_clf = ((x_prob >= tau_) * y_adv).sum().item()
-            acc_adv_val = (x_prob[y_adv == 1] < tau_).sum().item() / (y_adv.sum().item() - adv_clf)
-            acc_val = (acc_prst_val + acc_adv_val) / 2.  # lead to imbalanced issue
-            self.model.tau = nn.Parameter(tau_, requires_grad=False)
-
-            if acc_val >= best_avg_acc:
-                best_avg_acc = acc_val
-                best_epoch = i
-                if not path.exists(self.model_save_path):
-                    utils.mkdir(path.dirname(self.model_save_path))
-                torch.save(self.model.state_dict(), self.model_save_path)
-                if verbose:
-                    print(f'Model saved at path: {self.model_save_path}')
+            # if acc_val >= best_avg_acc:
+            #     best_avg_acc = acc_val
+            #     best_epoch = i
+            #     if not path.exists(self.model_save_path):
+            #         utils.mkdir(path.dirname(self.model_save_path))
+            #     torch.save(self.model.state_dict(), self.model_save_path)
+            #     if verbose:
+            #         print(f'Model saved at path: {self.model_save_path}')
+            if not path.exists(self.model_save_path):
+                utils.mkdir(path.dirname(self.model_save_path))
+            torch.save(self.model.state_dict(), self.model_save_path)
+            self.model.get_threshold()
 
             if verbose:
                 logger.info(
