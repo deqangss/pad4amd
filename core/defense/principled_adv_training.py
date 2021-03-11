@@ -91,8 +91,8 @@ class PrincipledAdvTraining(object):
                                                         self.attack_param['verbose']
                                                         )
                 total_time += time.time() - start_time
-                perturbations = torch.sum(torch.abs(adv_x_batch - mal_x_batch), dim=(1, 2))
-                adv_ce_flag = (perturbations <= epsilon)
+                # perturbations = torch.sum(torch.abs(adv_x_batch - mal_x_batch), dim=(1, 2))
+                # adv_ce_flag = (perturbations <= epsilon)
                 x_batch = torch.vstack([x_batch, adv_x_batch])
                 if adj is not None:
                     adj_batch = torch.vstack([adj_batch, mal_adj_batch])

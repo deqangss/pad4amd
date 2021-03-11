@@ -78,7 +78,7 @@ def _main():
                   )
     # test: accuracy
     if args.ascending:
-        interval = 20
+        interval = 10
     else:
         interval = args.n_pertb
     for m in range(interval, args.n_pertb+1, interval):
