@@ -41,7 +41,8 @@ class PrincipledAdvTraining(object):
                                          'model.pth')
         self.model.model_save_path = self.model_save_path
 
-    def fit(self, train_data_producer, validation_data_producer, epochs=100, adv_epochs=20, epsilon=1, lr=0.005, weight_decay=5e-4, verbose=True):
+    def fit(self, train_data_producer, validation_data_producer, epochs=100, adv_epochs=20, epsilon=1, lr=0.005,
+            weight_decay=5e-4, verbose=True):
         """
         Train the malware detector, pick the best model according to the cross-entropy loss on validation set
 
@@ -56,14 +57,15 @@ class PrincipledAdvTraining(object):
         @param weight_decay: Float, penalty factor, default value 5e-4 in graph attention layer
         @param verbose: Boolean, whether to show verbose logs
         """
+        assert epsilon <= self.attack_param['m']
         # normal training
-        # logger.info("Training is starting...")
-        # self.model.fit(train_data_producer,
-        #                validation_data_producer,
-        #                epochs=epochs,
-        #                lr=lr,
-        #                weight_decay=weight_decay)
-        # # get tau
+        logger.info("Training is starting...")
+        self.model.fit(train_data_producer,
+                       validation_data_producer,
+                       epochs=epochs,
+                       lr=lr,
+                       weight_decay=weight_decay)
+        # get tau
         self.model.get_threshold(validation_data_producer)
         logger.info(f"The threshold is {self.model.tau:.3f}.")
 
@@ -82,20 +84,26 @@ class PrincipledAdvTraining(object):
                 batch_size = x_batch.shape[0]
                 # perturb malware feature vectors
                 mal_x_batch, mal_adj_batch, mal_y_batch, null_flag = self.get_mal_data(x_batch, adj_batch, y_batch)
+                mal_batch_size = mal_x_batch.shape[0]
                 if null_flag:
                     continue
                 start_time = time.time()
-                adv_x_batch = self.attack_model.perturb(self.model, mal_x_batch, mal_adj_batch, mal_y_batch,
-                                                        self.attack_param['m'],
-                                                        self.attack_param['step_length'],
-                                                        self.attack_param['verbose']
-                                                        )
+                small_pertb_x_batch = self.attack_model.perturb(self.model, mal_x_batch, mal_adj_batch, mal_y_batch,
+                                                                epsilon,
+                                                                self.attack_param['step_length'],
+                                                                self.attack_param['verbose']
+                                                                )
+                pertb_x_batch = self.attack_model.perturb(self.model, small_pertb_x_batch, mal_adj_batch, mal_y_batch,
+                                                          self.attack_param['m'] - epsilon,
+                                                          self.attack_param['step_length'],
+                                                          self.attack_param['verbose']
+                                                          )
                 total_time += time.time() - start_time
                 # perturbations = torch.sum(torch.abs(adv_x_batch - mal_x_batch), dim=(1, 2))
                 # adv_ce_flag = (perturbations <= epsilon)
-                x_batch = torch.vstack([x_batch, adv_x_batch])
+                x_batch = torch.vstack([x_batch, small_pertb_x_batch, pertb_x_batch])
                 if adj is not None:
-                    adj_batch = torch.vstack([adj_batch, mal_adj_batch])
+                    adj_batch = torch.vstack([adj_batch, mal_adj_batch, mal_adj_batch])
 
                 # start training
                 start_time = time.time()
@@ -106,11 +114,9 @@ class PrincipledAdvTraining(object):
                                                        y_batch,
                                                        latent_rpst[:batch_size],
                                                        idx_batch)
-                # if torch.any(adv_ce_flag):
-                #     loss_train += F.cross_entropy(logits[batch_size:], mal_y_batch)
-                # if torch.any(~adv_ce_flag):
+                loss_train += F.cross_entropy(logits[batch_size:batch_size+mal_batch_size], mal_y_batch)
                 loss_train += self.model.beta * torch.mean(
-                    self.model.forward_g(latent_rpst[batch_size:]))
+                    self.model.forward_g(latent_rpst[batch_size+mal_batch_size:batch_size + 2 * mal_batch_size]))
                 # loss_train -= self.model.beta * self.model.energy(latent_rpst[batch_size:], logits[batch_size:])
                 # if torch.any(adv_reg_flag):
                 #     loss_train += F.cross_entropy(logits[batch_size:][adv_reg_flag], mal_y_batch[adv_reg_flag])
@@ -126,7 +132,7 @@ class PrincipledAdvTraining(object):
                 loss_train.backward()
                 optimizer.step()
                 total_time += time.time() - start_time
-                acc_train = (logits.argmax(1) == torch.cat([y_batch, mal_y_batch])).sum().item()
+                acc_train = (logits.argmax(1) == torch.cat([y_batch, mal_y_batch, mal_y_batch])).sum().item()
                 acc_train /= x_batch.size()[0]
                 mins, secs = int(total_time / 60), int(total_time % 60)
                 losses.append(loss_train.item())

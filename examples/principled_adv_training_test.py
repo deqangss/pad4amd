@@ -14,7 +14,7 @@ from examples.advmaldet_test import cmd_md
 
 indicator_argparse = cmd_md.add_argument_group(title='principled adv training')
 indicator_argparse.add_argument('--adv_epochs', type=int, default=20, help='epochs for adversarial training.')
-indicator_argparse.add_argument('--epsilon', type=float, default=1., help='scale of small perturbations.')
+indicator_argparse.add_argument('--epsilon', type=int, default=1, help='scale of small perturbations.')
 indicator_argparse.add_argument('--lambda_', type=float, default=1., help='balance factor for waging attack.')
 indicator_argparse.add_argument('--n_pertb', type=int, default=10, help='maximum number of perturbations.')
 indicator_argparse.add_argument('--step_length', type=float, default=1., help='step length.')
@@ -43,8 +43,7 @@ def _main():
     else:
         dv = 'cuda'
 
-    model_name = args.model_name
-    # if args.mode == 'test' else time.strftime("%Y%m%d-%H%M%S")
+    model_name = args.model_name if args.mode == 'test' else time.strftime("%Y%m%d-%H%M%S")
     model = MalwareDetectorIndicator(vocab_size=dataset.vocab_size,
                                      n_classes=dataset.n_classes,
                                      device=dv,
@@ -61,7 +60,7 @@ def _main():
         'verbose': False
     }
     principled_adv_training_model = PrincipledAdvTraining(model, attack, attack_param)
-    principled_adv_training_model.model.load()
+
     if args.mode == 'train':
         principled_adv_training_model.fit(train_dataset_producer,
                                           val_dataset_producer,
@@ -74,9 +73,9 @@ def _main():
         save_args(path.join(path.dirname(principled_adv_training_model.model_save_path), "hparam"), vars(args))
         dump_pickle(vars(args), path.join(path.dirname(principled_adv_training_model.model_save_path), "hparam.pkl"))
         # get threshold
-        principled_adv_training_model.model.get_threshold(val_dataset_producer)
-        print(principled_adv_training_model.model.tau)
-        principled_adv_training_model.model.save_to_disk()
+        # principled_adv_training_model.model.get_threshold(val_dataset_producer)
+        # print(principled_adv_training_model.model.tau)
+        # principled_adv_training_model.model.save_to_disk()
     # test: accuracy
     principled_adv_training_model.model.get_threshold(val_dataset_producer)
     principled_adv_training_model.model.predict(test_dataset_producer, use_indicator=True)
