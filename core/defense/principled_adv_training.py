@@ -57,13 +57,13 @@ class PrincipledAdvTraining(object):
         @param verbose: Boolean, whether to show verbose logs
         """
         # normal training
-        logger.info("Training is starting...")
-        self.model.fit(train_data_producer,
-                       validation_data_producer,
-                       epochs=epochs,
-                       lr=lr,
-                       weight_decay=weight_decay)
-        # get tau
+        # logger.info("Training is starting...")
+        # self.model.fit(train_data_producer,
+        #                validation_data_producer,
+        #                epochs=epochs,
+        #                lr=lr,
+        #                weight_decay=weight_decay)
+        # # get tau
         self.model.get_threshold(validation_data_producer)
         logger.info(f"The threshold is {self.model.tau:.3f}.")
 
@@ -193,8 +193,8 @@ class PrincipledAdvTraining(object):
             if verbose:
                 logger.info(
                     f'Training loss (epoch level): {np.mean(losses):.4f} | Train accuracy: {np.mean(accuracies) * 100:.2f}')
-                logger.info(
-                    f'Validation accuracy: {acc_val * 100:.2f} | The best validation accuracy: {best_avg_acc * 100:.2f} at epoch: {best_epoch}')
+                # logger.info(
+                #     f'Validation accuracy: {acc_val * 100:.2f} | The best validation accuracy: {best_avg_acc * 100:.2f} at epoch: {best_epoch}')
                 logger.info(
                     f'The threshold is {self.model.tau}.'
                 )
