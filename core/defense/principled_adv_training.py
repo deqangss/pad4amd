@@ -106,11 +106,11 @@ class PrincipledAdvTraining(object):
                                                        y_batch,
                                                        latent_rpst[:batch_size],
                                                        idx_batch)
-                if torch.any(adv_ce_flag):
-                    loss_train += F.cross_entropy(logits[batch_size:], mal_y_batch)
-                if torch.any(~adv_ce_flag):
-                    loss_train += self.model.beta * torch.mean(
-                        self.model.forward_g(latent_rpst[batch_size:]))
+                # if torch.any(adv_ce_flag):
+                #     loss_train += F.cross_entropy(logits[batch_size:], mal_y_batch)
+                # if torch.any(~adv_ce_flag):
+                loss_train += self.model.beta * torch.mean(
+                    self.model.forward_g(latent_rpst[batch_size:]))
                 # loss_train -= self.model.beta * self.model.energy(latent_rpst[batch_size:], logits[batch_size:])
                 # if torch.any(adv_reg_flag):
                 #     loss_train += F.cross_entropy(logits[batch_size:][adv_reg_flag], mal_y_batch[adv_reg_flag])
@@ -188,7 +188,7 @@ class PrincipledAdvTraining(object):
             if not path.exists(self.model_save_path):
                 utils.mkdir(path.dirname(self.model_save_path))
             torch.save(self.model.state_dict(), self.model_save_path)
-            self.model.get_threshold()
+            self.model.get_threshold(validation_data_producer)
 
             if verbose:
                 logger.info(
