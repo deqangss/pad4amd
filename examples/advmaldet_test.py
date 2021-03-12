@@ -16,7 +16,7 @@ indicator_argparse = cmd_md.add_argument_group(title='adv indicator')
 indicator_argparse.add_argument('--beta', type=float, default=1., help='balance factor.')
 indicator_argparse.add_argument('--sigma', type=float, default=0.1416,
                                 help='standard deviation of isotropic Gaussian distribution, default value 1/sqrt(2)')
-indicator_argparse.add_argument('--percentage', type=float, default=0.9,
+indicator_argparse.add_argument('--percentage', type=float, default=0.95,
                                 help='the percentage of reminded validation examples')
 
 
@@ -66,9 +66,9 @@ def _main():
         # serialization
         dump_pickle(vars(args), path.join(path.dirname(model.model_save_path), "hparam.pkl"))
 
-    # get threshold
-    model.get_threshold(val_dataset_producer)
-    model.save_to_disk()
+        # get threshold
+        model.get_threshold(val_dataset_producer)
+        model.save_to_disk()
 
     print(model.tau)
     # test: accuracy
