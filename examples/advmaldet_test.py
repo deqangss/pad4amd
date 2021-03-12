@@ -66,9 +66,9 @@ def _main():
         # serialization
         dump_pickle(vars(args), path.join(path.dirname(model.model_save_path), "hparam.pkl"))
 
-        # get threshold
-        model.get_threshold(val_dataset_producer)
-        model.save_to_disk()
+    # get threshold
+    model.get_threshold(val_dataset_producer)
+    model.save_to_disk()
 
     print(model.tau)
     # test: accuracy
