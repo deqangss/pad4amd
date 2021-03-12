@@ -59,9 +59,6 @@ class PrincipledAdvTraining(object):
         """
         assert epsilon <= self.attack_param['m']
         # normal training
-        print(self.model.sample_weights)
-        import sys
-        sys.exit(1)
         logger.info("Training is starting...")
         self.model.fit(train_data_producer,
                        validation_data_producer,
