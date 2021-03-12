@@ -59,6 +59,9 @@ class PrincipledAdvTraining(object):
         """
         assert epsilon <= self.attack_param['m']
         # normal training
+        print(self.model.sample_weights)
+        import sys
+        sys.exit(1)
         logger.info("Training is starting...")
         self.model.fit(train_data_producer,
                        validation_data_producer,
@@ -74,9 +77,7 @@ class PrincipledAdvTraining(object):
         best_epoch = 0
         total_time = 0.
         nbatchs = len(train_data_producer)
-        print(self.model.sample_weights)
-        import sys
-        sys.exit(1)
+
         self.model.sample_weights[1] /= 2.  # owing to augmenting the training set using malware
         logger.info("Adversarial training is starting ...")
         for i in range(adv_epochs):
