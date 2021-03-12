@@ -195,8 +195,9 @@ class PrincipledAdvTraining(object):
             #         print(f'Model saved at path: {self.model_save_path}')
             if not path.exists(self.model_save_path):
                 utils.mkdir(path.dirname(self.model_save_path))
-            torch.save(self.model.state_dict(), self.model_save_path)
             self.model.get_threshold(validation_data_producer)
+            if (i + 1) % 10 == 0:
+                torch.save(self.model.state_dict(), path.dirname(path.join(self.model_save_path, f'model{i+1}.pth')))
 
             if verbose:
                 logger.info(
