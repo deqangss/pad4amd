@@ -74,7 +74,10 @@ class PrincipledAdvTraining(object):
         best_epoch = 0
         total_time = 0.
         nbatchs = len(train_data_producer)
-        # self.model.sample_weights[0] /= 2.  # owing to the adversarial malware
+        print(self.model.sample_weights)
+        import sys
+        sys.exit(1)
+        self.model.sample_weights[1] /= 2.  # owing to augmenting the training set using malware
         logger.info("Adversarial training is starting ...")
         for i in range(adv_epochs):
             losses, accuracies = [], []
@@ -93,6 +96,7 @@ class PrincipledAdvTraining(object):
                                                                 self.attack_param['step_length'],
                                                                 self.attack_param['verbose']
                                                                 )
+                # continue
                 pertb_x_batch = self.attack_model.perturb(self.model, small_pertb_x_batch, mal_adj_batch, mal_y_batch,
                                                           self.attack_param['m'] - epsilon,
                                                           self.attack_param['step_length'],

@@ -14,7 +14,7 @@ from examples.advmaldet_test import cmd_md
 
 indicator_argparse = cmd_md.add_argument_group(title='principled adv training')
 indicator_argparse.add_argument('--adv_epochs', type=int, default=20, help='epochs for adversarial training.')
-indicator_argparse.add_argument('--epsilon', type=int, default=1, help='scale of small perturbations.')
+indicator_argparse.add_argument('--epsilon', type=int, default=5, help='scale of small perturbations.')
 indicator_argparse.add_argument('--lambda_', type=float, default=1., help='balance factor for waging attack.')
 indicator_argparse.add_argument('--n_pertb', type=int, default=10, help='maximum number of perturbations.')
 indicator_argparse.add_argument('--step_length', type=float, default=1., help='step length.')
