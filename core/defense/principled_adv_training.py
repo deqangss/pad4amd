@@ -89,21 +89,23 @@ class PrincipledAdvTraining(object):
                 if null_flag:
                     continue
                 start_time = time.time()
-                small_pertb_x_batch = self.attack_model.perturb(self.model, mal_x_batch, mal_adj_batch, mal_y_batch,
-                                                                epsilon,
-                                                                self.attack_param['step_length'],
-                                                                self.attack_param['verbose']
-                                                                )
-                # continue
-                pertb_x_batch = self.attack_model.perturb(self.model, small_pertb_x_batch, mal_adj_batch, mal_y_batch,
-                                                          self.attack_param['m'] - epsilon,
+                pertb_x_batch = self.attack_model.perturb(self.model, mal_x_batch, mal_adj_batch, mal_y_batch,
+                                                          epsilon,
+                                                          self.attack_param['lambda_'],
                                                           self.attack_param['step_length'],
                                                           self.attack_param['verbose']
                                                           )
+                # continue
+                pert_x_batch_ext = self.attack_model.perturb(self.model, pertb_x_batch, mal_adj_batch, mal_y_batch,
+                                                             self.attack_param['m'] - epsilon,
+                                                             self.attack_param['lambda_'],
+                                                             self.attack_param['step_length'],
+                                                             self.attack_param['verbose']
+                                                             )
                 total_time += time.time() - start_time
                 # perturbations = torch.sum(torch.abs(adv_x_batch - mal_x_batch), dim=(1, 2))
                 # adv_ce_flag = (perturbations <= epsilon)
-                x_batch = torch.vstack([x_batch, small_pertb_x_batch, pertb_x_batch])
+                x_batch = torch.vstack([x_batch, pertb_x_batch, pert_x_batch_ext])
                 if adj is not None:
                     adj_batch = torch.vstack([adj_batch, mal_adj_batch, mal_adj_batch])
 
@@ -116,9 +118,9 @@ class PrincipledAdvTraining(object):
                                                        y_batch,
                                                        latent_rpst[:batch_size],
                                                        idx_batch)
-                loss_train += F.cross_entropy(logits[batch_size:batch_size+mal_batch_size], mal_y_batch)
+                loss_train += F.cross_entropy(logits[batch_size:batch_size + mal_batch_size], mal_y_batch)
                 loss_train += self.model.beta * torch.mean(
-                    self.model.forward_g(latent_rpst[batch_size+mal_batch_size:]))
+                    self.model.forward_g(latent_rpst[batch_size + mal_batch_size:]))
                 # loss_train -= self.model.beta * self.model.energy(latent_rpst[batch_size:], logits[batch_size:])
                 # if torch.any(adv_reg_flag):
                 #     loss_train += F.cross_entropy(logits[batch_size:][adv_reg_flag], mal_y_batch[adv_reg_flag])
@@ -196,7 +198,7 @@ class PrincipledAdvTraining(object):
             if not path.exists(self.model_save_path):
                 utils.mkdir(path.dirname(self.model_save_path))
             if (i + 1) % 10 == 0:
-                torch.save(self.model.state_dict(), path.join(path.dirname(self.model_save_path), f'model{i+1}.pth'))
+                torch.save(self.model.state_dict(), path.join(path.dirname(self.model_save_path), f'model{i + 1}.pth'))
             torch.save(self.model.state_dict(), self.model_save_path)
             self.model.get_threshold(validation_data_producer)
             if verbose:

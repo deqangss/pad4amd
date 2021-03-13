@@ -52,7 +52,7 @@ def _main():
                                      **vars(args)
                                      )
     model = model.to(dv)
-    attack = OMPA(lambda_=args.lambda_, device=model.device)
+    attack = OMPA(device=model.device)
     attack_param = {
         'm': args.n_pertb,
         'lambda_': args.lambda_,

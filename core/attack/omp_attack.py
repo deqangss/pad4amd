@@ -3,7 +3,6 @@ from tqdm import tqdm
 import torch
 import torch.nn.functional as F
 
-from tools import utils
 from core.attack.base_attack import BaseAttack
 
 
@@ -13,17 +12,20 @@ class OMPA(BaseAttack):
 
     Parameters
     ---------
-    @param lambda_, float, penalty factor
     @manipulation_z, manipulations
     @param omega, the indices of interdependent apis corresponding to each api
     @param device, 'cpu' or 'cuda'
     """
 
-    def __init__(self, lambda_=1., manipulation_z=None, omega=None, device=None):
+    def __init__(self, manipulation_z=None, omega=None, device=None):
         super(OMPA, self).__init__(manipulation_z, omega, device)
-        self.lambda_ = lambda_
+        self.lambda_ = 1.
 
-    def perturb(self, model, node, adj=None, label=None, n_perturbations=10, step_length=1., verbose=False):
+    def perturb(self, model, node, adj=None, label=None,
+                n_perturbations=10,
+                lambda_=1.,
+                step_length=1.,
+                verbose=False):
         """
         perturb node feature vectors
 
@@ -34,6 +36,7 @@ class OMPA(BaseAttack):
         @param adj: torch.FloatTensor or None, adjacency matrix (if not None, the shape is [number_of_graphs, batch_size, vocab_dim, vocab_dim])
         @param label: torch.LongTensor, ground truth labels
         @param n_perturbations: Integer, maximum number of perturbations
+        @param lambda_, float, penalty factor
         @param step_length: Float, value is in the range of (0,1]
         @param verbose, Boolean, whether present attack information or not
         """
@@ -43,6 +46,7 @@ class OMPA(BaseAttack):
         # node, adj, label = utils.to_device(node, adj, label, self.device)
         adv_node = node.detach().clone().to(torch.float)
         model.eval()
+        self.lambda_ = lambda_
         self.padding_mask = torch.sum(node, dim=-1, keepdim=True) > 1  # we set a graph contains two apis at least
         for iter_i in range(n_perturbations):
             var_adv_node = torch.autograd.Variable(adv_node, requires_grad=True)

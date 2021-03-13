@@ -20,7 +20,8 @@ ompa_argparse = argparse.ArgumentParser(description='arguments for orthogonal ma
 ompa_argparse.add_argument('--lambda_', type=float, default=1., help='balance factor for waging attack.')
 ompa_argparse.add_argument('--step_length', type=float, default=1., help='step length.')
 ompa_argparse.add_argument('--n_pertb', type=int, default=100, help='maximum number of perturbations.')
-ompa_argparse.add_argument('--ascending', action='store_true', default=False, help='whether start the perturbations gradually.')
+ompa_argparse.add_argument('--ascending', action='store_true', default=False,
+                           help='whether start the perturbations gradually.')
 ompa_argparse.add_argument('--n_sample_times', type=int, default=1, help='sample times for producing data.')
 ompa_argparse.add_argument('--model', type=str, choices=['advmaldet',
                                                          'prip_adv'], help='model type, maldet or advmaldet.')
@@ -50,8 +51,8 @@ def _main():
     if mal_count <= 0:
         return
     mal_test_dataset_producer = dataset.get_input_producer(mal_test_data, mal_testy,
-                                                       batch_size=hp_params['batch_size'],
-                                                       name='test')
+                                                           batch_size=hp_params['batch_size'],
+                                                           name='test')
     assert dataset.n_classes == 2
 
     # test
@@ -73,15 +74,13 @@ def _main():
     model.load()
     print("Load model parameters from {}.".format(model.model_save_path))
     logger.info(f"\n The threshold is {model.tau}.")
-    attack = OMPA(lambda_=args.lambda_,
-                  device=model.device
-                  )
+    attack = OMPA(device=model.device)
     # test: accuracy
     if args.ascending:
         interval = 10
     else:
         interval = args.n_pertb
-    for m in range(interval, args.n_pertb+1, interval):
+    for m in range(interval, args.n_pertb + 1, interval):
         logger.info("\nThe maximum number of perturbations for each example is {}:".format(m))
         prist_acc = []
         adv_acc = []
@@ -96,7 +95,8 @@ def _main():
             for res in mal_test_dataset_producer:
                 x_batch, adj, y_batch = res
                 x_batch, adj_batch, y_batch = utils.to_tensor(x_batch, adj, y_batch, model.device)
-                adv_x_batch = attack.perturb(model, x_batch, adj_batch, y_batch, m, args.step_length,  verbose=False)
+                adv_x_batch = attack.perturb(model, x_batch, adj_batch, y_batch, m, args.lambda_,
+                                             args.step_length, verbose=False)
 
                 prist_preds.append(model.inference_batch_wise(x_batch, adj, y_batch, use_indicator=False))
                 adv_preds.append(model.inference_batch_wise(adv_x_batch, adj, y_batch, use_indicator=False))
@@ -106,10 +106,14 @@ def _main():
             prist_acc.append(np.mean(np.concatenate(prist_preds)))
             adv_acc_.append(np.mean(np.concatenate(adv_preds_)))
             prist_acc_.append(np.mean(np.concatenate(prist_preds_)))
-            logger.info(f'Sampling {i + 1}: accuracy on pristine vs. adversarial malware is {prist_acc[-1] * 100:.3f}% vs. {adv_acc[-1] * 100:.3f}%.')
-            logger.info(f'Sampling {i + 1} (W/ indicator): accuracy on pristine vs. adversarial malware is {prist_acc_[-1] * 100:.3f}% vs. {adv_acc_[-1] * 100:.3f}%.')
-        logger.info(f'The mean accuracy on pristine vs. adversarial malware is {sum(prist_acc) / args.n_sample_times * 100:.3f}% vs. {sum(adv_acc) / args.n_sample_times * 100:.3f}%.')
-        logger.info(f'The mean accuracy on pristine vs. adversarial malware is (W/ indicator) {sum(prist_acc_) / args.n_sample_times * 100:.3f}% vs. {sum(adv_acc_) / args.n_sample_times * 100:.3f}%.')
+            logger.info(
+                f'Sampling {i + 1}: accuracy on pristine vs. adversarial malware is {prist_acc[-1] * 100:.3f}% vs. {adv_acc[-1] * 100:.3f}%.')
+            logger.info(
+                f'Sampling {i + 1} (W/ indicator): accuracy on pristine vs. adversarial malware is {prist_acc_[-1] * 100:.3f}% vs. {adv_acc_[-1] * 100:.3f}%.')
+        logger.info(
+            f'The mean accuracy on pristine vs. adversarial malware is {sum(prist_acc) / args.n_sample_times * 100:.3f}% vs. {sum(adv_acc) / args.n_sample_times * 100:.3f}%.')
+        logger.info(
+            f'The mean accuracy on pristine vs. adversarial malware is (W/ indicator) {sum(prist_acc_) / args.n_sample_times * 100:.3f}% vs. {sum(adv_acc_) / args.n_sample_times * 100:.3f}%.')
 
 
 if __name__ == '__main__':
