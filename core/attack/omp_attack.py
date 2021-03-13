@@ -10,13 +10,16 @@ class OMPA(BaseAttack):
 
     Parameters
     ---------
-    @manipulation_z, manipulations
+    @param is_attacker, play the role of attack or not
+    @param manipulation_z, manipulations
     @param omega, the indices of interdependent apis corresponding to each api
     @param device, 'cpu' or 'cuda'
     """
 
-    def __init__(self, manipulation_z=None, omega=None, device=None):
+    def __init__(self, is_attacker=False, kappa=10., manipulation_z=None, omega=None, device=None):
         super(OMPA, self).__init__(manipulation_z, omega, device)
+        self.is_attacker = is_attacker
+        self.kappa = kappa
         self.lambda_ = 1.
 
     def perturb(self, model, node, adj=None, label=None,
@@ -83,8 +86,13 @@ class OMPA(BaseAttack):
         exp_over_flow = 1e-12
         if 'forward_g' in type(model).__dict__.keys():
             de = model.forward_g(representation)
-            loss_no_reduction = ce + self.lambda_ * \
-                                (torch.log(de + exp_over_flow) - torch.log(model.tau + exp_over_flow))
+            if not self.is_attacker:
+                loss_no_reduction = ce + self.lambda_ * \
+                                    (torch.log(de + exp_over_flow) - torch.log(model.tau + exp_over_flow))
+            else:
+                loss_no_reduction = ce + \
+                                    self.lambda_ * (torch.clamp(
+                    torch.log(de + exp_over_flow) - torch.log(model.tau + exp_over_flow), max=self.kappa))
             # loss_no_reduction = ce + self.lambda_ * (de - model.tau)
             done = (logit.argmax(1) == 0.) & (de >= model.tau)
         else:

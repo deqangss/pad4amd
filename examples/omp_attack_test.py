@@ -8,7 +8,7 @@ import argparse
 import numpy as np
 
 from core.defense import Dataset
-from core.defense import MalwareDetectorIndicator, PrincipledAdvTraining
+from core.defense import MalwareDetector, MalwareDetectorIndicator, PrincipledAdvTraining
 from core.attack import OMPA
 from tools import utils
 from config import config, logging, ErrorHandler
@@ -23,19 +23,22 @@ ompa_argparse.add_argument('--n_pertb', type=int, default=100, help='maximum num
 ompa_argparse.add_argument('--ascending', action='store_true', default=False,
                            help='whether start the perturbations gradually.')
 ompa_argparse.add_argument('--n_sample_times', type=int, default=1, help='sample times for producing data.')
-ompa_argparse.add_argument('--model', type=str, choices=['advmaldet',
-                                                         'prip_adv'], help='model type, maldet or advmaldet.')
+ompa_argparse.add_argument('--model', type=str, default='prip_adv',
+                           choices=['maldet', 'advmaldet', 'prip_adv'],
+                           help="model type, either of 'maldet', 'advmaldet' and 'prip_adv'.")
 ompa_argparse.add_argument('--model_name', type=str, default='pro', help='model name.')
 
 
 def _main():
     args = ompa_argparse.parse_args()
-    if args.model == 'advmaldet':
+    if args.model == 'maldet':
+        save_dir = config.get('experiments', 'malware_detector') + '_' + args.model_name
+    elif args.model == 'advmaldet':
         save_dir = config.get('experiments', 'malware_detector_indicator') + '_' + args.model_name
     elif args.model == 'prip_adv':
         save_dir = config.get('experiments', 'prip_adv_training') + '_' + args.model_name
     else:
-        raise TypeError("Expected 'advmaldet' or 'prip_adv'.")
+        raise TypeError("Expected 'maldet', 'advmaldet' or 'prip_adv'.")
 
     hp_params = utils.read_pickle(os.path.join(save_dir, 'hparam.pkl'))
     dataset = Dataset(hp_params['dataset_name'],
@@ -60,16 +63,23 @@ def _main():
         dv = 'cpu'
     else:
         dv = 'cuda'
-    model = MalwareDetectorIndicator(vocab_size=dataset.vocab_size,
-                                     n_classes=dataset.n_classes,
-                                     device=dv,
-                                     sample_weights=dataset.sample_weights,
-                                     name=args.model_name,
-                                     **hp_params
-                                     )
+    if args.model == 'maldet':
+        model = MalwareDetector(dataset.vocab_size,
+                                dataset.n_classes,
+                                device=dv,
+                                name=args.model_name,
+                                **hp_params
+                                )
+    else:
+        model = MalwareDetectorIndicator(vocab_size=dataset.vocab_size,
+                                         n_classes=dataset.n_classes,
+                                         device=dv,
+                                         sample_weights=dataset.sample_weights,
+                                         name=args.model_name,
+                                         **hp_params
+                                         )
     model = model.to(dv)
     if args.model == 'prip_adv':
-        model = model.to(dv)
         PrincipledAdvTraining(model)
     model.load()
     print("Load model parameters from {}.".format(model.model_save_path))
