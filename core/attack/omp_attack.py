@@ -85,7 +85,7 @@ class OMPA(BaseAttack):
             de = model.forward_g(representation)
             loss_no_reduction = ce + self.lambda_ * \
                                 (torch.log(de + exp_over_flow) - torch.log(model.tau + exp_over_flow))
-            # loss_no_reduction = ce + self.lambda_ * (model.tau - de)
+            # loss_no_reduction = ce + self.lambda_ * (de - model.tau)
             done = (logit.argmax(1) == 0.) & (de >= model.tau)
         else:
             loss_no_reduction = ce
