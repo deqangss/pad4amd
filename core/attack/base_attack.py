@@ -45,7 +45,7 @@ class BaseAttack(Module):
             F.one_hot(torch.tensor(self.omega), num_classes=len(self.inverse_feature.vocab)),
             dim=0).to(self.device)
 
-    def perturb(self, model, node_features, label=None):
+    def perturb(self, model, node_features, adj=None, label=None):
         """
         perturb node feature vectors
 
@@ -53,6 +53,7 @@ class BaseAttack(Module):
         -----------
         @param model, a victim model
         @param node_features: torch.FloatTensor, node feature vectors, each represents an api
+        @param adj: torch.FloatTensor or None, adjacency matrix (if not None, the shape is [number_of_graphs, batch_size, vocab_dim, vocab_dim])
         @param label: torch.LongTensor, ground truth labels
         """
         raise NotImplementedError
