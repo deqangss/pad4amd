@@ -1,5 +1,3 @@
-from tqdm import tqdm
-
 import torch
 import torch.nn.functional as F
 
@@ -50,7 +48,7 @@ class OMPA(BaseAttack):
         self.padding_mask = torch.sum(node, dim=-1, keepdim=True) > 1  # we set a graph contains two apis at least
         for iter_i in range(n_perturbations):
             var_adv_node = torch.autograd.Variable(adv_node, requires_grad=True)
-            rpst, logit = model.forward(var_adv_node, adj=None)
+            rpst, logit = model.forward(var_adv_node, adj)
             adv_loss, done = self.get_losses(model, logit, label, rpst)
             if torch.all(done):
                 break
@@ -62,33 +60,38 @@ class OMPA(BaseAttack):
                 with torch.no_grad():
                     steps = int(1 / step_length)
                     b, k, v = node.size()
-                    perturbations = torch.stack([perturbation * direction * gamma for gamma in torch.linspace(step_length, 1., steps)], dim=0)
-                    adv_node_expanded = torch.clip((adv_node.unsqueeze(dim=0) + perturbations).permute(1, 0, 2, 3).reshape(b * steps, k, v), min=0, max=1)
+                    perturbations = torch.stack(
+                        [perturbation * direction * gamma for gamma in torch.linspace(step_length, 1., steps)], dim=0)
+                    adv_node_expanded = torch.clip(
+                        (adv_node.unsqueeze(dim=0) + perturbations).permute(1, 0, 2, 3).reshape(b * steps, k, v), min=0,
+                        max=1)
                     if adj is not None:
                         adj = torch.repeat_interleave(adj, repeats=steps, dim=0)
                     rpst_, logit_ = model.forward(adv_node_expanded, adj)
-                    adv_loss_ = self.get_losses(model, logit_, torch.repeat_interleave(label, steps), rpst_) 
+                    adv_loss_ = self.get_losses(model, logit_, torch.repeat_interleave(label, steps), rpst_)
                     _, _worst_pos = torch.max(adv_loss_.reshape(b, steps), dim=1)
                     adv_node = adv_node_expanded.reshape(b, steps, k, v)[torch.arange(b), _worst_pos]
             else:
                 adv_node = torch.clip(adv_node + perturbation * direction, min=0., max=1.)
             if verbose:
-                print(f"\n Iteration {iter_i}: the accuracy is {(logit.argmax(1) == 1.).sum().item() / adv_node.size()[0]*100:.3f}.")
+                print(
+                    f"\n Iteration {iter_i}: the accuracy is {(logit.argmax(1) == 1.).sum().item() / adv_node.size()[0] * 100:.3f}.")
         return adv_node
 
     def get_losses(self, model, logit, label, representation=None):
         ce = F.cross_entropy(logit, label, reduction='none')
-        try:
-            if 'forward_g' in type(model).__dict__.keys():
-                de = model.forward_g(representation)
-                loss_no_reduction = ce + self.lambda_ * (model.tau - de)
-                done = (logit.argmax(1) == 0.) & (de >= model.tau)
-            else:
-                loss_no_reduction = ce
-                done = logit.argmax(1) == 0.
-            return loss_no_reduction, done
-        except Exception as e:
-            raise Exception(e)
+        exp_over_flow = 1e-12
+        if 'forward_g' in type(model).__dict__.keys():
+            de = model.forward_g(representation)
+            loss_no_reduction = ce + self.lambda_ * \
+                                (torch.log(de + exp_over_flow) - torch.log(model.tau + exp_over_flow))
+            # loss_no_reduction = ce + self.lambda_ * (model.tau - de)
+            print(ce, de)
+            done = (logit.argmax(1) == 0.) & (de >= model.tau)
+        else:
+            loss_no_reduction = ce
+            done = logit.argmax(1) == 0.
+        return loss_no_reduction, done
 
     def get_perturbation(self, features, adv_features, gradients):
         # 1. mask paddings

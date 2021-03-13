@@ -17,7 +17,7 @@ logger = logging.getLogger('examples.omp_attack_test')
 logger.addHandler(ErrorHandler)
 
 ompa_argparse = argparse.ArgumentParser(description='arguments for orthogonal matching pursuit attack')
-ompa_argparse.add_argument('--lambda_', type=float, default=1., help='balance factor for waging attack.')
+ompa_argparse.add_argument('--lambda_', type=float, default=0.01, help='balance factor for waging attack.')
 ompa_argparse.add_argument('--step_length', type=float, default=1., help='step length.')
 ompa_argparse.add_argument('--n_pertb', type=int, default=100, help='maximum number of perturbations.')
 ompa_argparse.add_argument('--ascending', action='store_true', default=False,
