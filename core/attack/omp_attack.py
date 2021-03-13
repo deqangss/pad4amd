@@ -15,7 +15,7 @@ class OMPA(BaseAttack):
     ---------
     @param lambda_, float, penalty factor
     @manipulation_z, manipulations
-    @param omega, list of 4 sets, each set contains the indices of interdependent apis corresponding to each api
+    @param omega, the indices of interdependent apis corresponding to each api
     @param device, 'cpu' or 'cuda'
     """
 
@@ -74,10 +74,17 @@ class OMPA(BaseAttack):
 
     def get_losses(self, model, logit, label, representation=None):
         ce = F.cross_entropy(logit, label, reduction='none')
-        de = model.forward_g(representation)
-        loss_no_reduction = ce + self.lambda_ * (model.tau - de)
-        done = (logit.argmax(1) == 0.) & (de >= model.tau)
-        return loss_no_reduction, done
+        try:
+            if 'forward_g' in type(model).__dict__.keys():
+                de = model.forward_g(representation)
+                loss_no_reduction = ce + self.lambda_ * (model.tau - de)
+                done = (logit.argmax(1) == 0.) & (de >= model.tau)
+            else:
+                loss_no_reduction = ce
+                done = logit.argmax(1) == 0.
+            return loss_no_reduction, done
+        except Exception as e:
+            raise Exception(e)
 
     def get_perturbation(self, features, adv_features, gradients):
         # 1. mask paddings
