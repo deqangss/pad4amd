@@ -75,7 +75,7 @@ class PrincipledAdvTraining(object):
         total_time = 0.
         nbatchs = len(train_data_producer)
 
-        self.model.sample_weights[1] /= 2.  # owing to augmenting the training set using malware
+        # self.model.sample_weights[1] /= 2.  # owing to augmenting the training set using malware
         logger.info("Adversarial training is starting ...")
         for i in range(adv_epochs):
             losses, accuracies = [], []
