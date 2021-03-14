@@ -21,6 +21,7 @@ logger.addHandler(ErrorHandler)
 
 EXP_OVER_FLOW = 1e-30
 
+
 class MalwareDetectorIndicator(MalwareDetector):
     def __init__(self, vocab_size, n_classes, beta=1., sigma=0.1416, percentage=0.99, sample_weights=None, n_sample_times=5, device='cpu', name='PRO', enable_gd_ckpt=False, **kwargs):
         self.beta = beta
