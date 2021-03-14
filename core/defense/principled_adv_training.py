@@ -199,8 +199,8 @@ class PrincipledAdvTraining(object):
                 utils.mkdir(path.dirname(self.model_save_path))
             if (i + 1) % 10 == 0:
                 torch.save(self.model.state_dict(), path.join(path.dirname(self.model_save_path), f'model{i + 1}.pth'))
-            torch.save(self.model.state_dict(), self.model_save_path)
             self.model.get_threshold(validation_data_producer)
+            torch.save(self.model.state_dict(), self.model_save_path)
             if verbose:
                 logger.info(
                     f'Training loss (epoch level): {np.mean(losses):.4f} | Train accuracy: {np.mean(accuracies) * 100:.2f}')
@@ -209,6 +209,7 @@ class PrincipledAdvTraining(object):
                 logger.info(
                     f'The threshold is {self.model.tau}.'
                 )
+
 
     @staticmethod
     def get_mal_data(x_batch, adj_batch, y_batch):
