@@ -28,7 +28,7 @@ class OMPAP(OMPA):
                 min_lambda_=1e-5,
                 max_lambda_=1e5,
                 verbose=False):
-        assert 0 <= min_lambda_ <= max_lambda_
+        assert 0 < min_lambda_ <= max_lambda_
         self.lambda_ = min_lambda_
 
         # self.perturb(model, node, n_perturbations, s)
