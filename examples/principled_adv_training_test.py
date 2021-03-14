@@ -8,7 +8,7 @@ import torch
 
 from core.defense import Dataset
 from core.defense import MalwareDetectorIndicator, PrincipledAdvTraining
-from core.attack import OMPA
+from core.attack import OMPA, OMPAP
 from tools.utils import save_args, get_group_args, dump_pickle, read_pickle
 from examples.advdet_gmm_test import cmd_md
 
@@ -52,7 +52,7 @@ def _main():
                                      **vars(args)
                                      )
     model = model.to(dv)
-    attack = OMPA(device=model.device)
+    attack = OMPAP(device=model.device)
     attack_param = {
         'm': args.n_pertb,
         'lambda_': args.lambda_,

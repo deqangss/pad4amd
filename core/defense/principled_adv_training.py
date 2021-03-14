@@ -90,15 +90,15 @@ class PrincipledAdvTraining(object):
                 start_time = time.time()
                 pertb_x_batch = self.attack_model.perturb(self.model, mal_x_batch, mal_adj_batch, mal_y_batch,
                                                           self.attack_param['m'],
-                                                          self.attack_param['lambda_'],
-                                                          self.attack_param['step_length'],
+                                                          1e-3,
+                                                          1e3,
                                                           self.attack_param['verbose']
                                                           )
                 # continue
                 pert_x_batch_ext = self.attack_model.perturb(self.model, pertb_x_batch, mal_adj_batch, mal_y_batch,
                                                              epsilon,
-                                                             self.attack_param['lambda_'],
-                                                             self.attack_param['step_length'],
+                                                             1e-3,
+                                                             1e3,
                                                              self.attack_param['verbose']
                                                              )
                 total_time += time.time() - start_time
