@@ -67,6 +67,7 @@ def _main():
         dump_pickle(vars(args), path.join(path.dirname(model.model_save_path), "hparam.pkl"))
 
         # get threshold
+        model.load()
         model.get_threshold(val_dataset_producer)
         model.save_to_disk()
 

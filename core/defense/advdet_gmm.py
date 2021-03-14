@@ -125,7 +125,6 @@ class MalwareDetectorIndicator(MalwareDetector):
         get the threshold for density estimation
         :param validation_data_producer: Object, an iterator for producing validation dataset
         """
-        self.load_state_dict(torch.load(self.model_save_path))
         self.eval()
         probabilities = []
         with torch.no_grad():
