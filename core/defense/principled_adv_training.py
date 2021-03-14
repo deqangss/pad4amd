@@ -9,12 +9,11 @@ import os.path as path
 import time
 
 import torch
-import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
-from torch.utils.checkpoint import checkpoint
 import numpy as np
 
+from core.defense.advdet_gmm import EXP_OVER_FLOW
 from config import config, logging, ErrorHandler
 from tools import utils
 
@@ -120,7 +119,7 @@ class PrincipledAdvTraining(object):
                                                        idx_batch)
                 loss_train += F.cross_entropy(logits[batch_size:batch_size + mal_batch_size], mal_y_batch)
                 loss_train += self.model.beta * torch.mean(
-                    torch.log(self.model.forward_g(latent_rpst[batch_size + mal_batch_size:]) + 1e-12))
+                    torch.log(self.model.forward_g(latent_rpst[batch_size + mal_batch_size:]) + EXP_OVER_FLOW))
                 print('adv:', self.model.forward_g(latent_rpst[batch_size + mal_batch_size:]))
                 # loss_train -= self.model.beta * self.model.energy(latent_rpst[batch_size:], logits[batch_size:])
                 # if torch.any(adv_reg_flag):

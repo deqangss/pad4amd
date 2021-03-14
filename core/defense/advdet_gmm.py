@@ -19,6 +19,7 @@ from tools import utils
 logger = logging.getLogger('core.defense.adv_maldetector')
 logger.addHandler(ErrorHandler)
 
+EXP_OVER_FLOW = 1e-30
 
 class MalwareDetectorIndicator(MalwareDetector):
     def __init__(self, vocab_size, n_classes, beta=1., sigma=0.1416, percentage=0.99, sample_weights=None, n_sample_times=5, device='cpu', name='PRO', enable_gd_ckpt=False, **kwargs):
@@ -176,28 +177,26 @@ class MalwareDetectorIndicator(MalwareDetector):
             self.phi = nn.Parameter(prob, requires_grad=False)
 
     def gaussian_prob(self, x):
-        exp_over_flow = 1e-12
         assert 0 <= self.sigma
         d = self.penultimate_hidden_unit + 1
-        reverse_sigma = 1. / (self.sigma + exp_over_flow)
+        reverse_sigma = 1. / (self.sigma + EXP_OVER_FLOW)
         det_sigma = np.power(self.sigma, d)
         prob = 1. / ((2 * np.pi) ** (d / 2.) * det_sigma ** 0.5) * torch.exp(-0.5 * torch.sum(
             (x.unsqueeze(1) - self.dense.weight) * reverse_sigma * (x.unsqueeze(1) - self.dense.weight), dim=-1))
         return prob
 
     def energy(self, representation, logits):
-        exp_over_flow = 1e-12
         gamma_z = torch.softmax(logits, dim=1)
         prob_n = self.gaussian_prob(representation)
 
         # print(prob_n)
         # print(self.sample_weights)
-        debug = torch.sum(prob_n * self.phi + exp_over_flow, dim=1)
+        debug = torch.sum(prob_n * self.phi + EXP_OVER_FLOW, dim=1)
         print(debug)
         # print(torch.sum(-torch.log(prob_n * self.phi + exp_over_flow), dim=1))
         # E_z = torch.sum(torch.log(prob_n * self.phi + exp_over_flow) * self.sample_weights, dim=1)
-        E_z = torch.sum(gamma_z * torch.log(prob_n * self.phi / (gamma_z + exp_over_flow) + \
-                                            exp_over_flow) * self.sample_weights, dim=1)  # ELBO
+        E_z = torch.sum(gamma_z * torch.log(prob_n * self.phi / (gamma_z + EXP_OVER_FLOW) + \
+                                            EXP_OVER_FLOW) * self.sample_weights, dim=1)  # ELBO
         return torch.mean(-E_z, dim=0)
 
     def get_sample_weights(self, labels):
