@@ -123,7 +123,7 @@ class MalwareDetectorIndicator(MalwareDetector):
     def get_threshold(self, validation_data_producer):
         """
         get the threshold for density estimation
-        :param validation_data_producer: Object, an iterator for producing validation dataset
+        :@param validation_data_producer: Object, an iterator for producing validation dataset
         """
         self.eval()
         probabilities = []
