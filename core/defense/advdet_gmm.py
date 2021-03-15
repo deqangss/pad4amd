@@ -16,7 +16,7 @@ from core.defense.maldet import MalwareDetector
 from config import config, logging, ErrorHandler
 from tools import utils
 
-logger = logging.getLogger('core.defense.adv_maldetector')
+logger = logging.getLogger('core.defense.advdet_gmm')
 logger.addHandler(ErrorHandler)
 
 EXP_OVER_FLOW = 1e-30
