@@ -88,12 +88,12 @@ class MalwareDetectorIndicator(MalwareDetector):
             for ith in tqdm(range(self.n_sample_times)):
                 conf_batches = []
                 x_prob_batches = []
-                for res in test_data_producer:
+                for res in test_data_producer: 
                     x, adj, y = res
                     x, adj, y = utils.to_tensor(x, adj, y, self.device)
-                    p_representation, logits = self.forward(x, adj)
+                    x_hidden, logits = self.forward(x, adj)
                     conf_batches.append(F.softmax(logits, dim=-1))
-                    x_prob_batches.append(self.forward_g(p_representation))
+                    x_prob_batches.append(self.forward_g(x_hidden))
                     if ith == 0:
                         gt_labels.append(y)
                 conf_batches = torch.vstack(conf_batches)
@@ -108,9 +108,9 @@ class MalwareDetectorIndicator(MalwareDetector):
         assert isinstance(x, torch.Tensor) and isinstance(y, torch.Tensor)
         if a is not None:
             assert isinstance(a, torch.Tensor)
-        p_representation, logit = self.forward(x, a)
+        x_hidden, logit = self.forward(x, a)
         y_pred = logit.argmax(1)
-        x_prob = self.forward_g(p_representation)
+        x_prob = self.forward_g(x_hidden)
         if use_indicator:
             flag = self.indicator(x_prob)
             return ((y_pred == y) | (~flag)).cpu().numpy()
@@ -131,10 +131,10 @@ class MalwareDetectorIndicator(MalwareDetector):
             for _ in tqdm(range(self.n_sample_times)):
                 prob_ = []
                 for res in validation_data_producer:
-                    x_val, adj_val, y_val = res
+                    x_val, adj_val, y_val = res 
                     x_val, adj_val, y_val = utils.to_tensor(x_val, adj_val, y_val, self.device)
-                    p_representation, logits = self.forward(x_val, adj_val)
-                    x_prob = self.forward_g(p_representation)
+                    x_hidden, logits = self.forward(x_val, adj_val)
+                    x_prob = self.forward_g(x_hidden)
                     prob_.append(x_prob)
                 prob_ = torch.cat(prob_)
                 probabilities.append(prob_)
@@ -160,11 +160,11 @@ class MalwareDetectorIndicator(MalwareDetector):
                                        torch.ones(size=(latent_representation.shape[0], 1), dtype=torch.float32, device=self.device)])
         return latent_rep_ext, self.dense(latent_rep_ext)
 
-    def forward_g(self, representation):
+    def forward_g(self, x_hidden):
         # print(representation)
         # print(self.gaussian_prob(representation))
         # print(self.phi)
-        return torch.sum(self.gaussian_prob(representation) * self.phi, dim=1)
+        return torch.sum(self.gaussian_prob(x_hidden) * self.phi, dim=1)
 
     def update_phi(self, logits, mini_batch_idx):
         prob = torch.mean(torch.softmax(logits, dim=1), dim=0)
