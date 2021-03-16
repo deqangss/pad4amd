@@ -44,7 +44,7 @@ def _main():
     dataset = Dataset(hp_params['dataset_name'],
                       k=hp_params['k'],
                       use_cache=False,
-                      is_adj=False,
+                      is_adj=hp_params['is_adj'],
                       feature_ext_args={'proc_number': hp_params['proc_number']}
                       )
     test_data, testy = dataset.test_dataset
