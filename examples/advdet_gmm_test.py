@@ -15,7 +15,7 @@ from examples.maldet_test import cmd_md
 indicator_argparse = cmd_md.add_argument_group(title='adv indicator')
 indicator_argparse.add_argument('--beta', type=float, default=1., help='balance factor.')
 indicator_argparse.add_argument('--sigma', type=float, default=0.1416,
-                                help='standard deviation of isotropic Gaussian distribution, default value 1/sqrt(2)')
+                                help='standard deviation of isotropic Gaussian distribution.')
 indicator_argparse.add_argument('--percentage', type=float, default=0.90,
                                 help='the percentage of reminded validation examples')
 
