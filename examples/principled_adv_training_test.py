@@ -77,6 +77,7 @@ def _main():
         # print(principled_adv_training_model.model.tau)
         # principled_adv_training_model.model.save_to_disk()
     # test: accuracy
+    principled_adv_training_model.model.load()
     principled_adv_training_model.model.predict(test_dataset_producer, use_indicator=False)
 
 
