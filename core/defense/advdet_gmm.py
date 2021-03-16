@@ -13,6 +13,7 @@ from torch.utils.checkpoint import checkpoint
 import numpy as np
 
 from core.defense.maldet import MalwareDetector
+from core.defense.dense_est import DenseEstimator
 from config import config, logging, ErrorHandler
 from tools import utils
 
@@ -22,20 +23,22 @@ logger.addHandler(ErrorHandler)
 EXP_OVER_FLOW = 1e-30
 
 
-class MalwareDetectorIndicator(MalwareDetector):
-    def __init__(self, vocab_size, n_classes, beta=1., sigma=0.1416, ratio=0.99, sample_weights=None, n_sample_times=5, device='cpu', name='PRO', enable_gd_ckpt=False, **kwargs):
+class MalwareDetectorIndicator(MalwareDetector, DenseEstimator):
+    def __init__(self, vocab_size, n_classes, beta=1., sigma=0.1416, ratio=0.99, sample_weights=None, n_sample_times=5,
+                 device='cpu', name='PRO', enable_gd_ckpt=False, **kwargs):
         self.beta = beta
         self.sigma = sigma
         self.ratio = ratio
         self.sample_weights = sample_weights
         self.device = device
         self.enable_gd_ckpt = enable_gd_ckpt
-        super(MalwareDetectorIndicator, self).__init__(vocab_size,
-                                                       n_classes,
-                                                       n_sample_times,
-                                                       self.device,
-                                                       name,
-                                                       **kwargs)
+        MalwareDetector.__init__(self, vocab_size,
+                                 n_classes,
+                                 n_sample_times,
+                                 self.device,
+                                 name,
+                                 **kwargs)
+        DenseEstimator.__init__(self)
 
         self.dense = nn.Linear(self.penultimate_hidden_unit + 1, self.n_classes, bias=False)
         self.phi = nn.Parameter(torch.zeros(size=(self.n_classes,)), requires_grad=False)
@@ -86,7 +89,7 @@ class MalwareDetectorIndicator(MalwareDetector):
             for ith in tqdm(range(self.n_sample_times)):
                 conf_batches = []
                 x_prob_batches = []
-                for res in test_data_producer: 
+                for res in test_data_producer:
                     x, adj, y = res
                     x, adj, y = utils.to_tensor(x, adj, y, self.device)
                     x_hidden, logits = self.forward(x, adj)
@@ -129,7 +132,7 @@ class MalwareDetectorIndicator(MalwareDetector):
             for _ in tqdm(range(self.n_sample_times)):
                 prob_ = []
                 for res in validation_data_producer:
-                    x_val, adj_val, y_val = res 
+                    x_val, adj_val, y_val = res
                     x_val, adj_val, y_val = utils.to_tensor(x_val, adj_val, y_val, self.device)
                     x_hidden, logits = self.forward(x_val, adj_val)
                     x_prob = self.forward_g(x_hidden)
@@ -137,17 +140,9 @@ class MalwareDetectorIndicator(MalwareDetector):
                 prob_ = torch.cat(prob_)
                 probabilities.append(prob_)
             s, _ = torch.sort(torch.mean(torch.stack(probabilities), dim=0), descending=True)
-            i = int((s.shape[0]-1) * self.ratio)
+            i = int((s.shape[0] - 1) * self.ratio)
             assert i >= 0
             self.tau = nn.Parameter(s[i], requires_grad=False)
-
-    def load(self):
-        # load model
-        self.load_state_dict(torch.load(self.model_save_path))
-
-    def save_to_disk(self):
-        assert path.exists(self.model_save_path), 'train model first'
-        torch.save(self.state_dict(), self.model_save_path)
 
     def forward(self, feature, adj=None):
         if self.enable_gd_ckpt:
@@ -159,13 +154,11 @@ class MalwareDetectorIndicator(MalwareDetector):
             latent_representation = self.malgat(feature, adj)
         latent_representation = F.dropout(latent_representation, self.dropout, training=self.training)
         latent_rep_ext = torch.hstack([latent_representation,
-                                       torch.ones(size=(latent_representation.shape[0], 1), dtype=torch.float32, device=self.device)])
+                                       torch.ones(size=(latent_representation.shape[0], 1), dtype=torch.float32,
+                                                  device=self.device)])
         return latent_rep_ext, self.dense(latent_rep_ext)
 
     def forward_g(self, x_hidden):
-        # print(representation)
-        # print(self.gaussian_prob(representation))
-        # print(self.phi)
         return torch.sum(self.gaussian_prob(x_hidden) * self.phi, dim=1)
 
     def update_phi(self, logits, mini_batch_idx):
@@ -205,7 +198,7 @@ class MalwareDetectorIndicator(MalwareDetector):
         _labels = labels.cpu().numpy()
         _labels, counts = np.unique(_labels, return_counts=True)
         if _labels.shape[0] < self.n_classes:
-            return torch.zeros((self.n_classes, ), dtype=torch.float, device=self.device)
+            return torch.zeros((self.n_classes,), dtype=torch.float, device=self.device)
         else:
             sample_weights = np.ones_like(_labels).astype(np.float32)
             _weights = float(np.max(counts)) / counts
@@ -213,7 +206,7 @@ class MalwareDetectorIndicator(MalwareDetector):
                 sample_weights[_labels[i]] = _weights[i]
             return torch.from_numpy(sample_weights).to(self.device)
 
-    def customize_loss(self, logits, gt_labels, representation,  mini_batch_idx):
+    def customize_loss(self, logits, gt_labels, representation, mini_batch_idx):
         # print(gt_labels)
         self.update_phi(logits, mini_batch_idx)
 
@@ -221,5 +214,10 @@ class MalwareDetectorIndicator(MalwareDetector):
         ce = F.cross_entropy(logits, gt_labels)
         return de + ce
 
+    def load(self):
+        # load model
+        self.load_state_dict(torch.load(self.model_save_path))
 
-
+    def save_to_disk(self):
+        assert path.exists(self.model_save_path), 'train model first'
+        torch.save(self.state_dict(), self.model_save_path)
