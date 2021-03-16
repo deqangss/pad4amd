@@ -127,8 +127,6 @@ class MalwareDetector(nn.Module):
         return confidences, gt_labels
 
     def predict(self, test_data_producer):
-        # load model
-        self.load()
         # evaluation
         confidence, y_true = self.inference(test_data_producer)
         y_pred = confidence.argmax(1).cpu().numpy()

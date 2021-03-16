@@ -112,6 +112,7 @@ def _main():
         dump_pickle(vars(args), path.join(path.dirname(model.model_save_path), "hparam.pkl"))
 
     # test: accuracy
+    model.load()
     model.predict(test_dataset_producer)
 
 
