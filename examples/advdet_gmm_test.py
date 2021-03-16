@@ -71,6 +71,7 @@ def _main():
         model.get_threshold(val_dataset_producer)
         model.save_to_disk()
 
+    model.load()
     print(model.tau)
     # test: accuracy
     model.predict(test_dataset_producer, use_indicator=True)

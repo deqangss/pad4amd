@@ -48,8 +48,6 @@ class MalwareDetectorIndicator(MalwareDetector):
                                          'model.pth')
 
     def predict(self, test_data_producer, use_indicator=True):
-        # load model
-        self.load_state_dict(torch.load(self.model_save_path))
         # evaluation on detector & indicator
         confidence, probability, y_true = self.inference(test_data_producer)
         y_pred = confidence.argmax(1).cpu().numpy()
@@ -142,6 +140,10 @@ class MalwareDetectorIndicator(MalwareDetector):
             i = int((s.shape[0]-1) * self.ratio)
             assert i >= 0
             self.tau = nn.Parameter(s[i], requires_grad=False)
+
+    def load(self):
+        # load model
+        self.load_state_dict(torch.load(self.model_save_path))
 
     def save_to_disk(self):
         assert path.exists(self.model_save_path), 'train model first'
