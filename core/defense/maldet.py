@@ -136,13 +136,13 @@ class MalwareDetector(nn.Module):
         from sklearn.metrics import f1_score, accuracy_score, confusion_matrix, balanced_accuracy_score
         accuracy = accuracy_score(y_true, y_pred)
         b_accuracy = balanced_accuracy_score(y_true, y_pred)
-
         MSG = "The accuracy on the test dataset is {:.5f}%"
         logger.info(MSG.format(accuracy * 100))
         MSG = "The balanced accuracy on the test dataset is {:.5f}%"
         logger.info(MSG.format(b_accuracy * 100))
-        tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
 
+        assert not np.any([np.all(y_true == i) for i in range(self.n_classes)]), 'Exit! Class absent.'
+        tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
         fpr = fp / float(tn + fp)
         fnr = fn / float(tp + fn)
         f1 = f1_score(y_true, y_pred, average='binary')
