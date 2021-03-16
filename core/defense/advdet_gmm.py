@@ -23,10 +23,10 @@ EXP_OVER_FLOW = 1e-30
 
 
 class MalwareDetectorIndicator(MalwareDetector):
-    def __init__(self, vocab_size, n_classes, beta=1., sigma=0.1416, percentage=0.99, sample_weights=None, n_sample_times=5, device='cpu', name='PRO', enable_gd_ckpt=False, **kwargs):
+    def __init__(self, vocab_size, n_classes, beta=1., sigma=0.1416, ratio=0.99, sample_weights=None, n_sample_times=5, device='cpu', name='PRO', enable_gd_ckpt=False, **kwargs):
         self.beta = beta
         self.sigma = sigma
-        self.percentage = percentage
+        self.ratio = ratio
         self.sample_weights = sample_weights
         self.device = device
         self.enable_gd_ckpt = enable_gd_ckpt
@@ -139,7 +139,7 @@ class MalwareDetectorIndicator(MalwareDetector):
                 prob_ = torch.cat(prob_)
                 probabilities.append(prob_)
             s, _ = torch.sort(torch.mean(torch.stack(probabilities), dim=0), descending=True)
-            i = int((s.shape[0]-1)*self.percentage)
+            i = int((s.shape[0]-1) * self.ratio)
             assert i >= 0
             self.tau = nn.Parameter(s[i], requires_grad=False)
 

@@ -16,8 +16,8 @@ indicator_argparse = cmd_md.add_argument_group(title='adv indicator')
 indicator_argparse.add_argument('--beta', type=float, default=1., help='balance factor.')
 indicator_argparse.add_argument('--sigma', type=float, default=0.1416,
                                 help='standard deviation of isotropic Gaussian distribution.')
-indicator_argparse.add_argument('--percentage', type=float, default=0.90,
-                                help='the percentage of reminded validation examples')
+indicator_argparse.add_argument('--ratio', type=float, default=0.90,
+                                help='the ratio of reminded validation examples')
 
 
 def _main():
