@@ -12,6 +12,7 @@ class OMPA(BaseAttack):
     Parameters
     ---------
     @param is_attacker, play the role of attack or not
+    @param kappa, attack confidence
     @param manipulation_z, manipulations
     @param omega, the indices of interdependent apis corresponding to each api
     @param device, 'cpu' or 'cuda'
