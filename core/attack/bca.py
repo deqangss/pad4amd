@@ -72,7 +72,7 @@ class BCA(BaseAttack):
                 break
             grad = torch.autograd.grad(torch.mean(loss), var_adv_x)[0].data
 
-            # filtering un-considered graphs
+            # filtering un-considered graphs & positions
             grad = grad * padding_mask
             grad4insertion = (grad > 0) * grad * (adv_x < 0.5)
 
@@ -80,7 +80,7 @@ class BCA(BaseAttack):
             _, pos = torch.max(grad4ins_, dim=-1)
             perturbation = F.one_hot(pos, num_classes=grad4ins_.shape[-1]).float().reshape(x.shape)
             adv_x = torch.clamp(adv_x + perturbation, min=0., max=1.)
-            print(torch.sum(adv_x- x, dim=(1, 2)))
+
             if verbose:
                 print(
                     f"\n Iteration {iter_i}: the accuracy is {(logit.argmax(1) == 1.).sum().item() / adv_x.size()[0] * 100:.3f}.")
