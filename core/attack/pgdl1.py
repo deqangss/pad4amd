@@ -22,7 +22,8 @@ EXP_OVER_FLOW = -30
 
 class PGDl1(BaseAttack):
     """
-    Projected gradient descent (ascent). By comparing BCA, the api removal is leveraged
+    Projected gradient descent (ascent) with gradients 'normalized' using l1 norm.
+    By comparing BCA, the api removal is leveraged
 
     Parameters
     ---------
