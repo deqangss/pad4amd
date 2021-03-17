@@ -13,7 +13,7 @@ from core.attack import BCA
 from tools import utils
 from config import config, logging, ErrorHandler
 
-logger = logging.getLogger('examples.omp_attack_test')
+logger = logging.getLogger('examples.bca_test')
 logger.addHandler(ErrorHandler)
 
 ompa_argparse = argparse.ArgumentParser(description='arguments for orthogonal matching pursuit attack')
