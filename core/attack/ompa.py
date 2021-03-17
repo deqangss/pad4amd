@@ -63,8 +63,8 @@ class OMPA(BaseAttack):
                     f"\n Iteration {iter_i}: the accuracy is {(logit.argmax(1) == 1.).sum().item() / adv_node.size()[0] * 100:.3f}.")
             if torch.all(done) and stop:
                 break
-            grads = torch.autograd.grad(torch.mean(adv_loss), var_adv_node)[0].data
-            perturbation, direction = self.get_perturbation(node, adv_node, grads)
+            grad = torch.autograd.grad(torch.mean(adv_loss), var_adv_node)[0].data
+            perturbation, direction = self.get_perturbation(grad, node, adv_node)
             if stop:
                 perturbation[done] = 0.
             # cope with step length < 1.
