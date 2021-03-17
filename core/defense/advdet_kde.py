@@ -161,8 +161,9 @@ class KernelDensityEstimation(DenseEstimator):
         return self.tau[y_pred]
 
     def indicator(self, probability, y_pred):
-        res = probability.reshape(-1, 1).repeat_interleave(2, dim=1) >= self.tau
-        return res[torch.arange(res.size()[0]), y_pred]
+        return probability >= self.get_tau_sample_wise(y_pred)
+        # res = probability.reshape(-1, 1).repeat_interleave(2, dim=1) >= self.tau
+        # return res[torch.arange(res.size()[0]), y_pred]
 
     def fit(self, train_dataset_producer, val_dataet_producer):
         X_hidden = []
