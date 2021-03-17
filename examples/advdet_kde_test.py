@@ -66,12 +66,13 @@ def _main():
     if args.mode == 'train':
         # model.load_state_dict(torch.load(model.model_save_path))
         kde.fit(train_dataset_producer,
-                val_dataset_producer,
+                val_dataset_producer
                 )
+
         # developer readable
-        save_args(path.join(path.dirname(kde.model_save_path), "hparam"), vars(args))
+        save_args(path.join(path.dirname(kde.model_save_path), "hparam"), {**vars(args), **hp_params})
         # serialization
-        dump_pickle(vars(args), path.join(path.dirname(kde.model_save_path), "hparam.pkl"))
+        dump_pickle({**vars(args), **hp_params}, path.join(path.dirname(kde.model_save_path), "hparam.pkl"))
         kde.save_to_disk()
 
     kde.load()
