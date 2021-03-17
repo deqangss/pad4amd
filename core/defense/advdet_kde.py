@@ -26,7 +26,7 @@ class KernelDensityEstimation(DenseEstimator):
     @param ratio, float [0,1], ratio for computing the threshold
     """
 
-    def __init__(self, model, n_centers=500, bandwidth=20., n_classes=2, ratio=0.9):
+    def __init__(self, model, n_centers=1000, bandwidth=20., n_classes=2, ratio=0.9):
         super(KernelDensityEstimation, self).__init__()
         self.model = model
         self.n_centers = n_centers
@@ -105,7 +105,7 @@ class KernelDensityEstimation(DenseEstimator):
         MSG = "The balanced accuracy on the test dataset is {:.5f}%"
         logger.info(MSG.format(b_accuracy * 100))
 
-        assert not np.any([np.all(y_true == i) for i in range(self.n_classes)]), 'Exit! Class absent.'
+        assert not np.any([np.all(y_true == i) for i in range(self.n_classes)]), 'Exit! Class Absent.'
         tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
         fpr = fp / float(tn + fp)
         fnr = fn / float(tp + fn)
