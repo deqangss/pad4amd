@@ -54,13 +54,13 @@ class OMPA(BaseAttack):
         self.lambda_ = lambda_
         self.padding_mask = torch.sum(node, dim=-1, keepdim=True) > 1  # we set a graph contains two apis at least
         model.eval()
-        for iter_i in range(m_perturbations):
+        for t in range(m_perturbations):
             var_adv_node = torch.autograd.Variable(adv_node, requires_grad=True)
             hidden, logit = model.forward(var_adv_node, adj)
             adv_loss, done = self.get_losses(model, logit, label, hidden)
             if verbose:
                 print(
-                    f"\n Iteration {iter_i}: the accuracy is {(logit.argmax(1) == 1.).sum().item() / adv_node.size()[0] * 100:.3f}.")
+                    f"\n Iteration {t}: the accuracy is {(logit.argmax(1) == 1.).sum().item() / adv_node.size()[0] * 100:.3f}.")
             if torch.all(done) and stop:
                 break
             grad = torch.autograd.grad(torch.mean(adv_loss), var_adv_node)[0].data

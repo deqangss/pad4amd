@@ -68,15 +68,15 @@ class Groose(BaseAttack):
         self.lambda_ = lambda_
         padding_mask = torch.sum(adv_x, dim=-1, keepdim=True) > 1  # we set a graph contains two apis at least
         model.eval()
-        for iter_i in range(m_perturbations):
-            if use_sample and iter_i == 0:
+        for t in range(m_perturbations):
+            if use_sample and t == 0:
                 adv_x = rand_x(adv_x, is_sample=True)
             var_adv_x = torch.autograd.Variable(adv_x, requires_grad=True)
             hidden, logit = model.forward(var_adv_x, adj)
             loss, done = self.get_losses(model, logit, hidden)
             if verbose:
                 print(
-                    f"\n Iteration {iter_i}: the accuracy is {(logit.argmax(1) == 1.).sum().item() / adv_x.size()[0] * 100:.3f}.")
+                    f"\n Iteration {t}: the accuracy is {(logit.argmax(1) == 1.).sum().item() / adv_x.size()[0] * 100:.3f}.")
             if torch.all(done) and stop:
                 break
             grad = torch.autograd.grad(torch.mean(loss), var_adv_x)[0].data
