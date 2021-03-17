@@ -1,2 +1,2 @@
-from core.attack.omp_attack import OMPA
-from core.attack.omp_attack_plus import OMPAP
+from core.attack.ompa import OMPA
+from core.attack.ompa_plus import OMPAP
