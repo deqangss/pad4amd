@@ -15,7 +15,7 @@ class InverseDroidFeature(object):
     def get_manipulation(self):
         """
         We consider all apis are insertable and the apis that have public descriptor can be hidden by java reflection.
-        For efficiency and simplicity consideration, this function only returns a mask to filter out the apis that are not refelectable.
+        For efficiency and simplicity consideration, this function only returns a mask to filter out the apis that are non-refelectable.
         This means the value "1" in the mask vector corresponds to a reflectable api, and "0" means otherwise.
         """
         manipulation = np.zeros((len(self.vocab),), dtype=np.float32)
