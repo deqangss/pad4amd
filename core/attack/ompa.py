@@ -106,11 +106,11 @@ class OMPA(BaseAttack):
             done = logit.argmax(1) == 0.
         return loss_no_reduction, done
 
-    def get_perturbation(self, features, adv_features, gradients):
+    def get_perturbation(self, gradients, features, adv_features):
         # 1. mask paddings
         gradients = gradients * self.padding_mask
 
-        # 2. avoid the filled position, because only '1--> -' and '0 --> +' are permitted
+        # 2. look for allowable position, because only '1--> -' and '0 --> +' are permitted
         #    2.1 api insertion
         pos_insertion = (adv_features < 0.5) * 1
         grad4insertion = (gradients > 0) * pos_insertion * gradients
