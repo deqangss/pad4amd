@@ -46,13 +46,13 @@ def _main():
                       is_adj=False,
                       feature_ext_args={'proc_number': hp_params['proc_number']}
                       )
-    test_data, testy = dataset.test_dataset
-    mal_test_data = test_data[testy == 1]
+    test_x, testy = dataset.test_dataset
+    mal_test_x = test_x[testy == 1] 
     mal_testy = testy[testy == 1]
     mal_count = len(mal_testy)
     if mal_count <= 0:
         return
-    mal_test_dataset_producer = dataset.get_input_producer(mal_test_data, mal_testy,
+    mal_test_dataset_producer = dataset.get_input_producer(mal_test_x, mal_testy,
                                                            batch_size=hp_params['batch_size'],
                                                            name='test')
     assert dataset.n_classes == 2
