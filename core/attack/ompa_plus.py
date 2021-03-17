@@ -25,7 +25,7 @@ class OMPAP(OMPA):
         super(OMPAP, self).__init__(is_attacker, kappa, manipulation_z, omega, device)
 
     def perturb(self, model, node, adj=None, label=None,
-                n_perturbations=10,
+                m_perturbations=10,
                 min_lambda_=1e-5,
                 max_lambda_=1e5,
                 verbose=False):
@@ -45,7 +45,7 @@ class OMPAP(OMPA):
 
             adv_adj = None if adj is None else adv_adj[~done]
             pert_x = super(OMPAP, self).perturb(model, adv_node[~done], adv_adj, label[~done],
-                                                n_perturbations,
+                                                m_perturbations,
                                                 self.lambda_,
                                                 step_length=1.,
                                                 verbose=False
