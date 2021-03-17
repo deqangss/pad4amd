@@ -15,13 +15,14 @@ class OMPAP(OMPA):
 
     Parameters
     ---------
+    @param is_attacker, play the role of attack or not
     @manipulation_z, manipulations
     @param omega, the indices of interdependent apis corresponding to each api
     @param device, 'cpu' or 'cuda'
     """
 
-    def __init__(self, kappa=10, manipulation_z=None, omega=None, device=None):
-        super(OMPAP, self).__init__(True, kappa, manipulation_z, omega, device)
+    def __init__(self, is_attacker=False, kappa=10, manipulation_z=None, omega=None, device=None):
+        super(OMPAP, self).__init__(is_attacker, kappa, manipulation_z, omega, device)
 
     def perturb(self, model, node, adj=None, label=None,
                 n_perturbations=10,

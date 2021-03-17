@@ -15,6 +15,9 @@ class DenseEstimator(object):
         """calculate the threshold for rejecting outliers"""
         raise NotImplementedError
 
+    def get_tau_sample_wise(self):
+        raise NotImplementedError
+
     def indicator(self):
         """return a vector of boolean flags indicating whether reject a sample"""
         raise NotImplementedError

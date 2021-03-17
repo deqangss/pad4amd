@@ -118,6 +118,9 @@ class MalwareDetectorIndicator(MalwareDetector, DenseEstimator):
         else:
             return (y_pred == y).cpu().numpy()
 
+    def get_tau_sample_wise(self, y_pred=None):
+        return self.tau
+
     def indicator(self, x_probability):
         return x_probability >= self.tau
 

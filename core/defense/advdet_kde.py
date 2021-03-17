@@ -157,6 +157,9 @@ class KernelDensityEstimation(DenseEstimator):
         else:
             return (y_pred == y).cpu().numpy()
 
+    def get_tau_sample_wise(self, y_pred):
+        return self.tau[y_pred]
+
     def indicator(self, probability, y_pred):
         res = probability.reshape(-1, 1).repeat_interleave(2, dim=1) >= self.tau
         return res[torch.arange(res.size()[0]), y_pred]

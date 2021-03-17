@@ -20,6 +20,7 @@ class OMPA(BaseAttack):
     def __init__(self, is_attacker=False, kappa=10., manipulation_z=None, omega=None, device=None):
         super(OMPA, self).__init__(manipulation_z, omega, device)
         self.is_attacker = is_attacker
+        assert kappa > 0.
         self.kappa = kappa
         self.lambda_ = 1.
 
@@ -86,15 +87,16 @@ class OMPA(BaseAttack):
         ce = F.cross_entropy(logit, label, reduction='none')
         if 'forward_g' in type(model).__dict__.keys():
             de = model.forward_g(representation, logit.argmax(1))
+            tau = model.get_tau_sample_wise(logit.argmax(1))
             if not self.is_attacker:
                 loss_no_reduction = ce + self.lambda_ * \
-                                    (torch.log(de + EXP_OVER_FLOW) - torch.log(model.tau + EXP_OVER_FLOW))
+                                    (torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW))
             else:
                 loss_no_reduction = ce + \
                                     self.lambda_ * (torch.clamp(
-                    torch.log(de + EXP_OVER_FLOW) - torch.log(model.tau + EXP_OVER_FLOW), max=self.kappa))
+                    torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW), max=self.kappa))
             # loss_no_reduction = ce + self.lambda_ * (de - model.tau)
-            done = (logit.argmax(1) == 0.) & (de >= model.tau)
+            done = (logit.argmax(1) == 0.) & (de >= tau)
         else:
             loss_no_reduction = ce
             done = logit.argmax(1) == 0.
