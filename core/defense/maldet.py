@@ -106,6 +106,14 @@ class MalwareDetector(nn.Module):
         logits = self.dense(latent_representation)
         return latent_representation, logits
 
+    def inference_batch_wise(self, x, a, y, use_indicator=None):
+        assert isinstance(x, torch.Tensor) and isinstance(y, torch.Tensor)
+        if a is not None:
+            assert isinstance(a, torch.Tensor)
+        x_hidden, logit = self.forward(x, a)
+        y_pred = logit.argmax(1)
+        return (y_pred == y).cpu().numpy()
+
     def inference(self, test_data_producer):
         confidences = []
         gt_labels = []

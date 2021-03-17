@@ -49,16 +49,16 @@ class OMPA(BaseAttack):
         assert 0 < step_length <= 1.
         # node, adj, label = utils.to_device(node, adj, label, self.device)
         adv_node = node.detach().clone().to(torch.float)
-        model.eval()
         self.lambda_ = lambda_
         self.padding_mask = torch.sum(node, dim=-1, keepdim=True) > 1  # we set a graph contains two apis at least
+        model.eval()
         for iter_i in range(m_perturbations):
             var_adv_node = torch.autograd.Variable(adv_node, requires_grad=True)
-            rpst, logit = model.forward(var_adv_node, adj)
-            adv_loss, done = self.get_losses(model, logit, label, rpst)
+            hidden, logit = model.forward(var_adv_node, adj)
+            adv_loss, done = self.get_losses(model, logit, label, hidden)
             if torch.all(done):
                 break
-            grads = torch.autograd.grad(torch.mean(adv_loss), var_adv_node)[0]
+            grads = torch.autograd.grad(torch.mean(adv_loss), var_adv_node)[0].data
             perturbation, direction = self.get_perturbation(node, adv_node, grads)
             perturbation[done] = 0.
             # cope with step length < 1.
@@ -84,10 +84,10 @@ class OMPA(BaseAttack):
                     f"\n Iteration {iter_i}: the accuracy is {(logit.argmax(1) == 1.).sum().item() / adv_node.size()[0] * 100:.3f}.")
         return adv_node
 
-    def get_losses(self, model, logit, label, representation=None):
+    def get_losses(self, model, logit, label, hidden=None):
         ce = F.cross_entropy(logit, label, reduction='none')
         if 'forward_g' in type(model).__dict__.keys():
-            de = model.forward_g(representation, logit.argmax(1))
+            de = model.forward_g(hidden, logit.argmax(1))
             tau = model.get_tau_sample_wise(logit.argmax(1))
             if not self.is_attacker:
                 loss_no_reduction = ce + self.lambda_ * \
