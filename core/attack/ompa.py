@@ -29,6 +29,7 @@ class OMPA(BaseAttack):
                 m_perturbations=10,
                 lambda_=1.,
                 step_length=1.,
+                stop=True,
                 verbose=False):
         """
         perturb node feature vectors
@@ -42,6 +43,7 @@ class OMPA(BaseAttack):
         @param m_perturbations: Integer, maximum number of perturbations
         @param lambda_, float, penalty factor
         @param step_length: Float, value is in the range of (0,1]
+        @param stop: Boolean, whether stop once evade victim successfully
         @param verbose, Boolean, whether present attack information or not
         """
         if node is None and node.shape[0] == 0:
@@ -56,11 +58,15 @@ class OMPA(BaseAttack):
             var_adv_node = torch.autograd.Variable(adv_node, requires_grad=True)
             hidden, logit = model.forward(var_adv_node, adj)
             adv_loss, done = self.get_losses(model, logit, label, hidden)
-            if torch.all(done):
+            if verbose:
+                print(
+                    f"\n Iteration {iter_i}: the accuracy is {(logit.argmax(1) == 1.).sum().item() / adv_node.size()[0] * 100:.3f}.")
+            if torch.all(done) and stop:
                 break
             grads = torch.autograd.grad(torch.mean(adv_loss), var_adv_node)[0].data
             perturbation, direction = self.get_perturbation(node, adv_node, grads)
-            perturbation[done] = 0.
+            if stop:
+                perturbation[done] = 0.
             # cope with step length < 1.
             if 0 < step_length <= .5:
                 with torch.no_grad():
@@ -79,9 +85,6 @@ class OMPA(BaseAttack):
                     adv_node = adv_node_expanded.reshape(b, steps, k, v)[torch.arange(b), _worst_pos]
             else:
                 adv_node = torch.clip(adv_node + perturbation * direction, min=0., max=1.)
-            if verbose:
-                print(
-                    f"\n Iteration {iter_i}: the accuracy is {(logit.argmax(1) == 1.).sum().item() / adv_node.size()[0] * 100:.3f}.")
         return adv_node
 
     def get_losses(self, model, logit, label, hidden=None):

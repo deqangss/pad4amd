@@ -35,8 +35,8 @@ class OMPAP(OMPA):
         # self.perturb(model, node, n_perturbations, s)
         adv_node = node.detach().clone()
         while self.lambda_ <= max_lambda_:
-            latent_rpst, logit = model.forward(adv_node, adj)
-            _, done = self.get_losses(model, logit, label, latent_rpst)
+            hidden, logit = model.forward(adv_node, adj)
+            _, done = self.get_losses(model, logit, label, hidden)
             if verbose:
                 logger.info(
                     f"Ompa attack: attack effectiveness {done.sum().item() / node.size()[0]} with lambda {self.lambda_}.")

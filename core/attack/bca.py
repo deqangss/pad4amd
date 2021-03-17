@@ -14,6 +14,10 @@ import torch.nn.functional as F
 
 from core.attack.base_attack import BaseAttack
 from tools.utils import rand_x
+from config import logging, ErrorHandler
+
+logger = logging.getLogger('core.attack.bca')
+logger.addHandler(ErrorHandler)
 
 EXP_OVER_FLOW = -30
 
@@ -41,6 +45,7 @@ class BCA(BaseAttack):
                 m_perturbations=10,
                 lambda_=1.,
                 use_sample=False,
+                stop=True,
                 verbose=False):
         """
         perturb node feature vectors
@@ -54,6 +59,7 @@ class BCA(BaseAttack):
         @param m_perturbations: Integer, maximum number of perturbations
         @param lambda_, float, penalty factor
         @param use_sample, Boolean, whether use random start point
+        @param stop, Boolean, whether stop once evade victim successfully
         @param verbose, Boolean, whether present attack information or not
         """
         if x is None and x.shape[0] <= 0:
@@ -68,7 +74,10 @@ class BCA(BaseAttack):
             var_adv_x = torch.autograd.Variable(adv_x, requires_grad=True)
             hidden, logit = model.forward(var_adv_x, adj)
             loss, done = self.get_losses(model, logit, label, hidden)
-            if torch.all(done):
+            if verbose:
+                print(
+                    f"\n Iteration {iter_i}: the accuracy is {(logit.argmax(1) == 1.).sum().item() / adv_x.size()[0] * 100:.3f}.")
+            if torch.all(done) and stop:
                 break
             grad = torch.autograd.grad(torch.mean(loss), var_adv_x)[0].data
 
@@ -79,12 +88,44 @@ class BCA(BaseAttack):
             grad4ins_ = grad4insertion.reshape(x.shape[0], -1)
             _, pos = torch.max(grad4ins_, dim=-1)
             perturbation = F.one_hot(pos, num_classes=grad4ins_.shape[-1]).float().reshape(x.shape)
+            if stop:
+                perturbation[done] = 0.
             adv_x = torch.clamp(adv_x + perturbation, min=0., max=1.)
-
-            if verbose:
-                print(
-                    f"\n Iteration {iter_i}: the accuracy is {(logit.argmax(1) == 1.).sum().item() / adv_x.size()[0] * 100:.3f}.")
         return adv_x
+
+    def perturb_ehs(self, model, x, adj=None, label=None,
+                    m_perturbations=10,
+                    min_lambda_=1e-5,
+                    max_lambda_=1e5,
+                    use_sample=False,
+                    stop=True,
+                    verbose=False):
+        """
+        enhance BCA attack
+        """
+        assert 0 < min_lambda_ <= max_lambda_
+        self.lambda_ = min_lambda_
+        adv_node = x.detach().clone()
+        while self.lambda_ <= max_lambda_:
+            hidden, logit = model.forward(adv_node, adj)
+            _, done = self.get_losses(model, logit, label, hidden)
+            if verbose:
+                logger.info(
+                    f"BCA attack: attack effectiveness {done.sum().item() / x.size()[0]} with lambda {self.lambda_}.")
+            if torch.all(done):
+                return adv_node
+
+            adv_adj = None if adj is None else adv_adj[~done]
+            pert_x = self.perturb(model, adv_node[~done], adv_adj, label[~done],
+                                  m_perturbations,
+                                  lambda_=self.lambda_,
+                                  use_sample=use_sample,
+                                  stop=stop,
+                                  verbose=False
+                                  )
+            adv_node[~done] = pert_x
+            self.lambda_ *= 10.
+        return adv_node
 
     def get_losses(self, model, logit, label, hidden=None):
         ce = F.cross_entropy(logit, label, reduction='none')
