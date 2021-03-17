@@ -158,7 +158,7 @@ class MalwareDetectorIndicator(MalwareDetector, DenseEstimator):
                                                   device=self.device)])
         return latent_rep_ext, self.dense(latent_rep_ext)
 
-    def forward_g(self, x_hidden):
+    def forward_g(self, x_hidden, y_pred=None):
         return torch.sum(self.gaussian_prob(x_hidden) * self.phi, dim=1)
 
     def update_phi(self, logits, mini_batch_idx):

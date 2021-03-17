@@ -29,13 +29,14 @@ class KernelDensityEstimation(DenseEstimator):
     def __init__(self, model, n_centers=1000, bandwidth=20., n_classes=2, ratio=0.9):
         super(KernelDensityEstimation, self).__init__()
         self.model = model
+        self.device = model.device
         self.n_centers = n_centers
         self.bandwidth = bandwidth
         self.n_classes = n_classes
         self.ratio = ratio
         self.gaussian_means = None
 
-        self.tau = nn.Parameter(torch.zeros([self.n_classes, ], device=self.model.device), requires_grad=False)
+        self.tau = nn.Parameter(torch.zeros([self.n_classes, ], device=self.device), requires_grad=False)
         self.name = self.model.name
         self.model.load()
         self.model_save_path = path.join(config.get('experiments', 'kde') + '_' + self.name, 'model.pth')
@@ -65,7 +66,7 @@ class KernelDensityEstimation(DenseEstimator):
         get the threshold for density estimation
         :@param validation_data_producer: Object, an iterator for producing validation dataset
         """
-        self.model.eval()
+        self.eval()
         probabilities = []
         with torch.no_grad():
             for _ in tqdm(range(self.model.n_sample_times)):
@@ -73,7 +74,7 @@ class KernelDensityEstimation(DenseEstimator):
                 Y = []
                 for res in validation_data_producer:
                     x_val, adj_val, y_val = res
-                    x_val, adj_val, y_val = utils.to_tensor(x_val, adj_val, y_val, self.model.device)
+                    x_val, adj_val, y_val = utils.to_tensor(x_val, adj_val, y_val, self.device)
                     x_hidden, logits = self.forward(x_val, adj_val)
                     x_prob = self.forward_g(x_hidden, y_val)
                     prob_.append(x_prob)
@@ -115,18 +116,21 @@ class KernelDensityEstimation(DenseEstimator):
         MSG = "False Negative Rate (FNR) is {:.5f}%, False Positive Rate (FPR) is {:.5f}%, F1 score is {:.5f}%"
         logger.info(MSG.format(fnr * 100, fpr * 100, f1 * 100))
 
+    def eval(self):
+        self.model.eval()
+
     def inference(self, test_data_producer):
         confidences = []
         x_probabilities = []
         gt_labels = []
-        self.model.eval()
+        self.eval()
         with torch.no_grad():
             for ith in tqdm(range(self.model.n_sample_times)):
                 conf_batches = []
                 x_prob_batches = []
                 for res in test_data_producer:
                     x, adj, y = res
-                    x, adj, y = utils.to_tensor(x, adj, y, self.model.device)
+                    x, adj, y = utils.to_tensor(x, adj, y, self.device)
                     x_hidden, logit = self.forward(x, adj)
                     conf_batches.append(F.softmax(logit, dim=-1))
                     x_prob_batches.append(self.forward_g(x_hidden, logit.argmax(dim=1)))
@@ -140,6 +144,19 @@ class KernelDensityEstimation(DenseEstimator):
         probabilities = torch.mean(torch.stack(x_probabilities), dim=0)
         return confidences, probabilities, gt_labels
 
+    def inference_batch_wise(self, x, a, y, use_indicator=True):
+        assert isinstance(x, torch.Tensor) and isinstance(y, torch.Tensor)
+        if a is not None:
+            assert isinstance(a, torch.Tensor)
+        x_hidden, logit = self.forward(x, a)
+        y_pred = logit.argmax(1)
+        x_prob = self.forward_g(x_hidden, y_pred)
+        if use_indicator:
+            flag = self.indicator(x_prob, y_pred)
+            return ((y_pred == y) | (~flag)).cpu().numpy()
+        else:
+            return (y_pred == y).cpu().numpy()
+
     def indicator(self, probability, y_pred):
         res = probability.reshape(-1, 1).repeat_interleave(2, dim=1) >= self.tau
         return res[torch.arange(res.size()[0]), y_pred]
@@ -147,10 +164,10 @@ class KernelDensityEstimation(DenseEstimator):
     def fit(self, train_dataset_producer, val_dataet_producer):
         X_hidden = []
         Y = []
-        self.model.eval()
+        self.eval()
         for data in train_dataset_producer:
             x, a, y = data
-            x, a, y = utils.to_tensor(x, a, y, self.model.device)
+            x, a, y = utils.to_tensor(x, a, y, self.device)
             x_hidden, _ = self.forward(x, a)
             X_hidden.append(x_hidden)
             Y.append(y)

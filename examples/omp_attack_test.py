@@ -8,7 +8,7 @@ import argparse
 import numpy as np
 
 from core.defense import Dataset
-from core.defense import MalwareDetector, MalwareDetectorIndicator, PrincipledAdvTraining
+from core.defense import MalwareDetector, MalwareDetectorIndicator, PrincipledAdvTraining, KernelDensityEstimation
 from core.attack import OMPA
 from tools import utils
 from config import config, logging, ErrorHandler
@@ -23,6 +23,8 @@ ompa_argparse.add_argument('--n_pertb', type=int, default=100, help='maximum num
 ompa_argparse.add_argument('--ascending', action='store_true', default=False,
                            help='whether start the perturbations gradually.')
 ompa_argparse.add_argument('--n_sample_times', type=int, default=1, help='sample times for producing data.')
+ompa_argparse.add_argument('--kde', action='store_true', default=False,
+                               help='incorporate kernel density estimation.')
 ompa_argparse.add_argument('--model', type=str, default='prip_adv',
                            choices=['maldet', 'advmaldet', 'prip_adv'],
                            help="model type, either of 'maldet', 'advmaldet' and 'prip_adv'.")
@@ -81,6 +83,16 @@ def _main():
     model = model.to(dv)
     if args.model == 'prip_adv':
         PrincipledAdvTraining(model)
+    if args.kde:
+        save_dir = config.get('experiments', 'kde') + '_' + args.model_name
+        hp_params = utils.read_pickle(os.path.join(save_dir, 'hparam.pkl'))
+        model = KernelDensityEstimation(model,
+                                        n_centers=hp_params['n_centers'],
+                                        bandwidth=hp_params['bandwidth'],
+                                        n_classes=dataset.n_classes,
+                                        ratio=hp_params['ratio']
+                                        )
+
     model.load()
     print("Load model parameters from {}.".format(model.model_save_path))
     logger.info(f"\n The threshold is {model.tau}.")

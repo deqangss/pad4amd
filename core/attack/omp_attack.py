@@ -85,7 +85,7 @@ class OMPA(BaseAttack):
     def get_losses(self, model, logit, label, representation=None):
         ce = F.cross_entropy(logit, label, reduction='none')
         if 'forward_g' in type(model).__dict__.keys():
-            de = model.forward_g(representation)
+            de = model.forward_g(representation, logit.argmax(1))
             if not self.is_attacker:
                 loss_no_reduction = ce + self.lambda_ * \
                                     (torch.log(de + EXP_OVER_FLOW) - torch.log(model.tau + EXP_OVER_FLOW))
