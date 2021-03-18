@@ -123,7 +123,6 @@ def _main():
                                              min_lambda_=1e-5,
                                              max_lambda_=1e5,
                                              verbose=True)
-
                 prist_preds.append(model.inference_batch_wise(x_batch, adj, y_batch, use_indicator=False))
                 adv_preds.append(model.inference_batch_wise(adv_x_batch, adj, y_batch, use_indicator=False))
                 prist_preds_.append(model.inference_batch_wise(x_batch, adj, y_batch, use_indicator=True))
