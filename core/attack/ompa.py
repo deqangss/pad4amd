@@ -2,6 +2,7 @@ import torch
 import torch.nn.functional as F
 
 from core.attack.base_attack import BaseAttack
+from tools.utils import rand_x
 EXP_OVER_FLOW = -30
 
 
@@ -58,9 +59,6 @@ class OMPA(BaseAttack):
             var_adv_node = torch.autograd.Variable(adv_node, requires_grad=True)
             hidden, logit = model.forward(var_adv_node, adj)
             adv_loss, done = self.get_losses(model, logit, label, hidden)
-            if verbose:
-                print(
-                    f"\n Iteration {t}: the accuracy is {(logit.argmax(1) == 1.).sum().item() / adv_node.size()[0] * 100:.3f}.")
             if torch.all(done) and stop:
                 break
             grad = torch.autograd.grad(torch.mean(adv_loss), var_adv_node)[0].data
@@ -85,6 +83,7 @@ class OMPA(BaseAttack):
                     adv_node = adv_node_expanded.reshape(b, steps, k, v)[torch.arange(b), _worst_pos]
             else:
                 adv_node = torch.clip(adv_node + perturbation * direction, min=0., max=1.)
+            print('perturbations:', torch.sum(torch.abs(adv_node - node), dim=(1, 2)))
         return adv_node
 
     def get_losses(self, model, logit, label, hidden=None):
@@ -100,6 +99,8 @@ class OMPA(BaseAttack):
                                     self.lambda_ * (torch.clamp(
                     torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW), max=self.kappa))
             # loss_no_reduction = ce + self.lambda_ * (de - model.tau)
+            # print('cross-entropy:', ce)
+            # print('density-estimation:', de)
             done = (logit.argmax(1) == 0.) & (de >= tau)
         else:
             loss_no_reduction = ce

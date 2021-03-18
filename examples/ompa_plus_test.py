@@ -16,7 +16,7 @@ logger = logging.getLogger('examples.omp_plus_attack_test')
 logger.addHandler(ErrorHandler)
 
 ompap_argparse = argparse.ArgumentParser(description='arguments for enhancing orthogonal matching pursuit attack')
-ompap_argparse.add_argument('--n_pertb', type=int, default=10, help='maximum number of perturbations.')
+ompap_argparse.add_argument('--n_pertb', type=int, default=100, help='maximum number of perturbations.')
 ompap_argparse.add_argument('--kappa', type=float, default=10., help='attack confidence.')
 ompap_argparse.add_argument('--ascending', action='store_true', default=False,
                             help='whether start the perturbations gradually.')
@@ -100,7 +100,7 @@ def _main():
 
     # test: accuracy
     if args.ascending:
-        interval = 10
+        interval = 20
     else:
         interval = args.n_pertb
     for m in range(interval, args.n_pertb + 1, interval):
@@ -118,7 +118,11 @@ def _main():
             for res in mal_test_dataset_producer:
                 x_batch, adj, y_batch = res
                 x_batch, adj_batch, y_batch = utils.to_tensor(x_batch, adj, y_batch, model.device)
-                adv_x_batch = attack.perturb(model, x_batch, adj_batch, y_batch, m, verbose=True)
+                adv_x_batch = attack.perturb(model, x_batch, adj_batch, y_batch,
+                                             m,
+                                             min_lambda_=1e-5,
+                                             max_lambda_=1e5,
+                                             verbose=True)
 
                 prist_preds.append(model.inference_batch_wise(x_batch, adj, y_batch, use_indicator=False))
                 adv_preds.append(model.inference_batch_wise(adv_x_batch, adj, y_batch, use_indicator=False))
