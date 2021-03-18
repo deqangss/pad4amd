@@ -17,7 +17,7 @@ from config import logging, ErrorHandler
 logger = logging.getLogger('core.attack.pgdl1')
 logger.addHandler(ErrorHandler)
 
-EXP_OVER_FLOW = -30
+EXP_OVER_FLOW = 1e-30
 
 
 class PGDl1(BaseAttack):
