@@ -83,7 +83,6 @@ class OMPA(BaseAttack):
                     adv_node = adv_node_expanded.reshape(b, steps, k, v)[torch.arange(b), _worst_pos]
             else:
                 adv_node = torch.clip(adv_node + perturbation * direction, min=0., max=1.)
-            print('perturbations:', torch.sum(torch.abs(adv_node - node), dim=(1, 2)))
         return adv_node
 
     def get_losses(self, model, logit, label, hidden=None):
