@@ -57,7 +57,7 @@ class PGDl1(BaseAttack):
         @param stop, Boolean, whether stop once evade victim successfully
         @param verbose, Boolean, whether present attack information or not
         """
-        if x is None and x.shape[0] <= 0:
+        if x is None or x.shape[0] <= 0:
             return []
         adv_x = x.detach().clone().to(torch.float)
         self.lambda_ = lambda_

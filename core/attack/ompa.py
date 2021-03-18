@@ -47,7 +47,7 @@ class OMPA(BaseAttack):
         @param stop: Boolean, whether stop once evade victim successfully
         @param verbose, Boolean, whether present attack information or not
         """
-        if node is None and node.shape[0] == 0:
+        if node is None or node.shape[0] == 0:
             return []
         assert 0 < step_length <= 1.
         # node, adj, label = utils.to_device(node, adj, label, self.device)
