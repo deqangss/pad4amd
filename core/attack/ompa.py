@@ -3,7 +3,7 @@ import torch.nn.functional as F
 
 from core.attack.base_attack import BaseAttack
 from tools.utils import rand_x
-EXP_OVER_FLOW = -30
+EXP_OVER_FLOW = 1e-30
 
 
 class OMPA(BaseAttack):
@@ -97,9 +97,6 @@ class OMPA(BaseAttack):
                 loss_no_reduction = ce + \
                                     self.lambda_ * (torch.clamp(
                     torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW), max=self.kappa))
-            # loss_no_reduction = ce + self.lambda_ * (de - model.tau)
-            # print('cross-entropy:', ce)
-            # print('density-estimation:', de)
             done = (logit.argmax(1) == 0.) & (de >= tau)
         else:
             loss_no_reduction = ce
