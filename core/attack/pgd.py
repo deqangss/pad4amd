@@ -57,8 +57,7 @@ class PGD(BaseAttack):
         @param label: torch.LongTensor, ground truth labels
         @param steps: Integer, maximum number of iterations
         @param step_length: float, the step length in each iteration
-        @param lambda_, f
-        loat, penalty factor
+        @param lambda_, float, penalty factor
         @param use_random, Boolean,  whether use random start point
         @param verbose, Boolean, whether present attack information or not
         """
