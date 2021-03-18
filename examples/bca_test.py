@@ -16,22 +16,22 @@ from config import config, logging, ErrorHandler
 logger = logging.getLogger('examples.bca_test')
 logger.addHandler(ErrorHandler)
 
-ompa_argparse = argparse.ArgumentParser(description='arguments for bca')
-ompa_argparse.add_argument('--lambda_', type=float, default=0.01, help='balance factor for waging attack.')
-ompa_argparse.add_argument('--n_pertb', type=int, default=100, help='maximum number of perturbations.')
-ompa_argparse.add_argument('--kappa', type=float, default=10., help='attack confidence.')
-ompa_argparse.add_argument('--ascending', action='store_true', default=False,
+atta_argparse = argparse.ArgumentParser(description='arguments for bca')
+atta_argparse.add_argument('--lambda_', type=float, default=0.01, help='balance factor for waging attack.')
+atta_argparse.add_argument('--n_pertb', type=int, default=100, help='maximum number of perturbations.')
+atta_argparse.add_argument('--kappa', type=float, default=10., help='attack confidence.')
+atta_argparse.add_argument('--ascending', action='store_true', default=False,
                            help='whether start the perturbations gradually.')
-ompa_argparse.add_argument('--n_sample_times', type=int, default=1, help='sample times for producing data.')
-ompa_argparse.add_argument('--kde', action='store_true', default=False, help='incorporate kernel density estimation.')
-ompa_argparse.add_argument('--model', type=str, default='maldet',
+atta_argparse.add_argument('--n_sample_times', type=int, default=1, help='sample times for producing data.')
+atta_argparse.add_argument('--kde', action='store_true', default=False, help='incorporate kernel density estimation.')
+atta_argparse.add_argument('--model', type=str, default='maldet',
                            choices=['maldet', 'advmaldet', 'prip_adv'],
                            help="model type, either of 'maldet', 'advmaldet' and 'prip_adv'.")
-ompa_argparse.add_argument('--model_name', type=str, default='pro', help='model name.')
+atta_argparse.add_argument('--model_name', type=str, default='pro', help='model name.')
 
 
 def _main():
-    args = ompa_argparse.parse_args()
+    args = atta_argparse.parse_args()
     if args.model == 'maldet':
         save_dir = config.get('experiments', 'malware_detector') + '_' + args.model_name
     elif args.model == 'advmaldet':
