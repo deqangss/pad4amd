@@ -16,7 +16,7 @@ from config import config, logging, ErrorHandler
 logger = logging.getLogger('examples.bca_test')
 logger.addHandler(ErrorHandler)
 
-ompa_argparse = argparse.ArgumentParser(description='arguments for orthogonal matching pursuit attack')
+ompa_argparse = argparse.ArgumentParser(description='arguments for bca')
 ompa_argparse.add_argument('--lambda_', type=float, default=0.01, help='balance factor for waging attack.')
 ompa_argparse.add_argument('--n_pertb', type=int, default=100, help='maximum number of perturbations.')
 ompa_argparse.add_argument('--kappa', type=float, default=10., help='attack confidence.')
