@@ -5,3 +5,4 @@ from core.attack.grosse import Groose
 from core.attack.pgdl1 import PGDl1
 from core.attack.pgd import PGD
 from core.attack.pgd_adam import PGDAdam
+from core.attack.mimicry import Mimicry
