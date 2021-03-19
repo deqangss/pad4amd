@@ -70,6 +70,11 @@ class MalwareDetectorIndicator(MalwareDetector, DenseEstimator):
         logger.info(MSG.format(accuracy * 100))
         MSG = "The balanced accuracy on the test dataset is {:.5f}%"
         logger.info(MSG.format(b_accuracy * 100))
+
+        if np.any([np.all(y_true == i) for i in range(self.n_classes)]):
+            logger.warning("class absent.")
+            return
+
         tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
 
         fpr = fp / float(tn + fp)
@@ -110,19 +115,23 @@ class MalwareDetectorIndicator(MalwareDetector, DenseEstimator):
         if a is not None:
             assert isinstance(a, torch.Tensor)
         x_hidden, logit = self.forward(x, a)
-        y_pred = logit.argmax(1)
-        x_prob = self.forward_g(x_hidden)
+        x_dense = self.forward_g(x_hidden)
         if use_indicator:
-            flag = self.indicator(x_prob)
-            return ((y_pred == y) | (~flag)).cpu().numpy()
+            return torch.softmax(logit, dim=-1).detach().cpu().numpy(), x_dense.detach().cpu().numpy()
         else:
-            return (y_pred == y).cpu().numpy()
+            return torch.softmax(logit, dim=-1).detach().cpu().numpy(), np.ones((logit.shape[0], ))
 
     def get_tau_sample_wise(self, y_pred=None):
         return self.tau
 
-    def indicator(self, x_probability):
-        return x_probability >= self.tau
+    def indicator(self, x_dense, y_pred=None):
+        if isinstance(x_dense, np.ndarray):
+            x_dense = torch.tensor(x_dense, device=self.device)
+            return (x_dense >= self.tau).cpu().numpy()
+        elif isinstance(x_dense, torch.Tensor):
+            return x_dense >= self.tau
+        else:
+            raise TypeError("Tensor or numpy.ndarray are expected.")
 
     def get_threshold(self, validation_data_producer):
         """

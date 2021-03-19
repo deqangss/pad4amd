@@ -2,6 +2,7 @@ import re
 import numpy as np
 
 from core.droidfeature import Apk2graphs
+from core.droidfeature import sequence_generator as seq_gen
 from config import config
 
 
@@ -28,11 +29,18 @@ class InverseDroidFeature(object):
         """
         For api insertion, no interdependent apis are considered. For api removal, getClass, getMethod and Invoke methods are used
         """
-        interdependent_apis = ['Ljava/lang/Object;->getClass', 'Ljava/lang/Class;->getMethod', 'Ljava/lang/reflect/Method;->invoke']
+        interdependent_apis = ['Ljava/lang/Object;->getClass', 'Ljava/lang/Class;->getMethod',
+                               'Ljava/lang/reflect/Method;->invoke']
         omega = [self.vocab.index(api) for api in interdependent_apis]
         return omega
 
-
+    @staticmethod
+    def merge_features(cg_dict1, cg_dict2):
+        # avoid duplication of root call
+        for root_call, _ in cg_dict1.items():
+            if root_call in cg_dict2.keys():
+                cg_dict2.pop(root_call)
+        return {**cg_dict1, **cg_dict2}
 
     @staticmethod
     def approx_check_public_method(word, word_info):
@@ -40,7 +48,7 @@ class InverseDroidFeature(object):
         # see: https://docs.oracle.com/javase/specs/jvms/se10/html/jvms-2.html#jvms-2.12
         if re.search(r'\<init\>|\<clinit\>', word) is None and \
                 re.search(r'Ljava\/lang\/reflect\/|Ljava\/lang\/Class\;|Ljava\/lang\/Object\;', word) is None and any(
-                [re.search(r'invoke\-virtual|invoke\-static|invoke\-interface', info) for info in word_info]):
+            [re.search(r'invoke\-virtual|invoke\-static|invoke\-interface', info) for info in word_info]):
             return True
 
     def generate_mod_instruction(self, sample_paths, perturbations):

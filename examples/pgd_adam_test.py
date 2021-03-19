@@ -96,6 +96,10 @@ def _main():
 
     model.load()
     print("Load model parameters from {}.".format(model.model_save_path))
+
+    model.predict(mal_test_dataset_producer, use_indicator=False)
+    model.predict(mal_test_dataset_producer, use_indicator=True)
+
     attack = PGDAdam(device=model.device,
                      kappa=args.kappa
                      )
@@ -105,18 +109,13 @@ def _main():
         interval = 10
     else:
         interval = args.n_step
-    for m in range(interval, args.n_step + 1, interval):
+
+    for m in range(interval, args.n_pertb + 1, interval):
         logger.info("\nThe maximum number of perturbations for each example is {}:".format(m))
-        prist_acc = []
-        adv_acc = []
-        prist_acc_ = []
-        adv_acc_ = []
+        y_cent_list, x_dense_list = [], []
         model.eval()
         for i in range(args.n_sample_times):
-            prist_preds = []
-            adv_preds = []
-            prist_preds_ = []
-            adv_preds_ = []
+            y_cent, x_dense = [], []
             for res in mal_test_dataset_producer:
                 x_batch, adj, y_batch = res
                 x_batch, adj_batch, y_batch = utils.to_tensor(x_batch, adj, y_batch, model.device)
@@ -126,23 +125,23 @@ def _main():
                                              args.lambda_,
                                              args.random_start,
                                              verbose=True)
+                y_cent_batch, x_dense_batch = model.inference_batch_wise(adv_x_batch, adj, y_batch, use_indicator=True)
+                y_cent.append(y_cent_batch)
+                x_dense.append(x_dense_batch)
+            y_cent_list.append(np.vstack(y_cent))
+            x_dense_list.append(np.concatenate(x_dense))
 
-                prist_preds.append(model.inference_batch_wise(x_batch, adj, y_batch, use_indicator=False))
-                adv_preds.append(model.inference_batch_wise(adv_x_batch, adj, y_batch, use_indicator=False))
-                prist_preds_.append(model.inference_batch_wise(x_batch, adj, y_batch, use_indicator=True))
-                adv_preds_.append(model.inference_batch_wise(adv_x_batch, adj, y_batch, use_indicator=True))
-            adv_acc.append(np.mean(np.concatenate(adv_preds)))
-            prist_acc.append(np.mean(np.concatenate(prist_preds)))
-            adv_acc_.append(np.mean(np.concatenate(adv_preds_)))
-            prist_acc_.append(np.mean(np.concatenate(prist_preds_)))
-            logger.info(
-                f'Sampling {i + 1}: accuracy on pristine vs. adversarial malware is {prist_acc[-1] * 100:.3f}% vs. {adv_acc[-1] * 100:.3f}%.')
-            logger.info(
-                f'Sampling {i + 1} (W/ indicator): accuracy on pristine vs. adversarial malware is {prist_acc_[-1] * 100:.3f}% vs. {adv_acc_[-1] * 100:.3f}%.')
+        y_cent = np.mean(np.stack(y_cent_list, axis=1), axis=1)
+        y_pred = np.argmax(y_cent, axis=-1)
         logger.info(
-            f'The mean accuracy on pristine vs. adversarial malware is {sum(prist_acc) / args.n_sample_times * 100:.3f}% vs. {sum(adv_acc) / args.n_sample_times * 100:.3f}%.')
-        logger.info(
-            f'The mean accuracy on pristine vs. adversarial malware is (W/ indicator) {sum(prist_acc_) / args.n_sample_times * 100:.3f}% vs. {sum(adv_acc_) / args.n_sample_times * 100:.3f}%.')
+            f'The mean accuracy on perturbed malware is {sum(y_pred == 1.) / mal_count * 100:.3f}%')
+
+        if 'indicator' in type(model).__dict__.keys():
+            indicator_flag = model.indicator(np.mean(np.stack(x_dense_list, axis=1), axis=1), y_pred)
+            logger.info(f"The effectiveness of indicator is {np.sum(~indicator_flag) / float(len(indicator_flag)) * 100}%")
+            if np.sum(~indicator_flag) < len(indicator_flag):
+                c = len(indicator_flag) - np.sum(~indicator_flag)
+                logger.info(f'The mean accuracy on adversarial malware (w/ indicator) is {sum((y_pred == 1.) & indicator_flag) / c * 100:.3f}%.')
 
 
 if __name__ == '__main__':

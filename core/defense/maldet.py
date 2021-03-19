@@ -106,14 +106,6 @@ class MalwareDetector(nn.Module):
         logits = self.dense(latent_representation)
         return latent_representation, logits
 
-    def inference_batch_wise(self, x, a, y, use_indicator=None):
-        assert isinstance(x, torch.Tensor) and isinstance(y, torch.Tensor)
-        if a is not None:
-            assert isinstance(a, torch.Tensor)
-        x_hidden, logit = self.forward(x, a)
-        y_pred = logit.argmax(1)
-        return (y_pred == y).cpu().numpy()
-
     def inference(self, test_data_producer):
         confidences = []
         gt_labels = []
@@ -134,7 +126,14 @@ class MalwareDetector(nn.Module):
         confidences = torch.mean(torch.stack(confidences).permute([1, 0, 2]), dim=1)
         return confidences, gt_labels
 
-    def predict(self, test_data_producer):
+    def inference_batch_wise(self, x, a, y, use_indicator=None):
+        assert isinstance(x, torch.Tensor) and isinstance(y, torch.Tensor)
+        if a is not None:
+            assert isinstance(a, torch.Tensor)
+        _, logit = self.forward(x, a)
+        return torch.softmax(logit, dim=-1).detach().cpu().numpy(), np.ones((logit.size()[0], ))
+
+    def predict(self, test_data_producer, *args, **kwargs):
         # evaluation
         confidence, y_true = self.inference(test_data_producer)
         y_pred = confidence.argmax(1).cpu().numpy()
@@ -147,7 +146,10 @@ class MalwareDetector(nn.Module):
         MSG = "The balanced accuracy on the test dataset is {:.5f}%"
         logger.info(MSG.format(b_accuracy * 100))
 
-        assert not np.any([np.all(y_true == i) for i in range(self.n_classes)]), 'Exit! Class absent.'
+        if np.any([np.all(y_true == i) for i in range(self.n_classes)]):
+            logger.warning("class absent.")
+            return
+
         tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
         fpr = fp / float(tn + fp)
         fnr = fn / float(tp + fn)
