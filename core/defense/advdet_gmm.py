@@ -212,10 +212,10 @@ class MalwareDetectorIndicator(MalwareDetector, DenseEstimator):
                 sample_weights[_labels[i]] = _weights[i]
             return torch.from_numpy(sample_weights).to(self.device)
 
-    def customize_loss(self, logits, gt_labels, representation, mini_batch_idx):
+    def customize_loss(self, logits, gt_labels, hidden, mini_batch_idx):
         self.update_phi(logits, mini_batch_idx)
 
-        de = self.energy(representation, logits) * self.beta
+        de = self.energy(hidden, logits) * self.beta
         ce = F.cross_entropy(logits, gt_labels)
         return de + ce
 
