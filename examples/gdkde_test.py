@@ -103,8 +103,8 @@ def _main():
 
     model.load()
     print("Load model parameters from {}.".format(model.model_save_path))
-    # model.predict(mal_test_dataset_producer, use_indicator=False)
-    # model.predict(mal_test_dataset_producer, use_indicator=True)
+    model.predict(mal_test_dataset_producer, use_indicator=False)
+    model.predict(mal_test_dataset_producer, use_indicator=True)
 
     ben_hidden = []
     with torch.no_grad():
