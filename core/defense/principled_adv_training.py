@@ -103,6 +103,7 @@ class PrincipledAdvTraining(object):
                                                        y_batch,
                                                        latent_rpst[:batch_size],
                                                        idx_batch)
+                self.model.get_threshold(train_data_producer)
                 # loss_train += F.cross_entropy(logits[batch_size:batch_size + mal_batch_size], mal_y_batch)
                 loss_train += self.model.beta * torch.mean(
                     torch.log(
