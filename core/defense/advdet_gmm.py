@@ -189,7 +189,7 @@ class MalwareDetectorIndicator(MalwareDetector, DenseEstimator):
         reverse_sigma = 1. / (self.sigma + EXP_OVER_FLOW)
         det_sigma = np.power(self.sigma, d)
         prob = 1. / ((2 * np.pi) ** (d / 2.) * det_sigma ** 0.5) * torch.exp(-0.5 * torch.sum(
-            (x.unsqueeze(1) - self.dense.weight) * reverse_sigma * (x.unsqueeze(1) - self.dense.weight), dim=-1))
+            (x.unsqueeze(1) - self.dense.weight.detach()) * reverse_sigma * (x.unsqueeze(1) - self.dense.weight.detach()), dim=-1))
         return prob
 
     def energy(self, hidden, logits):
