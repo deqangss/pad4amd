@@ -28,8 +28,8 @@ def _main():
     train_data, trainy = dataset.train_dataset
     val_data, valy = dataset.validation_dataset
     test_data, testy = dataset.test_dataset
-    train_dataset_producer = dataset.get_input_producer(train_data[:16], trainy[:16], batch_size=args.batch_size, name='train')
-    val_dataset_producer = dataset.get_input_producer(val_data[:16], valy[:16], batch_size=args.batch_size, name='val')
+    train_dataset_producer = dataset.get_input_producer(train_data, trainy, batch_size=args.batch_size, name='train')
+    val_dataset_producer = dataset.get_input_producer(val_data, valy, batch_size=args.batch_size, name='val')
     test_dataset_producer = dataset.get_input_producer(test_data, testy, batch_size=args.batch_size, name='test')
     assert dataset.n_classes == 2
 
@@ -39,8 +39,7 @@ def _main():
     else:
         dv = 'cuda'
 
-    model_name = args.model_name
-    # if args.mode == 'test' else time.strftime("%Y%m%d-%H%M%S")
+    model_name = args.model_name if args.mode == 'test' else time.strftime("%Y%m%d-%H%M%S")
     model = MalwareDetectorIndicator(vocab_size=dataset.vocab_size,
                                      n_classes=dataset.n_classes,
                                      device=dv,
@@ -56,7 +55,6 @@ def _main():
         'verbose': False
     }
     principled_adv_training_model = PrincipledAdvTraining(model, attack, attack_param)
-    principled_adv_training_model.model.load()
 
     if args.mode == 'train':
         principled_adv_training_model.fit(train_dataset_producer,
@@ -68,14 +66,10 @@ def _main():
                                           )
         save_args(path.join(path.dirname(principled_adv_training_model.model_save_path), "hparam"), vars(args))
         dump_pickle(vars(args), path.join(path.dirname(principled_adv_training_model.model_save_path), "hparam.pkl"))
-        # get threshold
-        # principled_adv_training_model.model.get_threshold(val_dataset_producer)
-        # print(principled_adv_training_model.model.tau)
-        # principled_adv_training_model.model.save_to_disk()
+
     # test: accuracy
-    # principled_adv_training_model.model.load()
-    # principled_adv_training_model.model.get_threshold(val_dataset_producer)
-    # principled_adv_training_model.model.predict(test_dataset_producer, use_indicator=False)
+    principled_adv_training_model.model.load()
+    principled_adv_training_model.model.predict(test_dataset_producer, use_indicator=False)
 
 
 if __name__ == '__main__':

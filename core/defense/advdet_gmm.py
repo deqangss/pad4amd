@@ -133,28 +133,25 @@ class MalwareDetectorIndicator(MalwareDetector, DenseEstimator):
         else:
             raise TypeError("Tensor or numpy.ndarray are expected.")
 
-    def get_threshold(self, logits, x_hidden, y_val, validation_data_producer):
+    def get_threshold(self, validation_data_producer):
         """
         get the threshold for density estimation
         :@param validation_data_producer: Object, an iterator for producing validation dataset
         """
-        # self.eval()
+        self.eval()
         probabilities = []
         with torch.no_grad():
             for _ in tqdm(range(self.n_sample_times)):
                 prob_ = []
                 for res in validation_data_producer:
-                    # x_val, adj_val, y_val = res
-                    # x_val, adj_val, y_val = utils.to_tensor(x_val, adj_val, y_val, self.device)
-                    # x_hidden, logits = self.forward(x_val, adj_val)
-                    print('threshold:', x_hidden[0])
+                    x_val, adj_val, y_val = res
+                    x_val, adj_val, y_val = utils.to_tensor(x_val, adj_val, y_val, self.device)
+                    x_hidden, logits = self.forward(x_val, adj_val)
                     x_prob = self.forward_g(x_hidden)
-                    print("threshod:", x_prob)
                     prob_.append(x_prob)
                 prob_ = torch.cat(prob_)
                 probabilities.append(prob_)
             s, _ = torch.sort(torch.mean(torch.stack(probabilities), dim=0), descending=True)
-            print(s)
             i = int((s.shape[0] - 1) * self.ratio)
             assert i >= 0
             self.tau = nn.Parameter(s[i], requires_grad=False)
@@ -198,12 +195,7 @@ class MalwareDetectorIndicator(MalwareDetector, DenseEstimator):
     def energy(self, hidden, logits):
         gamma_z = torch.softmax(logits, dim=1)
         prob_n = self.gaussian_prob(hidden)
-        print('debug-hidden', hidden[0])
-        # print(self.sample_weights)
-        debug = torch.sum(prob_n * self.phi + EXP_OVER_FLOW, dim=1)
-        print('debug:', debug)
-        # print(torch.sum(-torch.log(prob_n * self.phi + exp_over_flow), dim=1))
-        # E_z = torch.sum(torch.log(prob_n * self.phi + exp_over_flow) * self.sample_weights, dim=1)
+
         E_z = torch.sum(gamma_z * torch.log(prob_n * self.phi / (gamma_z + EXP_OVER_FLOW) + \
                                             EXP_OVER_FLOW) * self.sample_weights, dim=1)  # ELBO
         return torch.mean(-E_z, dim=0)
