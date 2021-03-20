@@ -72,7 +72,7 @@ def _main():
         # principled_adv_training_model.model.save_to_disk()
     # test: accuracy
     principled_adv_training_model.model.load()
-    principled_adv_training_model.model.get_threshold(val_dataset_producer)
+    principled_adv_training_model.model.get_threshold(train_dataset_producer)
     principled_adv_training_model.model.predict(test_dataset_producer, use_indicator=False)
 
 

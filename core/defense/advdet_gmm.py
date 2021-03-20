@@ -152,7 +152,10 @@ class MalwareDetectorIndicator(MalwareDetector, DenseEstimator):
                 prob_ = torch.cat(prob_)
                 probabilities.append(prob_)
             s, _ = torch.sort(torch.mean(torch.stack(probabilities), dim=0), descending=True)
+            print(s)
+            print(self.ratio)
             i = int((s.shape[0] - 1) * self.ratio)
+            print(s[:i])
             assert i >= 0
             self.tau = nn.Parameter(s[i], requires_grad=False)
 
