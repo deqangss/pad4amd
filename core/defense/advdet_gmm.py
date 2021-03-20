@@ -147,6 +147,7 @@ class MalwareDetectorIndicator(MalwareDetector, DenseEstimator):
                     # x_val, adj_val, y_val = res
                     # x_val, adj_val, y_val = utils.to_tensor(x_val, adj_val, y_val, self.device)
                     x_hidden, logits = self.forward(x_val, adj_val)
+                    print('threshold:', x_hidden[0])
                     x_prob = self.forward_g(x_hidden)
                     print("threshod:", x_prob)
                     prob_.append(x_prob)
@@ -173,7 +174,6 @@ class MalwareDetectorIndicator(MalwareDetector, DenseEstimator):
         return latent_rep_ext, self.dense(latent_rep_ext)
 
     def forward_g(self, x_hidden, y_pred=None):
-        print("threshold-prob:", self.gaussian_prob(x_hidden))
         return torch.sum(self.gaussian_prob(x_hidden) * self.phi, dim=1)
 
     def update_phi(self, logits, mini_batch_idx):
@@ -198,8 +198,7 @@ class MalwareDetectorIndicator(MalwareDetector, DenseEstimator):
     def energy(self, hidden, logits):
         gamma_z = torch.softmax(logits, dim=1)
         prob_n = self.gaussian_prob(hidden)
-
-        print('debug-prob:', prob_n)
+        print('debug-hidden', hidden[0])
         # print(self.sample_weights)
         debug = torch.sum(prob_n * self.phi + EXP_OVER_FLOW, dim=1)
         print('debug:', debug)
