@@ -133,7 +133,7 @@ class MalwareDetectorIndicator(MalwareDetector, DenseEstimator):
         else:
             raise TypeError("Tensor or numpy.ndarray are expected.")
 
-    def get_threshold(self, validation_data_producer):
+    def get_threshold(self, x_val, adj_val, y_val, validation_data_producer):
         """
         get the threshold for density estimation
         :@param validation_data_producer: Object, an iterator for producing validation dataset
@@ -144,8 +144,8 @@ class MalwareDetectorIndicator(MalwareDetector, DenseEstimator):
             for _ in tqdm(range(self.n_sample_times)):
                 prob_ = []
                 for res in validation_data_producer:
-                    x_val, adj_val, y_val = res
-                    x_val, adj_val, y_val = utils.to_tensor(x_val, adj_val, y_val, self.device)
+                    # x_val, adj_val, y_val = res
+                    # x_val, adj_val, y_val = utils.to_tensor(x_val, adj_val, y_val, self.device)
                     x_hidden, logits = self.forward(x_val, adj_val)
                     x_prob = self.forward_g(x_hidden)
                     print("threshod:", x_prob)
@@ -174,7 +174,6 @@ class MalwareDetectorIndicator(MalwareDetector, DenseEstimator):
 
     def forward_g(self, x_hidden, y_pred=None):
         print("threshold-prob:", self.gaussian_prob(x_hidden))
-        print("threshold-phi:", self.phi)
         return torch.sum(self.gaussian_prob(x_hidden) * self.phi, dim=1)
 
     def update_phi(self, logits, mini_batch_idx):
@@ -201,7 +200,6 @@ class MalwareDetectorIndicator(MalwareDetector, DenseEstimator):
         prob_n = self.gaussian_prob(hidden)
 
         print('debug-prob:', prob_n)
-        print('debug-phi:', self.phi)
         # print(self.sample_weights)
         debug = torch.sum(prob_n * self.phi + EXP_OVER_FLOW, dim=1)
         print('debug:', debug)

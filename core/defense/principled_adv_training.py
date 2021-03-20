@@ -103,7 +103,9 @@ class PrincipledAdvTraining(object):
                                                        y_batch,
                                                        latent_rpst[:batch_size],
                                                        idx_batch)
-                self.model.get_threshold(train_data_producer)
+                self.model.get_threshold(x_batch, adj, y_batch, train_data_producer)
+                import sys
+                sys.exit(1)
                 # loss_train += F.cross_entropy(logits[batch_size:batch_size + mal_batch_size], mal_y_batch)
                 loss_train += self.model.beta * torch.mean(
                     torch.log(
@@ -128,7 +130,7 @@ class PrincipledAdvTraining(object):
             if (i + 1) % 10 == 0:
                 torch.save(self.model.state_dict(), path.join(path.dirname(self.model_save_path), f'model{i + 1}.pth'))
             self.model.get_threshold(validation_data_producer)
-            # torch.save(self.model.state_dict(), self.model_save_path)
+            torch.save(self.model.state_dict(), self.model_save_path)
             if verbose:
                 logger.info(
                     f'Training loss (epoch level): {np.mean(losses):.4f} | Train accuracy: {np.mean(accuracies) * 100:.2f}')
