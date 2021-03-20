@@ -222,7 +222,6 @@ class MalwareDetectorIndicator(MalwareDetector, DenseEstimator):
             return torch.from_numpy(sample_weights).to(self.device)
 
     def customize_loss(self, logits, gt_labels, representation, mini_batch_idx):
-        # print(gt_labels)
         self.update_phi(logits, mini_batch_idx)
 
         de = self.energy(representation, logits) * self.beta
