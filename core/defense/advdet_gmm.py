@@ -152,10 +152,7 @@ class MalwareDetectorIndicator(MalwareDetector, DenseEstimator):
                 prob_ = torch.cat(prob_)
                 probabilities.append(prob_)
             s, _ = torch.sort(torch.mean(torch.stack(probabilities), dim=0), descending=True)
-            print(s)
-            print(self.ratio)
             i = int((s.shape[0] - 1) * self.ratio)
-            print(s[:i])
             assert i >= 0
             self.tau = nn.Parameter(s[i], requires_grad=False)
 
@@ -202,7 +199,7 @@ class MalwareDetectorIndicator(MalwareDetector, DenseEstimator):
         # print(prob_n)
         # print(self.sample_weights)
         debug = torch.sum(prob_n * self.phi + EXP_OVER_FLOW, dim=1)
-        print(debug)
+        print('debug:', debug)
         # print(torch.sum(-torch.log(prob_n * self.phi + exp_over_flow), dim=1))
         # E_z = torch.sum(torch.log(prob_n * self.phi + exp_over_flow) * self.sample_weights, dim=1)
         E_z = torch.sum(gamma_z * torch.log(prob_n * self.phi / (gamma_z + EXP_OVER_FLOW) + \

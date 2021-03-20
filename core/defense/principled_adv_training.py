@@ -56,15 +56,15 @@ class PrincipledAdvTraining(object):
         @param verbose: Boolean, whether to show verbose logs
         """
         # normal training
-        logger.info("Training is starting...")
-        self.model.fit(train_data_producer,
-                       validation_data_producer,
-                       epochs=epochs,
-                       lr=lr,
-                       weight_decay=weight_decay)
-        # get tau
-        self.model.get_threshold(validation_data_producer)
-        logger.info(f"The threshold is {self.model.tau:.3f}.")
+        # logger.info("Training is starting...")
+        # self.model.fit(train_data_producer,
+        #                validation_data_producer,
+        #                epochs=epochs,
+        #                lr=lr,
+        #                weight_decay=weight_decay)
+        # # get tau
+        # self.model.get_threshold(validation_data_producer)
+        # logger.info(f"The threshold is {self.model.tau:.3f}.")
 
         optimizer = optim.Adam(self.model.param_customizing(weight_decay), lr=lr, weight_decay=weight_decay)
         total_time = 0.
@@ -107,7 +107,6 @@ class PrincipledAdvTraining(object):
                 loss_train += self.model.beta * torch.mean(
                     torch.log(
                         self.model.forward_g(latent_rpst[batch_size: batch_size + mal_batch_size]) + EXP_OVER_FLOW))
-                print('adv:', self.model.forward_g(latent_rpst[batch_size: batch_size + mal_batch_size]))
 
                 loss_train.backward()
                 optimizer.step()
