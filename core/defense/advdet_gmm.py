@@ -133,7 +133,7 @@ class MalwareDetectorIndicator(MalwareDetector, DenseEstimator):
         else:
             raise TypeError("Tensor or numpy.ndarray are expected.")
 
-    def get_threshold(self, x_val, adj_val, y_val, validation_data_producer):
+    def get_threshold(self, logits, x_hidden, y_val, validation_data_producer):
         """
         get the threshold for density estimation
         :@param validation_data_producer: Object, an iterator for producing validation dataset
@@ -146,7 +146,7 @@ class MalwareDetectorIndicator(MalwareDetector, DenseEstimator):
                 for res in validation_data_producer:
                     # x_val, adj_val, y_val = res
                     # x_val, adj_val, y_val = utils.to_tensor(x_val, adj_val, y_val, self.device)
-                    x_hidden, logits = self.forward(x_val, adj_val)
+                    # x_hidden, logits = self.forward(x_val, adj_val)
                     print('threshold:', x_hidden[0])
                     x_prob = self.forward_g(x_hidden)
                     print("threshod:", x_prob)

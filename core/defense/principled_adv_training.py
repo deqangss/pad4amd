@@ -103,7 +103,7 @@ class PrincipledAdvTraining(object):
                                                        y_batch,
                                                        latent_rpst[:batch_size],
                                                        idx_batch)
-                self.model.get_threshold(x_batch, adj, y_batch, train_data_producer)
+                self.model.get_threshold(logits[:batch_size], latent_rpst[:batch_size], y_batch, train_data_producer)
                 import sys
                 sys.exit(1)
                 # loss_train += F.cross_entropy(logits[batch_size:batch_size + mal_batch_size], mal_y_batch)
