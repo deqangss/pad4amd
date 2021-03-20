@@ -40,7 +40,7 @@ class PrincipledAdvTraining(object):
                                          'model.pth')
         self.model.model_save_path = self.model_save_path
 
-    def fit(self, train_data_producer, validation_data_producer, epochs=100, adv_epochs=20, epsilon=1, lr=0.005,
+    def fit(self, train_data_producer, validation_data_producer, epochs=100, adv_epochs=20, lr=0.005,
             weight_decay=5e-4, verbose=True):
         """
         Train the malware detector, pick the best model according to the cross-entropy loss on validation set
@@ -51,12 +51,10 @@ class PrincipledAdvTraining(object):
         @param validation_data_producer: Object, an iterator for producing validation dataset
         @param epochs: Integer, epochs
         @param adv_epochs: Integer, epochs for adversarial training
-        @param epsilon: Float, a small number of perturbations
         @param lr: Float, learning rate for Adam optimizer
         @param weight_decay: Float, penalty factor, default value 5e-4 in graph attention layer
         @param verbose: Boolean, whether to show verbose logs
         """
-        assert epsilon <= self.attack_param['m']
         # normal training
         logger.info("Training is starting...")
         self.model.fit(train_data_producer,
@@ -70,9 +68,8 @@ class PrincipledAdvTraining(object):
 
         optimizer = optim.Adam(self.model.param_customizing(weight_decay), lr=lr, weight_decay=weight_decay)
         total_time = 0.
-        nbatchs = len(train_data_producer)
+        nbatches = len(train_data_producer)
 
-        # self.model.sample_weights[1] /= 2.  # owing to augmenting the training set using malware
         logger.info("Adversarial training is starting ...")
         for i in range(adv_epochs):
             losses, accuracies = [], []
@@ -86,25 +83,16 @@ class PrincipledAdvTraining(object):
                 if null_flag:
                     continue
                 start_time = time.time()
-                pert_x_batch = self.attack_model.perturb(self.model, mal_x_batch, mal_adj_batch, mal_y_batch,
-                                                         self.attack_param['m'],
-                                                         1e-3,
-                                                         1e3,
-                                                         self.attack_param['verbose']
-                                                         )
-                # continue
-                # pert_x_batch_ext = self.attack_model.perturb(self.model, pert_x_batch, mal_adj_batch, mal_y_batch,
-                #                                              epsilon,
-                #                                              1e-3,
-                #                                              1e3,
-                #                                              self.attack_param['verbose']
-                #                                              )
+                pertb_x_batch = self.attack_model.perturb(self.model, mal_x_batch, mal_adj_batch, mal_y_batch,
+                                                          self.attack_param['m'],
+                                                          min_lambda_=1e-3,
+                                                          max_lambda_=1e3,
+                                                          verbose=self.attack_param['verbose']
+                                                          )
                 total_time += time.time() - start_time
-                # perturbations = torch.sum(torch.abs(adv_x_batch - mal_x_batch), dim=(1, 2))
-                # adv_ce_flag = (perturbations <= epsilon)
-                x_batch = torch.vstack([x_batch, pert_x_batch])
+                x_batch = torch.vstack([x_batch, pertb_x_batch])
                 if adj is not None:
-                    adj_batch = torch.vstack([adj_batch, mal_adj_batch, mal_adj_batch])
+                    adj_batch = torch.vstack([adj_batch, mal_adj_batch])
 
                 # start training
                 start_time = time.time()
@@ -117,7 +105,8 @@ class PrincipledAdvTraining(object):
                                                        idx_batch)
                 # loss_train += F.cross_entropy(logits[batch_size:batch_size + mal_batch_size], mal_y_batch)
                 loss_train += self.model.beta * torch.mean(
-                    torch.log(self.model.forward_g(latent_rpst[batch_size: batch_size + mal_batch_size]) + EXP_OVER_FLOW))
+                    torch.log(
+                        self.model.forward_g(latent_rpst[batch_size: batch_size + mal_batch_size]) + EXP_OVER_FLOW))
                 print('adv:', self.model.forward_g(latent_rpst[batch_size: batch_size + mal_batch_size]))
 
                 loss_train.backward()
@@ -130,7 +119,7 @@ class PrincipledAdvTraining(object):
                 accuracies.append(acc_train)
                 if verbose:
                     print(
-                        f'Mini batch: {i * nbatchs + idx_batch + 1}/{adv_epochs * nbatchs} | training time in {mins:.0f} minutes, {secs} seconds.')
+                        f'Mini batch: {i * nbatches + idx_batch + 1}/{adv_epochs * nbatches} | training time in {mins:.0f} minutes, {secs} seconds.')
                     logger.info(
                         f'Training loss (batch level): {losses[-1]:.4f} | Train accuracy: {acc_train * 100:.2f}')
 

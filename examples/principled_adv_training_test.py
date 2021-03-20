@@ -13,8 +13,6 @@ from examples.advdet_gmm_test import cmd_md
 
 indicator_argparse = cmd_md.add_argument_group(title='principled adv training')
 indicator_argparse.add_argument('--adv_epochs', type=int, default=20, help='epochs for adversarial training.')
-indicator_argparse.add_argument('--epsilon', type=int, default=5, help='scale of small perturbations.')
-indicator_argparse.add_argument('--lambda_', type=float, default=0.01, help='balance factor for waging attack.')
 indicator_argparse.add_argument('--m', type=int, default=10, help='maximum number of perturbations.')
 indicator_argparse.add_argument('--step_length', type=float, default=1., help='step length.')
 
@@ -53,7 +51,6 @@ def _main():
     attack = OMPAP(device=model.device)
     attack_param = {
         'm': args.m,
-        'lambda_': args.lambda_,
         'step_length': args.step_length,
         'verbose': False
     }
@@ -64,7 +61,6 @@ def _main():
                                           val_dataset_producer,
                                           epochs=args.epochs,
                                           adv_epochs=args.adv_epochs,
-                                          epsilon=args.epsilon,
                                           lr=args.lr,
                                           weight_decay=args.weight_decay
                                           )
@@ -76,6 +72,7 @@ def _main():
         # principled_adv_training_model.model.save_to_disk()
     # test: accuracy
     principled_adv_training_model.model.load()
+    principled_adv_training_model.model.get_threshold(val_dataset_producer)
     principled_adv_training_model.model.predict(test_dataset_producer, use_indicator=False)
 
 
