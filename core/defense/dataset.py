@@ -13,13 +13,12 @@ from tools import utils
 
 
 class Dataset(torch.utils.data.Dataset):
-    def __init__(self, dataset_name='drebin', k=8, is_adj=False, use_cache=False, seed=0, n_sgs_max=1000, feature_ext_args=None):
+    def __init__(self, dataset_name='drebin', k=8, is_adj=False, seed=0, n_sgs_max=1000, feature_ext_args=None):
         """
         build dataset for ml model learning
         :param dataset_name: String, the dataset name, expected 'drebin' or 'androzoo'
         :param k: Integer, the number of subgraphs is sampled for passing through the neural networks
         :param is_adj: Boolean, whether use the actual adjacent matrix or not
-        :param use_cache: Boolean, whether to use the cached data or not, the cached data is identified by a string format name
         :param seed: Integer, the random seed
         :param n_sgs_max: Integer, the maximum number of subgraphs
         :param feature_ext_args: Dict, arguments for feature extraction
@@ -34,7 +33,6 @@ class Dataset(torch.utils.data.Dataset):
         torch.set_default_dtype(torch.float32)
         assert self.k < n_sgs_max
         self.n_sgs_max = n_sgs_max
-        self.use_cache = use_cache
         self.feature_ext_args = feature_ext_args
         self.temp_dir_handle = tempfile.TemporaryDirectory()
         assert self.dataset_name in ['drebin', 'androzoo'], 'Expected either "drebin" or "androzoo".'
@@ -129,22 +127,14 @@ class Dataset(torch.utils.data.Dataset):
         """
         loading features for given a list of feature paths
         # results:
-        # --->> mapping feature paths to numerical representations, incorporating cache
+        # --->> mapping feature paths to numerical representations
         # --->> features: 2d list [number of files, number of subgraphs], in which each element
         # has a vector with size [vocab_size]
         # --->> _labels: 1d list [number of files]
         # --->> adjs: 2d list [number of files, number of subgraphs], in which each element has
         # a scipy sparse matrix with size [vocab_size, vocab_size]
         """
-        file_path = os.path.join(self.temp_dir_handle.name, name + '.pkl')
-        if os.path.exists(file_path) and ('val' in name) and self.use_cache:
-            features, adjs, labels_ = torch.load(file_path)
-        else:
-            features, adjs, labels_ = self.feature_extractor.feature2ipt(feature_paths, labels, self.is_adj)
-        if (not os.path.exists(file_path)) and ('val' in name) and self.use_cache:
-            torch.save((features, adjs, labels_), file_path)
-
-        return features, adjs, labels_
+        return self.feature_extractor.feature2ipt(feature_paths, labels, self.is_adj)
 
     def collate_fn(self, batch):
         # 1. Because the number of sub graphs is different between apks, we here align a batch of data
