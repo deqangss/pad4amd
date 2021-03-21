@@ -48,7 +48,7 @@ def _main():
                                      **vars(args)
                                      )
     model = model.to(dv)
-    attack = OMPAP(device=model.device)
+    attack = OMPAP(is_attacker=False, device=model.device)
     attack_param = {
         'm': args.m,
         'step_length': args.step_length,
@@ -64,7 +64,9 @@ def _main():
                                           lr=args.lr,
                                           weight_decay=args.weight_decay
                                           )
+        # human readable parameters
         save_args(path.join(path.dirname(principled_adv_training_model.model_save_path), "hparam"), vars(args))
+        # save parameters for rebuilding the neural nets
         dump_pickle(vars(args), path.join(path.dirname(principled_adv_training_model.model_save_path), "hparam.pkl"))
 
     # test: accuracy

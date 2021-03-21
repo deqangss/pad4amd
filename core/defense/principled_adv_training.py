@@ -22,7 +22,7 @@ logger.addHandler(ErrorHandler)
 
 
 class PrincipledAdvTraining(object):
-    """a framework of principled adversarial training for defending against adversarial malware
+    """a framework of towards principled adversarial training
 
     Parameters
     ------------------
@@ -43,26 +43,28 @@ class PrincipledAdvTraining(object):
     def fit(self, train_data_producer, validation_data_producer, epochs=100, adv_epochs=20, lr=0.005,
             weight_decay=5e-4, verbose=True):
         """
-        Train the malware detector, pick the best model according to the cross-entropy loss on validation set
+        Applying adversarial train to enhance the malware detector. Actually, we do not ensure this will
+        produce a malware detector with principled adversarial training because we adjust the hyper-parameter
+        lambda empirically.
 
         Parameters
         -------
-        @param train_data_producer: Object, an iterator for producing a batch of training data
-        @param validation_data_producer: Object, an iterator for producing validation dataset
-        @param epochs: Integer, epochs
+        @param train_data_producer: Object, an dataloader object for producing a batch of training data
+        @param validation_data_producer: Object, an dataloader object for producing validation dataset
+        @param epochs: Integer, epochs for normal training (i.e., no perturbed examples are attended)
         @param adv_epochs: Integer, epochs for adversarial training
-        @param lr: Float, learning rate for Adam optimizer
-        @param weight_decay: Float, penalty factor, default value 5e-4 in graph attention layer
-        @param verbose: Boolean, whether to show verbose logs
+        @param lr: Float, learning rate of Adam optimizer
+        @param weight_decay: Float, penalty factor, default value 5e-4 in Graph ATtention layer (GAT)
+        @param verbose: Boolean, whether to show verbose info
         """
-        # normal training
-        logger.info("Training is starting...")
+        # normal training is used for obtaining the initial indicator g
+        logger.info("Normal training is starting...")
         self.model.fit(train_data_producer,
                        validation_data_producer,
                        epochs=epochs,
                        lr=lr,
                        weight_decay=weight_decay)
-        # get tau
+        # get threshold tau
         self.model.get_threshold(validation_data_producer)
         logger.info(f"The threshold is {self.model.tau:.3f}.")
 
@@ -73,59 +75,60 @@ class PrincipledAdvTraining(object):
         logger.info("Adversarial training is starting ...")
         for i in range(adv_epochs):
             losses, accuracies = [], []
-            for idx_batch, res in enumerate(train_data_producer):
-                x_batch, adj, y_batch = res
-                x_batch, adj_batch, y_batch = utils.to_tensor(x_batch, adj, y_batch, self.model.device)
+            for ith_batch, res in enumerate(train_data_producer):
+                x_batch, adj_batch, y_batch = res
+                x_batch, adj_batch, y_batch = utils.to_tensor(x_batch, adj_batch, y_batch, self.model.device)
                 batch_size = x_batch.shape[0]
+
                 # perturb malware feature vectors
                 mal_x_batch, mal_adj_batch, mal_y_batch, null_flag = self.get_mal_data(x_batch, adj_batch, y_batch)
                 mal_batch_size = mal_x_batch.shape[0]
-                if null_flag:
+                if null_flag:  # if no malware in this batch, exit straightly
                     continue
+
                 start_time = time.time()
-                pertb_x_batch = self.attack_model.perturb(self.model, mal_x_batch, mal_adj_batch, mal_y_batch,
-                                                          self.attack_param['m'],
-                                                          min_lambda_=1e-3,
-                                                          max_lambda_=1e3,
-                                                          verbose=self.attack_param['verbose']
-                                                          )
+                # the attack perturbs feature vectors using various hyper-parameter lambda, aiming to obtain
+                # adversarial examples as much as possible
+                pertb_mal_x = self.attack_model.perturb(self.model, mal_x_batch, mal_adj_batch, mal_y_batch,
+                                                        self.attack_param['m'],
+                                                        min_lambda_=1e-3,
+                                                        max_lambda_=1e3,
+                                                        verbose=self.attack_param['verbose']
+                                                        )
                 total_time += time.time() - start_time
-                x_batch = torch.vstack([x_batch, pertb_x_batch])
-                if adj is not None:
+                x_batch = torch.vstack([x_batch, pertb_mal_x])
+                if adj_batch is not None:
                     adj_batch = torch.vstack([adj_batch, mal_adj_batch])
 
-                # start training
                 start_time = time.time()
                 self.model.train()
                 optimizer.zero_grad()
-                latent_rpst, logits = self.model.forward(x_batch, adj_batch)
+                hidden, logits = self.model.forward(x_batch, adj_batch)
                 loss_train = self.model.customize_loss(logits[:batch_size],
                                                        y_batch,
-                                                       latent_rpst[:batch_size],
-                                                       idx_batch)
-                # loss_train += F.cross_entropy(logits[batch_size:batch_size + mal_batch_size], mal_y_batch)
+                                                       hidden[:batch_size],
+                                                       ith_batch)
+                # appending adversarial training loss
                 loss_train += self.model.beta * torch.mean(
-                    torch.log(
-                        self.model.forward_g(latent_rpst[batch_size: batch_size + mal_batch_size]) + EXP_OVER_FLOW))
+                    torch.log(self.model.forward_g(hidden[batch_size: batch_size + mal_batch_size]) + EXP_OVER_FLOW))
 
                 loss_train.backward()
                 optimizer.step()
                 total_time += time.time() - start_time
+
                 acc_train = (logits.argmax(1) == torch.cat([y_batch, mal_y_batch])).sum().item()
                 acc_train /= x_batch.size()[0]
                 mins, secs = int(total_time / 60), int(total_time % 60)
                 losses.append(loss_train.item())
                 accuracies.append(acc_train)
                 if verbose:
-                    print(
-                        f'Mini batch: {i * nbatches + idx_batch + 1}/{adv_epochs * nbatches} | training time in {mins:.0f} minutes, {secs} seconds.')
+                    logger.info(
+                        f'Mini batch: {i * nbatches + ith_batch + 1}/{adv_epochs * nbatches} | training time in {mins:.0f} minutes, {secs} seconds.')
                     logger.info(
                         f'Training loss (batch level): {losses[-1]:.4f} | Train accuracy: {acc_train * 100:.2f}')
 
             if not path.exists(self.model_save_path):
                 utils.mkdir(path.dirname(self.model_save_path))
-            if (i + 1) % 10 == 0:
-                torch.save(self.model.state_dict(), path.join(path.dirname(self.model_save_path), f'model{i + 1}.pth'))
             self.model.get_threshold(validation_data_producer)
             torch.save(self.model.state_dict(), self.model_save_path)
             if verbose:
@@ -137,6 +140,9 @@ class PrincipledAdvTraining(object):
 
     @staticmethod
     def get_mal_data(x_batch, adj_batch, y_batch):
+        """
+        filter out malware feature vectors and adjacency matrix (if it is necessary)
+        """
         mal_x_batch = x_batch[y_batch == 1]
         mal_y_batch = y_batch[y_batch == 1]
         mal_adj_batch = None
