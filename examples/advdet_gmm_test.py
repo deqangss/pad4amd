@@ -4,12 +4,9 @@ from __future__ import print_function
 import os.path as path
 import time
 
-import torch
-import torch.nn.functional as F
-
 from core.defense import Dataset
 from core.defense import MalwareDetectorIndicator
-from tools.utils import save_args, get_group_args, to_tensor, read_pickle, dump_pickle
+from tools.utils import save_args, get_group_args, dump_pickle
 from examples.maldet_test import cmd_md
 
 indicator_argparse = cmd_md.add_argument_group(title='adv indicator')
@@ -17,7 +14,7 @@ indicator_argparse.add_argument('--beta', type=float, default=1., help='balance 
 indicator_argparse.add_argument('--sigma', type=float, default=0.1416,
                                 help='standard deviation of isotropic Gaussian distribution.')
 indicator_argparse.add_argument('--ratio', type=float, default=0.90,
-                                help='the ratio of reminded validation examples')
+                                help='ratio of validation examples remained for passing through malware detector')
 
 
 def _main():
@@ -26,7 +23,7 @@ def _main():
     dataset = Dataset(args.dataset_name,
                       k=args.k,
                       is_adj=args.is_adj,
-                      feature_ext_args=get_group_args(args, cmd_md, 'feature')
+                      feature_ext_args=get_group_args(args, cmd_md, 'x_feature')
                       )
     (train_data, trainy), (val_data, valy), (test_data, testy) = dataset.train_dataset, dataset.validation_dataset, dataset.test_dataset
     train_dataset_producer = dataset.get_input_producer(train_data, trainy, batch_size=args.batch_size, name='train')
@@ -51,16 +48,15 @@ def _main():
     model = model.to(dv)
 
     if args.mode == 'train':
-        # model.load_state_dict(torch.load(model.model_save_path))
         model.fit(train_dataset_producer,
                   val_dataset_producer,
                   epochs=args.epochs,
                   lr=args.lr,
                   weight_decay=args.weight_decay
                   )
-        # developer readable
+        # human readable
         save_args(path.join(path.dirname(model.model_save_path), "hparam"), vars(args))
-        # serialization
+        # serialization for rebuilding neural nets
         dump_pickle(vars(args), path.join(path.dirname(model.model_save_path), "hparam.pkl"))
 
         # get threshold

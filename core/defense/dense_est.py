@@ -3,7 +3,7 @@ abstract class of dense estimator
 """
 
 
-class DenseEstimator(object):
+class DensityEstimator(object):
     def __init__(self):
         self.tau = None
 

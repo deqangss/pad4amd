@@ -27,7 +27,7 @@ class PrincipledAdvTraining(object):
     Parameters
     ------------------
     @param model, Object,  a model to be protected, e.g., MalwareDetector
-    @attack_model: Object, adversary's model for generating adversarial malware on the feature space
+    @attack_model: Object, adversary's model for generating adversarial malware on the x_feature space
     """
 
     def __init__(self, model, attack_model=None, attack_param=None):
@@ -80,14 +80,14 @@ class PrincipledAdvTraining(object):
                 x_batch, adj_batch, y_batch = utils.to_tensor(x_batch, adj_batch, y_batch, self.model.device)
                 batch_size = x_batch.shape[0]
 
-                # perturb malware feature vectors
+                # perturb malware x_feature vectors
                 mal_x_batch, mal_adj_batch, mal_y_batch, null_flag = self.get_mal_data(x_batch, adj_batch, y_batch)
                 mal_batch_size = mal_x_batch.shape[0]
                 if null_flag:  # if no malware in this batch, exit straightly
                     continue
 
                 start_time = time.time()
-                # the attack perturbs feature vectors using various hyper-parameter lambda, aiming to obtain
+                # the attack perturbs x_feature vectors using various hyper-parameter lambda, aiming to obtain
                 # adversarial examples as much as possible
                 pertb_mal_x = self.attack_model.perturb(self.model, mal_x_batch, mal_adj_batch, mal_y_batch,
                                                         self.attack_param['m'],
@@ -141,7 +141,7 @@ class PrincipledAdvTraining(object):
     @staticmethod
     def get_mal_data(x_batch, adj_batch, y_batch):
         """
-        filter out malware feature vectors and adjacency matrix (if it is necessary)
+        filter out malware x_feature vectors and adjacency matrix (if it is necessary)
         """
         mal_x_batch = x_batch[y_batch == 1]
         mal_y_batch = y_batch[y_batch == 1]
