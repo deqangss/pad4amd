@@ -71,13 +71,10 @@ def _main():
     args = cmd_md.parse_args()
     dataset = Dataset(args.dataset_name,
                       k=args.k,
-                      use_cache=False,
                       is_adj=args.is_adj,
                       feature_ext_args=get_group_args(args, cmd_md, 'feature')
                       )
-    train_data, trainy = dataset.train_dataset
-    val_data, valy = dataset.validation_dataset
-    test_data, testy = dataset.test_dataset
+    (train_data, trainy), (val_data, valy), (test_data, testy) = dataset.train_dataset, dataset.validation_dataset, dataset.test_dataset
     train_dataset_producer = dataset.get_input_producer(train_data, trainy, batch_size=args.batch_size, name='train')
     val_dataset_producer = dataset.get_input_producer(val_data, valy, batch_size=args.batch_size, name='val')
     test_dataset_producer = dataset.get_input_producer(test_data, testy, batch_size=args.batch_size, name='test')

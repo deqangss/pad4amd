@@ -29,13 +29,10 @@ def _main():
 
     dataset = Dataset(hp_params['dataset_name'],
                       k=hp_params['k'],
-                      use_cache=False,
                       is_adj=hp_params['is_adj'],
                       feature_ext_args={'proc_number': hp_params['proc_number']}
                       )
-    train_data, trainy = dataset.train_dataset
-    val_data, valy = dataset.validation_dataset
-    test_data, testy = dataset.test_dataset
+    (train_data, trainy), (val_data, valy), (test_data, testy) = dataset.train_dataset, dataset.validation_dataset, dataset.test_dataset
     train_dataset_producer = dataset.get_input_producer(train_data, trainy, batch_size=hp_params['batch_size'], name='train')
     val_dataset_producer = dataset.get_input_producer(val_data, valy, batch_size=hp_params['batch_size'], name='val')
     test_dataset_producer = dataset.get_input_producer(test_data, testy, batch_size=hp_params['batch_size'], name='test')
