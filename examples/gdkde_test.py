@@ -47,7 +47,6 @@ def _main():
     hp_params = utils.read_pickle(os.path.join(save_dir, 'hparam.pkl'))
     dataset = Dataset(hp_params['dataset_name'],
                       k=hp_params['k'],
-                      use_cache=False,
                       is_adj=hp_params['is_adj'],
                       feature_ext_args={'proc_number': hp_params['proc_number']}
                       )
