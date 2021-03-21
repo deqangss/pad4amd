@@ -38,7 +38,7 @@ class GDKDE(BaseAttack):
 
     Parameters
     ---------
-    @param ben_hidden: torch.Tensor, representation of benign files on the hidden space
+    @param ben_hidden: torch.Tensor, hidden representation of benign files on the hidden space
     @param bandwidth: float, variance of gaussian distribution
     @param kappa, attack confidence
     @param manipulation_z, manipulations
