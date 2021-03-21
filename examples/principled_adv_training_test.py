@@ -4,14 +4,13 @@ from __future__ import print_function
 import os.path as path
 import time
 
-
 from core.defense import Dataset
 from core.defense import MalwareDetectorIndicator, PrincipledAdvTraining
 from core.attack import OMPAP
-from tools.utils import save_args, get_group_args, dump_pickle, read_pickle
+from tools.utils import save_args, get_group_args, dump_pickle
 from examples.advdet_gmm_test import cmd_md
 
-indicator_argparse = cmd_md.add_argument_group(title='principled adv training')
+indicator_argparse = cmd_md.add_argument_group(title='towards principled adv training')
 indicator_argparse.add_argument('--adv_epochs', type=int, default=20, help='epochs for adversarial training.')
 indicator_argparse.add_argument('--m', type=int, default=10, help='maximum number of perturbations.')
 indicator_argparse.add_argument('--step_length', type=float, default=1., help='step length.')
@@ -25,9 +24,7 @@ def _main():
                       is_adj=args.is_adj,
                       feature_ext_args=get_group_args(args, cmd_md, 'feature')
                       )
-    train_data, trainy = dataset.train_dataset
-    val_data, valy = dataset.validation_dataset
-    test_data, testy = dataset.test_dataset
+    (train_data, trainy), (val_data, valy), (test_data, testy) = dataset.train_dataset, dataset.validation_dataset, dataset.test_dataset
     train_dataset_producer = dataset.get_input_producer(train_data, trainy, batch_size=args.batch_size, name='train')
     val_dataset_producer = dataset.get_input_producer(val_data, valy, batch_size=args.batch_size, name='val')
     test_dataset_producer = dataset.get_input_producer(test_data, testy, batch_size=args.batch_size, name='test')
@@ -68,7 +65,6 @@ def _main():
         save_args(path.join(path.dirname(principled_adv_training_model.model_save_path), "hparam"), vars(args))
         # save parameters for rebuilding the neural nets
         dump_pickle(vars(args), path.join(path.dirname(principled_adv_training_model.model_save_path), "hparam.pkl"))
-
     # test: accuracy
     principled_adv_training_model.model.load()
     principled_adv_training_model.model.predict(test_dataset_producer, use_indicator=False)
