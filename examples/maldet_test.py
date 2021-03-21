@@ -43,28 +43,27 @@ detector_argparse.add_argument('--dropout', type=float, default=0.6, help='dropo
 detector_argparse.add_argument('--k', type=int, default=32, help='sampling size')
 detector_argparse.add_argument('--use_fusion', action='store_true', help='whether use feature fusion or not')
 detector_argparse.add_argument('--n_sample_times', type=int, default=5, help='times of sampling')
-detector_argparse.add_argument('--alpha_', type=float, default=0.2, help='slope coefficient of leaky-relu')
+detector_argparse.add_argument('--alpha_', type=float, default=0.2, help='slope coefficient of leaky-relu or elu')
 detector_argparse.add_argument('--sparse', action='store_true', default=True, help='GAT with sparse version or not.')
 detector_argparse.add_argument('--smooth', action='store_true', default=False,
-                               help='use smooth activation in the attention layer.')
+                               help='use smooth activation elu (rather than leaky-relu) in the GAT layer.')
 
-detector_argparse.add_argument('--batch_size', type=int, default=16, help='minibatch size')
+detector_argparse.add_argument('--batch_size', type=int, default=16, help='mini-batch size')
 detector_argparse.add_argument('--epochs', type=int, default=10, help='number of epochs to train.')
 detector_argparse.add_argument('--lr', type=float, default=0.005, help='initial learning rate.')
-detector_argparse.add_argument('--weight_decay', type=float, default=5e-4, help='weight_decay')
+detector_argparse.add_argument('--weight_decay', type=float, default=5e-4, help='coefficient of weight decay')
 detector_argparse.add_argument('--enable_gd_ckpt', action='store_true', default=False,
-                               help='gradients checkpoint for saving GPU RAM')  # please enable it with a caution
+                               help='gradients checkpoint for saving GPU RAM')  # enable it with a caution in the training phase
 
 dataset_argparse = cmd_md.add_argument_group(title='data_producer')
 dataset_argparse.add_argument('--dataset_name', type=str, default='drebin',
                               choices=['drebin', 'androzoo'], required=False, help='select dataset with "drebin" or "androzoo" expected ')
 detector_argparse.add_argument('--is_adj', action='store_true', help='incorporate branches instruction information.')
-detector_argparse.add_argument('--undersampling_ratio', type=float, default=0., help='undersamling the benign samples, default: no undersampling')
 
 mode_argparse = cmd_md.add_argument_group(title='mode')
 mode_argparse.add_argument('--mode', type=str, default='train', choices=['train', 'test'], required=False,
                            help='learn a model or test it.')
-mode_argparse.add_argument('--model_name', type=str, default='pro', required=False, help='suffix of a tested model name.')
+mode_argparse.add_argument('--model_name', type=str, default='', required=False, help='suffix date of a tested model name.')
 
 
 def _main():
@@ -103,9 +102,9 @@ def _main():
                   lr=args.lr,
                   weight_decay=args.weight_decay
                   )
-        # developer readable
+        # human readable
         save_args(path.join(path.dirname(model.model_save_path), "hparam"), vars(args))
-        # serialization
+        # serialization for building the neural nets
         dump_pickle(vars(args), path.join(path.dirname(model.model_save_path), "hparam.pkl"))
 
     # test: accuracy
