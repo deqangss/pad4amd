@@ -50,7 +50,7 @@ class OMPA(BaseAttack):
             return []
         assert 0 < step_length <= 1.
         # node, adj, label = utils.to_device(x, adj, label, self.device)
-        adv_x = x.detach().clone().to(torch.float)
+        adv_x = x
         self.lambda_ = lambda_
         self.padding_mask = torch.sum(x, dim=-1, keepdim=True) > 1  # we set a graph contains two apis at least
         model.eval()
