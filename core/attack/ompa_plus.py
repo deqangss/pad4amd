@@ -59,5 +59,5 @@ class OMPAP(OMPA):
             _, done = self.get_losses(model, logit, label, hidden)
             if verbose:
                 logger.info(
-                    f"Ompa attack: attack effectiveness {done.sum().item() / x.size()[0]} with lambda {max_lambda_}.")
+                    f"Ompa attack: attack effectiveness {done.sum().item() / x.size()[0]}.")
         return adv_x
