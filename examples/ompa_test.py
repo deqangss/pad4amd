@@ -91,9 +91,8 @@ def _main():
     print("Load model parameters from {}.".format(model.model_save_path))
     logger.info(f"\n The threshold is {model.tau}.")
 
-    # model.predict(mal_test_dataset_producer, use_indicator=False)
-    # model.predict(mal_test_dataset_producer, use_indicator=True)
-    hp_params['n_sample_times'] = 1
+    model.predict(mal_test_dataset_producer, use_indicator=False)
+    model.predict(mal_test_dataset_producer, use_indicator=True)
 
     attack = OMPA(is_attacker=True,
                   device=model.device,
@@ -128,9 +127,8 @@ def _main():
         if 'indicator' in type(model).__dict__.keys():
             indicator_flag = model.indicator(np.mean(np.stack(x_density_list, axis=1), axis=1), y_pred)
             logger.info(f"The effectiveness of indicator is {sum(~indicator_flag) / mal_count * 100:.3f}%")
-            if np.sum(~indicator_flag) < len(indicator_flag):
-                acc_w_indicator = (sum(~indicator_flag) + sum((y_pred == 1.) & indicator_flag)) / mal_count * 100
-                logger.info(f'The mean accuracy on adversarial malware (w/ indicator) is {acc_w_indicator:.3f}%.')
+            acc_w_indicator = (sum(~indicator_flag) + sum((y_pred == 1.) & indicator_flag)) / mal_count * 100
+            logger.info(f'The mean accuracy on adversarial malware (w/ indicator) is {acc_w_indicator:.3f}%.')
 
 
 if __name__ == '__main__':
