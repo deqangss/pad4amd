@@ -101,7 +101,7 @@ class PGDAdam(BaseAttack):
         """
         assert 0 < min_lambda_ <= max_lambda_
         self.lambda_ = min_lambda_
-        adv_x = x.detach().clone()
+        adv_x = x.clone()
         while self.lambda_ <= max_lambda_:
             hidden, logit = model.forward(adv_x, adj)
             _, done = self.get_losses(model, logit, label, hidden)

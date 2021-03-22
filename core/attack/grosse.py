@@ -105,7 +105,7 @@ class Groose(BaseAttack):
         """
         assert 0 < min_lambda_ <= max_lambda_
         self.lambda_ = min_lambda_
-        adv_node = x.detach().clone()
+        adv_node = x.clone()
         while self.lambda_ <= max_lambda_:
             hidden, logit = model.forward(adv_node, adj)
             _, done = self.get_losses(model, logit, hidden)
