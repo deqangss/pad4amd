@@ -91,8 +91,9 @@ def _main():
     print("Load model parameters from {}.".format(model.model_save_path))
     logger.info(f"\n The threshold is {model.tau}.")
 
-    model.predict(mal_test_dataset_producer, use_indicator=False)
-    model.predict(mal_test_dataset_producer, use_indicator=True)
+    # model.predict(mal_test_dataset_producer, use_indicator=False)
+    # model.predict(mal_test_dataset_producer, use_indicator=True)
+    hp_params['n_sample_times'] = 1
 
     attack = OMPA(is_attacker=True,
                   device=model.device,
