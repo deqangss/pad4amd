@@ -20,7 +20,6 @@ atta_argparse.add_argument('--lambda_', type=float, default=0.01, help='balance 
 atta_argparse.add_argument('--step_length', type=float, default=1., help='step length.')
 atta_argparse.add_argument('--m_pertb', type=int, default=100, help='maximum number of perturbations.')
 atta_argparse.add_argument('--kappa', type=float, default=10., help='attack confidence.')
-atta_argparse.add_argument('--n_sample_times', type=int, default=1, help='sample times for producing data.')
 atta_argparse.add_argument('--kde', action='store_true', default=False, help='attacking model with kernel density estimation.')
 atta_argparse.add_argument('--model', type=str, default='p_adv_train',
                            choices=['maldet', 'advmaldet', 'p_adv_train'],
@@ -92,8 +91,9 @@ def _main():
     print("Load model parameters from {}.".format(model.model_save_path))
     logger.info(f"\n The threshold is {model.tau}.")
 
-    model.predict(mal_test_dataset_producer, use_indicator=False)
-    model.predict(mal_test_dataset_producer, use_indicator=True)
+    # model.predict(mal_test_dataset_producer, use_indicator=False)
+    # model.predict(mal_test_dataset_producer, use_indicator=True)
+    hp_params['n_sample_times'] = 1
 
     attack = OMPA(is_attacker=True,
                   device=model.device,
@@ -105,7 +105,7 @@ def _main():
         logger.info("\nThe maximum number of perturbations for each example is {}:".format(m))
         y_cent_list, x_density_list = [], []
         model.eval()
-        for i in range(args.n_sample_times):
+        for i in range(hp_params['n_sample_times']):
             y_cent, x_density = [], []
             for x, a, y in mal_test_dataset_producer:
                 x, a, y = utils.to_tensor(x, a, y, model.device)
@@ -127,10 +127,9 @@ def _main():
 
         if 'indicator' in type(model).__dict__.keys():
             indicator_flag = model.indicator(np.mean(np.stack(x_density_list, axis=1), axis=1), y_pred)
-            logger.info(f"The effectiveness of indicator is {np.sum(~indicator_flag) / float(len(indicator_flag)) * 100}%")
+            logger.info(f"The effectiveness of indicator is {np.sum(~indicator_flag) / mal_count * 100:.3f}%")
             if np.sum(~indicator_flag) < len(indicator_flag):
-                c = len(indicator_flag) - np.sum(~indicator_flag)
-                logger.info(f'The mean accuracy on adversarial malware (w/ indicator) is {sum((y_pred == 1.) & indicator_flag) / c * 100:.3f}%.')
+                logger.info(f'The mean accuracy on adversarial malware (w/ indicator) is {sum((y_pred == 1.) & indicator_flag) / mal_count * 100:.3f}%.')
 
 
 if __name__ == '__main__':
