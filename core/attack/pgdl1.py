@@ -80,9 +80,10 @@ class PGDl1(BaseAttack):
         return adv_x
 
     def perturb_ehs(self, model, x, adj=None, label=None,
-                    m_perturbations=10,
+                    m=10,
                     min_lambda_=1e-5,
                     max_lambda_=1e5,
+                    granularity=10.,
                     stop=True,
                     verbose=False):
         """
@@ -90,26 +91,26 @@ class PGDl1(BaseAttack):
         """
         assert 0 < min_lambda_ <= max_lambda_
         self.lambda_ = min_lambda_
-        adv_node = x.detach().clone()
+        adv_x = x.detach().clone()
         while self.lambda_ <= max_lambda_:
-            hidden, logit = model.forward(adv_node, adj)
+            hidden, logit = model.forward(adv_x, adj)
             _, done = self.get_losses(model, logit, label, hidden)
             if verbose:
                 logger.info(
                     f"BCA attack: attack effectiveness {done.sum().item() / x.size()[0]} with lambda {self.lambda_}.")
             if torch.all(done):
-                return adv_node
+                return adv_x
 
             adv_adj = None if adj is None else adv_adj[~done]
-            pert_x = self.perturb(model, adv_node[~done], adv_adj, label[~done],
-                                  m_perturbations,
+            pert_x = self.perturb(model, adv_x[~done], adv_adj, label[~done],
+                                  m,
                                   lambda_=self.lambda_,
                                   stop=stop,
                                   verbose=False
                                   )
-            adv_node[~done] = pert_x
-            self.lambda_ *= 10.
-        return adv_node
+            adv_x[~done] = pert_x
+            self.lambda_ *= granularity
+        return adv_x
 
     def get_perturbation(self, gradients, features, adv_features):
         # 1. mask paddings
@@ -136,7 +137,7 @@ class PGDl1(BaseAttack):
         _, position = torch.max(absolute_grad, dim=-1)
         perturbations = F.one_hot(position, num_classes=absolute_grad.shape[-1]).float()
         perturbations = perturbations.reshape(features.shape)
-        directions = torch.sign(gradients) * perturbations
+        directions = torch.sign(gradients) * (perturbations > 1e-6)
 
         # 5. tailor the interdependent apis
         perturbations += (torch.sum(directions, dim=-1, keepdim=True) < 0) * checking_nonexist_api
@@ -145,15 +146,14 @@ class PGDl1(BaseAttack):
 
     def get_losses(self, model, logit, label, hidden=None):
         ce = F.cross_entropy(logit, label, reduction='none')
+        y_pred = logit.argmax(1)
         if 'forward_g' in type(model).__dict__.keys():
-            de = model.forward_g(hidden, logit.argmax(1))
-            tau = model.get_tau_sample_wise(logit.argmax(1))
-            loss_no_reduction = ce + \
-                                self.lambda_ * (torch.clamp(
+            de = model.forward_g(hidden, y_pred)
+            tau = model.get_tau_sample_wise(y_pred)
+            loss_no_reduction = ce + self.lambda_ * (torch.clamp(
                 torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW), max=self.kappa))
-            # loss_no_reduction = ce + self.lambda_ * (de - model.tau)
-            done = (logit.argmax(1) == 0.) & (de >= tau)
+            done = (y_pred == 0.) & (de >= tau)
         else:
             loss_no_reduction = ce
-            done = logit.argmax(1) == 0.
+            done = y_pred == 0.
         return loss_no_reduction, done
