@@ -30,6 +30,7 @@ class OMPA(BaseAttack):
                 lambda_=1.,
                 step_length=1.,
                 stop=True,
+                clone=True,
                 verbose=False):
         """
         perturb node feature vectors
@@ -44,13 +45,17 @@ class OMPA(BaseAttack):
         @param lambda_, float, penalty factor
         @param step_length: Float, value is in the range of (0,1]
         @param stop: Boolean, whether stop once evade victim successfully
+        @param clone: Boolean, whether clone the node feature
         @param verbose, Boolean, whether present attack information or not
         """
         if x is None or x.shape[0] == 0:
             return []
         assert 0 < step_length <= 1.
         # node, adj, label = utils.to_device(x, adj, label, self.device)
-        adv_x = x
+        if clone:
+            adv_x = x.detach().clone().to(torch.float)
+        else:
+            adv_x = x
         self.lambda_ = lambda_
         self.padding_mask = torch.sum(x, dim=-1, keepdim=True) > 1  # we set a graph contains two apis at least
         model.eval()

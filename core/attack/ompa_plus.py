@@ -34,7 +34,7 @@ class OMPAP(OMPA):
         assert 0 < min_lambda_ <= max_lambda_
         self.lambda_ = min_lambda_
 
-        adv_x = x
+        adv_x = x.detach().clone().to(torch.float)
         while self.lambda_ <= max_lambda_:
             hidden, logit = model.forward(adv_x, adj)
             _, done = self.get_losses(model, logit, label, hidden)
@@ -50,6 +50,7 @@ class OMPAP(OMPA):
                                                 self.lambda_,
                                                 step_length=1.,
                                                 stop=stop,
+                                                clone=False,
                                                 verbose=False
                                                 )
             adv_x[~done] = pert_x
