@@ -82,8 +82,7 @@ class MalwareDetectorIndicator(MalwareDetector, DensityEstimator):
         logger.info(MSG.format(fnr * 100, fpr * 100, f1 * 100))
 
     def inference(self, test_data_producer):
-        y_cent = []
-        x_prob = []
+        y_cent, x_prob = [], []
         gt_labels = []
         self.eval()
         with torch.no_grad():

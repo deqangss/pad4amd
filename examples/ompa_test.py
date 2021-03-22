@@ -99,36 +99,34 @@ def _main():
                   kappa=args.kappa
                   )
 
-    space = 20
-    for m in range(space, args.m_pertb + 1, space):
-        logger.info("\nThe maximum number of perturbations for each example is {}:".format(m))
-        y_cent_list, x_density_list = [], []
-        model.eval()
-        for i in range(hp_params['n_sample_times']):
-            y_cent, x_density = [], []
-            for x, a, y in mal_test_dataset_producer:
-                x, a, y = utils.to_tensor(x, a, y, model.device)
-                adv_x_batch = attack.perturb(model, x, a, y,
-                                             m,
-                                             args.lambda_,
-                                             args.step_length,
-                                             verbose=False)
-                y_cent_batch, x_density_batch = model.inference_batch_wise(adv_x_batch, a, y, use_indicator=True)
-                y_cent.append(y_cent_batch)
-                x_density.append(x_density_batch)
-            y_cent_list.append(np.vstack(y_cent))
-            x_density_list.append(np.concatenate(x_density))
+    logger.info("\nThe maximum number of perturbations for each example is {}:".format(args.m_pertb))
+    y_cent_list, x_density_list = [], []
+    model.eval()
+    for i in range(hp_params['n_sample_times']):
+        y_cent, x_density = [], []
+        for x, a, y in mal_test_dataset_producer:
+            x, a, y = utils.to_tensor(x, a, y, model.device)
+            adv_x_batch = attack.perturb(model, x, a, y,
+                                         args.m_pertb,
+                                         args.lambda_,
+                                         args.step_length,
+                                         verbose=False)
+            y_cent_batch, x_density_batch = model.inference_batch_wise(adv_x_batch, a, y, use_indicator=True)
+            y_cent.append(y_cent_batch)
+            x_density.append(x_density_batch)
+        y_cent_list.append(np.vstack(y_cent))
+        x_density_list.append(np.concatenate(x_density))
 
-        y_cent = np.mean(np.stack(y_cent_list, axis=1), axis=1)
-        y_pred = np.argmax(y_cent, axis=-1)
-        logger.info(
-            f'The mean accuracy on perturbed malware is {sum(y_pred == 1.) / mal_count * 100:.3f}%')
+    y_cent = np.mean(np.stack(y_cent_list, axis=1), axis=1)
+    y_pred = np.argmax(y_cent, axis=-1)
+    logger.info(
+        f'The mean accuracy on perturbed malware is {sum(y_pred == 1.) / mal_count * 100:.3f}%')
 
-        if 'indicator' in type(model).__dict__.keys():
-            indicator_flag = model.indicator(np.mean(np.stack(x_density_list, axis=1), axis=1), y_pred)
-            logger.info(f"The effectiveness of indicator is {sum(~indicator_flag) / mal_count * 100:.3f}%")
-            acc_w_indicator = (sum(~indicator_flag) + sum((y_pred == 1.) & indicator_flag)) / mal_count * 100
-            logger.info(f'The mean accuracy on adversarial malware (w/ indicator) is {acc_w_indicator:.3f}%.')
+    if 'indicator' in type(model).__dict__.keys():
+        indicator_flag = model.indicator(np.mean(np.stack(x_density_list, axis=1), axis=1), y_pred)
+        logger.info(f"The effectiveness of indicator is {sum(~indicator_flag) / mal_count * 100:.3f}%")
+        acc_w_indicator = (sum(~indicator_flag) + sum((y_pred == 1.) & indicator_flag)) / mal_count * 100
+        logger.info(f'The mean accuracy on adversarial malware (w/ indicator) is {acc_w_indicator:.3f}%.')
 
 
 if __name__ == '__main__':

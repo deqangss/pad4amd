@@ -19,7 +19,7 @@ kde_argparse.add_argument('--ratio', type=float, default=0.90,
                           help='the percentage of reminded validation examples')
 kde_argparse.add_argument('--mode', type=str, default='train', choices=['train', 'test'], required=False,
                            help='learn a model or test it.')
-kde_argparse.add_argument('--model_name', type=str, default='pro', help='model name.')
+kde_argparse.add_argument('--model_name', type=str, default='xxxxxxxx-xxxxxx', help='model timestamp.')
 
 
 def _main():
@@ -61,12 +61,9 @@ def _main():
                                   )
 
     if args.mode == 'train':
-        # model.load_state_dict(torch.load(model.model_save_path))
-        kde.fit(train_dataset_producer,
-                val_dataset_producer
-                )
+        kde.fit(train_dataset_producer, val_dataset_producer)
 
-        # developer readable
+        # human readable
         save_args(path.join(path.dirname(kde.model_save_path), "hparam"), {**vars(args), **hp_params})
         # serialization
         dump_pickle({**vars(args), **hp_params}, path.join(path.dirname(kde.model_save_path), "hparam.pkl"))

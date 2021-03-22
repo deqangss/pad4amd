@@ -47,7 +47,7 @@ class KernelDensityEstimation(DensityEstimator):
 
     def forward_g(self, x_hidden, y_pred):
         """
-        1 / |X_| * \sum(exp(||x_ - mu||_2^2/sigma^2))
+        1 / |X_| * \sum(exp(||x - x_||_2^2/sigma^2))
 
         parameters
         -----------
@@ -70,10 +70,8 @@ class KernelDensityEstimation(DensityEstimator):
         probabilities = []
         with torch.no_grad():
             for _ in tqdm(range(self.model.n_sample_times)):
-                prob_ = []
-                Y = []
-                for res in validation_data_producer:
-                    x_val, adj_val, y_val = res
+                prob_, Y = [], []
+                for x_val, adj_val, y_val in validation_data_producer:
                     x_val, adj_val, y_val = utils.to_tensor(x_val, adj_val, y_val, self.device)
                     x_hidden, logits = self.forward(x_val, adj_val)
                     x_prob = self.forward_g(x_hidden, y_val)
@@ -90,10 +88,10 @@ class KernelDensityEstimation(DensityEstimator):
 
     def predict(self, test_data_producer):
         # evaluation on detector & indicator
-        confidence, probability, y_true = self.inference(test_data_producer)
-        y_pred = confidence.argmax(1).cpu().numpy()
+        y_cent, x_prob, y_true = self.inference(test_data_producer)
+        y_pred = y_cent.argmax(1).cpu().numpy()
         y_true = y_true.cpu().numpy()
-        indicator_flag = self.indicator(probability, y_pred).cpu().numpy()
+        indicator_flag = self.indicator(x_prob, y_pred).cpu().numpy()
         # filter out examples with low likelihood
         y_pred = y_pred[indicator_flag]
         y_true = y_true[indicator_flag]
@@ -123,29 +121,27 @@ class KernelDensityEstimation(DensityEstimator):
         self.model.eval()
 
     def inference(self, test_data_producer):
-        confidences = []
-        x_probabilities = []
+        y_cent, x_prob = [], []
         gt_labels = []
         self.eval()
         with torch.no_grad():
             for ith in tqdm(range(self.model.n_sample_times)):
-                conf_batches = []
+                y_conf_batches = []
                 x_prob_batches = []
-                for res in test_data_producer:
-                    x, adj, y = res
+                for x, adj, y  in test_data_producer:
                     x, adj, y = utils.to_tensor(x, adj, y, self.device)
                     x_hidden, logit = self.forward(x, adj)
-                    conf_batches.append(F.softmax(logit, dim=-1))
+                    y_conf_batches.append(F.softmax(logit, dim=-1))
                     x_prob_batches.append(self.forward_g(x_hidden, logit.argmax(dim=1)))
                     if ith == 0:
                         gt_labels.append(y)
-                conf_batches = torch.vstack(conf_batches)
-                confidences.append(conf_batches)
-                x_probabilities.append(torch.hstack(x_prob_batches))
+                y_conf_batches = torch.vstack(y_conf_batches)
+                y_cent.append(y_conf_batches)
+                x_prob.append(torch.hstack(x_prob_batches))
         gt_labels = torch.cat(gt_labels, dim=0)
-        confidences = torch.mean(torch.stack(confidences).permute([1, 0, 2]), dim=1)
-        probabilities = torch.mean(torch.stack(x_probabilities), dim=0)
-        return confidences, probabilities, gt_labels
+        y_cent = torch.mean(torch.stack(y_cent).permute([1, 0, 2]), dim=1)
+        x_prob = torch.mean(torch.stack(x_prob), dim=0)
+        return y_cent, x_prob, gt_labels
 
     def inference_batch_wise(self, x, a, y, use_indicator=True):
         assert isinstance(x, torch.Tensor) and isinstance(y, torch.Tensor)
@@ -153,34 +149,32 @@ class KernelDensityEstimation(DensityEstimator):
             assert isinstance(a, torch.Tensor)
         x_hidden, logit = self.forward(x, a)
         y_pred = logit.argmax(1)
-        x_dense = self.forward_g(x_hidden, y_pred)
+        x_prob = self.forward_g(x_hidden, y_pred)
         if use_indicator:
-            return torch.softmax(logit, dim=-1).detach().cpu().numpy(), x_dense.detach().cpu().numpy()
+            return torch.softmax(logit, dim=-1).detach().cpu().numpy(), x_prob.detach().cpu().numpy()
         else:
             return torch.softmax(logit, dim=-1).detach().cpu().numpy(), np.ones((logit.shape[0], ))
 
     def get_tau_sample_wise(self, y_pred):
         return self.tau[y_pred]
 
-    def indicator(self, x_dense, y_pred=None):
+    def indicator(self, x_prob, y_pred=None):
         assert y_pred is not None
-        if isinstance(x_dense, np.ndarray):
-            x_dense = torch.tensor(x_dense, device=self.device)
-            return (x_dense >= self.get_tau_sample_wise(y_pred)).cpu().numpy()
-        elif isinstance(x_dense, torch.Tensor):
-            return x_dense >= self.get_tau_sample_wise(y_pred)
+        if isinstance(x_prob, np.ndarray):
+            x_prob = torch.tensor(x_prob, device=self.device)
+            return (x_prob >= self.get_tau_sample_wise(y_pred)).cpu().numpy()
+        elif isinstance(x_prob, torch.Tensor):
+            return x_prob >= self.get_tau_sample_wise(y_pred)
         else:
             raise TypeError("Tensor or numpy.ndarray are expected.")
-
         # res = probability.reshape(-1, 1).repeat_interleave(2, dim=1) >= self.tau
         # return res[torch.arange(res.size()[0]), y_pred]
+        return
 
     def fit(self, train_dataset_producer, val_dataet_producer):
-        X_hidden = []
-        Y = []
+        X_hidden, Y = [], []
         self.eval()
-        for data in train_dataset_producer:
-            x, a, y = data
+        for x, a, y in train_dataset_producer:
             x, a, y = utils.to_tensor(x, a, y, self.device)
             x_hidden, _ = self.forward(x, a)
             X_hidden.append(x_hidden)

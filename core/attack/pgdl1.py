@@ -96,7 +96,7 @@ class PGDl1(BaseAttack):
             _, done = self.get_losses(model, logit, label, hidden)
             if verbose:
                 logger.info(
-                    f"BCA attack: attack effectiveness {done.sum().item() / x.size()[0]} with lambda {self.lambda_}.")
+                    f"PGD l1 attack: attack effectiveness {done.sum().item() / float(x.size()[0]):.3f} with lambda {self.lambda_}.")
             if torch.all(done):
                 return adv_x
 
