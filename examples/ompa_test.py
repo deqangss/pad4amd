@@ -20,7 +20,7 @@ atta_argparse.add_argument('--lambda_', type=float, default=0.01, help='balance 
 atta_argparse.add_argument('--step_length', type=float, default=1., help='step length.')
 atta_argparse.add_argument('--m_pertb', type=int, default=100, help='maximum number of perturbations.')
 atta_argparse.add_argument('--kappa', type=float, default=10., help='attack confidence.')
-atta_argparse.add_argument('--kde', action='store_true', default=False, help='attacking model with kernel density estimation.')
+atta_argparse.add_argument('--kde', action='store_true', default=False, help='attacking model enhanced by kernel density estimation.')
 atta_argparse.add_argument('--model', type=str, default='p_adv_train',
                            choices=['maldet', 'advmaldet', 'p_adv_train'],
                            help="model type, either of 'maldet', 'advmaldet' and 'p_adv_train'.")
