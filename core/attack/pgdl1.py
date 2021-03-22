@@ -11,7 +11,6 @@ import torch
 import torch.nn.functional as F
 
 from core.attack.base_attack import BaseAttack
-from tools.utils import rand_x
 from config import logging, ErrorHandler
 
 logger = logging.getLogger('core.attack.pgdl1')
