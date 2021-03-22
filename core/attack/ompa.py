@@ -3,8 +3,7 @@ import torch.nn.functional as F
 
 from core.attack.base_attack import BaseAttack
 from tools.utils import rand_x
-EXP_OVER_FLOW = -30
-
+EXP_OVER_FLOW = 1e-30
 
 class OMPA(BaseAttack):
     """
