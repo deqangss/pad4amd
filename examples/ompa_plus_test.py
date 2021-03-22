@@ -92,7 +92,8 @@ def _main():
     # model.predict(mal_test_dataset_producer, use_indicator=True)
     hp_params['n_sample_times'] = 1
 
-    attack = OMPAP(kappa=args.kappa,
+    attack = OMPAP(is_attacker=True,
+                   kappa=args.kappa,
                    device=model.device)
 
     space = 20
@@ -114,7 +115,6 @@ def _main():
                 x_density.append(x_density_batch)
             y_cent_list.append(np.vstack(y_cent))
             x_density_list.append(np.concatenate(x_density))
-
         y_cent = np.mean(np.stack(y_cent_list, axis=1), axis=1)
         y_pred = np.argmax(y_cent, axis=-1)
         logger.info(
