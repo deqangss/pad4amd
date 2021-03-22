@@ -18,7 +18,7 @@ logger.addHandler(ErrorHandler)
 ompap_argparse = argparse.ArgumentParser(description='arguments for enhancing orthogonal matching pursuit attack')
 ompap_argparse.add_argument('--m_pertb', type=int, default=100, help='maximum number of perturbations.')
 ompap_argparse.add_argument('--kappa', type=float, default=10., help='attack confidence.')
-ompap_argparse.add_argument('--kde', action='store_true', default=False, help='attack model with kernel density estimation.')
+ompap_argparse.add_argument('--kde', action='store_true', default=False, help='attack model enhanced by kernel density estimation.')
 ompap_argparse.add_argument('--model', type=str, default='p_adv_train',
                             choices=['maldet', 'advmaldet', 'p_adv_train'],
                             help="model type, either of 'maldet', 'advmaldet' and 'p_adv_train'.")
@@ -92,8 +92,7 @@ def _main():
     # model.predict(mal_test_dataset_producer, use_indicator=True)
     hp_params['n_sample_times'] = 1
 
-    attack = OMPAP(is_attacker=True,
-                   kappa=args.kappa,
+    attack = OMPAP(kappa=args.kappa,
                    device=model.device)
 
     space = 20
@@ -110,7 +109,7 @@ def _main():
                                              min_lambda_=1e-5,
                                              max_lambda_=1e5,
                                              verbose=True)
-                y_cent_batch, x_density_batch = model.inference_batch_wise(adv_x_batch, a, y, use_indicator=False)
+                y_cent_batch, x_density_batch = model.inference_batch_wise(adv_x_batch, a, y, use_indicator=True)
                 y_cent.append(y_cent_batch)
                 x_density.append(x_density_batch)
             y_cent_list.append(np.vstack(y_cent))
