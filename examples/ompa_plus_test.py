@@ -110,7 +110,7 @@ def _main():
                                              min_lambda_=1e-5,
                                              max_lambda_=1e5,
                                              verbose=True)
-                y_cent_batch, x_density_batch = model.inference_batch_wise(adv_x_batch, a, y, use_indicator=True)
+                y_cent_batch, x_density_batch = model.inference_batch_wise(adv_x_batch, a, y, use_indicator=False)
                 y_cent.append(y_cent_batch)
                 x_density.append(x_density_batch)
             y_cent_list.append(np.vstack(y_cent))
