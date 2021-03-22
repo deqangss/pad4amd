@@ -40,7 +40,11 @@ class PrincipledAdvTraining(object):
                                          'model.pth')
         self.model.model_save_path = self.model_save_path
 
-    def fit(self, train_data_producer, validation_data_producer, epochs=100, adv_epochs=20, lr=0.005,
+    def fit(self, train_data_producer, validation_data_producer, epochs=100, adv_epochs=20,
+            lambda_lower_bound=1e-3,
+            lambda_upper_bound=1e3,
+            granularity=1,
+            lr=0.005,
             weight_decay=5e-4, verbose=True):
         """
         Applying adversarial train to enhance the malware detector. Actually, we do not ensure this will
@@ -53,6 +57,9 @@ class PrincipledAdvTraining(object):
         @param validation_data_producer: Object, an dataloader object for producing validation dataset
         @param epochs: Integer, epochs for normal training (i.e., no perturbed examples are attended)
         @param adv_epochs: Integer, epochs for adversarial training
+        @param lambda_lower_bound: Float, lower boundary of penalty factor
+        @param lambda_upper_bound: Float, upper boundary of penalty factor
+        @param granularity: Integer, 10^granularity exp-space between penalty factors
         @param lr: Float, learning rate of Adam optimizer
         @param weight_decay: Float, penalty factor, default value 5e-4 in Graph ATtention layer (GAT)
         @param verbose: Boolean, whether to show verbose info
@@ -71,7 +78,9 @@ class PrincipledAdvTraining(object):
         optimizer = optim.Adam(self.model.param_customizing(weight_decay), lr=lr, weight_decay=weight_decay)
         total_time = 0.
         nbatches = len(train_data_producer)
-
+        lambda_space = np.logspace(np.log10(lambda_lower_bound),
+                                   np.log10(lambda_upper_bound),
+                                   num=int(np.log10(lambda_upper_bound / lambda_lower_bound)//granularity) + 1)
         logger.info("Adversarial training is starting ...")
         for i in range(adv_epochs):
             losses, accuracies = [], []
@@ -91,8 +100,9 @@ class PrincipledAdvTraining(object):
                 # adversarial examples as much as possible
                 pertb_mal_x = self.attack_model.perturb(self.model, mal_x_batch, mal_adj_batch, mal_y_batch,
                                                         self.attack_param['m'],
-                                                        min_lambda_=1e-3,
-                                                        max_lambda_=1e3,
+                                                        min_lambda_=np.random.choice(lambda_space),
+                                                        max_lambda_=lambda_upper_bound,
+                                                        base=10,
                                                         verbose=self.attack_param['verbose']
                                                         )
                 total_time += time.time() - start_time
