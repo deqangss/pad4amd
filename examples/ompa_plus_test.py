@@ -107,7 +107,7 @@ def _main():
             adv_x_batch = attack.perturb(model, x, a, y,
                                          args.m_pertb,
                                          min_lambda_=1.,
-                                         max_lambda_=1.,
+                                         max_lambda_=10.,
                                          verbose=True)
             y_cent_batch, x_density_batch = model.inference_batch_wise(adv_x_batch, a, y, use_indicator=True)
             y_cent.append(y_cent_batch)
