@@ -127,9 +127,10 @@ def _main():
 
         if 'indicator' in type(model).__dict__.keys():
             indicator_flag = model.indicator(np.mean(np.stack(x_density_list, axis=1), axis=1), y_pred)
-            logger.info(f"The effectiveness of indicator is {np.sum(~indicator_flag) / mal_count * 100:.3f}%")
+            logger.info(f"The effectiveness of indicator is {sum(~indicator_flag) / mal_count * 100:.3f}%")
             if np.sum(~indicator_flag) < len(indicator_flag):
-                logger.info(f'The mean accuracy on adversarial malware (w/ indicator) is {sum((y_pred == 1.) & indicator_flag) / mal_count * 100:.3f}%.')
+                acc_w_indicator = (sum(~indicator_flag) + sum((y_pred == 1.) & indicator_flag)) / mal_count * 100
+                logger.info(f'The mean accuracy on adversarial malware (w/ indicator) is {acc_w_indicator:.3f}%.')
 
 
 if __name__ == '__main__':
