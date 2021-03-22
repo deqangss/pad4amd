@@ -96,7 +96,7 @@ def _main():
                    kappa=args.kappa,
                    device=model.device)
 
-    space = 20
+    space = 60
     for m in range(space, args.m_pertb + 1, space):
         logger.info("\nThe maximum number of perturbations for each example is {}:".format(m))
         y_cent_list, x_density_list = [], []
