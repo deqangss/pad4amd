@@ -54,4 +54,10 @@ class OMPAP(OMPA):
                                                 )
             adv_x[~done] = pert_x
             self.lambda_ *= granularity
+        with torch.no_grad():
+            hidden, logit = model.forward(adv_x, adj)
+            _, done = self.get_losses(model, logit, label, hidden)
+            if verbose:
+                logger.info(
+                    f"Ompa attack: attack effectiveness {done.sum().item() / x.size()[0]} with lambda {self.lambda_}.")
         return adv_x
