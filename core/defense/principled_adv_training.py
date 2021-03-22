@@ -36,7 +36,7 @@ class PrincipledAdvTraining(object):
         self.attack_param = attack_param
 
         self.name = self.model.name
-        self.model_save_path = path.join(config.get('experiments', 'prip_adv_training') + '_' + self.name,
+        self.model_save_path = path.join(config.get('experiments', 'p_adv_training') + '_' + self.name,
                                          'model.pth')
         self.model.model_save_path = self.model_save_path
 
