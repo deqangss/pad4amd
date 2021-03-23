@@ -11,25 +11,19 @@ class OMPA(BaseAttack):
 
     Parameters
     ---------
-    @param is_attacker, play the role of attack or not (note: the defender applies adversarial training)
-    @param kappa, attack confidence
     @param manipulation_z, manipulations
     @param omega, the indices of interdependent apis corresponding to each api
     @param device, 'cpu' or 'cuda'
     """
 
-    def __init__(self, is_attacker=False, kappa=10., manipulation_z=None, omega=None, device=None):
+    def __init__(self, manipulation_z=None, omega=None, device=None):
         super(OMPA, self).__init__(manipulation_z, omega, device)
-        self.is_attacker = is_attacker
-        assert kappa > 0.
-        self.kappa = kappa
         self.lambda_ = 1.
 
     def perturb(self, model, x, adj=None, label=None,
                 m=10,
                 lambda_=1.,
                 step_length=1.,
-                stop=True,
                 clone=True,
                 verbose=False):
         """
@@ -44,7 +38,6 @@ class OMPA(BaseAttack):
         @param m: Integer, maximum number of perturbations
         @param lambda_, float, penalty factor
         @param step_length: Float, value is in the range of (0,1]
-        @param stop: Boolean, whether stop once evade victim successfully
         @param clone: Boolean, whether clone the node feature
         @param verbose, Boolean, whether present attack information or not
         """
@@ -63,12 +56,13 @@ class OMPA(BaseAttack):
             var_adv_x = torch.autograd.Variable(adv_x, requires_grad=True)
             hidden, logit = model.forward(var_adv_x, adj)
             adv_loss, done = self.get_losses(model, logit, label, hidden)
-            if torch.all(done) and stop:
+            if torch.all(done):
                 break
             grad = torch.autograd.grad(torch.mean(adv_loss), var_adv_x)[0].data
             perturbation, direction = self.get_perturbation(grad, x, adv_x)
-            if stop:
-                perturbation[done] = 0.
+            # avoid to perturb the examples that are successful to evade the victim
+            # note: this decreases the transferability of adversarial examples
+            perturbation[done] = 0.
             # cope with step length < 1.
             if 0 < step_length <= .5:
                 with torch.no_grad():
@@ -96,12 +90,7 @@ class OMPA(BaseAttack):
         if 'forward_g' in type(model).__dict__.keys():
             de = model.forward_g(hidden, y_pred)
             tau = model.get_tau_sample_wise(y_pred)
-            if not self.is_attacker:
-                loss_no_reduction = ce + self.lambda_ * \
-                                    (torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW))
-            else:
-                loss_no_reduction = ce + self.lambda_ * (torch.clamp(
-                    torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW), max=self.kappa))
+            loss_no_reduction = ce + self.lambda_ * (torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW))
             done = (y_pred == 0.) & (de >= tau)
         else:
             loss_no_reduction = ce
