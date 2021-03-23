@@ -45,7 +45,7 @@ def _main():
                                      **vars(args)
                                      )
     model = model.to(dv)
-    attack = OMPAP(is_attacker=False, device=model.device)
+    attack = OMPAP(device=model.device)
     attack_param = {
         'm': args.m,
         'step_length': args.step_length,
