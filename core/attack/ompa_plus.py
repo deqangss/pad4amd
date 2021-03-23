@@ -29,6 +29,7 @@ class OMPAP(OMPA):
                 m=10,
                 min_lambda_=1e-5,
                 max_lambda_=1e5,
+                base=10.,
                 stop=True,
                 verbose=False):
         assert 0 < min_lambda_ <= max_lambda_
@@ -54,7 +55,7 @@ class OMPAP(OMPA):
                                                 verbose=False
                                                 )
             adv_x[~done] = pert_x
-            self.lambda_ *= 10
+            self.lambda_ *= base
         with torch.no_grad():
             hidden, logit = model.forward(adv_x, adj)
             _, done = self.get_losses(model, logit, label, hidden)
