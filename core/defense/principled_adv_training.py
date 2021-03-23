@@ -59,7 +59,7 @@ class PrincipledAdvTraining(object):
         @param adv_epochs: Integer, epochs for adversarial training
         @param lambda_lower_bound: Float, lower boundary of penalty factor
         @param lambda_upper_bound: Float, upper boundary of penalty factor
-        @param granularity: Integer, 10^granularity exp-space between penalty factors
+        @param granularity: Integer, 10^base exp-space between penalty factors
         @param lr: Float, learning rate of Adam optimizer
         @param weight_decay: Float, penalty factor, default value 5e-4 in Graph ATtention layer (GAT)
         @param verbose: Boolean, whether to show verbose info

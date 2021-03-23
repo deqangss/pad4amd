@@ -26,7 +26,7 @@ class OMPA(BaseAttack):
         self.lambda_ = 1.
 
     def perturb(self, model, x, adj=None, label=None,
-                m_perturbations=10,
+                m=10,
                 lambda_=1.,
                 step_length=1.,
                 stop=True,
@@ -41,7 +41,7 @@ class OMPA(BaseAttack):
         @param x: torch.FloatTensor, node feature vectors (each represents the occurrences of apis in a graph) with shape [batch_size, number_of_graphs, vocab_dim]
         @param adj: torch.FloatTensor or None, adjacency matrix (if not None, the shape is [number_of_graphs, batch_size, vocab_dim, vocab_dim])
         @param label: torch.LongTensor, ground truth labels
-        @param m_perturbations: Integer, maximum number of perturbations
+        @param m: Integer, maximum number of perturbations
         @param lambda_, float, penalty factor
         @param step_length: Float, value is in the range of (0,1]
         @param stop: Boolean, whether stop once evade victim successfully
@@ -59,7 +59,7 @@ class OMPA(BaseAttack):
         self.lambda_ = lambda_
         self.padding_mask = torch.sum(x, dim=-1, keepdim=True) > 1  # we set a graph contains two apis at least
         model.eval()
-        for t in range(m_perturbations):
+        for t in range(m):
             var_adv_x = torch.autograd.Variable(adv_x, requires_grad=True)
             hidden, logit = model.forward(var_adv_x, adj)
             adv_loss, done = self.get_losses(model, logit, label, hidden)
