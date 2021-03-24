@@ -1,5 +1,5 @@
 """
-enhance 'omp_attack': (i) exponential search for looking for lambda; (2) change adversarial loss
+enhance 'omp_attack': (i) exponential search for looking for lambda;
 """
 import torch
 

@@ -17,7 +17,8 @@ logger.addHandler(ErrorHandler)
 
 ompap_argparse = argparse.ArgumentParser(description='arguments for enhancing orthogonal matching pursuit attack')
 ompap_argparse.add_argument('--m_pertb', type=int, default=100, help='maximum number of perturbations.')
-ompap_argparse.add_argument('--kappa', type=float, default=10., help='attack confidence.')
+ompap_argparse.add_argument('--base', type=float, default=10., help='base of a logarithm function.')
+ompap_argparse.add_argument('--kappa', type=float, default=1., help='attack confidence.')
 ompap_argparse.add_argument('--kde', action='store_true', default=False, help='attack model enhanced by kernel density estimation.')
 ompap_argparse.add_argument('--model', type=str, default='p_adv_train',
                             choices=['maldet', 'advmaldet', 'p_adv_train'],
@@ -93,7 +94,8 @@ def _main():
 
     hp_params['n_sample_times'] = 1
 
-    attack = OMPAP(device=model.device)
+    attack = OMPAP(kappa=args.kappa,
+                   device=model.device)
 
     logger.info("\nThe maximum number of perturbations for each example is {}:".format(args.m_pertb))
     y_cent_list, x_density_list = [], []
@@ -106,6 +108,7 @@ def _main():
                                          args.m_pertb,
                                          min_lambda_=1e-5,
                                          max_lambda_=1e5,
+                                         base=args.base,
                                          verbose=True)
             y_cent_batch, x_density_batch = model.inference_batch_wise(adv_x_batch, a, y, use_indicator=True)
             y_cent.append(y_cent_batch)
