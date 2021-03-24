@@ -6,7 +6,7 @@ import time
 
 from core.defense import Dataset
 from core.defense import MalwareDetectorIndicator, PrincipledAdvTraining
-from core.attack import OMPAP
+from core.attack import OMPA
 from tools.utils import save_args, get_group_args, dump_pickle
 from examples.advdet_gmm_test import cmd_md
 
@@ -45,7 +45,7 @@ def _main():
                                      **vars(args)
                                      )
     model = model.to(dv)
-    attack = OMPAP(device=model.device)
+    attack = OMPA(device=model.device)
     attack_param = {
         'm': args.m,
         'step_length': args.step_length,

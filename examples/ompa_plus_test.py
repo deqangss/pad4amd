@@ -93,9 +93,7 @@ def _main():
 
     hp_params['n_sample_times'] = 1
 
-    attack = OMPAP(is_attacker=True,
-                   kappa=args.kappa,
-                   device=model.device)
+    attack = OMPAP(device=model.device)
 
     logger.info("\nThe maximum number of perturbations for each example is {}:".format(args.m_pertb))
     y_cent_list, x_density_list = [], []
