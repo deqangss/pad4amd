@@ -100,7 +100,7 @@ class PrincipledAdvTraining(object):
                 # adversarial examples as much as possible
                 pertb_mal_x = self.attack_model.perturb(self.model, mal_x_batch, mal_adj_batch, mal_y_batch,
                                                         self.attack_param['m'],
-                                                        lambda_=np.random.choice(lambda_space),
+                                                        lambda_=1.,
                                                         step_length=self.attack_param['step_length'],
                                                         verbose=self.attack_param['verbose']
                                                         )
