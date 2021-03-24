@@ -22,13 +22,15 @@ class BaseAttack(Module):
 
     Parameters
     ---------
+    @param kappa, float, attack confidence
     @param manipulation_z, boolean vector shows the modifiable apis
     @param omega, list of 4 sets, each set contains the indices of interdependent apis corresponding to each api
     @param device, 'cpu' or 'cuda'
     """
 
-    def __init__(self, manipulation_z=None, omega=None, device=None):
+    def __init__(self, kappa=10, manipulation_z=None, omega=None, device=None):
         super(BaseAttack, self).__init__()
+        self.kappa = kappa
         self.manipulation_z = manipulation_z
         self.device = device
         self.omega = omega
@@ -71,8 +73,6 @@ class BaseAttack(Module):
             x_mod = x_mod.detach().cpu().numpy()
 
 
-
-
     @staticmethod
     def check_lambda(model):
         if 'forward_g' in type(model).__dict__.keys():
@@ -87,7 +87,8 @@ class BaseAttack(Module):
             assert lambda_ is not None
             de = model.forward_g(hidden, y_pred)
             tau = model.get_tau_sample_wise(y_pred)
-            loss_no_reduction = ce + lambda_ * (torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW))
+            loss_no_reduction = ce + lambda_ * (torch.clamp(
+                    torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW), max=self.kappa))
             # loss_no_reduction = ce + self.lambda_ * (de - model.tau)
             done = (y_pred == 0.) & (de >= tau)
         else:
