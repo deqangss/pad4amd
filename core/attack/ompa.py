@@ -11,13 +11,14 @@ class OMPA(BaseAttack):
 
     Parameters
     ---------
+    @param kappa, float, attack confidence
     @param manipulation_z, manipulations
     @param omega, the indices of interdependent apis corresponding to each api
     @param device, 'cpu' or 'cuda'
     """
 
-    def __init__(self, manipulation_z=None, omega=None, device=None):
-        super(OMPA, self).__init__(manipulation_z, omega, device)
+    def __init__(self, kappa=10, manipulation_z=None, omega=None, device=None):
+        super(OMPA, self).__init__(kappa, manipulation_z, omega, device)
         self.lambda_ = 1.
 
     def perturb(self, model, x, adj=None, label=None,
