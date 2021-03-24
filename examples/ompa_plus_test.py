@@ -100,7 +100,7 @@ def _main():
     model.eval()
     for i in range(hp_params['n_sample_times']):
         y_cent, x_density = [], []
-        for x, a, y in mal_test_dataset_producer:
+        for x, a, y, g_ind in mal_test_dataset_producer:
             x, a, y = utils.to_tensor(x, a, y, model.device)
             adv_x_batch = attack.perturb(model, x, a, y,
                                          args.m_pertb,
