@@ -89,7 +89,7 @@ class MalwareDetectorIndicator(MalwareDetector, DensityEstimator):
             for ith in tqdm(range(self.n_sample_times)):
                 y_cent_batches = []
                 x_prob_batches = []
-                for x, adj, y in test_data_producer:
+                for x, adj, y, _1 in test_data_producer:
                     x, adj, y = utils.to_tensor(x, adj, y, self.device)
                     x_hidden, logits = self.forward(x, adj)
                     y_cent_batches.append(F.softmax(logits, dim=-1))
@@ -137,8 +137,7 @@ class MalwareDetectorIndicator(MalwareDetector, DensityEstimator):
         with torch.no_grad():
             for _ in tqdm(range(self.n_sample_times)):
                 prob_ = []
-                for res in validation_data_producer:
-                    x_val, adj_val, y_val = res
+                for x_val, adj_val, y_val, _ in validation_data_producer:
                     x_val, adj_val, y_val = utils.to_tensor(x_val, adj_val, y_val, self.device)
                     x_hidden, logits = self.forward(x_val, adj_val)
                     x_prob = self.forward_g(x_hidden)
