@@ -16,6 +16,7 @@ class OMPAP(OMPA):
 
     Parameters
     ---------
+    @param is_attacker, Boolean, play the role of attacker (note: the defender conducts adversarial training)
     @param kappa, attack confidence
     @param manipulation_z, manipulations
     @param omega, the indices of interdependent apis corresponding to each api
