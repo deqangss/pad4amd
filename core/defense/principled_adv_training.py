@@ -100,7 +100,7 @@ class PrincipledAdvTraining(object):
                 # adversarial examples as much as possible
                 pertb_mal_x = self.attack_model.perturb(self.model, mal_x_batch, mal_adj_batch, mal_y_batch,
                                                         self.attack_param['m'],
-                                                        lambda_=1.,
+                                                        lambda_=np.random.choice(lambda_space),
                                                         step_length=self.attack_param['step_length'],
                                                         verbose=self.attack_param['verbose']
                                                         )
@@ -118,8 +118,7 @@ class PrincipledAdvTraining(object):
                                                        hidden[:batch_size],
                                                        ith_batch)
                 # appending adversarial training loss
-                # loss_train += F.cross_entropy(logits[batch_size:batch_size + mal_batch_size], mal_y_batch)
-                loss_train += self.model.beta * 0.1 * torch.mean(
+                loss_train += self.model.beta * 0.5 * torch.mean(
                     torch.log(self.model.forward_g(hidden[batch_size: batch_size + mal_batch_size]) + EXP_OVER_FLOW))
 
                 loss_train.backward()
