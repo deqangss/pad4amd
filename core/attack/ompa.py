@@ -55,7 +55,7 @@ class OMPA(BaseAttack):
         for t in range(m):
             var_adv_x = torch.autograd.Variable(adv_x, requires_grad=True)
             hidden, logit = model.forward(var_adv_x, adj)
-            adv_loss, done = self.get_losses(model, logit, label, hidden)
+            adv_loss, done = self.get_losses(model, logit, label, hidden, self.lambda_)
             if torch.all(done):
                 break
             grad = torch.autograd.grad(torch.mean(adv_loss), var_adv_x)[0].data
@@ -77,25 +77,13 @@ class OMPA(BaseAttack):
                     if adj is not None:
                         adj = torch.repeat_interleave(adj, repeats=steps, dim=0)
                     hidden_, logit_ = model.forward(adv_x_expanded, adj)
-                    adv_loss_ = self.get_losses(model, logit_, torch.repeat_interleave(label, steps), hidden_)
+                    adv_loss_ = self.get_losses(model, logit_, torch.repeat_interleave(label, steps), hidden_, self.lambda_)
                     _, worst_pos = torch.max(adv_loss_.reshape(b, steps), dim=1)
                     adv_x = adv_x_expanded.reshape(b, steps, k, v)[torch.arange(b), worst_pos]
             else:
                 adv_x = torch.clip(adv_x + perturbation * direction, min=0., max=1.)
         return adv_x
 
-    def get_losses(self, model, logit, label, hidden=None):
-        ce = F.cross_entropy(logit, label, reduction='none')
-        y_pred = logit.argmax(1)
-        if 'forward_g' in type(model).__dict__.keys():
-            de = model.forward_g(hidden, y_pred)
-            tau = model.get_tau_sample_wise(y_pred)
-            loss_no_reduction = ce + self.lambda_ * (torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW))
-            done = (y_pred == 0.) & (de >= tau)
-        else:
-            loss_no_reduction = ce
-            done = y_pred == 0.
-        return loss_no_reduction, done
 
     def get_perturbation(self, gradients, features, adv_features):
         # 1. mask paddings

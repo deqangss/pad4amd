@@ -4,6 +4,7 @@ from __future__ import print_function
 import os
 import argparse
 
+import torch
 import numpy as np
 
 from core.defense import Dataset
@@ -19,7 +20,6 @@ atta_argparse = argparse.ArgumentParser(description='arguments for orthogonal ma
 atta_argparse.add_argument('--lambda_', type=float, default=1., help='balance factor for waging attack.')
 atta_argparse.add_argument('--step_length', type=float, default=1., help='step length.')
 atta_argparse.add_argument('--m_pertb', type=int, default=100, help='maximum number of perturbations.')
-atta_argparse.add_argument('--kappa', type=float, default=10., help='attack confidence.')
 atta_argparse.add_argument('--kde', action='store_true', default=False, help='attacking model enhanced by kernel density estimation.')
 atta_argparse.add_argument('--model', type=str, default='p_adv_train',
                            choices=['maldet', 'advmaldet', 'p_adv_train'],
@@ -95,17 +95,16 @@ def _main():
     # model.predict(mal_test_dataset_producer, use_indicator=True)
     hp_params['n_sample_times'] = 1
 
-    attack = OMPA(is_attacker=True,
-                  device=model.device,
-                  kappa=args.kappa
-                  )
+    attack = OMPA(device=model.device)
 
     logger.info("\nThe maximum number of perturbations for each example is {}:".format(args.m_pertb))
     y_cent_list, x_density_list = [], []
+    x_mod = torch.empty(size=torch.Size(mal_count, dataset.n_sgs_max, dataset.vocab_size), layout=torch.sparse_coo)
     model.eval()
     for i in range(hp_params['n_sample_times']):
         y_cent, x_density = [], []
-        for x, a, y in mal_test_dataset_producer:
+        x_mod_batch = []
+        for x, a, y, g_ind in mal_test_dataset_producer:
             x, a, y = utils.to_tensor(x, a, y, model.device)
             adv_x_batch = attack.perturb(model, x, a, y,
                                          args.m_pertb,
@@ -115,6 +114,7 @@ def _main():
             y_cent_batch, x_density_batch = model.inference_batch_wise(adv_x_batch, a, y, use_indicator=True)
             y_cent.append(y_cent_batch)
             x_density.append(x_density_batch)
+            x_mod_batch.append()
         y_cent_list.append(np.vstack(y_cent))
         x_density_list.append(np.concatenate(x_density))
 
