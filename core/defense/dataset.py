@@ -168,7 +168,7 @@ class Dataset(torch.utils.data.Dataset):
                     adjs_padded.append(adjs[i])
 
         # shape [batch_size, self.n_sg_used, vocab_size]
-        features_padded = np.array([np.stack(list(feat), axis=0) for feat in zip(*features_padded)]).transpose(1,0,2)
+        features_padded = np.array([np.stack(list(feat), axis=0) for feat in zip(*features_padded)]).transpose(1, 0, 2)
 
         if self.is_adj:
             # A list (with size self.k) of sparse adjacent matrix in the mini-batch level, in which each element
@@ -178,7 +178,6 @@ class Dataset(torch.utils.data.Dataset):
                     adjs_padded[i][j] = utils.sparse_mx_to_torch_sparse_tensor(
                         utils.sp_to_symmetric_sp(adjs_padded[i][j])
                     )
-
             adjs_padded_t = torch.stack([torch.stack(list(adj)) for adj in list(zip(*adjs_padded))[:self.k]])
             # dataloader does not support sparse matrix
             adjs_padded_tuple = utils.tensor_coo_sp_to_ivs(adjs_padded_t)
@@ -223,8 +222,7 @@ class DatasetTorch(torch.utils.data.Dataset):
         feature_path = self.dataX[index]
         y = self.datay[index]
         # Load data and get label
-        x, adj, y = \
-            self.dataset_obj.get_numerical_input([feature_path], [y], name=self.name + str(index))
-        assert len(x) > 0 and len(adj) > 0, feature_path
+        x, adj, y = self.dataset_obj.get_numerical_input([feature_path], [y], name=self.name + str(index))
+        assert len(x) > 0 and len(adj) > 0, "Fail to load: " + feature_path
         return x[0], adj[0], y[0]
 
