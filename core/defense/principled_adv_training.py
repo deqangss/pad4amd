@@ -85,7 +85,7 @@ class PrincipledAdvTraining(object):
         for i in range(adv_epochs):
             losses, accuracies = [], []
             for ith_batch, res in enumerate(train_data_producer):
-                x_batch, adj_batch, y_batch = res
+                x_batch, adj_batch, y_batch, _1 = res
                 x_batch, adj_batch, y_batch = utils.to_tensor(x_batch, adj_batch, y_batch, self.model.device)
                 batch_size = x_batch.shape[0]
 

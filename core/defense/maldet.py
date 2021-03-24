@@ -113,10 +113,9 @@ class MalwareDetector(nn.Module):
         with torch.no_grad():
             for ith in tqdm(range(self.n_sample_times)):
                 conf_batches = []
-                for res in test_data_producer:
-                    x, adj, y = res
+                for x, adj, y, _1 in test_data_producer:
                     x, adj, y = utils.to_tensor(x, adj, y, self.device)
-                    _, logits = self.forward(x, adj)
+                    _2, logits = self.forward(x, adj)
                     conf_batches.append(F.softmax(logits, dim=-1))
                     if ith == 0:
                         gt_labels.append(y)
@@ -184,7 +183,7 @@ class MalwareDetector(nn.Module):
             self.train()
             losses, accuracies = [], []
             for idx_batch, res in enumerate(train_data_producer):
-                x_batch, adj, y_batch = res
+                x_batch, adj, y_batch, _1 = res
                 x_batch, adj_batch, y_batch = utils.to_tensor(x_batch, adj, y_batch, self.device)
                 start_time = time.time()
                 optimizer.zero_grad()
@@ -208,7 +207,7 @@ class MalwareDetector(nn.Module):
             avg_acc_val = []
             with torch.no_grad():
                 for res in validation_data_producer:
-                    x_val, adj_val, y_val = res
+                    x_val, adj_val, y_val, _2 = res
                     x_val, adj_val, y_val = utils.to_tensor(x_val, adj_val, y_val, self.device)
                     _, logits = self.forward(x_val, adj_val)
                     acc_val = (logits.argmax(1) == y_val).sum().item()
