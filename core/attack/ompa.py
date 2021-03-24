@@ -2,6 +2,7 @@ import torch
 import torch.nn.functional as F
 
 from core.attack.base_attack import BaseAttack
+
 EXP_OVER_FLOW = 1e-30
 
 
@@ -17,8 +18,9 @@ class OMPA(BaseAttack):
     @param device, 'cpu' or 'cuda'
     """
 
-    def __init__(self, kappa=10, manipulation_z=None, omega=None, device=None):
+    def __init__(self, is_attacker=True, kappa=10, manipulation_z=None, omega=None, device=None):
         super(OMPA, self).__init__(kappa, manipulation_z, omega, device)
+        self.is_attacker = is_attacker
         self.lambda_ = 1.
 
     def perturb(self, model, x, adj=None, label=None,
@@ -56,7 +58,7 @@ class OMPA(BaseAttack):
         for t in range(m):
             var_adv_x = torch.autograd.Variable(adv_x, requires_grad=True)
             hidden, logit = model.forward(var_adv_x, adj)
-            adv_loss, done = self.get_losses(model, logit, label, hidden, self.lambda_)
+            adv_loss, done = self.get_losses(model, logit, label, hidden)
             if torch.all(done):
                 break
             grad = torch.autograd.grad(torch.mean(adv_loss), var_adv_x)[0].data
@@ -78,13 +80,12 @@ class OMPA(BaseAttack):
                     if adj is not None:
                         adj = torch.repeat_interleave(adj, repeats=steps, dim=0)
                     hidden_, logit_ = model.forward(adv_x_expanded, adj)
-                    adv_loss_ = self.get_losses(model, logit_, torch.repeat_interleave(label, steps), hidden_, self.lambda_)
+                    adv_loss_ = self.get_losses(model, logit_, torch.repeat_interleave(label, steps), hidden_)
                     _, worst_pos = torch.max(adv_loss_.reshape(b, steps), dim=1)
                     adv_x = adv_x_expanded.reshape(b, steps, k, v)[torch.arange(b), worst_pos]
             else:
                 adv_x = torch.clip(adv_x + perturbation * direction, min=0., max=1.)
         return adv_x
-
 
     def get_perturbation(self, gradients, features, adv_features):
         # 1. mask paddings
@@ -117,3 +118,21 @@ class OMPA(BaseAttack):
         perturbations += (torch.sum(directions, dim=-1, keepdim=True) < 0) * checking_nonexist_api
         directions += perturbations * self.omega
         return perturbations, directions
+
+    def get_losses(self, model, logit, label, hidden=None):
+        ce = F.cross_entropy(logit, label, reduction='none')
+        y_pred = logit.argmax(1)
+        if 'forward_g' in type(model).__dict__.keys():
+            de = model.forward_g(hidden, y_pred)
+            tau = model.get_tau_sample_wise(y_pred)
+            if self.is_attacker:
+                loss_no_reduction = ce + self.lambda_ * (torch.clamp(
+                    torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW), max=self.kappa))
+            else:
+                loss_no_reduction = ce + self.lambda_ * (torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW))
+            # loss_no_reduction = ce + self.lambda_ * (de - model.tau)
+            done = (y_pred == 0.) & (de >= tau)
+        else:
+            loss_no_reduction = ce
+            done = y_pred == 0.
+        return loss_no_reduction, done

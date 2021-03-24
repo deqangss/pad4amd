@@ -22,8 +22,8 @@ class OMPAP(OMPA):
     @param device, 'cpu' or 'cuda'
     """
 
-    def __init__(self, kappa=10., manipulation_z=None, omega=None, device=None):
-        super(OMPAP, self).__init__(kappa, manipulation_z, omega, device)
+    def __init__(self, is_attacker=True, kappa=10., manipulation_z=None, omega=None, device=None):
+        super(OMPAP, self).__init__(is_attacker, kappa, manipulation_z, omega, device)
 
     def perturb(self, model, x, adj=None, label=None,
                 m=10,
@@ -37,7 +37,7 @@ class OMPAP(OMPA):
         while self.lambda_ <= max_lambda_:
             with torch.no_grad():
                 hidden, logit = model.forward(adv_x, adj)
-                _, done = self.get_losses(model, logit, label, hidden, self.lambda_)
+                _, done = self.get_losses(model, logit, label, hidden)
             if verbose:
                 logger.info(f"Ompa attack: attack effectiveness {done.sum().item() / x.size()[0]} with lambda {self.lambda_}.")
             if torch.all(done):
@@ -55,7 +55,7 @@ class OMPAP(OMPA):
             self.lambda_ *= base
         with torch.no_grad():
             hidden, logit = model.forward(adv_x, adj)
-            _, done = self.get_losses(model, logit, label, hidden, self.lambda_)
+            _, done = self.get_losses(model, logit, label, hidden)
             if verbose:
                 logger.info(f"Ompa: attack effectiveness {done.sum().item() / x.size()[0]}.")
         return adv_x

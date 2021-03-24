@@ -11,6 +11,7 @@ from core.defense import Dataset
 from core.defense import MalwareDetector, MalwareDetectorIndicator, PrincipledAdvTraining, KernelDensityEstimation
 from core.attack import OMPA
 from tools import utils
+from core.droidfeature import inverse_feature_extraction
 from config import config, logging, ErrorHandler
 
 logger = logging.getLogger('examples.omp_attack_test')
@@ -99,11 +100,11 @@ def _main():
 
     logger.info("\nThe maximum number of perturbations for each example is {}:".format(args.m_pertb))
     y_cent_list, x_density_list = [], []
-    # x_mod = torch.empty(size=torch.Size(mal_count, dataset.n_sgs_max, dataset.vocab_size), layout=torch.sparse_coo)
+    x_mod_integrated = torch.empty(size=torch.Size(mal_count, dataset.n_sgs_max, dataset.vocab_size), layout=torch.sparse_coo)
     model.eval()
     for i in range(hp_params['n_sample_times']):
         y_cent, x_density = [], []
-        x_mod_batch = []
+        x_mod = []
         for x, a, y, g_ind in mal_test_dataset_producer:
             x, a, y = utils.to_tensor(x, a, y, model.device)
             adv_x_batch = attack.perturb(model, x, a, y,
@@ -114,6 +115,7 @@ def _main():
             y_cent_batch, x_density_batch = model.inference_batch_wise(adv_x_batch, a, y, use_indicator=True)
             y_cent.append(y_cent_batch)
             x_density.append(x_density_batch)
+            x_mod.append(inverse_feature_extraction.get_mod(adv_x_batch, x, g_ind, sp=True))
         y_cent_list.append(np.vstack(y_cent))
         x_density_list.append(np.concatenate(x_density))
 
