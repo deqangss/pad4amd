@@ -118,7 +118,7 @@ class PrincipledAdvTraining(object):
                                                        hidden[:batch_size],
                                                        ith_batch)
                 # appending adversarial training loss
-                loss_train += self.model.beta * 0.5 * torch.mean(
+                loss_train += self.model.beta * 0.1 * torch.mean(
                     torch.log(self.model.forward_g(hidden[batch_size: batch_size + mal_batch_size]) + EXP_OVER_FLOW))
 
                 loss_train.backward()
