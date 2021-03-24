@@ -23,7 +23,7 @@ class OMPAP(OMPA):
     @param device, 'cpu' or 'cuda'
     """
 
-    def __init__(self, is_attacker=True, kappa=10., manipulation_z=None, omega=None, device=None):
+    def __init__(self, is_attacker=True, kappa=1., manipulation_z=None, omega=None, device=None):
         super(OMPAP, self).__init__(is_attacker, kappa, manipulation_z, omega, device)
 
     def perturb(self, model, x, adj=None, label=None,

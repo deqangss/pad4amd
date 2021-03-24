@@ -28,7 +28,7 @@ class BaseAttack(Module):
     @param device, 'cpu' or 'cuda'
     """
 
-    def __init__(self, kappa=10, manipulation_z=None, omega=None, device=None):
+    def __init__(self, kappa=1., manipulation_z=None, omega=None, device=None):
         super(BaseAttack, self).__init__()
         self.kappa = kappa
         self.manipulation_z = manipulation_z

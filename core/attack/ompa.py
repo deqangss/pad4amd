@@ -19,7 +19,7 @@ class OMPA(BaseAttack):
     @param device, 'cpu' or 'cuda'
     """
 
-    def __init__(self, is_attacker=True, kappa=10, manipulation_z=None, omega=None, device=None):
+    def __init__(self, is_attacker=True, kappa=1., manipulation_z=None, omega=None, device=None):
         super(OMPA, self).__init__(kappa, manipulation_z, omega, device)
         self.is_attacker = is_attacker
         self.lambda_ = 1.
