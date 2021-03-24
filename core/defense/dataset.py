@@ -148,6 +148,7 @@ class Dataset(torch.utils.data.Dataset):
         batch_size = len(features)
         features_padded = []
         adjs_padded = []
+        g_ind = []
 
         batch_n_sg_max = np.max([len(feature) for feature in features])
         n_sg_used = batch_n_sg_max if batch_n_sg_max < self.n_sgs_max else self.n_sgs_max
@@ -161,11 +162,13 @@ class Dataset(torch.utils.data.Dataset):
                     adjs_padded.append([adjs[i][_i] for _i in indices])
             else:
                 n = n_sg_used - len(feature)
+                indices = np.arange(n_sg_used)
                 feature.extend([np.zeros_like((feature[0]), dtype=np.float32) for _ in range(n)])
                 features_padded.append(feature)
                 if self.is_adj:
                     adjs[i].extend([csr_matrix(adjs[i][0].shape, dtype=np.float32) for _ in range(n)])
                     adjs_padded.append(adjs[i])
+            g_ind.append(indices)
 
         # shape [batch_size, self.n_sg_used, vocab_size]
         features_padded = np.array([np.stack(list(feat), axis=0) for feat in zip(*features_padded)]).transpose(1, 0, 2)
@@ -184,7 +187,7 @@ class Dataset(torch.utils.data.Dataset):
         else:
             adjs_padded_tuple = None
 
-        return features_padded, adjs_padded_tuple, labels_
+        return features_padded, adjs_padded_tuple, labels_, np.array(g_ind)
 
     def get_input_producer(self, data, y, batch_size, name='train'):
         params = {'batch_size': batch_size,
