@@ -99,7 +99,7 @@ def _main():
 
     logger.info("\nThe maximum number of perturbations for each example is {}:".format(args.m_pertb))
     y_cent_list, x_density_list = [], []
-    x_mod = torch.empty(size=torch.Size(mal_count, dataset.n_sgs_max, dataset.vocab_size), layout=torch.sparse_coo)
+    # x_mod = torch.empty(size=torch.Size(mal_count, dataset.n_sgs_max, dataset.vocab_size), layout=torch.sparse_coo)
     model.eval()
     for i in range(hp_params['n_sample_times']):
         y_cent, x_density = [], []
@@ -114,7 +114,6 @@ def _main():
             y_cent_batch, x_density_batch = model.inference_batch_wise(adv_x_batch, a, y, use_indicator=True)
             y_cent.append(y_cent_batch)
             x_density.append(x_density_batch)
-            x_mod_batch.append()
         y_cent_list.append(np.vstack(y_cent))
         x_density_list.append(np.concatenate(x_density))
 
