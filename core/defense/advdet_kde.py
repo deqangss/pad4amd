@@ -71,7 +71,7 @@ class KernelDensityEstimation(DensityEstimator):
         with torch.no_grad():
             for _ in tqdm(range(self.model.n_sample_times)):
                 prob_, Y = [], []
-                for x_val, adj_val, y_val in validation_data_producer:
+                for x_val, adj_val, y_val, _1 in validation_data_producer:
                     x_val, adj_val, y_val = utils.to_tensor(x_val, adj_val, y_val, self.device)
                     x_hidden, logits = self.forward(x_val, adj_val)
                     x_prob = self.forward_g(x_hidden, y_val)
@@ -128,7 +128,7 @@ class KernelDensityEstimation(DensityEstimator):
             for ith in tqdm(range(self.model.n_sample_times)):
                 y_conf_batches = []
                 x_prob_batches = []
-                for x, adj, y  in test_data_producer:
+                for x, adj, y, _1 in test_data_producer:
                     x, adj, y = utils.to_tensor(x, adj, y, self.device)
                     x_hidden, logit = self.forward(x, adj)
                     y_conf_batches.append(F.softmax(logit, dim=-1))
@@ -174,7 +174,7 @@ class KernelDensityEstimation(DensityEstimator):
     def fit(self, train_dataset_producer, val_dataet_producer):
         X_hidden, Y = [], []
         self.eval()
-        for x, a, y in train_dataset_producer:
+        for x, a, y, _1 in train_dataset_producer:
             x, a, y = utils.to_tensor(x, a, y, self.device)
             x_hidden, _ = self.forward(x, a)
             X_hidden.append(x_hidden)
