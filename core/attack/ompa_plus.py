@@ -38,7 +38,7 @@ class OMPAP(OMPA):
         while self.lambda_ <= max_lambda_:
             with torch.no_grad():
                 hidden, logit = model.forward(adv_x, adj)
-                _, done = self.get_losses(model, logit, label, hidden)
+                _, done = self.get_loss(model, logit, label, hidden)
             if verbose:
                 logger.info(f"Ompa attack: attack effectiveness {done.sum().item() / x.size()[0]} with lambda {self.lambda_}.")
             if torch.all(done):
@@ -56,7 +56,7 @@ class OMPAP(OMPA):
             self.lambda_ *= base
         with torch.no_grad():
             hidden, logit = model.forward(adv_x, adj)
-            _, done = self.get_losses(model, logit, label, hidden)
+            _, done = self.get_loss(model, logit, label, hidden)
             if verbose:
                 logger.info(f"Ompa: attack effectiveness {done.sum().item() / x.size()[0]}.")
         return adv_x

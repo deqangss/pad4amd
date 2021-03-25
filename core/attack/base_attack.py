@@ -80,7 +80,7 @@ class BaseAttack(Module):
         else:
             return False
 
-    def get_losses(self, model, logit, label, hidden=None, lambda_=None):
+    def get_loss(self, model, logit, label, hidden=None, lambda_=None):
         ce = F.cross_entropy(logit, label, reduction='none')
         y_pred = logit.argmax(1)
         if 'forward_g' in type(model).__dict__.keys():

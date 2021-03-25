@@ -94,13 +94,13 @@ def _main():
 
     # model.predict(mal_test_dataset_producer, use_indicator=False)
     # model.predict(mal_test_dataset_producer, use_indicator=True)
-    hp_params['n_sample_times'] = 1
+    hp_params['n_sample_times'] = 2
 
     attack = OMPA(device=model.device)
 
     logger.info("\nThe maximum number of perturbations for each example is {}:".format(args.m_pertb))
     y_cent_list, x_density_list = [], []
-    x_mod_integrated = torch.empty(size=torch.Size(mal_count, dataset.n_sgs_max, dataset.vocab_size), layout=torch.sparse_coo)
+    x_mod_integrated = []
     model.eval()
     for i in range(hp_params['n_sample_times']):
         y_cent, x_density = [], []
@@ -115,10 +115,11 @@ def _main():
             y_cent_batch, x_density_batch = model.inference_batch_wise(adv_x_batch, a, y, use_indicator=True)
             y_cent.append(y_cent_batch)
             x_density.append(x_density_batch)
-            x_mod.append(inverse_feature_extraction.get_mod(adv_x_batch, x, g_ind, sp=True))
+            x_mod.extend(dataset.get_modification(adv_x_batch, x, g_ind, True))
         y_cent_list.append(np.vstack(y_cent))
         x_density_list.append(np.concatenate(x_density))
-
+        # following function: if both addition and removal operations are applied to a same API, we have it be unchanged
+        x_mod_integrated = dataset.modification_integ(x_mod_integrated, x_mod)
     y_cent = np.mean(np.stack(y_cent_list, axis=1), axis=1)
     y_pred = np.argmax(y_cent, axis=-1)
     logger.info(
