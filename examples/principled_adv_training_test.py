@@ -11,6 +11,7 @@ from tools.utils import save_args, get_group_args, dump_pickle
 from examples.advdet_gmm_test import cmd_md
 
 indicator_argparse = cmd_md.add_argument_group(title='towards principled adv training')
+indicator_argparse.add_argument('--beta_a', type=float, default=0.001, help='penalty factor on adversarial loss.')
 indicator_argparse.add_argument('--adv_epochs', type=int, default=20, help='epochs for adversarial training.')
 indicator_argparse.add_argument('--m', type=int, default=10, help='maximum number of perturbations.')
 indicator_argparse.add_argument('--step_length', type=float, default=1., help='step length.')
@@ -58,6 +59,7 @@ def _main():
                                           val_dataset_producer,
                                           epochs=args.epochs,
                                           adv_epochs=args.adv_epochs,
+                                          beta_a=args.beta_a,
                                           lr=args.lr,
                                           weight_decay=args.weight_decay
                                           )

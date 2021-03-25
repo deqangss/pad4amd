@@ -41,6 +41,7 @@ class PrincipledAdvTraining(object):
         self.model.model_save_path = self.model_save_path
 
     def fit(self, train_data_producer, validation_data_producer, epochs=100, adv_epochs=20,
+            beta_a=0.001,
             lambda_lower_bound=1e-3,
             lambda_upper_bound=1e3,
             granularity=1,
@@ -57,6 +58,7 @@ class PrincipledAdvTraining(object):
         @param validation_data_producer: Object, an dataloader object for producing validation dataset
         @param epochs: Integer, epochs for normal training (i.e., no perturbed examples are attended)
         @param adv_epochs: Integer, epochs for adversarial training
+        @param beta_a: Float, penalty factor for adversarial loss
         @param lambda_lower_bound: Float, lower boundary of penalty factor
         @param lambda_upper_bound: Float, upper boundary of penalty factor
         @param granularity: Integer, 10^base exp-space between penalty factors
@@ -118,7 +120,7 @@ class PrincipledAdvTraining(object):
                                                        hidden[:batch_size],
                                                        ith_batch)
                 # appending adversarial training loss
-                loss_train += self.model.beta * 0.1 * torch.mean(
+                loss_train += beta_a * torch.mean(
                     torch.log(self.model.forward_g(hidden[batch_size: batch_size + mal_batch_size]) + EXP_OVER_FLOW))
 
                 loss_train.backward()
