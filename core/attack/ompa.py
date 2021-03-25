@@ -126,6 +126,7 @@ class OMPA(BaseAttack):
         if 'forward_g' in type(model).__dict__.keys():
             de = model.forward_g(hidden, y_pred)
             print(de)
+            print(y_pred)
             tau = model.get_tau_sample_wise(y_pred)
             if self.is_attacker:
                 loss_no_reduction = ce + self.lambda_ * (torch.clamp(
