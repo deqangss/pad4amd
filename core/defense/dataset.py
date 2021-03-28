@@ -38,14 +38,14 @@ class Dataset(torch.utils.data.Dataset):
         assert self.dataset_name in ['drebin', 'androzoo'], 'Expected either "drebin" or "androzoo".'
         if feature_ext_args is None:
             self.feature_extractor = Apk2graphs(config.get('metadata', 'naive_data_pool'),
-                                                config.get(self.dataset_name, 'intermediate'))
+                                                config.get('dataset', 'intermediate'))
         else:
             assert isinstance(feature_ext_args, dict)
             self.feature_extractor = Apk2graphs(config.get('metadata', 'naive_data_pool'),
-                                                config.get(self.dataset_name, 'intermediate'),
+                                                config.get('dataset', 'intermediate'),
                                                 **feature_ext_args)
 
-        data_saving_path = os.path.join(config.get(self.dataset_name, 'intermediate'), 'dataset.idx')
+        data_saving_path = os.path.join(config.get('dataset', 'intermediate'), 'dataset.idx')
         if os.path.exists(data_saving_path):
             (self.train_dataset, self.validation_dataset, self.test_dataset) = utils.read_pickle(data_saving_path)
 
@@ -160,6 +160,7 @@ class Dataset(torch.utils.data.Dataset):
                 features_padded.append([feature[_i] for _i in indices])
                 if self.is_adj:
                     adjs_padded.append([adjs[i][_i] for _i in indices])
+                indices_slicing = np.array(list(map(dict(zip(indices, range(n_sg_used))).get, range(n_sg_used))))
             else:
                 n = n_sg_used - len(feature)
                 indices = np.arange(n_sg_used)
@@ -168,7 +169,8 @@ class Dataset(torch.utils.data.Dataset):
                 if self.is_adj:
                     adjs[i].extend([csr_matrix(adjs[i][0].shape, dtype=np.float32) for _ in range(n)])
                     adjs_padded.append(adjs[i])
-            g_ind.append(indices)
+                indices_slicing = indices
+            g_ind.append(indices_slicing)
 
         # shape [batch_size, self.n_sg_used, vocab_size]
         features_padded = np.array([np.stack(list(feat), axis=0) for feat in zip(*features_padded)]).transpose(1, 0, 2)
@@ -197,6 +199,40 @@ class Dataset(torch.utils.data.Dataset):
         return torch.utils.data.DataLoader(DatasetTorch(data, y, self, name=name),
                                            worker_init_fn=lambda x: np.random.seed(torch.randint(0, 2^31, [1,])[0] + x),
                                            **params)
+
+    @staticmethod
+    def get_modification(adv_x, x, g_ind, sp=True):
+        assert isinstance(adv_x, (np.ndarray, torch.Tensor))
+        assert isinstance(x, (np.ndarray, torch.Tensor))
+        x_mod = adv_x - x
+        if isinstance(x_mod, np.ndarray):
+            x_mod = np.array([x_mod[i, g_ind[i]] for i in range(x.shape[0])])
+        else:
+            x_mod = torch.stack([x_mod[i, g_ind[i]] for i in range(x.shape[0])])
+
+        if sp:
+            if isinstance(x_mod, torch.Tensor):
+                return x_mod.to_sparse().cpu().unbind(dim=0)
+            else:
+                return torch.tensor(x_mod, dtype=torch.int).to_sparse().cpu().unbind(dim=0)
+        else:
+            if isinstance(x_mod, torch.Tensor):
+                return x_mod.cpu().unbind(dim=0)
+            else:
+                return np.split(x_mod, x_mod.shape[0], axis=0)
+
+    @staticmethod
+    def modification_integ(x_mod_integrated, x_mod):
+        assert isinstance(x_mod_integrated, list) and isinstance(x_mod, list)
+        if len(x_mod_integrated) == 0:
+            return x_mod
+        assert len(x_mod_integrated) == len(x_mod)
+        for i in range(len(x_mod)):
+            # warning: the addition is list appending when tensors are on gpu,
+            # while it is summation of two tensors on cpu
+            assert not x_mod[i].is_cuda
+            x_mod_integrated[i] += x_mod[i]
+        return x_mod_integrated
 
     def clean_up(self):
         self.temp_dir_handle.cleanup()

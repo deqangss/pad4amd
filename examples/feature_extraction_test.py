@@ -19,7 +19,7 @@ cmd_md.add_argument('--use_feature_selection', action='store_true', default=True
                     help='use feature selection or not.')
 cmd_md.add_argument('--use_graph_merging', action='store_true', default=True,
                     help='merge graph or not.')
-cmd_md.add_argument('--max_vocab_size', type=int, default=10000,
+cmd_md.add_argument('--max_vocab_size', type=int, default=5000,
                     help='maximum number of vocabulary size')
 cmd_md.add_argument('--update', action='store_true', default=False,
                     help='update the existed features.')
@@ -28,9 +28,9 @@ args = cmd_md.parse_args()
 
 
 def _main():
-    malware_dir_name = config.get('drebin', 'malware_dir')
-    benware_dir_name = config.get('drebin', 'benware_dir')
-    meta_data_saving_dir = config.get('drebin', 'intermediate')
+    malware_dir_name = config.get('dataset', 'malware_dir')
+    benware_dir_name = config.get('dataset', 'benware_dir')
+    meta_data_saving_dir = config.get('dataset', 'intermediate')
     naive_data_saving_dir = config.get('metadata', 'naive_data_pool')
     feature_extractor = Apk2graphs(naive_data_saving_dir,
                                    meta_data_saving_dir,

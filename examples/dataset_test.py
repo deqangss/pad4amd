@@ -4,8 +4,11 @@ from __future__ import print_function
 
 import numpy as np
 import argparse
+
 from core.defense import Dataset
 from tools.utils import ivs_to_tensor_coo_sp
+
+from config import config
 
 cmd_md = argparse.ArgumentParser(description='arguments for feature extraction')
 cmd_md.add_argument('--proc_number', type=int, default=6,
@@ -27,12 +30,12 @@ args_dict = vars(args)
 
 
 def main_():
-    dataset = Dataset('drebin', is_adj=True, feature_ext_args=args_dict)
+    dataset = Dataset(config.get('DEFAULT', 'dataset_name'), is_adj=True, feature_ext_args=args_dict)
     validation_data, valy = dataset.validation_dataset
     val_dataset_producer = dataset.get_input_producer(validation_data, valy, batch_size=2, name='train')
     for epoch in range(1):
         for idx, res in enumerate(val_dataset_producer):
-            x, adj, l = res
+            x, adj, l, i = res
             if dataset.is_adj is not None:
                 adjs = ivs_to_tensor_coo_sp(adj)
                 adj = adjs[5, 1].to_dense().numpy()
