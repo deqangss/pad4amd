@@ -132,7 +132,7 @@ class MalwareDetector(nn.Module):
         _, logit = self.forward(x, a)
         return torch.softmax(logit, dim=-1).detach().cpu().numpy(), np.ones((logit.size()[0], ))
 
-    def predict(self, test_data_producer, *args, **kwargs):
+    def predict(self, test_data_producer):
         # evaluation
         confidence, y_true = self.inference(test_data_producer)
         y_pred = confidence.argmax(1).cpu().numpy()
