@@ -131,10 +131,11 @@ def apk2graphs(apk_path, max_number_of_sequences=15000, max_recursive_depth=50, 
                                             )
 
     # 5. merger graphs based on class name
-    new_seq_dict = merge_graphs(api_sequence_dict, minimum_graphs_of_leaf, maximum_graphs_of_leaf)
+    if use_graph_merging and len(api_sequence_dict) > 0:
+        api_sequence_dict = merge_graphs(api_sequence_dict, minimum_graphs_of_leaf, maximum_graphs_of_leaf)
     # 6. saving the results
-    if len(new_seq_dict) > 0:
-        save_to_disk(new_seq_dict, saving_path)
+    if len(api_sequence_dict) > 0:
+        save_to_disk(api_sequence_dict, saving_path)
         return saving_path
     else:
         raise ValueError("No graph found: " + apk_path)
@@ -476,6 +477,15 @@ def get_api_info(node_tag):
     return api_info
 
 
+def get_caller_info(node_tag):
+    if not isinstance(node_tag, str):
+        raise TypeError
+    assert TAG_SPLITTER in node_tag
+    call_info = node_tag.split(TAG_SPLITTER)[1]
+    class_name, method_statement = call_info.split(';', 1)
+    return class_name+';', method_statement
+
+
 def merge_graphs(api_seq_dict, minimum_points=16, maximum_points=32):
     """
     merge graphs based on class names
@@ -550,7 +560,7 @@ def merge_graphs(api_seq_dict, minimum_points=16, maximum_points=32):
 
 def _main():
     rtn_str = apk2graphs(
-        '/local_disk/data/Android/koodous/benign_samples/a8b37c627407d1444967828bcfe09d4a093dad48b5ebd964633baaf318de7916',
+        '/local_disk/data/Android/drebin/benign_samples/a8b37c627407d1444967828bcfe09d4a093dad48b5ebd964633baaf318de7916',
         200000,
         50,
         1,
