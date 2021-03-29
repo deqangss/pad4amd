@@ -27,21 +27,19 @@ class PGDl1(BaseAttack):
     Parameters
     ---------
     @param kappa, attack confidence
-    @param manipulation_z, manipulations
+    @param manipulation_x, manipulations
     @param omega, the indices of interdependent apis corresponding to each api
     @param device, 'cpu' or 'cuda'
     """
 
-    def __init__(self, kappa=10., manipulation_z=None, omega=None, device=None):
-        super(PGDl1, self).__init__(manipulation_z, omega, device)
-        self.kappa = kappa
+    def __init__(self, kappa=1., manipulation_x=None, omega=None, device=None):
+        super(PGDl1, self).__init__(kappa, manipulation_x, omega, device)
         self.lambda_ = 1.
 
-    def perturb(self, model, x, adj=None, label=None,
-                m_perturbations=10,
-                lambda_=1.,
-                stop=True,
-                verbose=False):
+    def _perturb(self, model, x, adj=None, label=None,
+                 m_perturbations=10,
+                 lambda_=1.,
+                 verbose=False):
         """
         perturb node feature vectors
 
@@ -53,62 +51,65 @@ class PGDl1(BaseAttack):
         @param label: torch.LongTensor, ground truth labels
         @param m_perturbations: Integer, maximum number of perturbations
         @param lambda_, float, penalty factor
-        @param stop, Boolean, whether stop once evade victim successfully
         @param verbose, Boolean, whether present attack information or not
         """
         if x is None or x.shape[0] <= 0:
             return []
-        adv_x = x.detach().clone().to(torch.float)
+        adv_x = x
         self.lambda_ = lambda_
         self.padding_mask = torch.sum(adv_x, dim=-1, keepdim=True) > 1  # we set a graph contains two apis at least
         model.eval()
         for t in range(m_perturbations):
             var_adv_x = torch.autograd.Variable(adv_x, requires_grad=True)
             hidden, logit = model.forward(var_adv_x, adj)
-            loss, done = self.get_losses(model, logit, label, hidden)
-            if verbose:
-                print(
-                    f"\n Iteration {t}: the accuracy is {(logit.argmax(1) == 1.).sum().item() / adv_x.size()[0] * 100:.3f}.")
-            if torch.all(done) and stop:
+            loss, done = self.get_loss(model, logit, label, hidden, self.lambda_)
+            # if verbose:
+            #     print(f"\n Iteration {t}: the accuracy is {(logit.argmax(1) == 1.).sum().item() / adv_x.size()[0] * 100:.3f}.")
+            if torch.all(done):
                 break
-            grad = torch.autograd.grad(torch.mean(loss), var_adv_x)[0].data
+            grad = torch.autograd.grad(torch.mean(loss), var_adv_x)[0]
             perturbation, direction = self.get_perturbation(grad, x, adv_x)
-            if stop:
-                perturbation[done] = 0.
+            # avoid to perturb the examples that are successful to evade the victim
+            perturbation[done] = 0.
             adv_x = torch.clamp(adv_x + perturbation * direction, min=0., max=1.)
         return adv_x
 
-    def perturb_ehs(self, model, x, adj=None, label=None,
-                    m=10,
-                    min_lambda_=1e-5,
-                    max_lambda_=1e5,
-                    granularity=10.,
-                    stop=True,
-                    verbose=False):
+    def perturb(self, model, x, adj=None, label=None,
+                m=10,
+                min_lambda_=1e-5,
+                max_lambda_=1e5,
+                base=10.,
+                verbose=False):
         """
         enhance attack
         """
         assert 0 < min_lambda_ <= max_lambda_
         self.lambda_ = min_lambda_
-        adv_x = x.clone()
+        adv_x = x.detach().clone().to(torch.float)
         while self.lambda_ <= max_lambda_:
             hidden, logit = model.forward(adv_x, adj)
-            _, done = self.get_losses(model, logit, label, hidden)
+            _, done = self.get_loss(model, logit, label, hidden, self.lambda_)
             if verbose:
                 logger.info(
-                    f"PGD l1 attack: attack effectiveness {done.sum().item() / float(x.size()[0]):.3f} with lambda {self.lambda_}.")
+                    f"PGD l1: attack effectiveness {done.sum().item() / float(x.size()[0]) * 100:.3f}% with lambda {self.lambda_}.")
             if torch.all(done):
-                return adv_x
-
+                break
+            adv_x[~done] = x[~done]  # recompute the perturbation under other penalty factors
             adv_adj = None if adj is None else adv_adj[~done]
-            pert_x = self.perturb(model, adv_x[~done], adv_adj, label[~done],
-                                  m,
-                                  lambda_=self.lambda_,
-                                  stop=stop,
-                                  verbose=False
-                                  )
+            pert_x = self._perturb(model, adv_x[~done], adv_adj, label[~done],
+                                   m,
+                                   lambda_=self.lambda_,
+                                   verbose=False
+                                   )
             adv_x[~done] = pert_x
-            self.lambda_ *= granularity
+            self.lambda_ *= base
+            if not self.check_lambda(model):
+                break
+        with torch.no_grad():
+            hidden, logit = model.forward(adv_x, adj)
+            _, done = self.get_loss(model, logit, label, hidden, self.lambda_)
+            if verbose:
+                logger.info(f"pgd l1: attack effectiveness {done.sum().item() / x.size()[0]}.")
         return adv_x
 
     def get_perturbation(self, gradients, features, adv_features):
@@ -124,7 +125,7 @@ class PGDl1(BaseAttack):
         #     2.2.1 cope with the interdependent apis
         checking_nonexist_api = (pos_removal ^ self.omega) & self.omega
         grad4removal = torch.sum(gradients * checking_nonexist_api, dim=-1, keepdim=True) + gradients
-        grad4removal *= (grad4removal < 0) * (pos_removal & self.manipulation_z)
+        grad4removal *= (grad4removal < 0) * (pos_removal & self.manipulation_x)
         gradients = grad4removal + grad4insertion
 
         # 3. remove duplications
@@ -142,17 +143,3 @@ class PGDl1(BaseAttack):
         perturbations += (torch.sum(directions, dim=-1, keepdim=True) < 0) * checking_nonexist_api
         directions += perturbations * self.omega
         return perturbations, directions
-
-    def get_losses(self, model, logit, label, hidden=None):
-        ce = F.cross_entropy(logit, label, reduction='none')
-        y_pred = logit.argmax(1)
-        if 'forward_g' in type(model).__dict__.keys():
-            de = model.forward_g(hidden, y_pred)
-            tau = model.get_tau_sample_wise(y_pred)
-            loss_no_reduction = ce + self.lambda_ * (torch.clamp(
-                torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW), max=self.kappa))
-            done = (y_pred == 0.) & (de >= tau)
-        else:
-            loss_no_reduction = ce
-            done = y_pred == 0.
-        return loss_no_reduction, done
