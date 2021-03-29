@@ -14,13 +14,13 @@ class OMPA(BaseAttack):
     ---------
     @param is_attacker, Boolean, play the role of attacker (note: the defender conducts adversarial training)
     @param kappa, float, attack confidence
-    @param manipulation_z, manipulations
+    @param manipulation_x, manipulations
     @param omega, the indices of interdependent apis corresponding to each api
     @param device, 'cpu' or 'cuda'
     """
 
-    def __init__(self, is_attacker=True, kappa=1., manipulation_z=None, omega=None, device=None):
-        super(OMPA, self).__init__(kappa, manipulation_z, omega, device)
+    def __init__(self, is_attacker=True, kappa=1., manipulation_x=None, omega=None, device=None):
+        super(OMPA, self).__init__(kappa, manipulation_x, omega, device)
         self.is_attacker = is_attacker
         self.lambda_ = 1.
 
@@ -68,7 +68,7 @@ class OMPA(BaseAttack):
             # note: this decreases the transferability of adversarial examples
             perturbation[done] = 0.
             # cope with step length < 1.
-            if 0 < step_length <= .5:
+            if 0 < step_length <= .5 and (not self.is_attacker):
                 with torch.no_grad():
                     steps = int(1 / step_length)
                     b, k, v = x.size()
@@ -101,7 +101,7 @@ class OMPA(BaseAttack):
         #     2.2.1 cope with the interdependent apis
         checking_nonexist_api = (pos_removal ^ self.omega) & self.omega
         grad4removal = torch.sum(gradients * checking_nonexist_api, dim=-1, keepdim=True) + gradients
-        grad4removal *= (grad4removal < 0) * (pos_removal & self.manipulation_z)
+        grad4removal *= (grad4removal < 0) * (pos_removal & self.manipulation_x)
         gradients = grad4removal + grad4insertion
 
         # 3. remove duplications

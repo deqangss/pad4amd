@@ -18,13 +18,13 @@ class OMPAP(OMPA):
     ---------
     @param is_attacker, Boolean, play the role of attacker (note: the defender conducts adversarial training)
     @param kappa, attack confidence
-    @param manipulation_z, manipulations
+    @param manipulation_x, manipulations
     @param omega, the indices of interdependent apis corresponding to each api
     @param device, 'cpu' or 'cuda'
     """
 
-    def __init__(self, is_attacker=True, kappa=1., manipulation_z=None, omega=None, device=None):
-        super(OMPAP, self).__init__(is_attacker, kappa, manipulation_z, omega, device)
+    def __init__(self, is_attacker=True, kappa=1., manipulation_x=None, omega=None, device=None):
+        super(OMPAP, self).__init__(is_attacker, kappa, manipulation_x, omega, device)
 
     def perturb(self, model, x, adj=None, label=None,
                 m=10,

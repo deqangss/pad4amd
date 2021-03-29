@@ -19,6 +19,7 @@ ompap_argparse = argparse.ArgumentParser(description='arguments for enhancing or
 ompap_argparse.add_argument('--m_pertb', type=int, default=100, help='maximum number of perturbations.')
 ompap_argparse.add_argument('--base', type=float, default=10., help='base of a logarithm function.')
 ompap_argparse.add_argument('--kappa', type=float, default=1., help='attack confidence.')
+ompap_argparse.add_argument('--real', action='store_true', default=True, help='whether produce the perturbed apks.')
 ompap_argparse.add_argument('--kde', action='store_true', default=False, help='attack model enhanced by kernel density estimation.')
 ompap_argparse.add_argument('--model', type=str, default='p_adv_train',
                             choices=['maldet', 'advmaldet', 'p_adv_train'],
@@ -92,16 +93,16 @@ def _main():
     # model.predict(mal_test_dataset_producer, use_indicator=False)
     # model.predict(mal_test_dataset_producer, use_indicator=True)
 
-    hp_params['n_sample_times'] = 1
-
     attack = OMPAP(kappa=args.kappa,
                    device=model.device)
 
     logger.info("\nThe maximum number of perturbations for each example is {}:".format(args.m_pertb))
     y_cent_list, x_density_list = [], []
+    x_mod_integrated = []
     model.eval()
     for i in range(hp_params['n_sample_times']):
         y_cent, x_density = [], []
+        x_mod = []
         for x, a, y, g_ind in mal_test_dataset_producer:
             x, a, y = utils.to_tensor(x, a, y, model.device)
             adv_x_batch = attack.perturb(model, x, a, y,
@@ -113,8 +114,10 @@ def _main():
             y_cent_batch, x_density_batch = model.inference_batch_wise(adv_x_batch, a, y, use_indicator=True)
             y_cent.append(y_cent_batch)
             x_density.append(x_density_batch)
+            x_mod.extend(dataset.get_modification(adv_x_batch, x, g_ind, True))
         y_cent_list.append(np.vstack(y_cent))
         x_density_list.append(np.concatenate(x_density))
+        x_mod_integrated = dataset.modification_integ(x_mod_integrated, x_mod)
     y_cent = np.mean(np.stack(y_cent_list, axis=1), axis=1)
     y_pred = np.argmax(y_cent, axis=-1)
     logger.info(
@@ -125,6 +128,11 @@ def _main():
         logger.info(f"The effectiveness of indicator is {sum(~indicator_flag) / mal_count * 100:.3f}%")
         acc_w_indicator = (sum(~indicator_flag) + sum((y_pred == 1.) & indicator_flag)) / mal_count * 100
         logger.info(f'The mean accuracy on adversarial malware (w/ indicator) is {acc_w_indicator:.3f}%.')
+
+    if args.real:
+        attack.produce_adv_mal(x_mod_integrated, mal_test_x.tolist(),
+                               config.get('dataset', 'malware_dir'),
+                               adj_mod=None)
 
 
 if __name__ == '__main__':

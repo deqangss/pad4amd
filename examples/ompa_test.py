@@ -4,14 +4,12 @@ from __future__ import print_function
 import os
 import argparse
 
-import torch
 import numpy as np
 
 from core.defense import Dataset
 from core.defense import MalwareDetector, MalwareDetectorIndicator, PrincipledAdvTraining, KernelDensityEstimation
 from core.attack import OMPA
 from tools import utils
-from core.droidfeature import inverse_feature_extraction
 from config import config, logging, ErrorHandler
 
 logger = logging.getLogger('examples.omp_attack_test')
@@ -21,6 +19,8 @@ atta_argparse = argparse.ArgumentParser(description='arguments for orthogonal ma
 atta_argparse.add_argument('--lambda_', type=float, default=1., help='balance factor for waging attack.')
 atta_argparse.add_argument('--step_length', type=float, default=1., help='step length.')
 atta_argparse.add_argument('--m_pertb', type=int, default=100, help='maximum number of perturbations.')
+atta_argparse.add_argument('--kappa', type=float, default=1., help='attack confidence.')
+atta_argparse.add_argument('--real', action='store_true', default=False, help='whether produce the perturbed apks.')
 atta_argparse.add_argument('--kde', action='store_true', default=False, help='attacking model enhanced by kernel density estimation.')
 atta_argparse.add_argument('--model', type=str, default='p_adv_train',
                            choices=['maldet', 'advmaldet', 'p_adv_train'],
@@ -92,12 +92,10 @@ def _main():
     logger.info("Load model parameters from {}.".format(model.model_save_path))
     logger.info(f"\n The threshold is {model.tau}.")
 
-    # model.predict(mal_test_dataset_producer, use_indicator=False)
-    # model.predict(mal_test_dataset_producer, use_indicator=True)
-    hp_params['n_sample_times'] = 2
+    model.predict(mal_test_dataset_producer, use_indicator=False)
+    model.predict(mal_test_dataset_producer, use_indicator=True)
 
-    attack = OMPA(device=model.device)
-
+    attack = OMPA(kappa=args.kappa, device=model.device)
     logger.info("\nThe maximum number of perturbations for each example is {}:".format(args.m_pertb))
     y_cent_list, x_density_list = [], []
     x_mod_integrated = []
@@ -118,7 +116,7 @@ def _main():
             x_mod.extend(dataset.get_modification(adv_x_batch, x, g_ind, True))
         y_cent_list.append(np.vstack(y_cent))
         x_density_list.append(np.concatenate(x_density))
-        # following function: if both addition and removal operations are applied to a same API, we have it be unchanged
+        # following function: if both addition and removal operations are applied to a same API, we have it un-change
         x_mod_integrated = dataset.modification_integ(x_mod_integrated, x_mod)
     y_cent = np.mean(np.stack(y_cent_list, axis=1), axis=1)
     y_pred = np.argmax(y_cent, axis=-1)
@@ -130,6 +128,11 @@ def _main():
         logger.info(f"The effectiveness of indicator is {sum(~indicator_flag) / mal_count * 100:.3f}%")
         acc_w_indicator = (sum(~indicator_flag) + sum((y_pred == 1.) & indicator_flag)) / mal_count * 100
         logger.info(f'The mean accuracy on adversarial malware (w/ indicator) is {acc_w_indicator:.3f}%.')
+
+    if args.real:
+        attack.produce_adv_mal(x_mod_integrated, mal_test_x.tolist(),
+                               config.get('dataset', 'malware_dir'),
+                               adj_mod=None)
 
 
 if __name__ == '__main__':

@@ -2,38 +2,21 @@ import os
 import signal
 import warnings
 import joblib
+import fileinput
 import pickle as pkl
+import shutil
+
+import hashlib
+import random
+import string
+import base64
+import re
+
+ENC_KEY = 'cab228a122d3486bac7fab148e8b5aba'
 
 import scipy.sparse as sp
 import numpy as np
 import torch
-
-#################################################################################
-################################# smali code ####################################
-#################################################################################
-
-def java_class_name2smali_name(cls):
-    """
-       Transform a typical xml format class into smali format
-
-       :param cls: the input class name
-       :rtype: string
-    """
-    if cls is None:
-        return
-    if not isinstance(cls, str):
-        raise ValueError("Expected a string")
-
-    return "L" + cls.replace(".", "/") + ";"
-
-
-def remove_duplicate(components):
-    if isinstance(components, list):
-        return ['.'.join(list(filter(None, comp.strip().split('.')))) for comp in components]
-    elif isinstance(components, str):
-        return '.'.join(list(filter(None, components.strip().split('.'))))
-    else:
-        raise TypeError("Types of 'list' and 'str' are expected, but got {}.".format(type(components)))
 
 
 def pool_initializer():
@@ -189,6 +172,13 @@ def dump_txt(data_str, path, mode='w'):
         f_w.write(data_str)
 
 
+def read_file_by_fileinput(file_path, inplace=True):
+    try:
+        return fileinput.input(file_path, inplace=inplace)
+    except IOError as ex:
+        raise IOError(str(ex))
+
+
 def build_kwargs(keys, arg_dict):
     st = ''
     for key in keys:
@@ -233,7 +223,7 @@ def tensor_coo_sp_to_ivs(sparse_tensor):
     return sparse_tensor._indices(), sparse_tensor._values(), sparse_tensor.size()
 
 
-def ivs_to_tensor_coo_sp(ivs, device = 'cpu'):
+def ivs_to_tensor_coo_sp(ivs, device='cpu'):
     return torch.sparse_coo_tensor(ivs[0], ivs[1], ivs[2], device=device)
 
 
@@ -322,3 +312,82 @@ def rand_x(x, rounding_threshold=0.5, is_sample=False):
     else:
         return x
 
+
+#################################################################################
+################################# smali code ####################################
+#################################################################################
+
+def java_class_name2smali_name(cls):
+    """
+       Transform a typical xml format class into smali format
+
+       :param cls: the input class name
+       :rtype: string
+    """
+    if cls is None:
+        return
+    if not isinstance(cls, str):
+        raise ValueError("Expected a string")
+
+    return "L" + cls.replace(".", "/") + ";"
+
+
+def remove_duplicate(components):
+    if isinstance(components, list):
+        return ['.'.join(list(filter(None, comp.strip().split('.')))) for comp in components]
+    elif isinstance(components, str):
+        return '.'.join(list(filter(None, components.strip().split('.'))))
+    else:
+        raise TypeError("Types of 'list' and 'str' are expected, but got {}.".format(type(components)))
+
+
+def crypt_identifier(idf, seed=2345):
+    if idf == '':
+        return ''
+    random.seed(seed)
+
+    def md5_transform():
+        if isinstance(idf, str):
+            return hashlib.md5(idf.encode('utf-8'))
+        else:
+            return hashlib.md5(idf)
+
+    start_idx = random.choice(range(0, 8))
+    length = random.choice(range(8, 16 - start_idx))
+
+    head_letter = random.choice(string.ascii_lowercase)
+    return head_letter + md5_transform().hexdigest()[start_idx:start_idx + length]
+
+
+def random_string(code):
+    def sha1_transform():
+        if isinstance(code, str):
+            return hashlib.sha1(code.encode('utf-8'))
+        else:
+            return hashlib.sha1(code)
+
+    return random.choice(string.ascii_uppercase) + sha1_transform().hexdigest()[:8]
+
+
+def string_on_code(code):
+    def md5_transform():
+        if isinstance(code, str):
+            return hashlib.md5(code.encode('utf-8'))
+        else:
+            return hashlib.md5(code)
+
+    return 'md5' + md5_transform().hexdigest()
+
+
+def random_name(seed=2345, code='abc'):
+    if not isinstance(seed, int):
+        raise TypeError("Integer required.", type(seed), seed)
+    random.seed(seed)
+    sample_letters = [random.sample(string.ascii_letters, 1)[0] for _ in range(12)]
+    return random.choice(string.ascii_uppercase) + random_string(code) + ''.join(sample_letters)
+
+
+def apply_encryption(base_string):
+    key = ENC_KEY * int(len(base_string) / len(ENC_KEY) + 1)
+    xor_string = ''.join(chr(ord(x) ^ ord(y)) for (x, y) in zip(base_string, key))
+    return base64.b64encode(xor_string.encode('utf-8')).decode('utf-8')
