@@ -91,7 +91,7 @@ def _main():
     model.load()
     logger.info("Load model parameters from {}.".format(model.model_save_path))
 
-    model.predict(mal_test_dataset_producer)
+    # model.predict(mal_test_dataset_producer)
 
     attack = OMPA(kappa=args.kappa, device=model.device)
     logger.info("\nThe maximum number of perturbations for each example is {}:".format(args.m_pertb))

@@ -90,8 +90,7 @@ def _main():
     logger.info("Load model parameters from {}.".format(model.model_save_path))
     logger.info(f"\n The threshold is {model.tau}.")
 
-    # model.predict(mal_test_dataset_producer, use_indicator=False)
-    # model.predict(mal_test_dataset_producer, use_indicator=True)
+    # model.predict(mal_test_dataset_producer)
 
     attack = OMPAP(kappa=args.kappa,
                    device=model.device)
