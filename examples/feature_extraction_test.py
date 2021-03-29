@@ -13,8 +13,8 @@ cmd_md.add_argument('--number_of_sequences', type=int, default=100000,
                     help='maximum number of produced sequences for each app')
 cmd_md.add_argument('--depth_of_recursion', type=int, default=50,
                     help='maximum depth restricted on the depth-first traverse')
-cmd_md.add_argument('--timeout', type=int, default=20,
-                    help='maximum elapsed time for analyzing an app')
+cmd_md.add_argument('--timeout', type=int, default=5,
+                    help='maximum elapsed time (minutes) for analyzing an app')
 cmd_md.add_argument('--use_feature_selection', action='store_true', default=True,
                     help='use feature selection or not.')
 cmd_md.add_argument('--use_graph_merging', action='store_true', default=True,
