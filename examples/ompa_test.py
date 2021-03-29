@@ -22,9 +22,9 @@ atta_argparse.add_argument('--m_pertb', type=int, default=100, help='maximum num
 atta_argparse.add_argument('--kappa', type=float, default=1., help='attack confidence.')
 atta_argparse.add_argument('--real', action='store_true', default=False, help='whether produce the perturbed apks.')
 atta_argparse.add_argument('--kde', action='store_true', default=False, help='attacking model enhanced by kernel density estimation.')
-atta_argparse.add_argument('--model', type=str, default='p_adv_train',
-                           choices=['maldet', 'advmaldet', 'p_adv_train'],
-                           help="model type, either of 'maldet', 'advmaldet' and 'p_adv_train'.")
+atta_argparse.add_argument('--model', type=str, default='padvtrain',
+                           choices=['maldet', 'advmaldet', 'padvtrain'],
+                           help="model type, either of 'maldet', 'advmaldet' and 'padvtrain'.")
 atta_argparse.add_argument('--model_name', type=str, default='xxxxxxxx-xxxxxx', help='model timestamp.')
 
 
@@ -34,10 +34,10 @@ def _main():
         save_dir = config.get('experiments', 'malware_detector') + '_' + args.model_name
     elif args.model == 'advmaldet':
         save_dir = config.get('experiments', 'malware_detector_indicator') + '_' + args.model_name
-    elif args.model == 'p_adv_train':
+    elif args.model == 'padvtrain':
         save_dir = config.get('experiments', 'p_adv_training') + '_' + args.model_name
     else:
-        raise TypeError("Expected 'maldet', 'advmaldet' or 'p_adv_train'.")
+        raise TypeError("Expected 'maldet', 'advmaldet' or 'padvtrain'.")
 
     hp_params = utils.read_pickle(os.path.join(save_dir, 'hparam.pkl'))
     dataset = Dataset(hp_params['dataset_name'],
@@ -76,7 +76,7 @@ def _main():
                                          **hp_params
                                          )
     model = model.to(dv)
-    if args.model == 'p_adv_train':
+    if args.model == 'padvtrain':
         PrincipledAdvTraining(model)
     if args.kde:
         save_dir = config.get('experiments', 'kde') + '_' + args.model_name
