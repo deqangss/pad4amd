@@ -19,7 +19,7 @@ ompap_argparse = argparse.ArgumentParser(description='arguments for enhancing or
 ompap_argparse.add_argument('--m_pertb', type=int, default=100, help='maximum number of perturbations.')
 ompap_argparse.add_argument('--base', type=float, default=10., help='base of a logarithm function.')
 ompap_argparse.add_argument('--kappa', type=float, default=1., help='attack confidence.')
-ompap_argparse.add_argument('--real', action='store_true', default=True, help='whether produce the perturbed apks.')
+ompap_argparse.add_argument('--real', action='store_true', default=False, help='whether produce the perturbed apks.')
 ompap_argparse.add_argument('--kde', action='store_true', default=False, help='attack model enhanced by kernel density estimation.')
 ompap_argparse.add_argument('--model', type=str, default='p_adv_train',
                             choices=['maldet', 'advmaldet', 'p_adv_train'],
