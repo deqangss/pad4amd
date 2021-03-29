@@ -67,7 +67,7 @@ def _main():
     model.load()
     print(model.tau)
     # test: accuracy
-    model.predict(test_dataset_producer, use_indicator=True)
+    model.predict(test_dataset_producer)
 
 
 if __name__ == '__main__':
