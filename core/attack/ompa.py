@@ -62,7 +62,7 @@ class OMPA(BaseAttack):
             adv_loss, done = self.get_loss(model, logit, label, hidden)
             if torch.all(done):
                 break
-            grad = torch.autograd.grad(torch.mean(adv_loss), var_adv_x)[0].data
+            grad = torch.autograd.grad(torch.mean(adv_loss), var_adv_x)[0]
             perturbation, direction = self.get_perturbation(grad, x, adv_x)
             # avoid to perturb the examples that are successful to evade the victim
             # note: this decreases the transferability of adversarial examples

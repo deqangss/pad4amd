@@ -75,7 +75,7 @@ class BCA(BaseAttack):
                 print(f"\n Iteration {t}: the accuracy is {(logit.argmax(1) == 1.).sum().item() / adv_x.size()[0] * 100:.3f}.")
             if torch.all(done):
                 break
-            grad = torch.autograd.grad(torch.mean(loss), var_adv_x)[0].data
+            grad = torch.autograd.grad(torch.mean(loss), var_adv_x)[0]
 
             # filtering un-considered graphs & positions
             grad = grad * padding_mask
