@@ -208,7 +208,7 @@ class Dataset(torch.utils.data.Dataset):
         if isinstance(x_mod, np.ndarray):
             x_mod = np.array([x_mod[i, g_ind[i]] for i in range(x.shape[0])])
         else:
-            x_mod = torch.stack([x_mod[i, g_ind[i]] for i in range(x.shape[0])])
+            x_mod = torch.stack([x_mod[i, g_ind[i]]for i in range(x.shape[0])])
 
         if sp:
             if isinstance(x_mod, torch.Tensor):
