@@ -21,7 +21,7 @@ class KernelDensityEstimation(DensityEstimator):
     parameters
     -------------
     @param model, torch.nn.Module, an instantiation of model object
-    @param bandwidth, float, variance for Gaussian density function
+    @param bandwidth, float, variance of Gaussian density function
     @param n_classes, integer, number of classes
     @param ratio, float [0,1], ratio for computing the threshold
     """
