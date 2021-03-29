@@ -40,7 +40,7 @@ class OMPAP(OMPA):
                 hidden, logit = model.forward(adv_x, adj)
                 _, done = self.get_loss(model, logit, label, hidden)
             if verbose:
-                logger.info(f"Ompa attack: attack effectiveness {done.sum().item() / x.size()[0]} with lambda {self.lambda_}.")
+                logger.info(f"Ompa attack: attack effectiveness {done.sum().item() / x.size()[0] * 100}% with lambda {self.lambda_}.")
             if torch.all(done):
                 break
             adv_x[~done] = x[~done]  # recompute the perturbation under other penalty factors
