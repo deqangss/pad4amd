@@ -9,7 +9,7 @@ from config import config
 cmd_md = argparse.ArgumentParser(description='arguments for feature extraction')
 cmd_md.add_argument('--proc_number', type=int, default=2,
                     help='number of threads for features extraction.')
-cmd_md.add_argument('--number_of_sequences', type=int, default=200000,
+cmd_md.add_argument('--number_of_sequences', type=int, default=100000,
                     help='maximum number of produced sequences for each app')
 cmd_md.add_argument('--depth_of_recursion', type=int, default=50,
                     help='maximum depth restricted on the depth-first traverse')
