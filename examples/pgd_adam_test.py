@@ -20,7 +20,7 @@ atta_argparse.add_argument('--lambda_', type=float, default=0.01, help='balance 
 atta_argparse.add_argument('--n_step', type=int, default=100, help='maximum number of steps.')
 atta_argparse.add_argument('--lr', type=float, default=0.1, help='learning rate.')
 atta_argparse.add_argument('--random_start', action='store_true', default=False, help='randomly initialize the start points.')
-atta_argparse.add_argument('--round_threshold', type=float, default=0.5, help='threshold for rounding real scalars.')
+atta_argparse.add_argument('--round_threshold', type=float, default=0.98, help='threshold for rounding real scalars.')
 atta_argparse.add_argument('--base', type=float, default=10., help='base of a logarithm function.')
 atta_argparse.add_argument('--kappa', type=float, default=1., help='attack confidence.')
 atta_argparse.add_argument('--real', action='store_true', default=False, help='whether produce the perturbed apks.')
