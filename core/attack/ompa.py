@@ -61,7 +61,7 @@ class OMPA(BaseAttack):
             hidden, logit = model.forward(var_adv_x, adj)
             adv_loss, done = self.get_loss(model, logit, label, hidden)
             print(
-                f"Ompa attack: attack effectiveness {done.sum().item() / x.size()[0] * 100}% with lambda.")
+                f"{t+1} Ompa attack: attack effectiveness {done.sum().item() / x.size()[0] * 100}% with lambda.")
             if torch.all(done):
                 break
             grad = torch.autograd.grad(torch.mean(adv_loss), var_adv_x)[0].data
