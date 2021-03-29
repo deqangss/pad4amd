@@ -69,7 +69,7 @@ def _main():
         dump_pickle(vars(args), path.join(path.dirname(principled_adv_training_model.model_save_path), "hparam.pkl"))
     # test: accuracy
     principled_adv_training_model.model.load()
-    principled_adv_training_model.model.predict(test_dataset_producer, use_indicator=False)
+    principled_adv_training_model.model.predict(test_dataset_producer)
 
 
 if __name__ == '__main__':
