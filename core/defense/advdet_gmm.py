@@ -50,36 +50,42 @@ class MalwareDetectorIndicator(MalwareDetector, DensityEstimator):
         self.model_save_path = path.join(config.get('experiments', 'malware_detector_indicator') + '_' + self.name,
                                          'model.pth')
 
-    def predict(self, test_data_producer, use_indicator=True):
+    def predict(self, test_data_producer):
         # evaluation on detector & indicator
         y_cent, x_prob, y_true = self.inference(test_data_producer)
         y_pred = y_cent.argmax(1).cpu().numpy()
         y_true = y_true.cpu().numpy()
-        indicator_flag = self.indicator(x_prob).cpu().numpy()
+
+        def measurement(_y_true, _y_pred):
+            from sklearn.metrics import f1_score, accuracy_score, confusion_matrix, balanced_accuracy_score
+            accuracy = accuracy_score(_y_true, _y_pred)
+            b_accuracy = balanced_accuracy_score(_y_true, _y_pred)
+            MSG = "The accuracy on the test dataset is {:.5f}%"
+            logger.info(MSG.format(accuracy * 100))
+            MSG = "The balanced accuracy on the test dataset is {:.5f}%"
+            logger.info(MSG.format(b_accuracy * 100))
+
+            if np.any([np.all(_y_true == i) for i in range(self.n_classes)]):
+                logger.warning("class absent.")
+                return
+
+            tn, fp, fn, tp = confusion_matrix(_y_true, _y_pred).ravel()
+            fpr = fp / float(tn + fp)
+            fnr = fn / float(tp + fn)
+            f1 = f1_score(_y_true, _y_pred, average='binary')
+            print("Other evaluation metrics we may need:")
+            MSG = "False Negative Rate (FNR) is {:.5f}%, False Positive Rate (FPR) is {:.5f}%, F1 score is {:.5f}%"
+            logger.info(MSG.format(fnr * 100, fpr * 100, f1 * 100))
+
+        measurement(y_true, y_pred)
+
         # filter out examples in the low dense region
-        if use_indicator:
-            y_pred = y_pred[indicator_flag]
-            y_true = y_true[indicator_flag]
-            logger.info('The indicator is turning on...')
-        from sklearn.metrics import f1_score, accuracy_score, confusion_matrix, balanced_accuracy_score
-        accuracy = accuracy_score(y_true, y_pred)
-        b_accuracy = balanced_accuracy_score(y_true, y_pred)
-        MSG = "The accuracy on the test dataset is {:.5f}%"
-        logger.info(MSG.format(accuracy * 100))
-        MSG = "The balanced accuracy on the test dataset is {:.5f}%"
-        logger.info(MSG.format(b_accuracy * 100))
+        indicator_flag = self.indicator(x_prob).cpu().numpy()
+        y_pred = y_pred[indicator_flag]
+        y_true = y_true[indicator_flag]
+        logger.info('The indicator is turning on...')
+        measurement(y_true, y_pred)
 
-        if np.any([np.all(y_true == i) for i in range(self.n_classes)]):
-            logger.warning("class absent.")
-            return
-
-        tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
-        fpr = fp / float(tn + fp)
-        fnr = fn / float(tp + fn)
-        f1 = f1_score(y_true, y_pred, average='binary')
-        print("Other evaluation metrics we may need:")
-        MSG = "False Negative Rate (FNR) is {:.5f}%, False Positive Rate (FPR) is {:.5f}%, F1 score is {:.5f}%"
-        logger.info(MSG.format(fnr * 100, fpr * 100, f1 * 100))
 
     def inference(self, test_data_producer):
         y_cent, x_prob = [], []
