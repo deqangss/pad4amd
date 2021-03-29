@@ -63,7 +63,7 @@ detector_argparse.add_argument('--is_adj', action='store_true', help='incorporat
 mode_argparse = cmd_md.add_argument_group(title='mode')
 mode_argparse.add_argument('--mode', type=str, default='train', choices=['train', 'test'], required=False,
                            help='learn a model or test it.')
-mode_argparse.add_argument('--model_name', type=str, default='', required=False, help='suffix date of a tested model name.')
+mode_argparse.add_argument('--model_name', type=str, default='xxxxxxxx-xxxxxx', required=False, help='suffix date of a tested model name.')
 
 
 def _main():
