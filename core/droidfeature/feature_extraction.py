@@ -25,7 +25,7 @@ class Apk2graphs(object):
                  intermediate_save_dir,
                  number_of_sequences=200000,
                  depth_of_recursion=50,
-                 timeout=20,
+                 timeout=6,
                  max_vocab_size=5000,
                  use_feature_selection=True,
                  use_graph_merging=True,

@@ -78,7 +78,7 @@ def apk2graphs_wrapper(kwargs):
         return e
 
 
-def apk2graphs(apk_path, max_number_of_sequences=15000, max_recursive_depth=50, timeout=20,
+def apk2graphs(apk_path, max_number_of_sequences=15000, max_recursive_depth=50, timeout=6,
                use_graph_merging=True, minimum_graphs_of_leaf=16, maximum_graphs_of_leaf=32,
                saving_path=None):
     """
