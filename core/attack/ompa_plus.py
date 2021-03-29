@@ -60,5 +60,5 @@ class OMPAP(OMPA):
             hidden, logit = model.forward(adv_x, adj)
             _, done = self.get_loss(model, logit, label, hidden)
             if verbose:
-                logger.info(f"Ompa: attack effectiveness {done.sum().item() / x.size()[0]}.")
+                logger.info(f"Ompa: attack effectiveness {done.sum().item() / x.size()[0] * 100:.3}%.")
         return adv_x
