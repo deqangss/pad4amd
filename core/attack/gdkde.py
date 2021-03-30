@@ -176,6 +176,8 @@ class GDKDE(BaseAttack):
         if 'forward_g' in type(model).__dict__.keys():
             de = model.forward_g(hidden, y_pred)
             tau = model.get_tau_sample_wise(y_pred)
+            print('threshold test:', tau)
+            print(de)
             # loss_no_reduction += 1e10 * \
             #     torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW)
             done = (y_pred == 0.) & (de >= tau)
