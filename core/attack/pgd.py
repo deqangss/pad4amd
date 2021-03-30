@@ -77,7 +77,6 @@ class PGD(BaseAttack):
             perturbation = self.get_perturbation(grad, x, adv_x)
             adv_x = torch.clamp(adv_x + perturbation * step_length, min=0., max=1.)
         # round
-        # print(torch.max(torch.abs(adv_x - x)))
         print(torch.sum(torch.abs(adv_x - x), dim=(1, 2)))
         return adv_x.round()
 
@@ -136,8 +135,9 @@ class PGD(BaseAttack):
         #     2.2.1 cope with the interdependent apis
         checking_nonexist_api = (pos_removal ^ self.omega) & self.omega
         grad4removal = torch.sum(gradients * checking_nonexist_api, dim=-1, keepdim=True) + gradients
-        grad4removal *= (grad4removal < 0) * (pos_removal & self.manipulation_x)
+        grad4removal *= (grad4removal < 0) * self.manipulation_x
         gradients = grad4removal + grad4insertion
+        # gradients = grad4insertion
 
         # 3. norm
         if self.norm == 'linf':
