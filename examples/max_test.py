@@ -194,7 +194,7 @@ def _main():
         x_mod = []
         for x, a, y, g_ind in mal_test_dataset_producer:
             x, a, y = utils.to_tensor(x, a, y, model.device)
-            adv_x_batch = attack.perturb(model, x, a, y)
+            adv_x_batch = attack.perturb(model, x, a, y, verbose=True)
             y_cent_batch, x_density_batch = model.inference_batch_wise(adv_x_batch, a, y, use_indicator=True)
             y_cent.append(y_cent_batch)
             x_density.append(x_density_batch)
