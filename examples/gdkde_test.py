@@ -104,7 +104,7 @@ def _main():
     ben_hidden = []
     with torch.no_grad():
         c = args.n_benware if args.n_benware < ben_count else ben_count
-        for ben_x, ben_a, ben_y in ben_test_dataset_producer:
+        for ben_x, ben_a, ben_y, _1 in ben_test_dataset_producer:
             ben_x, ben_a, ben_y = utils.to_tensor(ben_x, ben_a, ben_y, device=dv)
             ben_x_hidden, _ = model.forward(ben_x, ben_a)
             ben_hidden.append(ben_x_hidden)
