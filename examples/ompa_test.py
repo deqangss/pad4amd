@@ -93,7 +93,7 @@ def _main():
 
     model.predict(mal_test_dataset_producer)
 
-    attack = OMPA(kappa=args.kappa, use_dependent_api=False, device=model.device)
+    attack = OMPA(kappa=args.kappa, device=model.device)
     logger.info("\nThe maximum number of perturbations for each example is {}:".format(args.m_pertb))
     y_cent_list, x_density_list = [], []
     x_mod_integrated = []
