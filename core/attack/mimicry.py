@@ -72,8 +72,6 @@ class Mimicry(object):
                         x, a, y, _1 = next(iter(data_producer))
                         x, a, y = utils.to_tensor(x, a, y, model.device)
                         y_cent_, x_density_ = model.inference_batch_wise(x, a, y, use_indicator=True)
-                        print(y_cent_)
-                        print('density:', x_density_)
                         y_cent.append(y_cent_)
                         x_density.append(x_density_)
                     y_cent = np.mean(np.stack(y_cent, axis=1), axis=1)
