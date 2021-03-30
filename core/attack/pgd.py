@@ -131,13 +131,13 @@ class PGD(BaseAttack):
         # grad4insertion = (gradients > 0) * pos_insertion * gradients
         grad4insertion = (gradients > 0) * gradients
         #    2.2 api removal
-        pos_removal = (adv_features > 0.5) * 1
-        #     2.2.1 cope with the interdependent apis
-        checking_nonexist_api = (pos_removal ^ self.omega) & self.omega
-        grad4removal = torch.sum(gradients * checking_nonexist_api, dim=-1, keepdim=True) + gradients
-        grad4removal *= (grad4removal < 0) * self.manipulation_x
-        gradients = grad4removal + grad4insertion
-        # gradients = grad4insertion
+        # pos_removal = (adv_features > 0.5) * 1
+        # #     2.2.1 cope with the interdependent apis
+        # checking_nonexist_api = (pos_removal ^ self.omega) & self.omega
+        # grad4removal = torch.sum(gradients * checking_nonexist_api, dim=-1, keepdim=True) + gradients
+        # grad4removal *= (grad4removal < 0) * self.manipulation_x
+        # gradients = grad4removal + grad4insertion
+        gradients = grad4insertion
 
         # 3. norm
         if self.norm == 'linf':
