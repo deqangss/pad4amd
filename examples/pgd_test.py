@@ -24,7 +24,7 @@ atta_argparse.add_argument('--norm', type=str, default='l2', choices=['l2', 'lin
 atta_argparse.add_argument('--random_start', action='store_true', default=False, help='randomly initialize the start points.')
 atta_argparse.add_argument('--round_threshold', type=float, default=0.5, help='threshold for rounding real scalars.')
 atta_argparse.add_argument('--base', type=float, default=10., help='base of a logarithm function.')
-atta_argparse.add_argument('--kappa', type=float, default=10., help='attack confidence.')
+atta_argparse.add_argument('--kappa', type=float, default=1., help='attack confidence.')
 atta_argparse.add_argument('--real', action='store_true', default=False, help='whether produce the perturbed apks.')
 atta_argparse.add_argument('--kde', action='store_true', default=False, help='attack model enhanced by kernel density estimation.')
 atta_argparse.add_argument('--model', type=str, default='maldet',
