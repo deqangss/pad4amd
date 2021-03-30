@@ -41,9 +41,6 @@ class BaseAttack(Module):
         self.initialize()
 
     def initialize(self):
-        """
-        todo: initialize necessaries
-        """
         if self.manipulation_x is None:
             self.manipulation_x = self.inverse_feature.get_manipulation()
         self.manipulation_x = torch.LongTensor(self.manipulation_x).to(self.device)
