@@ -24,7 +24,7 @@ class OMPAP(OMPA):
     """
 
     def __init__(self, is_attacker=True, kappa=1., manipulation_x=None, omega=None, device=None):
-        super(OMPAP, self).__init__(is_attacker, False, kappa, manipulation_x, omega, device)
+        super(OMPAP, self).__init__(is_attacker, kappa, manipulation_x, omega, device)
 
     def perturb(self, model, x, adj=None, label=None,
                 m=10,
