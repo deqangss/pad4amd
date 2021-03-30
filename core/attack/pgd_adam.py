@@ -84,7 +84,7 @@ class PGDAdam(BaseAttack):
             optimizer.step()
             adv_x.data = adv_x.data.clamp(min=0., max=1.)
 
-        print(torch.sum(torch.abs(adv_x.round() - x), dim=(1, 2)))
+        # round
         return adv_x.round().detach()
 
     def perturb(self, model, x, adj=None, label=None,
