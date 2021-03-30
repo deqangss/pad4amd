@@ -172,15 +172,15 @@ class GDKDE(BaseAttack):
         y_pred = logit.argmax(1)
         square = torch.sum(torch.square(self.ben_hidden.unsqueeze(dim=0) - hidden.unsqueeze(dim=1)), dim=-1)
         kde = torch.mean(torch.exp(-square / self.bandwidth), dim=-1)
-        loss_no_reduction = ce + self.lambda_ * kde
+        loss_no_reduction = ce + kde
         if 'forward_g' in type(model).__dict__.keys():
             de = model.forward_g(hidden, y_pred)
             tau = model.get_tau_sample_wise(y_pred)
             print('threshold test:', tau)
             print(de)
             print('kde', kde)
-            # loss_no_reduction += 1e10 * \
-            #     torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW)
+            loss_no_reduction += self.lambda_ * \
+                torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW)
             done = (y_pred == 0.) & (de >= tau)
         else:
             done = y_pred == 0.
