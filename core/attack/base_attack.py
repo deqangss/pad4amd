@@ -46,8 +46,6 @@ class BaseAttack(Module):
         self.manipulation_x = torch.LongTensor(self.manipulation_x).to(self.device)
         if self.omega is None:
             self.omega = self.inverse_feature.get_interdependent_apis()
-        print(type(self.omega))
-        print(type(self.inverse_feature.vocab))
         self.omega = torch.sum(
             F.one_hot(torch.tensor(self.omega), num_classes=len(self.inverse_feature.vocab)),
             dim=0).to(self.device)
