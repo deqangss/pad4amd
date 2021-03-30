@@ -99,7 +99,7 @@ class PGD(BaseAttack):
             _, done = self.get_loss(model, logit, label, hidden, self.lambda_)
             if verbose:
                 logger.info(
-                    f"PGD {self.norm}: attack effectiveness {done.sum().item() / float(x.size()[0]):.3f} with lambda {self.lambda_}.")
+                    f"PGD {self.norm}: attack effectiveness {done.sum().item() / float(x.size()[0]) * 100:.3f}% with lambda {self.lambda_}.")
             if torch.all(done):
                 break
             adv_x[~done] = x[~done]  # recompute the perturbation under other penalty factors
@@ -117,7 +117,7 @@ class PGD(BaseAttack):
             hidden, logit = model.forward(adv_x, adj)
             _, done = self.get_loss(model, logit, label, hidden, self.lambda_)
             if verbose:
-                logger.info(f"pgd {self.norm}: attack effectiveness {done.sum().item() / x.size()[0]}.")
+                logger.info(f"pgd {self.norm}: attack effectiveness {done.sum().item() / x.size()[0] * 100:.3f}%.")
         return adv_x
 
     def get_perturbation(self, gradients, features, adv_features):
@@ -128,8 +128,9 @@ class PGD(BaseAttack):
 
         # 2. look for allowable position, because only '1--> -' and '0 --> +' are permitted
         #    2.1 api insertion
-        pos_insertion = (adv_features <= 0.5) * 1 * (adv_features >= 0.)
-        grad4insertion = (gradients > 0) * pos_insertion * gradients
+        # pos_insertion = (adv_features <= 0.5) * 1 * (adv_features >= 0.)
+        # grad4insertion = (gradients > 0) * pos_insertion * gradients
+        grad4insertion = (gradients > 0) * gradients
         #    2.2 api removal
         pos_removal = (adv_features > 0.5) * 1
         #     2.2.1 cope with the interdependent apis
