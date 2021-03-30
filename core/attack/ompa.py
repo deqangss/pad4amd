@@ -108,7 +108,7 @@ class OMPA(BaseAttack):
             grad4removal = (gradients < 0) * (pos_removal & self.manipulation_x) * gradients
         gradients = grad4removal + grad4insertion
 
-        # 3. remove duplications
+        # 3. remove duplications (i.e., neglect the positions, whose values have been modified former.)
         un_mod = torch.abs(features - adv_features) <= 1e-6
         gradients = gradients * un_mod
 
