@@ -17,12 +17,11 @@ logger.addHandler(ErrorHandler)
 
 atta_argparse = argparse.ArgumentParser(description='arguments for mimicry attack')
 atta_argparse.add_argument('--trials', type=int, default=10, help='number of benign samples for perturbing one malicious file.')
-atta_argparse.add_argument('--n_sample_times', type=int, default=1, help='sample times for producing data.')
-atta_argparse.add_argument('--kde', action='store_true', default=False, help='incorporate kernel density estimation.')
+atta_argparse.add_argument('--kde', action='store_true', default=False, help='attack model enhanced by kernel density estimation.')
 atta_argparse.add_argument('--model', type=str, default='maldet',
-                           choices=['maldet', 'advmaldet', 'prip_adv'],
-                           help="model type, either of 'maldet', 'advmaldet' and 'prip_adv'.")
-atta_argparse.add_argument('--model_name', type=str, default='pro', help='model name.')
+                           choices=['maldet', 'advmaldet', 'p_adv_train'],
+                           help="model type, either of 'maldet', 'advmaldet' and 'p_adv_train'.")
+atta_argparse.add_argument('--model_name', type=str, default='xxxxxxxx-xxxxxx', help='model timestamp.')
 
 
 def _main():
@@ -31,21 +30,19 @@ def _main():
         save_dir = config.get('experiments', 'malware_detector') + '_' + args.model_name
     elif args.model == 'advmaldet':
         save_dir = config.get('experiments', 'malware_detector_indicator') + '_' + args.model_name
-    elif args.model == 'prip_adv':
-        save_dir = config.get('experiments', 'prip_adv_training') + '_' + args.model_name
+    elif args.model == 'p_adv_train':
+        save_dir = config.get('experiments', 'p_adv_training') + '_' + args.model_name
     else:
-        raise TypeError("Expected 'maldet', 'advmaldet' or 'prip_adv'.")
+        raise TypeError("Expected 'maldet', 'advmaldet' or 'p_adv_train'.")
 
     hp_params = utils.read_pickle(os.path.join(save_dir, 'hparam.pkl'))
     dataset = Dataset(hp_params['dataset_name'],
                       k=hp_params['k'],
-                      use_cache=False,
                       is_adj=hp_params['is_adj'],
                       feature_ext_args={'proc_number': hp_params['proc_number']}
                       )
     test_x, testy = dataset.test_dataset
-    mal_test_x = test_x[testy == 1]
-    mal_testy = testy[testy == 1]
+    mal_test_x, mal_testy = test_x[testy == 1], testy[testy == 1]
     mal_count = len(mal_testy)
     ben_test_x = test_x[testy == 0]
     if mal_count <= 0:
@@ -72,7 +69,7 @@ def _main():
                                          **hp_params
                                          )
     model = model.to(dv)
-    if args.model == 'prip_adv':
+    if args.model == 'p_adv_train':
         PrincipledAdvTraining(model)
     if args.kde:
         save_dir = config.get('experiments', 'kde') + '_' + args.model_name
@@ -85,7 +82,7 @@ def _main():
                                         )
 
     model.load()
-    print("Load model parameters from {}.".format(model.model_save_path))
+    logger.info("Load model parameters from {}.".format(model.model_save_path))
     attack = Mimicry(device=model.device)
 
     model.eval()
