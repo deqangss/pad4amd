@@ -28,7 +28,7 @@ atta_argparse.add_argument('--varepsilon', type=float, default=1e-9, help='small
 atta_argparse.add_argument('--lambda_', type=float, default=1., help='balance factor for waging attack.')
 atta_argparse.add_argument('--m_pertb', type=int, default=10, help='maximum number of perturbations.')
 atta_argparse.add_argument('--bandwidth', type=float, default=20., help='variance of Gaussian distribution.')
-atta_argparse.add_argument('--n_benware', type=int, default=1000, help='number of centers.')
+atta_argparse.add_argument('--n_benware', type=int, default=5000, help='number of centers.')
 
 atta_argparse.add_argument('--n_step', type=int, default=50, help='maximum number of steps.')
 atta_argparse.add_argument('--step_length_l2', type=float, default=2., help='step length in each step.')
