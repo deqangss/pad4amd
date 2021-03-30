@@ -178,6 +178,7 @@ class GDKDE(BaseAttack):
             tau = model.get_tau_sample_wise(y_pred)
             print('threshold test:', tau)
             print(de)
+            print('kde', kde)
             # loss_no_reduction += 1e10 * \
             #     torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW)
             done = (y_pred == 0.) & (de >= tau)
