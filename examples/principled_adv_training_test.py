@@ -46,7 +46,7 @@ def _main():
                                      **vars(args)
                                      )
     model = model.to(dv)
-    attack = OMPA(is_attacker=False, device=model.device)
+    attack = OMPA(is_attacker=False, use_dependent_api=False, device=model.device)
     attack_param = {
         'm': args.m,
         'step_length': args.step_length,
