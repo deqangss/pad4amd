@@ -19,9 +19,10 @@ class OMPA(BaseAttack):
     @param device, 'cpu' or 'cuda'
     """
 
-    def __init__(self, is_attacker=True, kappa=1., manipulation_x=None, omega=None, device=None):
+    def __init__(self, is_attacker=True, use_dependent_api=True, kappa=1., manipulation_x=None, omega=None, device=None):
         super(OMPA, self).__init__(kappa, manipulation_x, omega, device)
         self.is_attacker = is_attacker
+        self.use_dependent_api = use_dependent_api
         self.lambda_ = 1.
 
     def perturb(self, model, x, adj=None, label=None,
@@ -98,11 +99,13 @@ class OMPA(BaseAttack):
         grad4insertion = (gradients > 0) * pos_insertion * gradients  # owing to gradient ascent
         #    2.2 api removal
         pos_removal = (adv_features >= 0.5) * 1
-        #     2.2.1 cope with the interdependent apis (note: application-specific)
-        # checking_nonexist_api = (pos_removal ^ self.omega) & self.omega
-        # grad4removal = torch.sum(gradients * checking_nonexist_api, dim=-1, keepdim=True) + gradients
-        # grad4removal *= (grad4removal < 0) * (pos_removal & self.manipulation_x)
-        grad4removal = (gradients < 0) * (pos_removal & self.manipulation_x) * gradients
+        if self.use_dependent_api:
+            #     2.2.1 cope with the interdependent apis (note: application-specific)
+            checking_nonexist_api = (pos_removal ^ self.omega) & self.omega
+            grad4removal = torch.sum(gradients * checking_nonexist_api, dim=-1, keepdim=True) + gradients
+            grad4removal *= (grad4removal < 0) * (pos_removal & self.manipulation_x)
+        else:
+            grad4removal = (gradients < 0) * (pos_removal & self.manipulation_x) * gradients
         gradients = grad4removal + grad4insertion
 
         # 3. remove duplications
@@ -116,9 +119,10 @@ class OMPA(BaseAttack):
         perturbations = perturbations.reshape(features.shape)
         directions = torch.sign(gradients) * (perturbations > 1e-6)
 
-        # 5. tailor the interdependent apis (note: application-specific)
-        # perturbations += (torch.sum(directions, dim=-1, keepdim=True) < 0) * checking_nonexist_api
-        # directions += perturbations * self.omega
+        if self.use_dependent_api:
+            # 5. tailor the interdependent apis (note: application-specific)
+            perturbations += (torch.sum(directions, dim=-1, keepdim=True) < 0) * checking_nonexist_api
+            directions += perturbations * self.omega
         return perturbations, directions
 
     def get_loss(self, model, logit, label, hidden=None):
