@@ -26,20 +26,20 @@ atta_argparse.add_argument('--n_step_max', type=int, default=5, help='maximum nu
 atta_argparse.add_argument('--varepsilon', type=float, default=1e-9, help='small value for checking convergence.')
 
 atta_argparse.add_argument('--lambda_', type=float, default=1., help='balance factor for waging attack.')
-atta_argparse.add_argument('--m_pertb', type=int, default=100, help='maximum number of perturbations.')
-atta_argparse.add_argument('--bandwidth', type=float, default=10., help='variance of Gaussian distribution.')
-atta_argparse.add_argument('--n_benware', type=int, default=500, help='number of centers.')
+atta_argparse.add_argument('--m_pertb', type=int, default=50, help='maximum number of perturbations.')
+atta_argparse.add_argument('--bandwidth', type=float, default=20., help='variance of Gaussian distribution.')
+atta_argparse.add_argument('--n_benware', type=int, default=1000, help='number of centers.')
 
 atta_argparse.add_argument('--n_step', type=int, default=10, help='maximum number of steps.')
-atta_argparse.add_argument('--step_length_l2', type=float, default=5., help='step length in each step.')
-atta_argparse.add_argument('--step_length_linf', type=float, default=5., help='step length in each step.')
+atta_argparse.add_argument('--step_length_l2', type=float, default=2., help='step length in each step.')
+atta_argparse.add_argument('--step_length_linf', type=float, default=0.1, help='step length in each step.')
 atta_argparse.add_argument('--lr', type=float, default=0.1, help='learning rate.')
 atta_argparse.add_argument('--random_start', action='store_true', default=False, help='randomly initialize the start points.')
 atta_argparse.add_argument('--round_threshold', type=float, default=0.98, help='threshold for rounding real scalars.')
 
 atta_argparse.add_argument('--base', type=float, default=10., help='base of a logarithm function.')
 atta_argparse.add_argument('--kappa', type=float, default=1., help='attack confidence.')
-atta_argparse.add_argument('--real', action='store_true', default=True, help='whether produce the perturbed apks.')
+atta_argparse.add_argument('--real', action='store_true', default=False, help='whether produce the perturbed apks.')
 atta_argparse.add_argument('--kde', action='store_true', default=False,
                            help='attack model enhanced by kernel density estimation.')
 atta_argparse.add_argument('--model', type=str, default='maldet',
@@ -120,9 +120,9 @@ def _main():
     ben_hidden = []
     with torch.no_grad():
         c = args.n_benware if args.n_benware < ben_count else ben_count
-        for ben_x, ben_a, ben_y in ben_test_dataset_producer:
+        for ben_x, ben_a, ben_y, _1 in ben_test_dataset_producer:
             ben_x, ben_a, ben_y = utils.to_tensor(ben_x, ben_a, ben_y, device=dv)
-            ben_x_hidden, _ = model.forward(ben_x, ben_a)
+            ben_x_hidden, _2 = model.forward(ben_x, ben_a)
             ben_hidden.append(ben_x_hidden)
             if len(ben_hidden) * hp_params['batch_size'] >= c:
                 break

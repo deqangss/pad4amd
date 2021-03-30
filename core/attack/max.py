@@ -2,11 +2,11 @@ import torch
 import torch.nn.functional as F
 
 from core.attack.base_attack import BaseAttack
-from core.attack import PGDAdam
 from config import logging, ErrorHandler
 
 logger = logging.getLogger('core.attack.max')
 logger.addHandler(ErrorHandler)
+EXP_OVER_FLOW = 1e-30
 
 
 class Max(BaseAttack):
@@ -72,7 +72,7 @@ class Max(BaseAttack):
                 loss = loss.reshape(len(self.attack_list), num_sample_red).permute(1, 0)
                 done = done.reshape(len(self.attack_list), num_sample_red).permute(1, 0)
                 success_flag = torch.any(done, dim=-1)
-                done[~torch.any(done, dim=-1)] = 1  # for an example, if no attacks evade victim successful, all perturbed examples are reminded for future selection
+                done[~torch.any(done, dim=-1)] = 1  # for a sample, if no attacks evade the victim successful, all perturbed examples are reminded for future selection
                 loss = (loss * done.to(torch.float)) + torch.min(loss) * (~done).to(torch.float)
                 pertbx = pertbx.reshape(len(self.attack_list), num_sample_red, *red_n).permute([1, 0, *red_ind])
                 _, indices = loss.max(dim=-1)
@@ -93,8 +93,7 @@ class Max(BaseAttack):
         if 'forward_g' in type(model).__dict__.keys():
             de = model.forward_g(hidden, y_pred)
             tau = model.get_tau_sample_wise(y_pred)
-            loss_no_reduction = ce
-            # + self.lambda_ * (torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW))
+            loss_no_reduction = ce + torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW)
             # loss_no_reduction = ce + self.lambda_ * (de - model.tau)
             done = (y_pred == 0.) & (de >= tau)
         else:
