@@ -69,9 +69,11 @@ class Mimicry(object):
                     data_producer = data_fn(np.array(_paths), ben_y, batch_size=trials, name='test')
                     y_cent, x_density = [], []
                     for _ in range(n_sample_times):
-                        x, a, y = next(iter(data_producer))
+                        x, a, y, _1 = next(iter(data_producer))
                         x, a, y = utils.to_tensor(x, a, y, model.device)
                         y_cent_, x_density_ = model.inference_batch_wise(x, a, y, use_indicator=True)
+                        print(y_cent_)
+                        print('density:', x_density_)
                         y_cent.append(y_cent_)
                         x_density.append(x_density_)
                     y_cent = np.mean(np.stack(y_cent, axis=1), axis=1)
@@ -84,7 +86,7 @@ class Mimicry(object):
                     if not np.any(attack_success_flag):
                         success_flag = np.append(success_flag, [False])
                         if verbose:
-                            logger.info("Fail to perturb the file {}".format(mal_f_name))
+                            logger.info("Fail to perturb the file {}.".format(mal_f_name))
                     else:
                         success_flag = np.append(success_flag, [True])
                         if verbose:
