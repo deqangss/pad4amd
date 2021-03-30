@@ -75,9 +75,9 @@ class PGDAdam(BaseAttack):
             loss = -1 * torch.mean(loss)  # optimizer is a type of gradient descent method
             loss.backward()
             grad = adv_x.grad * padding_mask
-            pos_insertion = (adv_x < 0.5) * 1 * (adv_x >= 0.)
+            pos_insertion = (adv_x <= 0.5) * 1 * (adv_x >= 0.)
             grad4insertion = (grad < 0) * pos_insertion * grad  # positions of gradient value smaller than zero are used for insertion
-            pos_removal = (adv_x >= 0.5) * 1 * (adv_x <= 1.)
+            pos_removal = (adv_x > 0.5) * 1 * (adv_x <= 1.)
             grad4removal = (grad > 0) * (pos_removal & self.manipulation_x) * grad
             adv_x.grad = (grad4removal + grad4insertion)
             adv_x.grad = grad

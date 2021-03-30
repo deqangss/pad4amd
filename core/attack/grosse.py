@@ -76,7 +76,7 @@ class Groose(BaseAttack):
 
             # filtering un-considered graphs & positions
             grad = grad * padding_mask
-            grad4insertion = (grad > 0) * grad * (adv_x < 0.5)
+            grad4insertion = (grad > 0) * grad * (adv_x <= 0.5)
 
             grad4ins_ = grad4insertion.reshape(x.shape[0], -1)
             _, pos = torch.max(grad4ins_, dim=-1)

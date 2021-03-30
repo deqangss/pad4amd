@@ -73,11 +73,14 @@ class PGD(BaseAttack):
             var_adv_x = torch.autograd.Variable(adv_x, requires_grad=True)
             hidden, logit = model.forward(var_adv_x, adj)
             loss, done = self.get_loss(model, logit, label, hidden, self.lambda_)
-            grad = torch.autograd.grad(torch.mean(loss), var_adv_x)[0].data
+            grad = torch.autograd.grad(torch.mean(loss), var_adv_x)[0]
             perturbation = self.get_perturbation(grad, x, adv_x)
+            print('step:', t)
             adv_x = torch.clamp(adv_x + perturbation * step_length, min=0., max=1.)
+            print(torch.max(torch.abs(adv_x - x)))
         # round
-        print(torch.sum(torch.abs(adv_x - x), dim=(1, 2)))
+        # print(torch.max(torch.abs(adv_x - x)))
+        # print(torch.sum(torch.abs(adv_x - x), dim=(1, 2)))
         return adv_x.round()
 
     def perturb(self, model, x, adj=None, label=None,
@@ -127,21 +130,17 @@ class PGD(BaseAttack):
 
         # 2. look for allowable position, because only '1--> -' and '0 --> +' are permitted
         #    2.1 api insertion
-        pos_insertion = (adv_features < 0.5) * 1 * (adv_features >= 0.)
+        pos_insertion = (adv_features <= 0.5) * 1 * (adv_features >= 0.)
         grad4insertion = (gradients > 0) * pos_insertion * gradients
         #    2.2 api removal
-        pos_removal = (adv_features >= 0.5) * 1
+        pos_removal = (adv_features > 0.5) * 1
         #     2.2.1 cope with the interdependent apis
         checking_nonexist_api = (pos_removal ^ self.omega) & self.omega
         grad4removal = torch.sum(gradients * checking_nonexist_api, dim=-1, keepdim=True) + gradients
         grad4removal *= (grad4removal < 0) * (pos_removal & self.manipulation_x)
         gradients = grad4removal + grad4insertion
 
-        # 3. remove duplications
-        un_mod = torch.abs(features - adv_features) <= 1e-6
-        gradients = gradients * un_mod
-
-        # 4. norm
+        # 3. norm
         if self.norm == 'linf':
             perturbation = torch.sign(gradients)
         elif self.norm == 'l2':

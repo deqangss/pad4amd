@@ -95,10 +95,10 @@ class OMPA(BaseAttack):
 
         # 2. look for allowable position, because only '1--> -' and '0 --> +' are permitted
         #    2.1 api insertion
-        pos_insertion = (adv_features < 0.5) * 1
+        pos_insertion = (adv_features <= 0.5) * 1
         grad4insertion = (gradients > 0) * pos_insertion * gradients  # owing to gradient ascent
         #    2.2 api removal
-        pos_removal = (adv_features >= 0.5) * 1
+        pos_removal = (adv_features > 0.5) * 1
         if self.use_dependent_api:
             #     2.2.1 cope with the interdependent apis (note: application-specific)
             checking_nonexist_api = (pos_removal ^ self.omega) & self.omega

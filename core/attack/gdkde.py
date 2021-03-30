@@ -141,10 +141,10 @@ class GDKDE(BaseAttack):
 
         # 2. look for allowable position, because only '1--> -' and '0 --> +' are permitted
         #    2.1 api insertion
-        pos_insertion = (adv_features < 0.5) * 1
+        pos_insertion = (adv_features <= 0.5) * 1
         grad4insertion = (gradients > 0) * pos_insertion * gradients
         #    2.2 api removal
-        pos_removal = (adv_features >= 0.5) * 1
+        pos_removal = (adv_features > 0.5) * 1
         #     2.2.1 cope with the interdependent apis
         checking_nonexist_api = (pos_removal ^ self.omega) & self.omega
         grad4removal = torch.sum(gradients * checking_nonexist_api, dim=-1, keepdim=True) + gradients
