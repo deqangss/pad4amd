@@ -110,7 +110,7 @@ class GDKDE(BaseAttack):
         adv_x = x.detach().clone().to(torch.float)
         while self.lambda_ <= max_lambda_:
             hidden, logit = model.forward(adv_x, adj)
-            _, done = self.get_loss(model, logit, label, hidden, self.lambda_)
+            _, done = self.get_loss(model, logit, label, hidden)
             if verbose:
                 logger.info(
                     f"GD-KDE: attack effectiveness {done.sum().item() / float(x.size()[0])*100:.3f}% with lambda {self.lambda_}.")
