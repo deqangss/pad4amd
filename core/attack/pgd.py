@@ -75,12 +75,10 @@ class PGD(BaseAttack):
             loss, done = self.get_loss(model, logit, label, hidden, self.lambda_)
             grad = torch.autograd.grad(torch.mean(loss), var_adv_x)[0]
             perturbation = self.get_perturbation(grad, x, adv_x)
-            print('step:', t)
             adv_x = torch.clamp(adv_x + perturbation * step_length, min=0., max=1.)
-            print(torch.max(torch.abs(adv_x - x)))
         # round
         # print(torch.max(torch.abs(adv_x - x)))
-        # print(torch.sum(torch.abs(adv_x - x), dim=(1, 2)))
+        print(torch.sum(torch.abs(adv_x - x), dim=(1, 2)))
         return adv_x.round()
 
     def perturb(self, model, x, adj=None, label=None,
