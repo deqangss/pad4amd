@@ -172,7 +172,7 @@ class GDKDE(BaseAttack):
         y_pred = logit.argmax(1)
         square = torch.sum(torch.square(self.ben_hidden.unsqueeze(dim=0) - hidden.unsqueeze(dim=1)), dim=-1)
         kde = torch.mean(torch.exp(-square / self.bandwidth), dim=-1)
-        loss_no_reduction = ce + kde
+        loss_no_reduction = ce + 1000 * kde
         if 'forward_g' in type(model).__dict__.keys():
             de = model.forward_g(hidden, y_pred)
             tau = model.get_tau_sample_wise(y_pred)
