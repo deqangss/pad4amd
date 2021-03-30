@@ -77,7 +77,6 @@ class PGD(BaseAttack):
             perturbation = self.get_perturbation(grad, x, adv_x)
             adv_x = torch.clamp(adv_x + perturbation * step_length, min=0., max=1.)
         # round
-        print(torch.sum(torch.abs(adv_x - x), dim=(1, 2)))
         return adv_x.round()
 
     def perturb(self, model, x, adj=None, label=None,
