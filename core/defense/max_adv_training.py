@@ -70,8 +70,10 @@ class MaxAdvTraining(object):
 
                 # perturb malware feature vectors
                 mal_x_batch, mal_adj_batch, mal_y_batch, null_flag = PrincipledAdvTraining.get_mal_data(x_batch,
-                                                                                                        adj_batch,
+                                                                                                                    adj_batch,
                                                                                                         y_batch)
+                if null_flag:
+                    continue
                 mal_batch_size = mal_x_batch.shape[0]
                 start_time = time.time()
                 # the attack perturbs feature vectors using various hyper-parameter lambda, aiming to obtain
