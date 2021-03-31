@@ -31,7 +31,7 @@ class MaxAdvTraining(object):
     @attack_model: Object, adversary's model for generating adversarial malware on the feature space
     """
 
-    def __init__(self, model, attack_model, attack_param=None):
+    def __init__(self, model, attack_model=None, attack_param=None):
         self.model = model
         assert isinstance(attack_model, Max)
         self.attack_model = attack_model
