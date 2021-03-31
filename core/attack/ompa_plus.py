@@ -16,14 +16,15 @@ class OMPAP(OMPA):
 
     Parameters
     ---------
+    @param centers, torch.tensor, hidden representation of examples (center points)
     @param kappa, attack confidence
     @param manipulation_x, manipulations
     @param omega, the indices of interdependent apis corresponding to each api
     @param device, 'cpu' or 'cuda'
     """
 
-    def __init__(self, kappa=1., manipulation_x=None, omega=None, device=None):
-        super(OMPAP, self).__init__(True, True, kappa, manipulation_x, omega, device)
+    def __init__(self, centers=None, bandwidth=20, kappa=1., manipulation_x=None, omega=None, device=None):
+        super(OMPAP, self).__init__(True, True, centers, bandwidth, kappa, manipulation_x, omega, device)
 
     def perturb(self, model, x, adj=None, label=None,
                 m=10,

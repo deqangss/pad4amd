@@ -4,6 +4,7 @@ from __future__ import print_function
 import os
 import argparse
 
+import torch
 import numpy as np
 
 from core.defense import Dataset
@@ -19,6 +20,8 @@ atta_argparse = argparse.ArgumentParser(description='arguments for orthogonal ma
 atta_argparse.add_argument('--lambda_', type=float, default=1., help='balance factor for waging attack.')
 atta_argparse.add_argument('--step_length', type=float, default=1., help='step length.')
 atta_argparse.add_argument('--m_pertb', type=int, default=100, help='maximum number of perturbations.')
+atta_argparse.add_argument('--n_sample', type=int, default=5000, help='number of centers.')
+atta_argparse.add_argument('--bandwidth', type=float, default=20., help='variance of Gaussian distribution.')
 atta_argparse.add_argument('--kappa', type=float, default=1., help='attack confidence.')
 atta_argparse.add_argument('--real', action='store_true', default=False, help='whether produce the perturbed apks.')
 atta_argparse.add_argument('--model', type=str, default='maldet',
@@ -96,7 +99,18 @@ def _main():
 
     model.predict(mal_test_dataset_producer)
 
-    attack = OMPA(kappa=args.kappa, device=model.device)
+    test_dataset_producer = dataset.get_input_producer(test_x, testy, batch_size=hp_params['batch_size'], name='test')
+    center_hidden = []
+    with torch.no_grad():
+        c = args.n_sample if args.n_sample < len(testy) else len(testy)
+        for x, a, y, _1 in test_dataset_producer:
+            x, a, y = utils.to_tensor(x, a, y, device=dv)
+            x_hidden, _ = model.forward(x, a)
+            center_hidden.append(x_hidden)
+            if len(center_hidden) * hp_params['batch_size'] >= c:
+                break
+        center_hidden = torch.vstack(center_hidden)[:c]
+    attack = OMPA(centers=center_hidden, kappa=args.kappa, device=model.device)
     logger.info("\nThe maximum number of perturbations for each example is {}:".format(args.m_pertb))
     y_cent_list, x_density_list = [], []
     x_mod_integrated = []

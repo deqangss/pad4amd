@@ -13,16 +13,22 @@ class OMPA(BaseAttack):
     Parameters
     ---------
     @param is_attacker, Boolean, play the role of attacker (note: the defender conducts adversarial training)
+    @param use_dependent_api, Boolean, whether use interdependent api
+    @param centers, torch.tensor, hidden representation of examples (center points)
+    @param bandwidth: float, variance of gaussian distribution
     @param kappa, float, attack confidence
     @param manipulation_x, manipulations
     @param omega, the indices of interdependent apis corresponding to each api
     @param device, 'cpu' or 'cuda'
     """
 
-    def __init__(self, is_attacker=True, use_dependent_api=True, kappa=1., manipulation_x=None, omega=None, device=None):
+    def __init__(self, is_attacker=True, use_dependent_api=True, centers=None, bandwidth=20.,
+                 kappa=1., manipulation_x=None, omega=None, device=None):
         super(OMPA, self).__init__(kappa, manipulation_x, omega, device)
         self.is_attacker = is_attacker
         self.use_dependent_api = use_dependent_api
+        self.centers = centers
+        self.bandwidth = bandwidth
         self.lambda_ = 1.
 
     def perturb(self, model, x, adj=None, label=None,
@@ -138,7 +144,18 @@ class OMPA(BaseAttack):
                 loss_no_reduction = ce + self.lambda_ * (torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW))
             # loss_no_reduction = ce + self.lambda_ * (de - model.tau)
             done = (y_pred == 0.) & (de >= tau)
-        else:
+        elif self.centers is not None:
+            de = self.density_estimation(hidden)
+            loss_no_reduction = ce + self.lambda_ * (torch.log(de + EXP_OVER_FLOW))
+            done = y_pred == 0.
+        else:  # degrade to pgd l1 attack
             loss_no_reduction = ce
             done = y_pred == 0.
         return loss_no_reduction, done
+
+    def density_estimation(self, hidden):
+        """
+        use kernel density estimation and no class is attended
+        """
+        square = torch.sum(torch.square(self.centers.unsqueeze(dim=0) - hidden.unsqueeze(dim=1)), dim=-1)
+        return torch.mean(torch.exp(-square / self.bandwidth), dim=-1)

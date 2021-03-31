@@ -4,6 +4,7 @@ from __future__ import print_function
 import os
 import argparse
 
+import torch
 import numpy as np
 
 from core.defense import Dataset
@@ -16,19 +17,21 @@ from config import config, logging, ErrorHandler
 logger = logging.getLogger('examples.omp_plus_attack_test')
 logger.addHandler(ErrorHandler)
 
-ompap_argparse = argparse.ArgumentParser(description='arguments for enhancing orthogonal matching pursuit attack')
-ompap_argparse.add_argument('--m_pertb', type=int, default=100, help='maximum number of perturbations.')
-ompap_argparse.add_argument('--base', type=float, default=10., help='base of a logarithm function.')
-ompap_argparse.add_argument('--kappa', type=float, default=1., help='attack confidence.')
-ompap_argparse.add_argument('--real', action='store_true', default=False, help='whether produce the perturbed apks.')
-ompap_argparse.add_argument('--model', type=str, default='maldet',
-                            choices=['maldet', 'kde', 'advmaldet', 'madvtrain', 'padvtrain'],
-                            help="model type, either of 'maldet', 'advmaldet' and 'padvtrain'.")
-ompap_argparse.add_argument('--model_name', type=str, default='xxxxxxxx-xxxxxx', help='model timestamp.')
+atta_argparse = argparse.ArgumentParser(description='arguments for enhancing orthogonal matching pursuit attack')
+atta_argparse.add_argument('--m_pertb', type=int, default=100, help='maximum number of perturbations.')
+atta_argparse.add_argument('--n_sample', type=int, default=5000, help='number of centers.')
+atta_argparse.add_argument('--bandwidth', type=float, default=20., help='variance of Gaussian distribution.')
+atta_argparse.add_argument('--base', type=float, default=10., help='base of a logarithm function.')
+atta_argparse.add_argument('--kappa', type=float, default=1., help='attack confidence.')
+atta_argparse.add_argument('--real', action='store_true', default=False, help='whether produce the perturbed apks.')
+atta_argparse.add_argument('--model', type=str, default='maldet',
+                           choices=['maldet', 'kde', 'advmaldet', 'madvtrain', 'padvtrain'],
+                           help="model type, either of 'maldet', 'advmaldet' and 'padvtrain'.")
+atta_argparse.add_argument('--model_name', type=str, default='xxxxxxxx-xxxxxx', help='model timestamp.')
 
 
 def _main():
-    args = ompap_argparse.parse_args()
+    args = atta_argparse.parse_args()
     if args.model == 'maldet':
         save_dir = config.get('experiments', 'malware_detector') + '_' + args.model_name
     elif args.model == 'kde':
@@ -94,7 +97,20 @@ def _main():
     logger.info("Load model parameters from {}.".format(model.model_save_path))
     # model.predict(mal_test_dataset_producer)
 
-    attack = OMPAP(kappa=args.kappa,
+    test_dataset_producer = dataset.get_input_producer(test_x, testy, batch_size=hp_params['batch_size'], name='test')
+    center_hidden = []
+    with torch.no_grad():
+        c = args.n_sample if args.n_sample < len(testy) else len(testy)
+        for x, a, y, _1 in test_dataset_producer:
+            x, a, y = utils.to_tensor(x, a, y, device=dv)
+            x_hidden, _ = model.forward(x, a)
+            center_hidden.append(x_hidden)
+            if len(center_hidden) * hp_params['batch_size'] >= c:
+                break
+        center_hidden = torch.vstack(center_hidden)[:c]
+    attack = OMPAP(centers=center_hidden,
+                   bandwidth=args.bandwidth,
+                   kappa=args.kappa,
                    device=model.device)
 
     logger.info("\nThe maximum number of perturbations for each example is {}:".format(args.m_pertb))
