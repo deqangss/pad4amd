@@ -20,7 +20,7 @@ atta_argparse = argparse.ArgumentParser(description='arguments for orthogonal ma
 atta_argparse.add_argument('--lambda_', type=float, default=1., help='balance factor for waging attack.')
 atta_argparse.add_argument('--step_length', type=float, default=1., help='step length.')
 atta_argparse.add_argument('--m_pertb', type=int, default=100, help='maximum number of perturbations.')
-atta_argparse.add_argument('--n_sample', type=int, default=5000, help='number of centers.')
+atta_argparse.add_argument('--n_center', type=int, default=5000, help='number of centers.')
 atta_argparse.add_argument('--bandwidth', type=float, default=20., help='variance of Gaussian distribution.')
 atta_argparse.add_argument('--kappa', type=float, default=1., help='attack confidence.')
 atta_argparse.add_argument('--real', action='store_true', default=False, help='whether produce the perturbed apks.')
@@ -102,7 +102,7 @@ def _main():
     test_dataset_producer = dataset.get_input_producer(test_x, testy, batch_size=hp_params['batch_size'], name='test')
     center_hidden = []
     with torch.no_grad():
-        c = args.n_sample if args.n_sample < len(testy) else len(testy)
+        c = args.n_center if args.n_center < len(testy) else len(testy)
         for x, a, y, _1 in test_dataset_producer:
             x, a, y = utils.to_tensor(x, a, y, device=dv)
             x_hidden, _ = model.forward(x, a)

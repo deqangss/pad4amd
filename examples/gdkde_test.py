@@ -21,7 +21,7 @@ atta_argparse = argparse.ArgumentParser(description='arguments for l1 norm based
 atta_argparse.add_argument('--lambda_', type=float, default=1., help='balance factor for waging attack.')
 atta_argparse.add_argument('--m_pertb', type=int, default=100, help='maximum number of perturbations.')
 atta_argparse.add_argument('--bandwidth', type=float, default=20., help='variance of Gaussian distribution.')
-atta_argparse.add_argument('--n_benware', type=int, default=1000, help='number of centers.')
+atta_argparse.add_argument('--n_center', type=int, default=1000, help='number of centers.')
 atta_argparse.add_argument('--base', type=float, default=10., help='base of a logarithm function.')
 atta_argparse.add_argument('--kappa', type=float, default=1., help='attack confidence.')
 atta_argparse.add_argument('--real', action='store_true', default=False, help='whether produce the perturbed apks.')
@@ -106,7 +106,7 @@ def _main():
 
     ben_hidden = []
     with torch.no_grad():
-        c = args.n_benware if args.n_benware < ben_count else ben_count
+        c = args.n_center if args.n_center < ben_count else ben_count
         for ben_x, ben_a, ben_y, _1 in ben_test_dataset_producer:
             ben_x, ben_a, ben_y = utils.to_tensor(ben_x, ben_a, ben_y, device=dv)
             ben_x_hidden, _ = model.forward(ben_x, ben_a)
