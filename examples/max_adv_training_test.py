@@ -12,7 +12,7 @@ from tools.utils import save_args, get_group_args, dump_pickle
 from examples.maldet_test import cmd_md
 
 max_adv_argparse = cmd_md.add_argument_group(title='max adv training')
-max_adv_argparse.add_argument('--m_pertb', type=int, default=10, help='maximum number of perturbations.')
+max_adv_argparse.add_argument('--m', type=int, default=10, help='maximum number of perturbations.')
 
 max_adv_argparse.add_argument('--n_step', type=int, default=50, help='maximum number of steps for base attacks.')
 max_adv_argparse.add_argument('--step_length_l2', type=float, default=2., help='step length in each step.')
@@ -55,7 +55,7 @@ def _main():
     # initialize the base model of max attack
     pgdl1 = PGDl1(device=model.device)
     pgdl1.perturb = partial(pgdl1.perturb,
-                            m=args.m_pertb
+                            m=args.m
                             )
 
     pgdl2 = PGD(norm='l2', use_random=False, device=model.device)
