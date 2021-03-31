@@ -21,8 +21,6 @@ atta_argparse.add_argument('--m_pertb', type=int, default=100, help='maximum num
 atta_argparse.add_argument('--base', type=float, default=10., help='base of a logarithm function.')
 atta_argparse.add_argument('--kappa', type=float, default=1., help='attack confidence.')
 atta_argparse.add_argument('--real', action='store_true', default=False, help='whether produce the perturbed apks.')
-# atta_argparse.add_argument('--kde', action='store_true', default=False,
-#                            help='attack model with kernel density estimation.')
 atta_argparse.add_argument('--model', type=str, default='maldet',
                            choices=['maldet', 'kde', 'advmaldet', 'madvtrain', 'padvtrain'],
                            help="model type, either of 'maldet', 'advmaldet' and 'padvtrain'.")

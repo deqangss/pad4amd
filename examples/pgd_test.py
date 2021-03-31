@@ -7,7 +7,7 @@ import argparse
 import numpy as np
 
 from core.defense import Dataset
-from core.defense import MalwareDetector, MalwareDetectorIndicator, PrincipledAdvTraining, KernelDensityEstimation
+from core.defense import MalwareDetector, KernelDensityEstimation, MalwareDetectorIndicator, MaxAdvTraining, PrincipledAdvTraining
 from core.attack import PGD
 from tools import utils
 from config import config, logging, ErrorHandler
@@ -25,9 +25,8 @@ atta_argparse.add_argument('--round_threshold', type=float, default=0.5, help='t
 atta_argparse.add_argument('--base', type=float, default=10., help='base of a logarithm function.')
 atta_argparse.add_argument('--kappa', type=float, default=1., help='attack confidence.')
 atta_argparse.add_argument('--real', action='store_true', default=False, help='whether produce the perturbed apks.')
-atta_argparse.add_argument('--kde', action='store_true', default=False, help='attack model enhanced by kernel density estimation.')
 atta_argparse.add_argument('--model', type=str, default='maldet',
-                           choices=['maldet', 'advmaldet', 'padvtrain'],
+                           choices=['maldet', 'kde', 'advmaldet', 'madvtrain', 'padvtrain'],
                            help="model type, either of 'maldet', 'advmaldet' and 'padvtrain'.")
 atta_argparse.add_argument('--model_name', type=str, default='xxxxxxxx-xxxxxx', help='model timestamp.')
 
@@ -36,8 +35,12 @@ def _main():
     args = atta_argparse.parse_args()
     if args.model == 'maldet':
         save_dir = config.get('experiments', 'malware_detector') + '_' + args.model_name
+    elif args.model == 'kde':
+        save_dir = config.get('experiments', 'kde') + '_' + args.model_name
     elif args.model == 'advmaldet':
         save_dir = config.get('experiments', 'malware_detector_indicator') + '_' + args.model_name
+    elif args.model == 'madvtrain':
+        save_dir = config.get('experiments', 'm_adv_training') + '_' + args.model_name
     elif args.model == 'padvtrain':
         save_dir = config.get('experiments', 'p_adv_training') + '_' + args.model_name
     else:
@@ -64,7 +67,7 @@ def _main():
         dv = 'cpu'
     else:
         dv = 'cuda'
-    if args.model == 'maldet':
+    if args.model == 'maldet' or args.model == 'kde' or args.model == 'madvtrain':
         model = MalwareDetector(dataset.vocab_size,
                                 dataset.n_classes,
                                 device=dv,
@@ -80,17 +83,17 @@ def _main():
                                          **hp_params
                                          )
     model = model.to(dv)
-    if args.model == 'padvtrain':
-        PrincipledAdvTraining(model)
     if args.kde:
-        save_dir = config.get('experiments', 'kde') + '_' + args.model_name
-        hp_params = utils.read_pickle(os.path.join(save_dir, 'hparam.pkl'))
         model = KernelDensityEstimation(model,
                                         n_centers=hp_params['n_centers'],
                                         bandwidth=hp_params['bandwidth'],
                                         n_classes=dataset.n_classes,
                                         ratio=hp_params['ratio']
                                         )
+    if args.model == 'madvtrain':
+        MaxAdvTraining(model)
+    if args.model == 'padvtrain':
+        PrincipledAdvTraining(model)
 
     model.load()
     logger.info("Load model parameters from {}.".format(model.model_save_path))
@@ -139,6 +142,7 @@ def _main():
         attack.produce_adv_mal(x_mod_integrated, mal_test_x.tolist(),
                                config.get('dataset', 'malware_dir'),
                                adj_mod=None)
+
 
 if __name__ == '__main__':
     _main()
