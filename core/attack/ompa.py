@@ -146,6 +146,7 @@ class OMPA(BaseAttack):
             done = (y_pred == 0.) & (de >= tau)
         elif self.centers is not None:
             de = self.density_estimation(hidden)
+            print(de)
             loss_no_reduction = ce + self.lambda_ * (torch.log(de + EXP_OVER_FLOW))
             done = y_pred == 0.
         else:  # degrade to pgd l1 attack

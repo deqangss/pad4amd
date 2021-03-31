@@ -54,8 +54,6 @@ class OMPAP(OMPA):
                                                 )
             adv_x[~done] = pert_x
             self.lambda_ *= base
-            if not self.check_lambda(model):
-                break
         with torch.no_grad():
             hidden, logit = model.forward(adv_x, adj)
             _, done = self.get_loss(model, logit, label, hidden)
