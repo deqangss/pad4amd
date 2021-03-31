@@ -33,7 +33,8 @@ class MaxAdvTraining(object):
 
     def __init__(self, model, attack_model=None, attack_param=None):
         self.model = model
-        assert isinstance(attack_model, Max)
+        if attack_model is not None:
+            assert isinstance(attack_model, Max)
         self.attack_model = attack_model
         self.attack_param = attack_param
 
