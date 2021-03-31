@@ -84,8 +84,6 @@ def _main():
     model = model.to(dv)
 
     if args.model == 'kde':
-        save_dir = config.get('experiments', 'kde') + '_' + args.model_name
-        hp_params = utils.read_pickle(os.path.join(save_dir, 'hparam.pkl'))
         model = KernelDensityEstimation(model,
                                         n_centers=hp_params['n_centers'],
                                         bandwidth=hp_params['bandwidth'],
