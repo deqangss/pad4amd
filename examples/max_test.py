@@ -181,7 +181,7 @@ def _main():
                               base=args.base,
                               verbose=False)
 
-    attack = Max(attack_list=[gdkde, pgdl1, pgdl2, pgdlinf, pgdadma],
+    attack = Max(attack_list=[pgdl1, pgdl2, pgdlinf, pgdadma],
                  varepsilon=1e-9,
                  device=model.device
                  )
