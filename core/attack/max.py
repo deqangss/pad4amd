@@ -39,7 +39,7 @@ class Max(BaseAttack):
         @param verbose: Boolean, print verbose log
         """
         if x is None or x.shape[0] <= 0:
-            return []
+            return torch.tensor([])
         with torch.no_grad():
             hidden, logit = model.forward(x, adj)
             loss, done = self.get_loss(model, logit, label, hidden)
