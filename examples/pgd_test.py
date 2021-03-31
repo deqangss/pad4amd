@@ -83,7 +83,7 @@ def _main():
                                          **hp_params
                                          )
     model = model.to(dv)
-    if args.kde:
+    if args.model == 'kde':
         model = KernelDensityEstimation(model,
                                         n_centers=hp_params['n_centers'],
                                         bandwidth=hp_params['bandwidth'],
