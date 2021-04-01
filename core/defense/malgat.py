@@ -94,6 +94,7 @@ class MalGAT(nn.Module):
             self.add_module('attention_cls_layer_header_{}'.format(idx_i), cls_attn_layer)
 
         self.attn_dense = nn.Linear(self.vocab_size, self.embedding_dim)
+        self.mod_gra_cls_dense = nn.Linear(self.penultimate_hidden_unit, self.penultimate_hidden_unit, bias=False)
 
         # another modality function
         self.mod_frq_dense = nn.Linear(self.vocab_size, self.embedding_dim)
@@ -140,8 +141,8 @@ class MalGAT(nn.Module):
         cls_code = self.activation(self.mod_frq_cls_dense(mod1_code))
         if self.use_fusion:
             latent_codes = self.activation(
-                torch.stack([header_cls(latent_codes, cls_code) for header_cls in self.cls_attn_layers], dim=-2).sum(
-                    -2) / self.n_heads + self.mod_frq_cls_dense(mod1_code))
+                self.mod_gra_cls_dense(torch.stack([header_cls(latent_codes, cls_code) for header_cls in self.cls_attn_layers], dim=-2).sum(
+                    -2) / self.n_heads) + self.mod_frq_cls_dense(mod1_code))
         else:
             latent_codes = self.activation(
                 torch.stack([header_cls(latent_codes, cls_code) for header_cls in self.cls_attn_layers], dim=-2).sum(
