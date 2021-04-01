@@ -113,9 +113,7 @@ class MalwareDetector(nn.Module):
         with torch.no_grad():
             for ith in tqdm(range(self.n_sample_times)):
                 conf_batches = []
-                print('--------')
                 for x, adj, y, ig in test_data_producer:
-                    print(ig)
                     x, adj, y = utils.to_tensor(x, adj, y, self.device)
                     _2, logits = self.forward(x, adj)
                     conf_batches.append(F.softmax(logits, dim=-1))
@@ -123,8 +121,6 @@ class MalwareDetector(nn.Module):
                         gt_labels.append(y)
                 conf_batches = torch.vstack(conf_batches)
                 confidences.append(conf_batches)
-            print(confidences[0])
-            print(confidences[1])
         gt_labels = torch.cat(gt_labels, dim=0)
         confidences = torch.mean(torch.stack(confidences).permute([1, 0, 2]), dim=1)
         return confidences, gt_labels
