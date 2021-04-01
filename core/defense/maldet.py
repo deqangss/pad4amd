@@ -121,6 +121,8 @@ class MalwareDetector(nn.Module):
                         gt_labels.append(y)
                 conf_batches = torch.vstack(conf_batches)
                 confidences.append(conf_batches)
+            print(confidences[0])
+            print(confidences[1])
         gt_labels = torch.cat(gt_labels, dim=0)
         confidences = torch.mean(torch.stack(confidences).permute([1, 0, 2]), dim=1)
         return confidences, gt_labels
