@@ -113,7 +113,9 @@ class MalwareDetector(nn.Module):
         with torch.no_grad():
             for ith in tqdm(range(self.n_sample_times)):
                 conf_batches = []
-                for x, adj, y, _1 in test_data_producer:
+                print('--------')
+                for x, adj, y, ig in test_data_producer:
+                    print(ig)
                     x, adj, y = utils.to_tensor(x, adj, y, self.device)
                     _2, logits = self.forward(x, adj)
                     conf_batches.append(F.softmax(logits, dim=-1))
