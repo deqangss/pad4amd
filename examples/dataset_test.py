@@ -33,7 +33,7 @@ def main_():
     dataset = Dataset(config.get('DEFAULT', 'dataset_name'), is_adj=True, feature_ext_args=args_dict)
     validation_data, valy = dataset.validation_dataset
     val_dataset_producer = dataset.get_input_producer(validation_data, valy, batch_size=2, name='train')
-    for epoch in range(1):
+    for epoch in range(2):
         for idx, res in enumerate(val_dataset_producer):
             x, adj, l, i = res
             if dataset.is_adj is not None:
