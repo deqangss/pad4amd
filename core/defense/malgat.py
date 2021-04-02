@@ -112,7 +112,9 @@ class MalGAT(nn.Module):
         x_comb = torch.clip(torch.sum(x, dim=0), min=0, max=1.)
         mod1_code = torch.amax(
             self.activation(self.mod_frq_dense((x_comb.unsqueeze(-1) * self.embedding_weight).permute(0, 2, 1))), dim=-1)
-
+        print(self.k)
+        import sys
+        sys.exit(1)
         if self.k <= 0:
             return self.activation(self.mod_frq_cls_dense(mod1_code))
 
