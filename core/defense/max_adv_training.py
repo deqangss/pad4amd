@@ -58,7 +58,7 @@ class MaxAdvTraining(object):
         @param weight_decay: Float, penalty factor, default value 5e-4 in Graph ATtention layer (GAT)
         @param verbose: Boolean, whether to show verbose info
         """
-        optimizer = optim.Adam(self.model.param_customizing(weight_decay), lr=lr, weight_decay=weight_decay)
+        optimizer = optim.Adam(self.model.customize_param(weight_decay), lr=lr, weight_decay=weight_decay)
         total_time = 0.
         nbatches = len(train_data_producer)
         logger.info("Max adversarial training is starting ...")

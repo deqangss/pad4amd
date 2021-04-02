@@ -77,7 +77,7 @@ class PrincipledAdvTraining(object):
         self.model.get_threshold(validation_data_producer)
         logger.info(f"The threshold is {self.model.tau:.3f}.")
 
-        optimizer = optim.Adam(self.model.param_customizing(weight_decay), lr=lr, weight_decay=weight_decay)
+        optimizer = optim.Adam(self.model.customize_param(weight_decay), lr=lr, weight_decay=weight_decay)
         total_time = 0.
         nbatches = len(train_data_producer)
         lambda_space = np.logspace(np.log10(lambda_lower_bound),

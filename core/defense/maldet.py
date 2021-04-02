@@ -174,7 +174,7 @@ class MalwareDetector(nn.Module):
         @param weight_decay, Float, penalty factor, default value 5e-4 in graph attention layer
         @param verbose: Boolean, whether to show verbose logs
         """
-        optimizer = optim.Adam(self.parameters(), lr=lr, weight_decay=weight_decay)
+        optimizer = optim.Adam(self.customize_param(weight_decay), lr=lr)
         best_avg_acc = 0.
         best_epoch = 0
         total_time = 0.
@@ -230,7 +230,7 @@ class MalwareDetector(nn.Module):
                 logger.info(
                     f'Validation accuracy: {avg_acc_val * 100:.2f} | The best validation accuracy: {best_avg_acc * 100:.2f} at epoch: {best_epoch}')
 
-    def param_customizing(self, weight_decay):
+    def customize_param(self, weight_decay):
         customized_params_no_decay = []
         customized_params_decay = []
 
