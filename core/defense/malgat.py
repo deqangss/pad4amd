@@ -140,9 +140,8 @@ class MalGAT(nn.Module):
         latent_codes = F.dropout(latent_codes, self.dropout, training=self.training)
         cls_code = self.activation(self.mod_frq_cls_dense(mod1_code))
         if self.use_fusion:
-            latent_codes = self.activation(
-                self.mod_gra_cls_dense(torch.stack([header_cls(latent_codes, cls_code) for header_cls in self.cls_attn_layers], dim=-2).sum(
-                    -2) / self.n_heads) + self.mod_frq_cls_dense(mod1_code))
+            latent_codes = self.activation(torch.stack([header_cls(latent_codes, cls_code) for header_cls in self.cls_attn_layers], dim=-2).sum(
+                    -2) / self.n_heads + self.mod_frq_cls_dense(mod1_code))
         else:
             latent_codes = self.activation(
                 torch.stack([header_cls(latent_codes, cls_code) for header_cls in self.cls_attn_layers], dim=-2).sum(
