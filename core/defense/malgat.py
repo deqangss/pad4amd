@@ -94,7 +94,6 @@ class MalGAT(nn.Module):
             self.add_module('attention_cls_layer_header_{}'.format(idx_i), cls_attn_layer)
 
         self.attn_dense = nn.Linear(self.vocab_size, self.embedding_dim)
-        self.mod_gra_cls_dense = nn.Linear(self.penultimate_hidden_unit, self.penultimate_hidden_unit, bias=False)
 
         # another modality function
         self.mod_frq_dense = nn.Linear(self.vocab_size, self.embedding_dim)
