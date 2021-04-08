@@ -23,7 +23,7 @@ def _main():
     dataset = Dataset(args.dataset_name,
                       k=args.k,
                       is_adj=args.is_adj,
-                      feature_ext_args=get_group_args(args, cmd_md, 'x_feature')
+                      feature_ext_args=get_group_args(args, cmd_md, 'feature')
                       )
     (train_data, trainy), (val_data, valy), (test_data, testy) = dataset.train_dataset, dataset.validation_dataset, dataset.test_dataset
     train_dataset_producer = dataset.get_input_producer(train_data, trainy, batch_size=args.batch_size, name='train')
