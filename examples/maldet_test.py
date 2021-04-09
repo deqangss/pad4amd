@@ -68,8 +68,7 @@ mode_argparse.add_argument('--model_name', type=str, default='xxxxxxxx-xxxxxx', 
 
 def _main():
     args = cmd_md.parse_args()
-    dataset = Dataset(args.dataset_name,
-                      k=args.k,
+    dataset = Dataset(k=args.k,
                       is_adj=args.is_adj,
                       feature_ext_args=get_group_args(args, cmd_md, 'feature')
                       )

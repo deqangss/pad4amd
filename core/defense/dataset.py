@@ -13,17 +13,15 @@ from tools import utils
 
 
 class Dataset(torch.utils.data.Dataset):
-    def __init__(self, dataset_name='drebin', k=8, is_adj=False, seed=0, n_sgs_max=1000, feature_ext_args=None):
+    def __init__(self, k=8, is_adj=False, seed=0, n_sgs_max=1000, feature_ext_args=None):
         """
         build dataset for ml model learning
-        :param dataset_name: String, the dataset name, expected 'drebin' or 'androzoo'
         :param k: Integer, the number of subgraphs is sampled for passing through the neural networks
         :param is_adj: Boolean, whether use the actual adjacent matrix or not
         :param seed: Integer, the random seed
         :param n_sgs_max: Integer, the maximum number of subgraphs
         :param feature_ext_args: Dict, arguments for feature extraction
         """
-        self.dataset_name = dataset_name
         self.k = k
         self.is_adj = is_adj
         self.seed = seed
@@ -35,7 +33,6 @@ class Dataset(torch.utils.data.Dataset):
         self.n_sgs_max = n_sgs_max
         self.feature_ext_args = feature_ext_args
         self.temp_dir_handle = tempfile.TemporaryDirectory()
-        assert self.dataset_name in ['drebin', 'androzoo'], 'Expected either "drebin" or "androzoo".'
         if feature_ext_args is None:
             self.feature_extractor = Apk2graphs(config.get('metadata', 'naive_data_pool'),
                                                 config.get('dataset', 'intermediate'))
@@ -57,9 +54,9 @@ class Dataset(torch.utils.data.Dataset):
             self.test_dataset = (path_tran(self.test_dataset[0]), self.test_dataset[1])
         else:
             mal_feature_paths = self.apk_preprocess(
-                config.get(self.dataset_name, 'malware_dir'))
+                config.get('dataset', 'malware_dir'))
             ben_feature_paths = self.apk_preprocess(
-                config.get(self.dataset_name, 'benware_dir'))
+                config.get('dataset', 'benware_dir'))
 
             feature_paths = mal_feature_paths + ben_feature_paths
             gt_labels = np.zeros((len(mal_feature_paths) + len(ben_feature_paths)), dtype=np.int32)
@@ -80,7 +77,7 @@ class Dataset(torch.utils.data.Dataset):
     def data_split(self, feature_paths, labels):
         assert len(feature_paths) == len(labels)
         train_dn, validation_dn, test_dn = None, None, None
-        data_split_path = os.path.join(config.get(self.dataset_name, 'dataset_dir'), 'tr_te_va_split.name')
+        data_split_path = os.path.join(config.get('dataset', 'dataset_dir'), 'tr_te_va_split.name')
         if os.path.exists(data_split_path):
             train_dn, val_dn, test_dn = utils.read_pickle(data_split_path)
 
