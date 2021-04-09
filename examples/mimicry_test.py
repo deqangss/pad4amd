@@ -39,8 +39,7 @@ def _main():
         raise TypeError("Expected 'maldet', 'advmaldet' or 'padvtrain'.")
 
     hp_params = utils.read_pickle(os.path.join(save_dir, 'hparam.pkl'))
-    dataset = Dataset(hp_params['dataset_name'],
-                      k=hp_params['k'],
+    dataset = Dataset(k=hp_params['k'],
                       is_adj=hp_params['is_adj'],
                       feature_ext_args={'proc_number': hp_params['proc_number']}
                       )

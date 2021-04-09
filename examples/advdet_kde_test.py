@@ -24,8 +24,7 @@ def _main():
     save_dir = config.get('experiments', 'malware_detector') + '_' + args.model_name
     hp_params = utils.read_pickle(path.join(save_dir, 'hparam.pkl'))
 
-    dataset = Dataset(hp_params['dataset_name'],
-                      k=hp_params['k'],
+    dataset = Dataset(k=hp_params['k'],
                       is_adj=hp_params['is_adj'],
                       feature_ext_args={'proc_number': hp_params['proc_number']}
                       )

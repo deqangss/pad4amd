@@ -20,8 +20,7 @@ indicator_argparse.add_argument('--ratio', type=float, default=0.90,
 def _main():
     args = cmd_md.parse_args()
 
-    dataset = Dataset(args.dataset_name,
-                      k=args.k,
+    dataset = Dataset(k=args.k,
                       is_adj=args.is_adj,
                       feature_ext_args=get_group_args(args, cmd_md, 'feature')
                       )
