@@ -1,10 +1,10 @@
 import os.path
-import warnings
 from tqdm import tqdm
 import multiprocessing
 
 import collections
 import numpy as np
+from scipy.sparse import csr_matrix
 import networkx as nx
 import itertools
 
@@ -259,9 +259,7 @@ class Apk2graphs(object):
             if not os.path.exists(feature_path):
                 logger.warning("Cannot find the feature path: {}".format(feature_path))
                 continue
-            start_time = time.time()
             cg_dict = seq_gen.read_from_disk(feature_path)
-            print('cg load time:', time.time() - start_time)
             numerical_representation_dict = collections.defaultdict(tuple)
             start_time = time.time()
             for i, (root_call, cg) in enumerate(cg_dict.items()):
@@ -270,7 +268,7 @@ class Apk2graphs(object):
                     numerical_representation_container.append([numerical_representation_dict, label, feature_path])
                 if i >= n_cg:
                     return numerical_representation_container
-            print('cg handling time:', time.time() - start_time)
+            print('cg handling time:', time.time() - start_time, i)
 
             # numerical_representation_dict = collections.defaultdict(tuple)
             # cpu_count = multiprocessing.cpu_count() // 2 if multiprocessing.cpu_count() // 2 > 1 else 1
@@ -299,7 +297,6 @@ def _graph2rpst_wrapper(args):
 def graph2rpst(g, vocab, is_adj):
     new_g = g.copy()
     indices = []
-    from scipy.sparse import csr_matrix
     for node in g.nodes():
         if node not in vocab:
             if is_adj:
