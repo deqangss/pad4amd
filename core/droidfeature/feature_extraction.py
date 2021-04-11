@@ -254,7 +254,6 @@ class Apk2graphs(object):
         assert len(vocabulary) > 0
 
         numerical_representation_container = []
-        import time
         for feature_path, label in zip(feature_path_list, gt_labels):
             if not os.path.exists(feature_path):
                 logger.warning("Cannot find the feature path: {}".format(feature_path))
@@ -263,13 +262,11 @@ class Apk2graphs(object):
             numerical_representation_dict = collections.defaultdict(tuple)
 
             for i, (root_call, cg) in enumerate(cg_dict.items()):
-                start_time = time.time()
                 numerical_representation_dict[root_call] = _graph2rpst_wrapper((cg, vocabulary, is_adj))
                 if len(numerical_representation_dict) > 0:
                     numerical_representation_container.append([numerical_representation_dict, label, feature_path])
                 if i >= n_cg:
                     return numerical_representation_container
-                print('cg handling time:', time.time() - start_time, i)
 
             # numerical_representation_dict = collections.defaultdict(tuple)
             # cpu_count = multiprocessing.cpu_count() // 2 if multiprocessing.cpu_count() // 2 > 1 else 1
@@ -314,6 +311,7 @@ def graph2rpst(g, vocab, is_adj):
         else:
             indices.append(vocab.index(node))
     print('node handing time:', time.time() - start_time)
+    start_time = time.time()
     indices.append(vocab.index(NULL_ID))
     feature = np.zeros((len(vocab), ), dtype=np.float32)
     feature[indices] = 1.
@@ -325,6 +323,7 @@ def graph2rpst(g, vocab, is_adj):
         adj = None
     del new_g
     del g
+    print('return node handing time:', time.time() - start_time)
     return feature, adj
 
 
