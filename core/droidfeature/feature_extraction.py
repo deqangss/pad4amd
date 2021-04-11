@@ -293,9 +293,12 @@ def _graph2rpst_wrapper(args):
 
 
 def graph2rpst(g, vocab, is_adj):
-    new_g = g.copy()
-    indices = []
     import time
+    start_time = time.time()
+    new_g = g.copy()
+    print('copy time:', time.time() - start_time, len(nodes))
+    indices = []
+
     start_time = time.time()
     nodes = g.nodes()
     for node in nodes:
