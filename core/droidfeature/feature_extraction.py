@@ -261,14 +261,15 @@ class Apk2graphs(object):
                 continue
             cg_dict = seq_gen.read_from_disk(feature_path)
             numerical_representation_dict = collections.defaultdict(tuple)
-            start_time = time.time()
+
             for i, (root_call, cg) in enumerate(cg_dict.items()):
+                start_time = time.time()
                 numerical_representation_dict[root_call] = _graph2rpst_wrapper((cg, vocabulary, is_adj))
                 if len(numerical_representation_dict) > 0:
                     numerical_representation_container.append([numerical_representation_dict, label, feature_path])
                 if i >= n_cg:
                     return numerical_representation_container
-            print('cg handling time:', time.time() - start_time, i)
+                print('cg handling time:', time.time() - start_time, i)
 
             # numerical_representation_dict = collections.defaultdict(tuple)
             # cpu_count = multiprocessing.cpu_count() // 2 if multiprocessing.cpu_count() // 2 > 1 else 1
@@ -297,6 +298,8 @@ def _graph2rpst_wrapper(args):
 def graph2rpst(g, vocab, is_adj):
     new_g = g.copy()
     indices = []
+    import time
+    start_time = time.time()
     for node in g.nodes():
         if node not in vocab:
             if is_adj:
@@ -310,6 +313,7 @@ def graph2rpst(g, vocab, is_adj):
                 new_g.remove_node(node)
         else:
             indices.append(vocab.index(node))
+    print('node handing time:', time.time() - start_time)
     indices.append(vocab.index(NULL_ID))
     feature = np.zeros((len(vocab), ), dtype=np.float32)
     feature[indices] = 1.
