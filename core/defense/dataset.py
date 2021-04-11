@@ -259,10 +259,7 @@ class DatasetTorch(torch.utils.data.Dataset):
         feature_path = self.dataX[index]
         y = self.datay[index]
         # Load data and get label
-        import time
-        start_time = time.time()
         x, adj, y = self.dataset_obj.get_numerical_input([feature_path], [y])
-        print('load time:', time.time() - start_time)
         assert len(x) > 0 and len(adj) > 0, "Fail to load: " + feature_path
         return x[0], adj[0], y[0]
 
