@@ -174,7 +174,7 @@ class Dataset(torch.utils.data.Dataset):
                     adjs_padded.append(adjs[i])
                 indices_slicing = indices
             g_ind.append(indices_slicing)
-        print('not vs yes:', not_pad_c, pad_c)
+        print('not vs yes:', not_pad_c, pad_c, n_sg_used)
 
         # shape [batch_size, self.n_sg_used, vocab_size]
         features_padded = np.array([np.stack(list(feat), axis=0) for feat in zip(*features_padded)]).transpose(1, 0, 2)
