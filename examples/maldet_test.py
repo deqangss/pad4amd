@@ -56,9 +56,8 @@ detector_argparse.add_argument('--enable_gd_ckpt', action='store_true', default=
                                help='gradients checkpoint for saving GPU RAM')  # enable it with a caution in the training phase
 
 dataset_argparse = cmd_md.add_argument_group(title='data_producer')
-dataset_argparse.add_argument('--dataset_name', type=str, default='drebin',
-                              choices=['drebin', 'androzoo'], required=False, help='select dataset with "drebin" or "androzoo" expected ')
 detector_argparse.add_argument('--is_adj', action='store_true', help='incorporate branches instruction information.')
+detector_argparse.add_argument('--n_cgs', type=int, default=1000, help='limited number of call graphs.')
 
 mode_argparse = cmd_md.add_argument_group(title='mode')
 mode_argparse.add_argument('--mode', type=str, default='train', choices=['train', 'test'], required=False,
@@ -70,6 +69,7 @@ def _main():
     args = cmd_md.parse_args()
     dataset = Dataset(k=args.k,
                       is_adj=args.is_adj,
+                      n_sgs_max=args.n_cgs,
                       feature_ext_args=get_group_args(args, cmd_md, 'feature')
                       )
     (train_data, trainy), (val_data, valy), (test_data, testy) = dataset.train_dataset, dataset.validation_dataset, dataset.test_dataset
