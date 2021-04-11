@@ -57,7 +57,7 @@ detector_argparse.add_argument('--enable_gd_ckpt', action='store_true', default=
 
 dataset_argparse = cmd_md.add_argument_group(title='data_producer')
 detector_argparse.add_argument('--is_adj', action='store_true', help='incorporate branches instruction information.')
-detector_argparse.add_argument('--n_cgs', type=int, default=1000, help='limited number of call graphs.')
+detector_argparse.add_argument('--n_cg', type=int, default=1000, help='limited number of call graphs.')
 
 mode_argparse = cmd_md.add_argument_group(title='mode')
 mode_argparse.add_argument('--mode', type=str, default='train', choices=['train', 'test'], required=False,
