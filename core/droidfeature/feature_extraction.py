@@ -266,7 +266,7 @@ class Apk2graphs(object):
                 if len(numerical_representation_dict) > 0:
                     numerical_representation_container.append([numerical_representation_dict, label, feature_path])
                 if i >= n_cg:
-                    break
+                    return numerical_representation_container
 
             # numerical_representation_dict = collections.defaultdict(tuple)
             # cpu_count = multiprocessing.cpu_count() // 2 if multiprocessing.cpu_count() // 2 > 1 else 1
@@ -296,7 +296,6 @@ def graph2rpst(g, vocab, is_adj):
     new_g = g.copy()
     indices = []
     from scipy.sparse import csr_matrix
-    rear = csr_matrix(([1], ([len(vocab) - 1], [len(vocab) - 1])), shape=(len(vocab), len(vocab)))
     for node in g.nodes():
         if node not in vocab:
             if is_adj:
@@ -314,6 +313,7 @@ def graph2rpst(g, vocab, is_adj):
     feature = np.zeros((len(vocab), ), dtype=np.float32)
     feature[indices] = 1.
     if is_adj:
+        rear = csr_matrix(([1], ([len(vocab) - 1], [len(vocab) - 1])), shape=(len(vocab), len(vocab)))
         adj = nx.convert_matrix.to_scipy_sparse_matrix(g, nodelist=vocab, format='csr', dtype=np.float32)
         adj += rear
     else:
