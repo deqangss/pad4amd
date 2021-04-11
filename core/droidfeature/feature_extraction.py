@@ -311,7 +311,7 @@ def graph2rpst(g, vocab, is_adj):
                 new_g.remove_node(node)
         else:
             indices.append(vocab.index(node))
-    print('node handing time:', time.time() - start_time)
+    print('node handing time:', time.time() - start_time, len(nodes))
     start_time = time.time()
     indices.append(vocab.index(NULL_ID))
     feature = np.zeros((len(vocab), ), dtype=np.float32)
