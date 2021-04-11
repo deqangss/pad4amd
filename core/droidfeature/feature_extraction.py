@@ -297,7 +297,8 @@ def graph2rpst(g, vocab, is_adj):
     indices = []
     import time
     start_time = time.time()
-    for node in g.nodes():
+    nodes = g.nodes()
+    for node in nodes:
         if node not in vocab:
             if is_adj:
                 # make connection between the predecessors and successors
