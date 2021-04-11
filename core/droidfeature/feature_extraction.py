@@ -229,8 +229,7 @@ class Apk2graphs(object):
         features, adj, labels = [], [], []
         vocab, _ = self.get_vocab()
         representation_container = self.graph2representation(feature_path_list, gt_labels, vocab, is_adj, n_cg)
-        for rpst in representation_container:
-            rpst_dict, label, feature_path = rpst
+        for rpst_dict, label, feature_path in representation_container:
             sub_features = []
             sub_adjs = []
             for root_call, sub_rpst in rpst_dict.items():
