@@ -187,8 +187,6 @@ class Apk2graphs(object):
                     else:
                         api_info['vocab_ind'] = len(vocab) - 1
             seq_gen.save_to_disk(cg_dict, feature_path)
-            for root_call, sub_cg in cg_dict.items():
-                print(sub_cg.nodes(data=True))
 
     def feature_selection(self, train_features, train_y, vocab, dim):
         """
@@ -314,7 +312,6 @@ def _graph2rpst_wrapper(args):
     try:
         return graph2rpst(*args)
     except Exception as e:
-        print(e)
         logger.error(str(e))
         return e
 
@@ -337,9 +334,6 @@ def graph2rpst(g, vocab, is_adj):
                 new_g.remove_node(api)
         else:
             # indices.append(vocab.index(api))
-            if 'vocab_ind' not in list(api_info.keys()):
-                print(api)
-                print(vocab.index(api))
             indices.append(api_info['vocab_ind'])
     # indices.append(vocab.index(NULL_ID))
     indices.append(-1)  # the last word is NULL
