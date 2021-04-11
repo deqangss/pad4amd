@@ -174,9 +174,10 @@ class Apk2graphs(object):
         else:
             raise FileNotFoundError("No vocabulary found!")
         # updating graph
-        for feature_path in feature_path_list:
+        for idx, feature_path in enumerate(feature_path_list):
             if not os.path.exists(feature_path):
                 continue
+            print(idx, feature_path)
             cg_dict = seq_gen.read_from_disk(
                 feature_path)  # each file contains a dict of {root call method: networkx objects}
             for root_call, sub_cg in cg_dict.items():
