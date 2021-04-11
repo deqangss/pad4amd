@@ -187,6 +187,8 @@ class Apk2graphs(object):
                     else:
                         api_info['vocab_ind'] = len(vocab) - 1
             seq_gen.save_to_disk(cg_dict, feature_path)
+            del cg_dict
+        return
 
     def feature_selection(self, train_features, train_y, vocab, dim):
         """
