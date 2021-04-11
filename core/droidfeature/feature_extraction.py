@@ -212,12 +212,13 @@ class Apk2graphs(object):
         """
         raise NotImplementedError
 
-    def feature2ipt(self, feature_path_list, gt_labels=None, is_adj=False):
+    def feature2ipt(self, feature_path_list, gt_labels=None, is_adj=False, n_cg=1000):
         """
         Mapping features to the numerical representation
         :param feature_path_list, list, a list of paths, each of which directs to a feature file
         :param gt_labels, list or numpy.ndarray, ground truth labels
         :param is_adj, boolean, whether extract structural information or not
+        :param n_cg, integer, the limited number of call graphs
         """
         assert len(feature_path_list) == len(gt_labels), 'inconsistent data size {} vs. label size {}'.format(
             len(feature_path_list), len(gt_labels)
@@ -227,7 +228,7 @@ class Apk2graphs(object):
 
         features, adj, labels = [], [], []
         vocab, _ = self.get_vocab()
-        representation_container = self.graph2representation(feature_path_list, gt_labels, vocab, is_adj)
+        representation_container = self.graph2representation(feature_path_list, gt_labels, vocab, is_adj, n_cg)
         for rpst in representation_container:
             rpst_dict, label, feature_path = rpst
             sub_features = []
@@ -242,7 +243,7 @@ class Apk2graphs(object):
         return features, adj, labels
 
     @staticmethod
-    def graph2representation(feature_path_list, gt_labels, vocabulary=None, is_adj=False):
+    def graph2representation(feature_path_list, gt_labels, vocabulary=None, is_adj=False, n_cg=1000):
         """
         map graphs to numerical representations :param feature_path_list, list, a list of paths, each of which
         directs to a feature file :param gt_labels, list or numpy.ndarray, ground truth labels :param vocabulary:
@@ -260,10 +261,12 @@ class Apk2graphs(object):
                 continue
             cg_dict = seq_gen.read_from_disk(feature_path)
             numerical_representation_dict = collections.defaultdict(tuple)
-            for root_call, cg in cg_dict.items():
+            for i, (root_call, cg) in enumerate(cg_dict.items()):
                 numerical_representation_dict[root_call] = _graph2rpst_wrapper((cg, vocabulary, is_adj))
                 if len(numerical_representation_dict) > 0:
                     numerical_representation_container.append([numerical_representation_dict, label, feature_path])
+                if i >= n_cg:
+                    break
 
             # numerical_representation_dict = collections.defaultdict(tuple)
             # cpu_count = multiprocessing.cpu_count() // 2 if multiprocessing.cpu_count() // 2 > 1 else 1

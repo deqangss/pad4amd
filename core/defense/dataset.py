@@ -120,7 +120,7 @@ class Dataset(torch.utils.data.Dataset):
                     labels_.append(labels[i])
             return feature_paths, np.array(labels_)
 
-    def get_numerical_input(self, feature_paths, labels, name):
+    def get_numerical_input(self, feature_paths, labels):
         """
         loading features for given a list of feature paths
         # results:
@@ -131,7 +131,7 @@ class Dataset(torch.utils.data.Dataset):
         # --->> adjs: 2d list [number of files, number of subgraphs], in which each element has
         # a scipy sparse matrix with size [vocab_size, vocab_size]
         """
-        return self.feature_extractor.feature2ipt(feature_paths, labels, self.is_adj)
+        return self.feature_extractor.feature2ipt(feature_paths, labels, self.is_adj, self.n_sgs_max)
 
     def collate_fn(self, batch):
         # 1. Because the number of sub graphs is different between apks, we here align a batch of data
@@ -258,7 +258,7 @@ class DatasetTorch(torch.utils.data.Dataset):
         feature_path = self.dataX[index]
         y = self.datay[index]
         # Load data and get label
-        x, adj, y = self.dataset_obj.get_numerical_input([feature_path], [y], name=self.name + str(index))
+        x, adj, y = self.dataset_obj.get_numerical_input([feature_path], [y])
         assert len(x) > 0 and len(adj) > 0, "Fail to load: " + feature_path
         return x[0], adj[0], y[0]
 
