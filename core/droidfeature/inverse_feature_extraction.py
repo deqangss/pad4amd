@@ -106,7 +106,7 @@ class InverseDroidFeature(object):
         meta_data_saving_dir = config.get('dataset', 'intermediate')
         naive_data_saving_dir = config.get('metadata', 'naive_data_pool')
         feature_extractor = Apk2graphs(naive_data_saving_dir, meta_data_saving_dir)
-        InverseDroidFeature.vocab, InverseDroidFeature.vocab_info = feature_extractor.get_vocab()
+        InverseDroidFeature.vocab, InverseDroidFeature.vocab_info, _1 = feature_extractor.get_vocab()
         self.vocab = InverseDroidFeature.vocab
         self.vocab_info = InverseDroidFeature.vocab_info
 

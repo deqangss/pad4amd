@@ -53,10 +53,8 @@ class Dataset(torch.utils.data.Dataset):
             self.validation_dataset = (path_tran(self.validation_dataset[0]), self.validation_dataset[1])
             self.test_dataset = (path_tran(self.test_dataset[0]), self.test_dataset[1])
         else:
-            mal_feature_paths = self.apk_preprocess(
-                config.get('dataset', 'malware_dir'))
-            ben_feature_paths = self.apk_preprocess(
-                config.get('dataset', 'benware_dir'))
+            mal_feature_paths = self.apk_preprocess(config.get('dataset', 'malware_dir'))
+            ben_feature_paths = self.apk_preprocess(config.get('dataset', 'benware_dir'))
 
             feature_paths = mal_feature_paths + ben_feature_paths
             gt_labels = np.zeros((len(mal_feature_paths) + len(ben_feature_paths)), dtype=np.int32)
@@ -70,9 +68,13 @@ class Dataset(torch.utils.data.Dataset):
         for i in range(_labels.shape[0]):
             self.sample_weights[_labels[i]] = _weights[i]
 
-        vocab, _1 = self.feature_extractor.get_vocab(*self.train_dataset)
+        vocab, _1, flag = self.feature_extractor.get_vocab(*self.train_dataset)
         self.vocab_size = len(vocab)
         self.n_classes = np.unique(self.train_dataset[1]).size
+        if flag:
+            self.feature_extractor.update_cg(self.train_dataset[0])
+            self.feature_extractor.update_cg(self.validation_dataset[0])
+            self.feature_extractor.update_cg(self.test_dataset[0])
 
     def data_split(self, feature_paths, labels):
         assert len(feature_paths) == len(labels)

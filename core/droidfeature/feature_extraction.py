@@ -115,9 +115,9 @@ class Apk2graphs(object):
         vocab_saving_path = os.path.join(self.intermediate_save_dir, 'data.vocab')
         vocab_extra_info_saving_path = os.path.join(self.intermediate_save_dir, 'data.vocab_info')
         if os.path.exists(vocab_saving_path) and os.path.exists(vocab_saving_path) and (not self.update):
-            return utils.read_pickle(vocab_saving_path), utils.read_pickle(vocab_extra_info_saving_path)
+            return utils.read_pickle(vocab_saving_path), utils.read_pickle(vocab_extra_info_saving_path), False
         elif feature_path_list is None and gt_labels is None:
-            raise FileNotFoundError("No vocabulary found!")
+            raise FileNotFoundError("No vocabulary found and no features for producing vocabulary!")
         else:
             pass
         assert len(feature_path_list) == len(gt_labels)
@@ -162,7 +162,33 @@ class Apk2graphs(object):
         if len(selected_words) > 0:
             utils.dump_pickle(selected_words, vocab_saving_path)
             utils.dump_pickle(corresponding_word_info, vocab_extra_info_saving_path)
-        return selected_words, corresponding_word_info
+        return selected_words, corresponding_word_info, True
+
+    def update_cg(self, feature_path_list):
+        """
+        append api index into each node according to the vocabulary
+        """
+        vocab_saving_path = os.path.join(self.intermediate_save_dir, 'data.vocab')
+        if os.path.exists(vocab_saving_path) and os.path.exists(vocab_saving_path) and (not self.update):
+            vocab = utils.read_pickle(vocab_saving_path)
+        else:
+            raise FileNotFoundError("No vocabulary found!")
+        # updating graph
+        for feature_path in feature_path_list:
+            if not os.path.exists(feature_path):
+                continue
+            cg_dict = seq_gen.read_from_disk(
+                feature_path)  # each file contains a dict of {root call method: networkx objects}
+            for root_call, sub_cg in cg_dict.items():
+                node_names = sub_cg.nodes(data=True)
+                for api, api_info in node_names:
+                    if api in vocab:
+                        api_info['vocab_ind'] = vocab.index(api)
+                    else:
+                        api_info['vocab_ind'] = len(vocab) - 1
+            seq_gen.save_to_disk(cg_dict, feature_path)
+            for root_call, sub_cg in cg_dict.items():
+                print(sub_cg.nodes(data=True))
 
     def feature_selection(self, train_features, train_y, vocab, dim):
         """
@@ -227,7 +253,7 @@ class Apk2graphs(object):
             return [], [], []
 
         features, adj, labels = [], [], []
-        vocab, _ = self.get_vocab()
+        vocab, _1, _2 = self.get_vocab()
         representation_container = self.graph2representation(feature_path_list, gt_labels, vocab, is_adj, n_cg)
         for rpst_dict, label, feature_path in representation_container:
             sub_features = []
@@ -260,7 +286,6 @@ class Apk2graphs(object):
                 continue
             cg_dict = seq_gen.read_from_disk(feature_path)
             numerical_representation_dict = collections.defaultdict(tuple)
-
             for i, (root_call, cg) in enumerate(cg_dict.items()):
                 numerical_representation_dict[root_call] = _graph2rpst_wrapper((cg, vocabulary, is_adj))
                 if len(numerical_representation_dict) > 0:
@@ -289,45 +314,44 @@ def _graph2rpst_wrapper(args):
     try:
         return graph2rpst(*args)
     except Exception as e:
+        print(e)
+        logger.error(str(e))
         return e
 
 
 def graph2rpst(g, vocab, is_adj):
-    import time
-    start_time = time.time()
     new_g = g.copy()
-    print('copy time:', time.time() - start_time, len(nodes))
     indices = []
 
-    start_time = time.time()
-    nodes = g.nodes()
-    for node in nodes:
-        if node not in vocab:
+    nodes = g.nodes(data=True)
+    for api, api_info in nodes:
+        if api not in vocab:
             if is_adj:
                 # make connection between the predecessors and successors
-                if new_g.out_degree(node) > 0 and new_g.in_degree(node) > 0:
+                if new_g.out_degree(api) > 0 and new_g.in_degree(api) > 0:
                     new_g.add_edges_from([(e1, e1) for e1, e2 in \
-                                          itertools.product(new_g.predecessors(node),
-                                                            new_g.successors(node))])
+                                          itertools.product(new_g.predecessors(api),
+                                                            new_g.successors(api))])
                     # print([node for node in new_cg.predecessors(node)])
                     # print([node for node in cg.successors(node)])
-                new_g.remove_node(node)
+                new_g.remove_node(api)
         else:
-            indices.append(vocab.index(node))
-    print('node handing time:', time.time() - start_time, len(nodes))
-    start_time = time.time()
-    indices.append(vocab.index(NULL_ID))
+            # indices.append(vocab.index(api))
+            if 'vocab_ind' not in list(api_info.keys()):
+                print(api)
+                print(vocab.index(api))
+            indices.append(api_info['vocab_ind'])
+    # indices.append(vocab.index(NULL_ID))
+    indices.append(-1)  # the last word is NULL
     feature = np.zeros((len(vocab), ), dtype=np.float32)
     feature[indices] = 1.
+    adj = None
     if is_adj:
         rear = csr_matrix(([1], ([len(vocab) - 1], [len(vocab) - 1])), shape=(len(vocab), len(vocab)))
         adj = nx.convert_matrix.to_scipy_sparse_matrix(g, nodelist=vocab, format='csr', dtype=np.float32)
         adj += rear
-    else:
-        adj = None
     del new_g
     del g
-    print('return node handing time:', time.time() - start_time)
     return feature, adj
 
 
