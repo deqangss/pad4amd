@@ -152,15 +152,19 @@ class Dataset(torch.utils.data.Dataset):
         batch_n_sg_max = np.max([len(feature) for feature in features])
         n_sg_used = batch_n_sg_max if batch_n_sg_max < self.n_sgs_max else self.n_sgs_max
         n_sg_used = n_sg_used if n_sg_used > self.k else self.k
+        not_pad_c = 0
+        pad_c = 0
         for i, feature in enumerate(features):
             is_padding = True if len(feature) < n_sg_used else False
             if not is_padding:
+                not_pad_c += 1
                 indices = np.random.choice(len(feature), n_sg_used, replace=False)
                 features_padded.append([feature[_i] for _i in indices])
                 if self.is_adj:
                     adjs_padded.append([adjs[i][_i] for _i in indices])
                 indices_slicing = np.array(list(map(dict(zip(indices, range(n_sg_used))).get, range(n_sg_used))))
             else:
+                pad_c+= 1
                 n = n_sg_used - len(feature)
                 indices = np.arange(n_sg_used)
                 feature.extend([np.zeros_like((feature[0]), dtype=np.float32) for _ in range(n)])
@@ -170,6 +174,7 @@ class Dataset(torch.utils.data.Dataset):
                     adjs_padded.append(adjs[i])
                 indices_slicing = indices
             g_ind.append(indices_slicing)
+            print('not vs yes:', not_pad_c, pad_c)
 
         # shape [batch_size, self.n_sg_used, vocab_size]
         features_padded = np.array([np.stack(list(feat), axis=0) for feat in zip(*features_padded)]).transpose(1, 0, 2)
