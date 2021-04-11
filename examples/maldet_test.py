@@ -69,7 +69,7 @@ def _main():
     args = cmd_md.parse_args()
     dataset = Dataset(k=args.k,
                       is_adj=args.is_adj,
-                      n_sgs_max=args.n_cgs,
+                      n_sgs_max=args.n_cg,
                       feature_ext_args=get_group_args(args, cmd_md, 'feature')
                       )
     (train_data, trainy), (val_data, valy), (test_data, testy) = dataset.train_dataset, dataset.validation_dataset, dataset.test_dataset
