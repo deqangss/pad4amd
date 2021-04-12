@@ -238,12 +238,13 @@ class Apk2graphs(object):
         """
         raise NotImplementedError
 
-    def feature2ipt(self, feature_path_list, gt_labels=None, is_adj=False, n_cg=1000):
+    def feature2ipt(self, feature_path_list, gt_labels=None, is_adj=False, vocab=None, n_cg=1000):
         """
         Mapping features to the numerical representation
         :param feature_path_list, list, a list of paths, each of which directs to a feature file
         :param gt_labels, list or numpy.ndarray, ground truth labels
         :param is_adj, boolean, whether extract structural information or not
+        :param vocab, list, vocabulary
         :param n_cg, integer, the limited number of call graphs
         """
         assert len(feature_path_list) == len(gt_labels), 'inconsistent data size {} vs. label size {}'.format(
@@ -253,7 +254,6 @@ class Apk2graphs(object):
             return [], [], []
 
         features, adj, labels = [], [], []
-        vocab, _1, _2 = self.get_vocab()
         representation_container = self.graph2representation(feature_path_list, gt_labels, vocab, is_adj, n_cg)
         for rpst_dict, label, feature_path in representation_container:
             sub_features = []

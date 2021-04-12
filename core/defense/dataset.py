@@ -68,8 +68,8 @@ class Dataset(torch.utils.data.Dataset):
         for i in range(_labels.shape[0]):
             self.sample_weights[_labels[i]] = _weights[i]
 
-        vocab, _1, flag = self.feature_extractor.get_vocab(*self.train_dataset)
-        self.vocab_size = len(vocab)
+        self.vocab, _1, flag = self.feature_extractor.get_vocab(*self.train_dataset)
+        self.vocab_size = len(self.vocab)
         self.n_classes = np.unique(self.train_dataset[1]).size
         if flag:
             self.feature_extractor.update_cg(self.train_dataset[0])
@@ -133,7 +133,7 @@ class Dataset(torch.utils.data.Dataset):
         # --->> adjs: 2d list [number of files, number of subgraphs], in which each element has
         # a scipy sparse matrix with size [vocab_size, vocab_size]
         """
-        return self.feature_extractor.feature2ipt(feature_paths, labels, self.is_adj, self.n_sgs_max)
+        return self.feature_extractor.feature2ipt(feature_paths, labels, self.is_adj, self.vocab, self.n_sgs_max)
 
     def collate_fn(self, batch):
         # 1. Because the number of sub graphs is different between apks, we here align a batch of data
