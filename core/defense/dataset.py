@@ -201,7 +201,6 @@ class Dataset(torch.utils.data.Dataset):
         params = {'batch_size': batch_size,
                   'num_workers': self.feature_ext_args['proc_number'],
                   'collate_fn': self.collate_fn,
-                  'prefetch_factor': 4,
                   'shuffle': False}
         return torch.utils.data.DataLoader(DatasetTorch(data, y, self, name=name),
                                            worker_init_fn=lambda x: np.random.seed(torch.randint(0, 2^31, [1,])[0] + x),
