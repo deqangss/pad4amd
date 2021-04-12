@@ -179,6 +179,13 @@ def read_file_by_fileinput(file_path, inplace=True):
         raise IOError(str(ex))
 
 
+class SimplifyClass:
+    name = None
+
+    def cleanup(self):
+        return
+
+
 def build_kwargs(keys, arg_dict):
     st = ''
     for key in keys:

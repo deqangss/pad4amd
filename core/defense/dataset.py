@@ -13,13 +13,14 @@ from tools import utils
 
 
 class Dataset(torch.utils.data.Dataset):
-    def __init__(self, k=8, is_adj=False, seed=0, n_sgs_max=1000, feature_ext_args=None):
+    def __init__(self, k=8, is_adj=False, seed=0, n_sgs_max=1000, use_cache=False, feature_ext_args=None):
         """
         build dataset for ml model learning
         :param k: Integer, the number of subgraphs is sampled for passing through the neural networks
         :param is_adj: Boolean, whether use the actual adjacent matrix or not
         :param seed: Integer, the random seed
         :param n_sgs_max: Integer, the maximum number of subgraphs
+        :param use_cache: Boolean, whether to use the cached data or not
         :param feature_ext_args: Dict, arguments for feature extraction
         """
         self.k = k
@@ -32,7 +33,13 @@ class Dataset(torch.utils.data.Dataset):
         assert self.k < n_sgs_max
         self.n_sgs_max = n_sgs_max
         self.feature_ext_args = feature_ext_args
-        self.temp_dir_handle = tempfile.TemporaryDirectory()
+        self.use_cache = use_cache
+        if self.use_cache:
+            self.temp_dir_handle = tempfile.TemporaryDirectory()
+            utils.mkdir(self.temp_dir_handle.name)
+        else:
+            self.temp_dir_handle = utils.SimplifyClass()
+
         if feature_ext_args is None:
             self.feature_extractor = Apk2graphs(config.get('metadata', 'naive_data_pool'),
                                                 config.get('dataset', 'intermediate'))
@@ -122,18 +129,19 @@ class Dataset(torch.utils.data.Dataset):
                     labels_.append(labels[i])
             return feature_paths, np.array(labels_)
 
-    def get_numerical_input(self, feature_paths, labels):
+    def get_numerical_input(self, feature_path, label):
         """
-        loading features for given a list of feature paths
+        loading features for given a feature path
         # results:
-        # --->> mapping feature paths to numerical representations
+        # --->> mapping feature path to numerical representations
         # --->> features: 2d list [number of files, number of subgraphs], in which each element
         # has a vector with size [vocab_size]
         # --->> _labels: 1d list [number of files]
         # --->> adjs: 2d list [number of files, number of subgraphs], in which each element has
         # a scipy sparse matrix with size [vocab_size, vocab_size]
         """
-        return self.feature_extractor.feature2ipt(feature_paths, labels, self.is_adj, self.vocab, self.n_sgs_max)
+        return self.feature_extractor.feature2ipt(feature_path, label, self.is_adj, self.vocab, self.n_sgs_max,
+                                                  self.temp_dir_handle.name)
 
     def collate_fn(self, batch):
         # 1. Because the number of sub graphs is different between apks, we here align a batch of data
@@ -260,7 +268,6 @@ class DatasetTorch(torch.utils.data.Dataset):
         feature_path = self.dataX[index]
         y = self.datay[index]
         # Load data and get label
-        x, adj, y = self.dataset_obj.get_numerical_input([feature_path], [y])
-        assert len(x) > 0 and len(adj) > 0, "Fail to load: " + feature_path
-        return x[0], adj[0], y[0]
+        x, adj, y = self.dataset_obj.get_numerical_input(feature_path, y)
+        return x, adj, y
 

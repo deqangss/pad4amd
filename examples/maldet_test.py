@@ -57,6 +57,7 @@ detector_argparse.add_argument('--enable_gd_ckpt', action='store_true', default=
 
 dataset_argparse = cmd_md.add_argument_group(title='data_producer')
 detector_argparse.add_argument('--is_adj', action='store_true', help='incorporate branches instruction information.')
+detector_argparse.add_argument('--cache', action='store_true', help='use cache data or not.')
 detector_argparse.add_argument('--n_cg', type=int, default=1000, help='limited number of call graphs.')
 
 mode_argparse = cmd_md.add_argument_group(title='mode')
@@ -70,6 +71,7 @@ def _main():
     dataset = Dataset(k=args.k,
                       is_adj=args.is_adj,
                       n_sgs_max=args.n_cg,
+                      use_cache=args.cache,
                       feature_ext_args=get_group_args(args, cmd_md, 'feature')
                       )
     (train_data, trainy), (val_data, valy), (test_data, testy) = dataset.train_dataset, dataset.validation_dataset, dataset.test_dataset
@@ -109,6 +111,8 @@ def _main():
     # test: accuracy
     model.load()
     model.predict(test_dataset_producer)
+
+    dataset.clean_up()
 
 
 if __name__ == '__main__':

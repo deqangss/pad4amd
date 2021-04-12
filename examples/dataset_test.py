@@ -30,10 +30,12 @@ args_dict = vars(args)
 
 
 def main_():
-    dataset = Dataset(is_adj=True, feature_ext_args=args_dict)
+    dataset = Dataset(is_adj=True, feature_ext_args=args_dict, use_cache=True)
     validation_data, valy = dataset.validation_dataset
     val_dataset_producer = dataset.get_input_producer(validation_data, valy, batch_size=2, name='train')
+    import time
     for epoch in range(2):
+        start_time = time.time()
         for idx, res in enumerate(val_dataset_producer):
             x, adj, l, i = res
             if dataset.is_adj is not None:
@@ -41,7 +43,8 @@ def main_():
                 adj = adjs[5, 1].to_dense().numpy()
                 assert np.all(adj.diagonal() == np.clip(np.sum(adj, axis=0), a_min=0., a_max=1))
                 assert np.all(np.abs(adj-adj.T) < 1e-8)
-
+        print('cost time:', time.time() - start_time)
+    dataset.clean_up()
 
 if __name__ == '__main__':
     main_()

@@ -238,76 +238,99 @@ class Apk2graphs(object):
         """
         raise NotImplementedError
 
-    def feature2ipt(self, feature_path_list, gt_labels=None, is_adj=False, vocab=None, n_cg=1000):
-        """
-        Mapping features to the numerical representation
-        :param feature_path_list, list, a list of paths, each of which directs to a feature file
-        :param gt_labels, list or numpy.ndarray, ground truth labels
-        :param is_adj, boolean, whether extract structural information or not
-        :param vocab, list, vocabulary
-        :param n_cg, integer, the limited number of call graphs
-        """
-        assert len(feature_path_list) == len(gt_labels), 'inconsistent data size {} vs. label size {}'.format(
-            len(feature_path_list), len(gt_labels)
-        )
-        if len(feature_path_list) == 0:
-            return [], [], []
-
-        features, adj, labels = [], [], []
-        representation_container = self.graph2representation(feature_path_list, gt_labels, vocab, is_adj, n_cg)
-        for rpst_dict, label, feature_path in representation_container:
-            sub_features = []
-            sub_adjs = []
-            for root_call, sub_rpst in rpst_dict.items():
-                sub_feature, sub_adj = sub_rpst
-                sub_features.append(sub_feature)
-                sub_adjs.append(sub_adj)
-            features.append(sub_features)  # [(number_of_files, number_of_subgraphs), number_of_words]
-            adj.append(sub_adjs)   # [(number of files, number_of_subgraphs), number of words, number of words]
-            labels.append(label)  # [number of files,]
-        return features, adj, labels
+    # def feature2ipt(self, feature_path, gt_label=None, is_adj=False, vocab=None, n_cg=1000, cache_dir=None):
+    #     """
+    #     Mapping features to the numerical representation
+    #     :param feature_path, string, a path directs to a feature file
+    #     :param gt_label, scalar, ground truth label
+    #     :param is_adj, boolean, whether extract structural information or not
+    #     :param vocab, list, vocabulary
+    #     :param n_cg, integer, the limited number of call graphs
+    #     :param cache_dir, string, saving the preprocessing data for using
+    #     """
+    #     if not isinstance(feature_path, str):
+    #         return [], [], []
+    #
+    #     return self.graph2representation(feature_path, gt_label, vocab, is_adj, n_cg)
+    #
+    #     features, adj, labels = [], [], []
+    #     representation_container = self.graph2representation(feature_path, gt_label, vocab, is_adj, n_cg)
+    #     for rpst_dict, label, feature_path in representation_container:
+    #         sub_features = []
+    #         sub_adjs = []
+    #         for root_call, sub_rpst in rpst_dict.items():
+    #             sub_feature, sub_adj = sub_rpst
+    #             sub_features.append(sub_feature)
+    #             sub_adjs.append(sub_adj)
+    #         features.append(sub_features)  # [(number_of_files, number_of_subgraphs), number_of_words]
+    #         adj.append(sub_adjs)   # [(number of files, number_of_subgraphs), number of words, number of words]
+    #         labels.append(label)  # [number of files,]
+    #     return features, adj, labels
 
     @staticmethod
-    def graph2representation(feature_path_list, gt_labels, vocabulary=None, is_adj=False, n_cg=1000):
+    def feature2ipt(feature_path, label, is_adj=False, vocabulary=None, n_cg=1000, cache_dir=None):
         """
         map graphs to numerical representations :param feature_path_list, list, a list of paths, each of which
         directs to a feature file :param gt_labels, list or numpy.ndarray, ground truth labels :param vocabulary:
         list, a list of words :return: a list of numerical representations corresponds to apps. Each representation
         contains a tuple ({'root call 1': (feature, adjacent matrix), 'root call 2': (feature, adjacent matrix),
         ...}, label)
+
+        Parameters
+        --------
+        :param feature_path, string, a path directs to a feature file
+        :param label, scalar, ground truth label
+        :param is_adj, boolean, whether extract structural information or not
+        :param vocabulary, list, vocabulary
+        :param n_cg, integer, the limited number of call graphs
+        :param cache_dir, string, saving the preprocessing data for using
         """
-        assert len(feature_path_list) == len(gt_labels)
         assert vocabulary is not None and len(vocabulary) > 0
 
-        numerical_representation_container = []
-        for feature_path, label in zip(feature_path_list, gt_labels):
-            if not os.path.exists(feature_path):
-                logger.warning("Cannot find the feature path: {}".format(feature_path))
-                continue
-            cg_dict = seq_gen.read_from_disk(feature_path)
-            numerical_representation_dict = collections.defaultdict(tuple)
-            for i, (root_call, cg) in enumerate(cg_dict.items()):
-                numerical_representation_dict[root_call] = _graph2rpst_wrapper((cg, vocabulary, is_adj))
-                if len(numerical_representation_dict) > 0:
-                    numerical_representation_container.append([numerical_representation_dict, label, feature_path])
-                if i >= n_cg:
-                    return numerical_representation_container
+        if not isinstance(feature_path, str):
+            return [], [], []
 
-            # numerical_representation_dict = collections.defaultdict(tuple)
-            # cpu_count = multiprocessing.cpu_count() // 2 if multiprocessing.cpu_count() // 2 > 1 else 1
-            # pool = multiprocessing.Pool(cpu_count, initializer=pool_initializer)
-            # pargs = [(cg, vocabulary, is_adj) for cg in cg_dict.values()]
-            # for root_call, res in zip(list(cg_dict.keys()), pool.map(_graph2rpst_wrapper, pargs)):
-            #     if not isinstance(res, Exception):
-            #         (feature, adj) = res
-            #         numerical_representation_dict[root_call] = (feature, adj)
-            #     else:
-            #         logger.error("Fail to process " + feature_path + ":" + str(res))
-            # pool.close()
-            # pool.join()
-            # if len(numerical_representation_dict) > 0:
-            #     numerical_representation_container.append([numerical_representation_dict, label, feature_path])
-        return numerical_representation_container
+        if not os.path.exists(feature_path):
+            logger.warning("Cannot find the feature path: {}".format(feature_path))
+            return [], [], []
+
+        cache_feature_path = None
+        if cache_dir is not None:
+            cache_feature_path = os.path.join(cache_dir, os.path.basename(feature_path))
+        if cache_feature_path is not None and os.path.exists(cache_feature_path):
+            return utils.read_pickle(cache_feature_path)
+
+        cg_dict = seq_gen.read_from_disk(feature_path)
+        sub_features = []
+        sub_adjs = []
+        for i, (root_call, cg) in enumerate(cg_dict.items()):
+            res = _graph2rpst_wrapper((cg, vocabulary, is_adj))
+            if isinstance(res, Exception):
+                continue
+            sub_feature, sub_adj = res
+            sub_features.append(sub_feature)
+            sub_adjs.append(sub_adj)
+            if i >= n_cg:
+                return sub_features, sub_adjs
+
+        if cache_feature_path is not None:
+            utils.dump_pickle((sub_features, sub_adjs, label), cache_feature_path)
+        return sub_features, sub_adjs, label
+
+        # numerical_representation_dict = collections.defaultdict(tuple)
+        # cpu_count = multiprocessing.cpu_count() // 2 if multiprocessing.cpu_count() // 2 > 1 else 1
+        # pool = multiprocessing.Pool(cpu_count, initializer=pool_initializer)
+        # pargs = [(cg, vocabulary, is_adj) for cg in cg_dict.values()]
+        # for root_call, res in zip(list(cg_dict.keys()), pool.map(_graph2rpst_wrapper, pargs)):
+        #     if not isinstance(res, Exception):
+        #         (feature, adj) = res
+        #         numerical_representation_dict[root_call] = (feature, adj)
+        #     else:
+        #         logger.error("Fail to process " + feature_path + ":" + str(res))
+        # pool.close()
+        # pool.join()
+        # if len(numerical_representation_dict) > 0:
+        #     numerical_representation_container.append([numerical_representation_dict, label, feature_path])
 
 
 def _graph2rpst_wrapper(args):
@@ -327,9 +350,8 @@ def graph2rpst(g, vocab, is_adj):
             if is_adj:
                 # make connection between the predecessors and successors
                 if new_g.out_degree(api) > 0 and new_g.in_degree(api) > 0:
-                    new_g.add_edges_from([(e1, e1) for e1, e2 in \
-                                          itertools.product(new_g.predecessors(api),
-                                                            new_g.successors(api))])
+                    new_g.add_edges_from([(e1, e1) for e1, e2 in itertools.product(new_g.predecessors(api),
+                                                                                   new_g.successors(api))])
                     # print([node for node in new_cg.predecessors(node)])
                     # print([node for node in cg.successors(node)])
                 new_g.remove_node(api)
