@@ -277,7 +277,7 @@ class Apk2graphs(object):
         ...}, label)
         """
         assert len(feature_path_list) == len(gt_labels)
-        assert len(vocabulary) > 0
+        assert vocabulary is not None and len(vocabulary) > 0
 
         numerical_representation_container = []
         for feature_path, label in zip(feature_path_list, gt_labels):
