@@ -311,7 +311,7 @@ class Apk2graphs(object):
             sub_features.append(sub_feature)
             sub_adjs.append(sub_adj)
             if i >= n_cg:
-                return sub_features, sub_adjs
+                break
 
         if cache_feature_path is not None:
             utils.dump_pickle((sub_features, sub_adjs, label), cache_feature_path)
