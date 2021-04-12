@@ -30,15 +30,14 @@ args_dict = vars(args)
 
 
 def main_():
-    dataset = Dataset(is_adj=True, feature_ext_args=args_dict, use_cache=True)
+    dataset = Dataset(is_adj=False, feature_ext_args=args_dict, use_cache=True)
     validation_data, valy = dataset.validation_dataset
     val_dataset_producer = dataset.get_input_producer(validation_data[:1000], valy[:1000], batch_size=16, name='train')
     import time
     for epoch in range(2):
         start_time = time.time()
-        for idx, res in enumerate(val_dataset_producer):
-            x, adj, l, i = res
-            if dataset.is_adj is not None:
+        for idx, (x, adj, l, i) in enumerate(val_dataset_producer):
+            if dataset.is_adj:
                 adjs = ivs_to_tensor_coo_sp(adj)
                 adj = adjs[5, 1].to_dense().numpy()
                 assert np.all(adj.diagonal() == np.clip(np.sum(adj, axis=0), a_min=0., a_max=1))
