@@ -296,7 +296,7 @@ class Apk2graphs(object):
                 if i >= n_cg:
                     return numerical_representation_container
 
-            print('graph handling time:', time.time() - start_time)
+            print('graph handling time:', time.time() - start_time, len(cg_dict.items()))
 
             # numerical_representation_dict = collections.defaultdict(tuple)
             # cpu_count = multiprocessing.cpu_count() // 2 if multiprocessing.cpu_count() // 2 > 1 else 1
