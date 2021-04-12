@@ -11,7 +11,7 @@ from tools.utils import ivs_to_tensor_coo_sp
 from config import config
 
 cmd_md = argparse.ArgumentParser(description='arguments for feature extraction')
-cmd_md.add_argument('--proc_number', type=int, default=1,
+cmd_md.add_argument('--proc_number', type=int, default=10,
                     help='The number of threads for features extraction.')
 cmd_md.add_argument('--number_of_sequences', type=int, default=200000,
                     help='The maximum number of produced sequences for each app')
