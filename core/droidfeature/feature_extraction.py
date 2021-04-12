@@ -5,6 +5,7 @@ import multiprocessing
 import collections
 import numpy as np
 import _pickle as cPickle
+import lzma
 from scipy.sparse import csr_matrix
 import networkx as nx
 import itertools
@@ -300,7 +301,7 @@ class Apk2graphs(object):
             cache_feature_path = os.path.join(cache_dir, os.path.basename(feature_path))
         if cache_feature_path is not None and os.path.exists(cache_feature_path):
             # return utils.read_pickle(cache_feature_path)
-            return utils.read_joblib(cache_feature_path)
+            return cPickle.load(lzma.open(cache_feature_path, 'rb'))
 
         cg_dict = seq_gen.read_from_disk(feature_path)
         sub_features = []
@@ -317,7 +318,8 @@ class Apk2graphs(object):
 
         if cache_feature_path is not None:
             # utils.dump_pickle((sub_features, sub_adjs, label), cache_feature_path)
-            utils.dump_joblib((sub_features, sub_adjs, label), cache_feature_path)
+            with lzma.open(cache_feature_path, 'wb') as wr:
+                cPickle.dump((sub_features, sub_adjs, label), wr)
         return sub_features, sub_adjs, label
 
         # numerical_representation_dict = collections.defaultdict(tuple)
