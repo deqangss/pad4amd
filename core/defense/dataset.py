@@ -268,9 +268,6 @@ class DatasetTorch(torch.utils.data.Dataset):
         feature_path = self.dataX[index]
         y = self.datay[index]
         # Load data and get label
-        import time
-        start_time = time.time()
         x, adj, y = self.dataset_obj.get_numerical_input(feature_path, y)
-        print('loading time:', time.time() - start_time)
         return x, adj, y
 
