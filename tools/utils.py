@@ -5,7 +5,7 @@ import joblib
 import fileinput
 import pickle as pkl
 import _pickle as cPickle
-import lzma
+import lzma, gzip
 import shutil
 
 import hashlib
@@ -128,14 +128,14 @@ def read_pickle(path):
 def dump_pickle_frd_space(data, path):
     if not os.path.exists(os.path.dirname(path)):
         mkdir(os.path.dirname(path))
-    with lzma.open(path, 'wb') as wr:
+    with gzip.open(path, 'wb') as wr:
         cPickle.dump(data, wr)
     return True
 
 
 def read_pickle_frd_space(path):
     if os.path.isfile(path):
-        with lzma.open(path, 'rb') as fr:
+        with gzip.open(path, 'rb') as fr:
             return cPickle.load(fr)
     else:
         raise IOError("The {0} is not been found.".format(path))

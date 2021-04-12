@@ -32,7 +32,7 @@ args_dict = vars(args)
 def main_():
     dataset = Dataset(is_adj=True, feature_ext_args=args_dict, use_cache=True)
     validation_data, valy = dataset.validation_dataset
-    val_dataset_producer = dataset.get_input_producer(validation_data, valy, batch_size=16, name='train')
+    val_dataset_producer = dataset.get_input_producer(validation_data[:1000], valy[:1000], batch_size=16, name='train')
     import time
     for epoch in range(2):
         start_time = time.time()
