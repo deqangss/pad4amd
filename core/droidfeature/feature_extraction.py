@@ -298,7 +298,7 @@ class Apk2graphs(object):
         if cache_dir is not None:
             cache_feature_path = os.path.join(cache_dir, os.path.basename(feature_path))
         if cache_feature_path is not None and os.path.exists(cache_feature_path):
-            return utils.read_pickle(cache_feature_path)
+            return utils.read_pickle_frd_space(cache_feature_path)
 
         cg_dict = seq_gen.read_from_disk(feature_path)
         sub_features = []
@@ -314,7 +314,7 @@ class Apk2graphs(object):
                 break
 
         if cache_feature_path is not None:
-            utils.dump_pickle((sub_features, sub_adjs, label), cache_feature_path)
+            utils.dump_pickle_frd_space((sub_features, sub_adjs, label), cache_feature_path)
         return sub_features, sub_adjs, label
 
         # numerical_representation_dict = collections.defaultdict(tuple)
