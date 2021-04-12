@@ -253,6 +253,7 @@ class Apk2graphs(object):
         if len(feature_path_list) == 0:
             return [], [], []
 
+        vocab, _1, _2 = self.get_vocab()
         features, adj, labels = [], [], []
         representation_container = self.graph2representation(feature_path_list, gt_labels, vocab, is_adj, n_cg)
         for rpst_dict, label, feature_path in representation_container:
