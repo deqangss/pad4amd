@@ -278,25 +278,20 @@ class Apk2graphs(object):
         """
         assert len(feature_path_list) == len(gt_labels)
         assert len(vocabulary) > 0
-        import time
+
         numerical_representation_container = []
         for feature_path, label in zip(feature_path_list, gt_labels):
             if not os.path.exists(feature_path):
                 logger.warning("Cannot find the feature path: {}".format(feature_path))
                 continue
-            start_time = time.time()
             cg_dict = seq_gen.read_from_disk(feature_path)
-            print('graph loading:', time.time() - start_time)
             numerical_representation_dict = collections.defaultdict(tuple)
-            start_time = time.time()
             for i, (root_call, cg) in enumerate(cg_dict.items()):
                 numerical_representation_dict[root_call] = _graph2rpst_wrapper((cg, vocabulary, is_adj))
                 if len(numerical_representation_dict) > 0:
                     numerical_representation_container.append([numerical_representation_dict, label, feature_path])
                 if i >= n_cg:
                     return numerical_representation_container
-
-            print('graph handling time:', time.time() - start_time, len(cg_dict.items()))
 
             # numerical_representation_dict = collections.defaultdict(tuple)
             # cpu_count = multiprocessing.cpu_count() // 2 if multiprocessing.cpu_count() // 2 > 1 else 1

@@ -149,8 +149,6 @@ class Dataset(torch.utils.data.Dataset):
         adjs_padded = []
         g_ind = []
 
-        import time
-        start_time = time.time()
         batch_n_sg_max = np.max([len(feature) for feature in features])
         n_sg_used = batch_n_sg_max if batch_n_sg_max < self.n_sgs_max else self.n_sgs_max
         n_sg_used = n_sg_used if n_sg_used > self.k else self.k
@@ -189,7 +187,6 @@ class Dataset(torch.utils.data.Dataset):
             adjs_padded_tuple = utils.tensor_coo_sp_to_ivs(adjs_padded_t)
         else:
             adjs_padded_tuple = None
-        print('processing time:', time.time() - start_time)
         return features_padded, adjs_padded_tuple, labels_, np.array(g_ind)
 
     def get_input_producer(self, data, y, batch_size, name='train'):
@@ -262,10 +259,7 @@ class DatasetTorch(torch.utils.data.Dataset):
         feature_path = self.dataX[index]
         y = self.datay[index]
         # Load data and get label
-        import time
-        start_time = time.time()
         x, adj, y = self.dataset_obj.get_numerical_input([feature_path], [y])
-        print('loading time:', time.time() - start_time)
         assert len(x) > 0 and len(adj) > 0, "Fail to load: " + feature_path
         return x[0], adj[0], y[0]
 
