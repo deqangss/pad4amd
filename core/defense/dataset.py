@@ -181,6 +181,7 @@ class Dataset(torch.utils.data.Dataset):
 
         # shape [batch_size, self.n_sg_used, vocab_size]
         features_padded = np.array(features_padded)
+        print(features_padded.shape)
 
         if self.is_adj:
             # A list (with size self.k) of sparse adjacent matrix in the mini-batch level, in which each element
