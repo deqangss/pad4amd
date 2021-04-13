@@ -161,22 +161,22 @@ class Dataset(torch.utils.data.Dataset):
         n_sg_used = batch_n_sg_max if batch_n_sg_max < self.n_sgs_max else self.n_sgs_max
         n_sg_used = n_sg_used if n_sg_used > self.k else self.k
         for i, feature in enumerate(features):
-            is_padding = True if len(feature) < n_sg_used else False
-            if not is_padding:
-                indices = np.random.choice(len(feature), n_sg_used, replace=False)
-                features_padded.append([feature[_i] for _i in indices])
-                if self.is_adj:
-                    adjs_padded.append([adjs[i][_i] for _i in indices])
-                indices_slicing = np.array(list(map(dict(zip(indices, range(n_sg_used))).get, range(n_sg_used))))
-            else:
-                n = n_sg_used - len(feature)
-                indices = np.arange(n_sg_used)
-                feature.extend([np.zeros_like((feature[0]), dtype=np.float32)] * n)
+            n_feature = len(feature)
+            is_padding = True if n_feature < n_sg_used else False
+            indices = np.arange(n_feature)
+            np.random.shuffle(indices)
+            feature = np.array(feature)[indices].tolist()
+            if self.is_adj:
+                adjs_padded.append([adjs[i][_i] for _i in indices])
+            if is_padding:
+                n_padded = n_sg_used - n_feature
+                indices = np.concatenate([indices, np.arange(n_feature, n_sg_used)])
+                feature.extend([np.zeros_like((feature[0]), dtype=np.float32)] * n_padded)
                 features_padded.append(feature)
                 if self.is_adj:
-                    adjs[i].extend([csr_matrix(adjs[i][0].shape, dtype=np.float32)] * n)
+                    adjs[i].extend([csr_matrix(adjs[i][0].shape, dtype=np.float32)] * n_padded)
                     adjs_padded.append(adjs[i])
-                indices_slicing = indices
+            indices_slicing = np.array(list(map(dict(zip(indices, range(n_sg_used))).get, range(n_sg_used))))
             g_ind.append(indices_slicing)
 
         # shape [batch_size, self.n_sg_used, vocab_size]
