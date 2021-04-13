@@ -165,22 +165,23 @@ class Dataset(torch.utils.data.Dataset):
             is_padding = True if n_feature < n_sg_used else False
             indices = np.arange(n_feature)
             np.random.shuffle(indices)
-            feature = np.array(feature)[indices].tolist()
+            feature = np.array(feature)[indices]
             if self.is_adj:
                 adjs_padded.append([adjs[i][_i] for _i in indices])
             if is_padding:
                 n_padded = n_sg_used - n_feature
                 indices = np.concatenate([indices, np.arange(n_feature, n_sg_used)])
-                feature.extend([np.zeros_like((feature[0]), dtype=np.float32)] * n_padded)
-                features_padded.append(feature)
+                red_ind = (n_padded, ) + feature[0].shape
+                feature = np.vstack([feature, np.zeros(red_ind, dtype=np.float32)])
                 if self.is_adj:
                     adjs[i].extend([csr_matrix(adjs[i][0].shape, dtype=np.float32)] * n_padded)
                     adjs_padded.append(adjs[i])
             indices_slicing = np.array(list(map(dict(zip(indices, range(n_sg_used))).get, range(n_sg_used))))
             g_ind.append(indices_slicing)
+            features_padded.append(feature)
 
         # shape [batch_size, self.n_sg_used, vocab_size]
-        features_padded = np.array([np.stack(list(feat), axis=0) for feat in zip(*features_padded)]).transpose(1, 0, 2)
+        features_padded = np.array(features_padded)
 
         if self.is_adj:
             # A list (with size self.k) of sparse adjacent matrix in the mini-batch level, in which each element
