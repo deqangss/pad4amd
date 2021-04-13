@@ -171,10 +171,10 @@ class Dataset(torch.utils.data.Dataset):
             else:
                 n = n_sg_used - len(feature)
                 indices = np.arange(n_sg_used)
-                feature.extend([np.zeros_like((feature[0]), dtype=np.float32) for _ in range(n)])
+                feature.extend([np.zeros_like((feature[0]), dtype=np.float32)] * n)
                 features_padded.append(feature)
                 if self.is_adj:
-                    adjs[i].extend([csr_matrix(adjs[i][0].shape, dtype=np.float32) for _ in range(n)])
+                    adjs[i].extend([csr_matrix(adjs[i][0].shape, dtype=np.float32)] * n)
                     adjs_padded.append(adjs[i])
                 indices_slicing = indices
             g_ind.append(indices_slicing)
