@@ -166,6 +166,7 @@ class Dataset(torch.utils.data.Dataset):
             indices = np.arange(n_feature)
             np.random.shuffle(indices)
             feature = np.array(feature)[indices]
+            print(feature.shape)
             if self.is_adj:
                 adjs_padded.append([adjs[i][_i] for _i in indices])
             if is_padding:
@@ -175,6 +176,7 @@ class Dataset(torch.utils.data.Dataset):
                 if self.is_adj:
                     adjs[i].extend([csr_matrix(adjs[i][0].shape, dtype=np.float32)] * n_padded)
                     adjs_padded.append(adjs[i])
+                print('padding:', feature.shape)
             indices_slicing = np.array(list(map(dict(zip(indices, range(n_sg_used))).get, range(n_sg_used))))
             g_ind.append(indices_slicing)
             features_padded.append(feature)
