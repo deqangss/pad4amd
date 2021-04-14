@@ -159,7 +159,7 @@ class Apk2graphs(object):
 
     def merge_cg(self, feature_path_list):
         pool = multiprocessing.Pool(self.proc_number)
-        params = [(feature_path, self.N) for feature_path in feature_path_list]
+        params = [(feature_path, self.N) for feature_path in feature_path_list if os.path.exists(feature_path)]
         for res in tqdm(pool.imap_unordered(_merge_cg, params), total=len(params)):
             if res:
                 pass
