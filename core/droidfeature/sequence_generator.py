@@ -445,58 +445,6 @@ def get_api_call_graphs(entry_points, dx, max_number_of_sequences, recursive_dep
     return cgs
 
 
-def save_to_disk(data, saving_path):
-    dump_pickle(data, saving_path)
-
-
-def read_from_disk(loading_path):
-    return read_pickle(loading_path)
-
-
-def get_api_name(node_tag):
-    if not isinstance(node_tag, str):
-        raise TypeError
-    assert TAG_SPLITTER in node_tag
-    api_info = node_tag.split(TAG_SPLITTER)[0]
-    invoke_match = re.search(
-        r'^([ ]*?)(?P<invokeType>invoke\-([^ ]*?)) (?P<invokeObject>L(.*?);|\[L(.*?);)->(?P<invokeMethod>(.*?))\((?P<invokeArgument>(.*?))\)(?P<invokeReturn>(.*?))$',
-        api_info)
-    api_name = invoke_match.group('invokeObject') + '->' + invoke_match.group('invokeMethod')
-    return api_name
-
-
-def get_api_info(node_tag):
-    if not isinstance(node_tag, str):
-        raise TypeError
-    assert TAG_SPLITTER in node_tag
-    api_info = node_tag.split(TAG_SPLITTER)[0]
-    return api_info
-
-
-def get_caller_info(node_tag):
-    if not isinstance(node_tag, str):
-        raise TypeError
-    assert TAG_SPLITTER in node_tag
-    call_info = node_tag.split(TAG_SPLITTER)[1]
-    class_name, method_statement = call_info.split(';', 1)
-    return class_name+';', method_statement
-
-
-def get_same_class_prefix(entry_node_list):
-    assert isinstance(entry_node_list, list)
-    if len(entry_node_list) <= 0:
-        return ''
-    class_names = [a_node.split('.method')[0].rsplit('$')[0] for a_node in entry_node_list]
-    a_class_name = class_names[0]
-    n_names = a_class_name.count('/')
-    for idx in range(n_names):
-        pre_class_name = a_class_name.rsplit('/', idx)[0]
-        if all([pre_class_name in class_name for class_name in class_names]):
-            return pre_class_name
-    else:
-        return ''
-
-
 def merge_graphs(api_seq_dict, N=1):
     """
     merge graphs based on class names
@@ -561,6 +509,58 @@ def merge_graphs(api_seq_dict, N=1):
         rn, g = merge(sorted(set(class_names), key=class_names.index))
         new_cg_dict[rn] = g
     return new_cg_dict
+
+
+def save_to_disk(data, saving_path):
+    dump_pickle(data, saving_path)
+
+
+def read_from_disk(loading_path):
+    return read_pickle(loading_path)
+
+
+def get_api_name(node_tag):
+    if not isinstance(node_tag, str):
+        raise TypeError
+    assert TAG_SPLITTER in node_tag
+    api_info = node_tag.split(TAG_SPLITTER)[0]
+    invoke_match = re.search(
+        r'^([ ]*?)(?P<invokeType>invoke\-([^ ]*?)) (?P<invokeObject>L(.*?);|\[L(.*?);)->(?P<invokeMethod>(.*?))\((?P<invokeArgument>(.*?))\)(?P<invokeReturn>(.*?))$',
+        api_info)
+    api_name = invoke_match.group('invokeObject') + '->' + invoke_match.group('invokeMethod')
+    return api_name
+
+
+def get_api_info(node_tag):
+    if not isinstance(node_tag, str):
+        raise TypeError
+    assert TAG_SPLITTER in node_tag
+    api_info = node_tag.split(TAG_SPLITTER)[0]
+    return api_info
+
+
+def get_caller_info(node_tag):
+    if not isinstance(node_tag, str):
+        raise TypeError
+    assert TAG_SPLITTER in node_tag
+    call_info = node_tag.split(TAG_SPLITTER)[1]
+    class_name, method_statement = call_info.split(';', 1)
+    return class_name+';', method_statement
+
+
+def get_same_class_prefix(entry_node_list):
+    assert isinstance(entry_node_list, list)
+    if len(entry_node_list) <= 0:
+        return ''
+    class_names = [a_node.split('.method')[0].rsplit('$')[0] for a_node in entry_node_list]
+    a_class_name = class_names[0]
+    n_names = a_class_name.count('/')
+    for idx in range(n_names):
+        pre_class_name = a_class_name.rsplit('/', idx)[0]
+        if all([pre_class_name in class_name for class_name in class_names]):
+            return pre_class_name
+    else:
+        return ''
 
 
 def _main():
