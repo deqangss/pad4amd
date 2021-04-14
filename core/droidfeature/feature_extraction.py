@@ -345,7 +345,6 @@ def graph2rpst(g, vocab, is_adj):
 
 def _merge_cg(args):
     feature_path, N = args[0], args[1]
-    print('doing:', feature_path)
     cg_dict = seq_gen.read_from_disk(
         feature_path)  # each file contains a dict of {root call method: networkx objects}
     new_cg_dict = seq_gen.merge_graphs(cg_dict, N)
