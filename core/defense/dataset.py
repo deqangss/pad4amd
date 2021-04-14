@@ -30,7 +30,7 @@ class Dataset(torch.utils.data.Dataset):
         np.random.seed(self.seed)
         torch.manual_seed(self.seed)
         torch.set_default_dtype(torch.float32)
-        assert self.k < n_sgs_max
+        assert self.k <= n_sgs_max
         self.n_sgs_max = n_sgs_max
         self.feature_ext_args = feature_ext_args
         self.use_cache = use_cache
