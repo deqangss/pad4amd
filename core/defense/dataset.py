@@ -79,8 +79,11 @@ class Dataset(torch.utils.data.Dataset):
         self.vocab_size = len(self.vocab)
         self.n_classes = np.unique(self.train_dataset[1]).size
         if flag:
+            print('updating training data')
             self.feature_extractor.update_cg(self.train_dataset[0])
+            print('updating validation data')
             self.feature_extractor.update_cg(self.validation_dataset[0])
+            print('updating test data')
             self.feature_extractor.update_cg(self.test_dataset[0])
 
     def data_split(self, feature_paths, labels):
