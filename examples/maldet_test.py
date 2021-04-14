@@ -60,7 +60,6 @@ detector_argparse.add_argument('--enable_gd_ckpt', action='store_true', default=
 dataset_argparse = cmd_md.add_argument_group(title='data_producer')
 detector_argparse.add_argument('--is_adj', action='store_true', default=False, help='incorporate branches instruction information.')
 detector_argparse.add_argument('--cache', action='store_true', default=False, help='use cache data or not.')
-detector_argparse.add_argument('--n_cg', type=int, default=1000, help='limited number of call graphs.')
 
 mode_argparse = cmd_md.add_argument_group(title='mode')
 mode_argparse.add_argument('--mode', type=str, default='train', choices=['train', 'test'], required=False,
@@ -72,7 +71,7 @@ def _main():
     args = cmd_md.parse_args()
     dataset = Dataset(k=args.k,
                       is_adj=args.is_adj,
-                      n_sgs_max=args.n_cg,
+                      n_sgs_max=args.N,
                       use_cache=args.cache,
                       feature_ext_args=get_group_args(args, cmd_md, 'feature')
                       )
