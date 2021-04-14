@@ -26,6 +26,8 @@ feature_argparse.add_argument('--timeout', type=int, default=20,
                               help='The maximum elapsed time for analyzing an app')
 feature_argparse.add_argument('--use_feature_selection', action='store_true', default=True,
                               help='Whether use feature selection or not.')
+feature_argparse.add_argument('--N', type=int, default=1,
+                              help='the maximum number of graphs for an app.')
 feature_argparse.add_argument('--max_vocab_size', type=int, default=5000,
                               help='The maximum number of vocabulary size')
 feature_argparse.add_argument('--update', action='store_true', default=False,
