@@ -78,9 +78,7 @@ def apk2graphs_wrapper(kwargs):
         return e
 
 
-def apk2graphs(apk_path, max_number_of_sequences=15000, max_recursive_depth=50, timeout=6,
-               use_graph_merging=True, minimum_graphs_of_leaf=16, maximum_graphs_of_leaf=32,
-               saving_path=None):
+def apk2graphs(apk_path, max_number_of_sequences=15000, max_recursive_depth=50, timeout=6, N=1, saving_path=None):
     """
     extract the api graph.
     Each API is represented by a string that is constructed by
@@ -90,9 +88,7 @@ def apk2graphs(apk_path, max_number_of_sequences=15000, max_recursive_depth=50, 
     :param max_number_of_sequences: integer, the maximum number of searched sequences
     :param max_recursive_depth: integer, the maximum depth of visited methods
     :param timeout: integer, the elapsed time in minutes
-    :param use_graph_merging: boolean, merge graphs or not
-    :param minimum_graphs_of_leaf: integer, the minimum graphs in a node if merging graphs,
-    :param maximum_graphs_of_leaf: integer, the maximum graphs in a node
+    :param N: integer, the minimum number of graphs for an app if merging graphs,
     :param saving_path: string, a path directs to saving path
     """
     if not isinstance(apk_path, str):
@@ -130,9 +126,9 @@ def apk2graphs(apk_path, max_number_of_sequences=15000, max_recursive_depth=50, 
                                             timeout
                                             )
 
-    # 5. merger graphs based on class name
-    if use_graph_merging and len(api_sequence_dict) > 0:
-        api_sequence_dict = merge_graphs(api_sequence_dict, minimum_graphs_of_leaf, maximum_graphs_of_leaf)
+    # 5. merge graphs based on class name
+    api_sequence_dict = merge_graphs(api_sequence_dict, N)
+
     # 6. saving the results
     if len(api_sequence_dict) > 0:
         save_to_disk(api_sequence_dict, saving_path)
@@ -486,75 +482,81 @@ def get_caller_info(node_tag):
     return class_name+';', method_statement
 
 
-def merge_graphs(api_seq_dict, minimum_points=16, maximum_points=32):
+def get_same_class_prefix(entry_node_list):
+    assert isinstance(entry_node_list, list)
+    if len(entry_node_list) <= 0:
+        return ''
+    class_names = [a_node.split('.method')[0].rsplit('$')[0] for a_node in entry_node_list]
+    a_class_name = class_names[0]
+    n_names = a_class_name.count('/')
+    for idx in range(n_names):
+        pre_class_name = a_class_name.rsplit('/', idx)[0]
+        if all([pre_class_name in class_name for class_name in class_names]):
+            return pre_class_name
+    else:
+        return ''
+
+
+def merge_graphs(api_seq_dict, N=1):
     """
     merge graphs based on class names
     :param api_seq_dict: collections.defaultdict, keys: entry points, values: call graphs
-    :param minimum_points: Integer, the minimum number of root points in a leaf node
-    :param maximum_points: Integer, the maximum number of root points in a leaf node
+    :param N: Integer, the minimum number of graphs for an app
     """
-    assert minimum_points <= maximum_points
 
     root_nodes = list(api_seq_dict.keys())
-    if isinstance(root_nodes[0], tuple):
+    if len(root_nodes) <= N:
         return api_seq_dict
-    # remove abundant information and sub-class
-    class_names = [root_node.split(';')[0].split('$')[0].split('/') for root_node in root_nodes]
 
-    # category
-    reminded_node_indices = list(range(len(class_names)))
+    if isinstance(root_nodes[0], tuple):
+        class_names = [get_same_class_prefix(list(root_node)) for root_node in root_nodes]  # duplication exists
+    elif isinstance(root_nodes[0], str):
+        class_names = [root_node.split(';')[0].split('$')[0].split('/') for root_node in root_nodes]
+    else:
+        raise TypeError("Expect 'list' or 'tuple'.")
+
+    def map_class_to_node(class_name):
+        return [root_nodes[j] for j in \
+                [i for i, e in enumerate(class_names) if e == class_name]]
+
+    def merge(class_name_list):
+        assert len(class_name_list) > 0
+
+        new_root_node = ()
+        g = api_seq_dict[map_class_to_node(class_name_list[0])[0]]
+        for class_name in class_name_list:
+            root_node_list = map_class_to_node(class_name)
+            for rn in root_node_list:
+                new_root_node += tuple(rn)
+                g = nx.compose(g, api_seq_dict[rn])
+        return new_root_node, g
+
     new_cg_dict = collections.defaultdict(nx.DiGraph)
-    for i in range(1, 16):
-        c = collections.Counter()
-        d = collections.defaultdict(list)
-        c_child = collections.Counter()
-        r = reminded_node_indices.copy()
-        for idx in r:
-            c['/'.join(class_names[idx][:i])] += 1
-            d['/'.join(class_names[idx][:i])].append(root_nodes[idx])
-            if len(class_names[idx][i:]) == 1:
-                c_child['/'.join(class_names[idx][:i + 1])] += 1
-                d['/'.join(class_names[idx][:i + 1])].append(root_nodes[idx])
 
-        def merge_graph(root_nodes_of_category):
-            assert len(root_nodes_of_category) > 0
-            g = api_seq_dict[root_nodes_of_category[0]]
-            for n in root_nodes_of_category[1:]:
-                g = nx.compose(g, api_seq_dict[n])
-            return g
+    # merge all graph
+    if N > 0 and N <= 1:
+        rn, g = merge(class_names)
+        new_cg_dict[rn] = g
+        return new_cg_dict
 
-        def remove_node(nodes):
-            for n in nodes:
-                reminded_node_indices.remove(root_nodes.index(n))
-
-        for e, k in c.items():
-            # 1. the number of successor is less than maximum number
-            if k <= maximum_points:
-                new_root_nodes = d[e]
-                new_cg_dict[tuple(new_root_nodes)] = merge_graph(new_root_nodes)
-                remove_node(new_root_nodes)
-            # 2. the number of successor is greater than maximum number
-            else:
-                child_count = 0
-                child_root_nodes = []
-                for e_c, k_c in c_child.items():
-                    if e == e_c.rsplit('/', 1)[0]:
-                        if minimum_points <= k_c:
-                            new_root_nodes = list(d[e_c])
-                            new_cg_dict[tuple(new_root_nodes)] = merge_graph(new_root_nodes)
-                            remove_node(new_root_nodes)
-                        else:
-                            child_count += k_c
-                            child_root_nodes += list(d[e_c])
-                        if minimum_points <= child_count:
-                            # a category
-                            new_cg_dict[tuple(child_root_nodes)] = merge_graph(child_root_nodes)
-                            remove_node(child_root_nodes)
-                            child_count = 0
-                            child_root_nodes = []
-                if 0 < child_count:
-                    new_cg_dict[tuple(child_root_nodes)] = merge_graph(child_root_nodes)
-                    remove_node(child_root_nodes)
+    # merge graphs based on class name
+    max_class_length = max([class_name.count('/') for class_name in class_names])
+    pre_class_name_set = set()
+    for idx in range(max_class_length):
+        pre_class_name_set = set()
+        for class_name in class_names:
+            pre_class_name_set.add(class_name.rsplit('/', idx)[0])
+        if len(pre_class_name_set) <= N:
+            break
+    if len(pre_class_name_set) <= N:
+        pre_class_names = list(pre_class_name_set)
+        for pre_class_name in pre_class_names:
+            _class_names = [class_name for class_name in class_names if pre_class_name in class_name]
+            rn, g = merge(_class_names)
+            new_cg_dict[rn] = g
+    else:
+        rn, g = merge(class_names)
+        new_cg_dict[rn] = g
     return new_cg_dict
 
 

@@ -28,9 +28,7 @@ class Apk2graphs(object):
                  timeout=6,
                  max_vocab_size=5000,
                  use_feature_selection=True,
-                 use_graph_merging=True,
-                 minimum_graphs_of_leaf=16,
-                 maximum_graphs_of_leaf=32,
+                 N=1,
                  file_ext='.gpickle',
                  update=False,
                  proc_number=2,
@@ -45,9 +43,7 @@ class Apk2graphs(object):
         :param depth_of_recursion: the maximum depth when conducting depth-first traverse
         :param timeout: the elapsed time on analysis an app
         :param use_feature_selection: use feature selection to filtering out entities with high frequencies
-        :param use_graph_merging: boolean, merge graphs or not
-        :param minimum_graphs_of_leaf: integer, the minimum graphs in a node if merging graphs,
-        :param maximum_graphs_of_leaf: integer, the maximum graphs in a node
+        :param N: integer, the maximum number of graphs for an app
         :param file_ext: file extension
         :param update: boolean indicator for recomputing the naive features
         :param proc_number: process number
@@ -55,12 +51,10 @@ class Apk2graphs(object):
         self.naive_data_save_dir = naive_data_save_dir
         self.intermediate_save_dir = intermediate_save_dir
         self.use_feature_selection = use_feature_selection
-        self.use_graph_merge = use_graph_merging
         self.maximum_vocab_size = max_vocab_size
         self.number_of_sequences = number_of_sequences
         self.depth_of_recursion = depth_of_recursion
-        self.minimum_graphs_of_leaf = minimum_graphs_of_leaf
-        self.maximum_graphs_of_leaf = maximum_graphs_of_leaf
+        self.N = N
         self.time_out = timeout
 
         self.file_ext = file_ext
@@ -84,10 +78,9 @@ class Apk2graphs(object):
             else:
                 return save_path
 
-        params = [(apk_path, self.number_of_sequences, self.depth_of_recursion, self.time_out,
-                   self.use_graph_merge, self.minimum_graphs_of_leaf, self.maximum_graphs_of_leaf,
+        params = [(apk_path, self.number_of_sequences, self.depth_of_recursion, self.time_out, self.N,
                    get_save_path(apk_path)) for \
-                 apk_path in sample_path_list if get_save_path(apk_path) is not None]
+                  apk_path in sample_path_list if get_save_path(apk_path) is not None]
         for res in tqdm(pool.imap_unordered(seq_gen.apk2graphs_wrapper, params), total=len(params)):
             if isinstance(res, Exception):
                 logger.error("Failed processing: {}".format(str(res)))
@@ -164,6 +157,13 @@ class Apk2graphs(object):
             utils.dump_pickle(corresponding_word_info, vocab_extra_info_saving_path)
         return selected_words, corresponding_word_info, True
 
+    def merge_cg(self, feature_path_list):
+        pool = multiprocessing.Pool(self.proc_number)
+        params = [(feature_path, self.N) for feature_path in feature_path_list]
+        for res in tqdm(pool.imap_unordered(_merge_cg, params), total=len(params)):
+            if res:
+                pass
+
     def update_cg(self, feature_path_list):
         """
         append api index into each node according to the vocabulary
@@ -237,35 +237,6 @@ class Apk2graphs(object):
         :rtype numpy.ndarray
         """
         raise NotImplementedError
-
-    # def feature2ipt(self, feature_path, gt_label=None, is_adj=False, vocab=None, n_cg=1000, cache_dir=None):
-    #     """
-    #     Mapping features to the numerical representation
-    #     :param feature_path, string, a path directs to a feature file
-    #     :param gt_label, scalar, ground truth label
-    #     :param is_adj, boolean, whether extract structural information or not
-    #     :param vocab, list, vocabulary
-    #     :param n_cg, integer, the limited number of call graphs
-    #     :param cache_dir, string, saving the preprocessing data for using
-    #     """
-    #     if not isinstance(feature_path, str):
-    #         return [], [], []
-    #
-    #     return self.graph2representation(feature_path, gt_label, vocab, is_adj, n_cg)
-    #
-    #     features, adj, labels = [], [], []
-    #     representation_container = self.graph2representation(feature_path, gt_label, vocab, is_adj, n_cg)
-    #     for rpst_dict, label, feature_path in representation_container:
-    #         sub_features = []
-    #         sub_adjs = []
-    #         for root_call, sub_rpst in rpst_dict.items():
-    #             sub_feature, sub_adj = sub_rpst
-    #             sub_features.append(sub_feature)
-    #             sub_adjs.append(sub_adj)
-    #         features.append(sub_features)  # [(number_of_files, number_of_subgraphs), number_of_words]
-    #         adj.append(sub_adjs)   # [(number of files, number_of_subgraphs), number of words, number of words]
-    #         labels.append(label)  # [number of files,]
-    #     return features, adj, labels
 
     @staticmethod
     def feature2ipt(feature_path, label, is_adj=False, vocabulary=None, n_cg=1000, cache_dir=None):
@@ -360,7 +331,7 @@ def graph2rpst(g, vocab, is_adj):
             indices.append(api_info['vocab_ind'])
     # indices.append(vocab.index(NULL_ID))
     indices.append(-1)  # the last word is NULL
-    feature = np.zeros((len(vocab), ), dtype=np.float32)
+    feature = np.zeros((len(vocab),), dtype=np.float32)
     feature[indices] = 1.
     adj = None
     if is_adj:
@@ -370,6 +341,15 @@ def graph2rpst(g, vocab, is_adj):
     del new_g
     del g
     return feature, adj
+
+
+def _merge_cg(args):
+    feature_path, N = args[0], args[1]
+    cg_dict = seq_gen.read_from_disk(
+        feature_path)  # each file contains a dict of {root call method: networkx objects}
+    new_cg_dict = seq_gen.merge_graphs(cg_dict, N)
+    seq_gen.save_to_disk(new_cg_dict, feature_path)
+    return True
 
 
 def _main():

@@ -17,8 +17,8 @@ cmd_md.add_argument('--timeout', type=int, default=6,
                     help='maximum elapsed time (minutes) for analyzing an app')
 cmd_md.add_argument('--use_feature_selection', action='store_true', default=True,
                     help='use feature selection or not.')
-cmd_md.add_argument('--use_graph_merging', action='store_true', default=True,
-                    help='merge graph or not.')
+cmd_md.add_argument('--N', type=int, default=1,
+                    help='the maximum number of graphs for an app.')
 cmd_md.add_argument('--max_vocab_size', type=int, default=5000,
                     help='maximum number of vocabulary size')
 cmd_md.add_argument('--update', action='store_true', default=False,
@@ -38,7 +38,7 @@ def _main():
                                    depth_of_recursion=args.depth_of_recursion,
                                    timeout=args.timeout,
                                    use_feature_selection=args.use_feature_selection,
-                                   use_graph_merging=args.use_graph_merging,
+                                   N=args.N,
                                    update=args.update,
                                    proc_number=args.proc_number)
     malware_features = feature_extractor.feature_extraction(malware_dir_name)
