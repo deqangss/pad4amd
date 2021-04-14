@@ -164,7 +164,7 @@ class Dataset(torch.utils.data.Dataset):
             n_feature = len(feature)
             is_padding = True if n_feature < n_sg_used else False
             indices = np.arange(n_feature)
-            np.random.shuffle(indices)
+            # np.random.shuffle(indices)
             indices = indices[:n_sg_used]
             feature = np.array(feature)[indices]
             if self.is_adj:
