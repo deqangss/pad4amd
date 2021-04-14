@@ -541,16 +541,19 @@ def merge_graphs(api_seq_dict, N=1):
 
     # merge graphs based on class name
     max_class_length = max([class_name.count('/') for class_name in class_names])
-    pre_class_name_set = set()
+    pre_class_name_list = []
     for idx in range(max_class_length):
         pre_class_name_set = set()
+        pre_class_name_list.clear()
         for class_name in class_names:
-            pre_class_name_set.add(class_name.rsplit('/', idx)[0])
-        if len(pre_class_name_set) <= N:
+            pre_class_name = class_name.rsplit('/', idx)[0]
+            if pre_class_name not in pre_class_name_set:
+                pre_class_name_list.append(pre_class_name)
+            pre_class_name_set.add(pre_class_name)
+        if len(pre_class_name_list) <= N:
             break
-    if len(pre_class_name_set) <= N:
-        pre_class_names = list(pre_class_name_set)
-        for pre_class_name in pre_class_names:
+    if len(pre_class_name_list) <= N:
+        for pre_class_name in pre_class_name_list:
             _class_names = [class_name for class_name in class_names if pre_class_name in class_name]
             rn, g = merge(_class_names)
             new_cg_dict[rn] = g

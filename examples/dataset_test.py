@@ -21,7 +21,7 @@ cmd_md.add_argument('--timeout', type=int, default=20,
                     help='The maximum elapsed time for analyzing an app')
 cmd_md.add_argument('--use_feature_selection', action='store_true', default=True,
                     help='Whether use feature selection or not.')
-cmd_md.add_argument('--N', type=int, default=10,
+cmd_md.add_argument('--N', type=int, default=4,
                     help='the maximum number of graphs for an app.')
 cmd_md.add_argument('--max_vocab_size', type=int, default=10000,
                     help='The maximum number of vocabulary size')
