@@ -15,7 +15,7 @@ indicator_argparse.add_argument('--beta_a', type=float, default=0.005, help='pen
 indicator_argparse.add_argument('--adv_epochs', type=int, default=20, help='epochs for adversarial training.')
 indicator_argparse.add_argument('--m', type=int, default=10, help='maximum number of perturbations.')
 indicator_argparse.add_argument('--step_length', type=float, default=1., help='step length.')
-indicator_argparse.add_argument('--use_interdependent_api', action='store_true', default=False, help='whether consider the interdependent apis.')
+indicator_argparse.add_argument('--use_interdependent_api', action='store_true', help='whether consider the interdependent apis.')
 
 def _main():
     args = cmd_md.parse_args()
