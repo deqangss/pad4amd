@@ -177,6 +177,10 @@ class KernelDensityEstimation(DensityEstimator):
         with torch.no_grad():
             for x, a, y, _1 in train_dataset_producer:
                 x, a, y = utils.to_tensor(x, a, y, self.device)
+                print(x.shape)
+                print(a)
+                import sys
+                sys.exit(1)
                 x_hidden, _ = self.forward(x, a)
                 X_hidden.append(x_hidden)
                 Y.append(y)
