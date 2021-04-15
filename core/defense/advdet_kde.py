@@ -179,8 +179,7 @@ class KernelDensityEstimation(DensityEstimator):
                 x, a, y = utils.to_tensor(x, a, y, self.device)
                 print(x.shape)
                 print(a)
-                import sys
-                sys.exit(1)
+                print(len(Y))
                 x_hidden, _ = self.forward(x, a)
                 X_hidden.append(x_hidden)
                 Y.append(y)
