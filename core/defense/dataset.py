@@ -13,7 +13,7 @@ from tools import utils
 
 
 class Dataset(torch.utils.data.Dataset):
-    def __init__(self, k=8, is_adj=False, seed=0, n_sgs_max=1000, use_cache=False, feature_ext_args=None):
+    def __init__(self, k=1, is_adj=False, seed=0, n_sgs_max=10, use_cache=False, feature_ext_args=None):
         """
         build dataset for ml model learning
         :param k: Integer, the number of subgraphs is sampled for passing through the neural networks
