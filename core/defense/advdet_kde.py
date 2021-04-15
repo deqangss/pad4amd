@@ -185,7 +185,7 @@ class KernelDensityEstimation(DensityEstimator):
                     break
             X_hidden = torch.vstack(X_hidden)
             Y = torch.cat(Y)
-        self.gaussian_means = [X_hidden[Y == i][:self.n_centers] for i in range(self.n_classes)]
+            self.gaussian_means = [X_hidden[Y == i][:self.n_centers] for i in range(self.n_classes)]
 
         self.get_threshold(val_dataet_producer)
 
