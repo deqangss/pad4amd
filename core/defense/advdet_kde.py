@@ -177,17 +177,14 @@ class KernelDensityEstimation(DensityEstimator):
         with torch.no_grad():
             for x, a, y, _1 in train_dataset_producer:
                 x, a, y = utils.to_tensor(x, a, y, self.device)
-                print(x.shape)
-                print(a)
-                print(len(Y))
                 x_hidden, _ = self.forward(x, a)
                 X_hidden.append(x_hidden)
                 Y.append(y)
                 _, count = torch.unique(torch.cat(Y))
                 if torch.min(count) >= self.n_centers:
                     break
-        X_hidden = torch.vstack(X_hidden)
-        Y = torch.cat(Y)
+            X_hidden = torch.vstack(X_hidden)
+            Y = torch.cat(Y)
         self.gaussian_means = [X_hidden[Y == i][:self.n_centers] for i in range(self.n_classes)]
 
         self.get_threshold(val_dataet_producer)
