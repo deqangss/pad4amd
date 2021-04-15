@@ -503,7 +503,7 @@ def merge_graphs(api_seq_dict, N=1):
     if len(pre_class_name_list) <= N:
         for pre_class_name in pre_class_name_list:
             _class_names = [class_name for class_name in class_names if pre_class_name in class_name]
-            rn, g = merge(_class_names)
+            rn, g = merge(sorted(set(_class_names), key=_class_names.index))
             new_cg_dict[rn] = g
     else:
         rn, g = merge(sorted(set(class_names), key=class_names.index))
