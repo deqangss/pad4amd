@@ -347,9 +347,8 @@ def _merge_cg(args):
     feature_path, N = args[0], args[1]
     cg_dict = seq_gen.read_from_disk(
         feature_path)  # each file contains a dict of {root call method: networkx objects}
-    print('doing:', feature_path)
     new_cg_dict = seq_gen.merge_graphs(cg_dict, N)
-    # seq_gen.save_to_disk(new_cg_dict, feature_path)
+    seq_gen.save_to_disk(new_cg_dict, feature_path)
     return True
 
 
