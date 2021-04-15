@@ -26,6 +26,8 @@ def _main():
 
     dataset = Dataset(k=hp_params['k'],
                       is_adj=hp_params['is_adj'],
+                      n_sgs_max=hp_params['N'],
+                      use_cache=hp_params['cache'],
                       feature_ext_args={'proc_number': hp_params['proc_number']}
                       )
     (train_data, trainy), (val_data, valy), (test_data, testy) = dataset.train_dataset, dataset.validation_dataset, dataset.test_dataset
