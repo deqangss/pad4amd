@@ -27,6 +27,8 @@ def _main():
 
     dataset = Dataset(k=args.k,
                       is_adj=args.is_adj,
+                      n_sgs_max=args.N,
+                      use_cache=args.cache,
                       feature_ext_args=get_group_args(args, cmd_md, 'feature')
                       )
     (train_data, trainy), (val_data, valy), (
