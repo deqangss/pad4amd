@@ -8,3 +8,4 @@ from core.attack.pgd_adam import PGDAdam
 from core.attack.mimicry import Mimicry
 from core.attack.gdkde import GDKDE
 from core.attack.max import Max
+from core.attack.malgan import MalGAN
