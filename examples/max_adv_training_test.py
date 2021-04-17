@@ -20,7 +20,7 @@ max_adv_argparse.add_argument('--step_length_l2', type=float, default=2.,
                               help='step length in each step.')
 max_adv_argparse.add_argument('--step_length_linf', type=float, default=0.02,
                               help='step length in each step.')
-max_adv_argparse.add_argument('--atta_lr', type=float, default=0.1,
+max_adv_argparse.add_argument('--atta_lr', type=float, default=0.05,
                               help='learning rate for pgd adam attack.')
 max_adv_argparse.add_argument('--random_start', action='store_true', default=False,
                               help='randomly initialize the start points.')
