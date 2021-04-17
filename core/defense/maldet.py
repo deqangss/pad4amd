@@ -185,10 +185,6 @@ class MalwareDetector(nn.Module):
             for idx_batch, res in enumerate(train_data_producer):
                 x_batch, adj, y_batch, _1 = res
                 x_batch, adj_batch, y_batch = utils.to_tensor(x_batch, adj, y_batch, self.device)
-                print(x_batch[0])
-                print(torch.sum(x_batch, dim=-1))
-                import sys
-                sys.exit(1)
                 start_time = time.time()
                 optimizer.zero_grad()
                 latent_rpst, logits = self.forward(x_batch, adj_batch)
