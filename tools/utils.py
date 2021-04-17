@@ -318,22 +318,53 @@ def to_device(x=None, adj=None, labels=None, device='cpu'):
     return x, adj, labels
 
 
-def rand_x(x, rounding_threshold=0.5, is_sample=False):
+# def rand_x(x, rounding_threshold=0.5, is_sample=False):
+#     """
+#     randomly start the maximizer, code is adapted from:
+#     https://github.com/ALFA-group/robust-adv-malware-detection/
+#
+#     Parameters
+#     --------
+#     @param x, torch.tensor
+#     @param rounding_threshold, Float value in [0, 1], a threshold for rounding a vector
+#     @param is_sample, Boolean, incorporating random noises or not
+#     """
+#     if is_sample:
+#         rand = (torch.rand(x.size()) > rounding_threshold).float()
+#         if x.is_cuda:
+#             rand = rand.to('cuda')
+#         return (rand.byte() | x.byte()).float()
+#     else:
+#         return x
+
+
+def round_x(x, alpha=0.5):
     """
-    randomly start the maximizer, code is adapted from:
+    rounds x by thresholding it according to alpha which can be a scalar or vector
+    :param x:
+    :param alpha: threshold parameter
+    :return: a float tensor of 0s and 1s.
+    """
+    return (x > alpha).float()
+
+
+def get_x0(x, rounding_threshold=0.5, is_sample=False):
+    """
+    Helper function to randomly initialize the the inner maximizer algos
+    randomize such that the functionality is preserved.
+    Functionality is preserved by maintaining the features present in x
+
     https://github.com/ALFA-group/robust-adv-malware-detection/
 
-    Parameters
-    --------
-    @param x, torch.tensor
-    @param rounding_threshold, Float value in [0, 1], a threshold for rounding a vector
-    @param is_sample, Boolean, incorporating random noises or not
+    :param x: training sample
+    :param is_sample: flag to sample randomly from feasible area or return just x
+    :return: randomly sampled feasible version of x
     """
     if is_sample:
-        rand = (torch.rand(x.size()) > rounding_threshold).float()
+        rand_x = round_x(torch.rand(x.size()), alpha=rounding_threshold)
         if x.is_cuda:
-            rand = rand.to('cuda')
-        return (rand.byte() | x.byte()).float()
+            rand_x = rand_x.cuda()
+        return (rand_x.byte() | x.byte()).float()
     else:
         return x
 

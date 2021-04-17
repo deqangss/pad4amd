@@ -11,7 +11,7 @@ import torch
 import torch.nn.functional as F
 
 from core.attack.base_attack import BaseAttack
-from tools.utils import rand_x
+from tools.utils import get_x0
 from config import logging, ErrorHandler
 
 logger = logging.getLogger('core.attack.pgd')
@@ -63,7 +63,7 @@ class PGDAdam(BaseAttack):
         self.lambda_ = lambda_
         self.padding_mask = torch.sum(adv_x, dim=-1, keepdim=True) > 1  # we set a graph contains two apis at least
         if self.use_random:
-            adv_x = rand_x(adv_x, rounding_threshold=self.round_threshold, is_sample=True)
+            adv_x = get_x0(adv_x, rounding_threshold=self.round_threshold, is_sample=True)
         padding_mask = torch.sum(adv_x, dim=-1, keepdim=True) > 1
         adv_x.requires_grad = True
         optimizer = torch.optim.Adam([adv_x], lr=lr)

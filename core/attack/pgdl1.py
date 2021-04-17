@@ -38,8 +38,7 @@ class PGDl1(BaseAttack):
 
     def _perturb(self, model, x, adj=None, label=None,
                  m_perturbations=10,
-                 lambda_=1.,
-                 verbose=False):
+                 lambda_=1.):
         """
         perturb node feature vectors
 

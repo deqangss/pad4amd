@@ -11,7 +11,7 @@ import torch
 import torch.nn.functional as F
 
 from core.attack.base_attack import BaseAttack
-from tools.utils import rand_x
+from tools.utils import get_x0, round_x
 from config import logging, ErrorHandler
 
 logger = logging.getLogger('core.attack.pgd')
@@ -69,7 +69,7 @@ class PGD(BaseAttack):
         model.eval()
         for t in range(steps):
             if t == 0 and self.use_random:
-                adv_x = rand_x(adv_x, rounding_threshold=self.round_threshold, is_sample=True)
+                adv_x = get_x0(adv_x, rounding_threshold=self.round_threshold, is_sample=True)
             var_adv_x = torch.autograd.Variable(adv_x, requires_grad=True)
             hidden, logit = model.forward(var_adv_x, adj)
             loss, done = self.get_loss(model, logit, label, hidden, self.lambda_)
@@ -77,7 +77,12 @@ class PGD(BaseAttack):
             perturbation = self.get_perturbation(grad, x, adv_x)
             adv_x = torch.clamp(adv_x + perturbation * step_length, min=0., max=1.)
         # round
-        return adv_x.round()
+        if self.norm == 'linf':
+            # see paper: Adversarial Deep Learning for Robust Detection of Binary Encoded Malware
+            round_threshold = torch.rand(adv_x.size()).to(self.device)
+        else:
+            round_threshold = 0.5
+        return round_x(adv_x, round_threshold)
 
     def perturb(self, model, x, adj=None, label=None,
                 steps=10,
