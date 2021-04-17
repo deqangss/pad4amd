@@ -103,7 +103,7 @@ class PGD(BaseAttack):
             if torch.all(done):
                 break
             adv_x[~done] = x[~done]  # recompute the perturbation under other penalty factors
-            adv_adj = None if adj is None else adv_adj[~done]
+            adv_adj = None if adj is None else adj[~done]
             pert_x = self._perturb(model, adv_x[~done], adv_adj, label[~done],
                                    steps,
                                    step_length,
