@@ -179,7 +179,7 @@ class Dataset(torch.utils.data.Dataset):
             if is_padding:
                 n_padded = n_sg_used - n_feature
                 indices = np.concatenate([indices, np.arange(n_feature, n_sg_used)])
-                feature = np.vstack([feature, np.zeros((n_padded, ) + feature[0].shape, dtype=np.float32)])
+                feature = np.vstack([feature, np.zeros((n_padded, self.vocab_size), dtype=np.float32)])
                 if self.is_adj:
                     adjs[i].extend([csr_matrix(adjs[i][0].shape, dtype=np.float32)] * n_padded)
                     adjs_padded.append(adjs[i])
