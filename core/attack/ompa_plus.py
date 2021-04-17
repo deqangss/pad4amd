@@ -44,7 +44,7 @@ class OMPAP(OMPA):
             if torch.all(done):
                 break
             adv_x[~done] = x[~done]  # recompute the perturbation under other penalty factors
-            adv_adj = None if adj is None else adv_adj[~done]
+            adv_adj = None if adj is None else adj[~done]
             pert_x = super(OMPAP, self).perturb(model, adv_x[~done], adv_adj, label[~done],
                                                 m,
                                                 self.lambda_,
