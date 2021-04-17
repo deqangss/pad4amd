@@ -71,7 +71,7 @@ class MaxAdvTraining(object):
 
                 # perturb malware feature vectors
                 mal_x_batch, mal_adj_batch, mal_y_batch, null_flag = PrincipledAdvTraining.get_mal_data(x_batch,
-                                                                                                                    adj_batch,
+                                                                                                        adj_batch,
                                                                                                         y_batch)
                 if null_flag:
                     continue
@@ -112,14 +112,11 @@ class MaxAdvTraining(object):
                 losses.append(loss_train.item())
                 accuracies.append(acc_train)
                 if verbose:
-                    logger.info(
-                        f'Mini batch: {i * nbatches + ith_batch + 1}/{epochs * nbatches} | training time in {mins:.0f} minutes, {secs} seconds.')
-                    logger.info(
-                        f'Training loss (batch level): {losses[-1]:.4f} | Train accuracy: {acc_train * 100:.2f}')
+                    logger.info(f'Mini batch: {i * nbatches + ith_batch + 1}/{epochs * nbatches} | training time in {mins:.0f} minutes, {secs} seconds.')
+                    logger.info(f'Training loss (batch level): {losses[-1]:.4f} | Train accuracy: {acc_train * 100:.2f}')
 
             if not path.exists(self.model_save_path):
                 utils.mkdir(path.dirname(self.model_save_path))
             torch.save(self.model.state_dict(), self.model_save_path)
             if verbose:
-                logger.info(
-                    f'Training loss (epoch level): {np.mean(losses):.4f} | Train accuracy: {np.mean(accuracies) * 100:.2f}')
+                logger.info(f'Training loss (epoch level): {np.mean(losses):.4f} | Train accuracy: {np.mean(accuracies) * 100:.2f}')
