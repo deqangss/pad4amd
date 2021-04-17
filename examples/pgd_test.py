@@ -17,11 +17,14 @@ logger.addHandler(ErrorHandler)
 
 atta_argparse = argparse.ArgumentParser(description='arguments for projected gradient descent attack')
 atta_argparse.add_argument('--lambda_', type=float, default=0.01, help='balance factor for waging attack.')
-atta_argparse.add_argument('--norm', type=str, default='l2', choices=['l2', 'linf'], help="gradient normalization, either of 'l2' and 'linf'.")
+atta_argparse.add_argument('--norm', type=str, default='l2', choices=['l2', 'linf'],
+                           help="gradient normalization, either of 'l2' and 'linf'.")
 atta_argparse.add_argument('--n_step', type=int, default=50, help='maximum number of steps.')
 atta_argparse.add_argument('--step_length', type=float, default=0.2, help='step length in each step.')
-atta_argparse.add_argument('--random_start', action='store_true', default=False, help='randomly initialize the start points.')
-atta_argparse.add_argument('--round_threshold', type=float, default=0.5, help='threshold for rounding real scalars.')
+atta_argparse.add_argument('--random_start', action='store_true', default=False,
+                           help='randomly initialize the start points.')
+atta_argparse.add_argument('--round_threshold', type=float, default=0.5,
+                           help='threshold for rounding real scalars at the initialization step.')
 atta_argparse.add_argument('--base', type=float, default=10., help='base of a logarithm function.')
 atta_argparse.add_argument('--kappa', type=float, default=1., help='attack confidence.')
 atta_argparse.add_argument('--real', action='store_true', default=False, help='whether produce the perturbed apks.')
@@ -98,7 +101,6 @@ def _main():
     logger.info("Load model parameters from {}.".format(model.model_save_path))
 
     # model.predict(mal_test_dataset_producer)
-
     attack = PGD(norm=args.norm,
                  use_random=args.random_start,
                  rounding_threshold=args.round_threshold,
