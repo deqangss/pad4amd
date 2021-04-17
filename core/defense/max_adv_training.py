@@ -118,5 +118,6 @@ class MaxAdvTraining(object):
             if not path.exists(self.model_save_path):
                 utils.mkdir(path.dirname(self.model_save_path))
             torch.save(self.model.state_dict(), self.model_save_path)
+            torch.save(self.model.state_dict(), self.model_save_path + str(i // 5 + 1))
             if verbose:
                 logger.info(f'Training loss (epoch level): {np.mean(losses):.4f} | Train accuracy: {np.mean(accuracies) * 100:.2f}')

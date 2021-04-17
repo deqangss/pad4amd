@@ -37,7 +37,7 @@ class PrincipledAdvTraining(object):
 
         self.name = self.model.name
         self.model_save_path = path.join(config.get('experiments', 'p_adv_training') + '_' + self.name,
-                                         'model{}.pth')
+                                         'model.pth')
         self.model.model_save_path = self.model_save_path
 
     def fit(self, train_data_producer, validation_data_producer, epochs=100, adv_epochs=20,
@@ -141,7 +141,9 @@ class PrincipledAdvTraining(object):
             if not path.exists(self.model_save_path):
                 utils.mkdir(path.dirname(self.model_save_path))
             self.model.get_threshold(validation_data_producer)
-            torch.save(self.model.state_dict(), self.model_save_path.format(i // 5))
+            torch.save(self.model.state_dict(), self.model_save_path)
+            # relief the worse model selection
+            torch.save(self.model.state_dict(), self.model_save_path + str(i // 5 + 1))
             if verbose:
                 logger.info(f'Training loss (epoch level): {np.mean(losses):.4f} | Train accuracy: {np.mean(accuracies) * 100:.2f}')
                 logger.info(
