@@ -104,10 +104,10 @@ def _main():
                   lr=args.lr,
                   weight_decay=args.weight_decay
                   )
-    # human readable
-    save_args(path.join(path.dirname(model.model_save_path), "hparam"), vars(args))
-    # serialization for building the neural nets
-    dump_pickle(vars(args), path.join(path.dirname(model.model_save_path), "hparam.pkl"))
+        # human readable
+        save_args(path.join(path.dirname(model.model_save_path), "hparam"), vars(args))
+        # serialization for building the neural nets
+        dump_pickle(vars(args), path.join(path.dirname(model.model_save_path), "hparam.pkl"))
 
     # test: accuracy
     model.load()
