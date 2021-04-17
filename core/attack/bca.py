@@ -13,7 +13,7 @@ import torch
 import torch.nn.functional as F
 
 from core.attack.base_attack import BaseAttack
-from tools.utils import rand_x
+from tools.utils import get_x0
 from config import logging, ErrorHandler
 
 logger = logging.getLogger('core.attack.bca')
@@ -67,7 +67,7 @@ class BCA(BaseAttack):
         model.eval()
         for t in range(m):
             if use_sample and t == 0:
-                adv_x = rand_x(adv_x, rounding_threshold=0.5, is_sample=True)
+                adv_x = get_x0(adv_x, rounding_threshold=0.5, is_sample=True)
             var_adv_x = torch.autograd.Variable(adv_x, requires_grad=True)
             hidden, logit = model.forward(var_adv_x, adj)
             loss, done = self.get_loss(model, logit, label, hidden, self.lambda_)

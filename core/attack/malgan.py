@@ -11,7 +11,7 @@ import torch.nn.functional as F
 import numpy as np
 
 from core.attack.base_attack import BaseAttack
-from tools.utils import rand_x, to_tensor, mkdir
+from tools.utils import to_tensor, mkdir
 from config import logging, ErrorHandler
 
 logger = logging.getLogger('core.attack.malgan')

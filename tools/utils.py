@@ -318,26 +318,6 @@ def to_device(x=None, adj=None, labels=None, device='cpu'):
     return x, adj, labels
 
 
-# def rand_x(x, rounding_threshold=0.5, is_sample=False):
-#     """
-#     randomly start the maximizer, code is adapted from:
-#     https://github.com/ALFA-group/robust-adv-malware-detection/
-#
-#     Parameters
-#     --------
-#     @param x, torch.tensor
-#     @param rounding_threshold, Float value in [0, 1], a threshold for rounding a vector
-#     @param is_sample, Boolean, incorporating random noises or not
-#     """
-#     if is_sample:
-#         rand = (torch.rand(x.size()) > rounding_threshold).float()
-#         if x.is_cuda:
-#             rand = rand.to('cuda')
-#         return (rand.byte() | x.byte()).float()
-#     else:
-#         return x
-
-
 def round_x(x, alpha=0.5):
     """
     rounds x by thresholding it according to alpha which can be a scalar or vector

@@ -22,7 +22,6 @@ import torch
 import torch.nn.functional as F
 import numpy as np
 
-from tools.utils import rand_x
 from core.attack.base_attack import BaseAttack
 from config import logging, ErrorHandler
 
