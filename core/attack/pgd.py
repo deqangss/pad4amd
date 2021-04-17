@@ -116,10 +116,9 @@ class PGD(BaseAttack):
         with torch.no_grad():
             hidden, logit = model.forward(adv_x, adj)
             _, done = self.get_loss(model, logit, label, hidden, self.lambda_)
-            print(done)
             if verbose:
                 logger.info(f"pgd {self.norm}: attack effectiveness {done.sum().item() / done.size()[0] * 100:.3f}%.")
-        return adv_x
+        return adv_x, done.sum().item()
 
     def get_perturbation(self, gradients, features, adv_features):
         div_zero_overflow = torch.tensor(1e-30, dtype=gradients.dtype, device=gradients.device)
