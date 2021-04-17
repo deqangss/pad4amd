@@ -14,12 +14,18 @@ from examples.maldet_test import cmd_md
 max_adv_argparse = cmd_md.add_argument_group(title='max adv training')
 max_adv_argparse.add_argument('--m', type=int, default=10, help='maximum number of perturbations.')
 
-max_adv_argparse.add_argument('--n_step', type=int, default=50, help='maximum number of steps for base attacks.')
-max_adv_argparse.add_argument('--step_length_l2', type=float, default=2., help='step length in each step.')
-max_adv_argparse.add_argument('--step_length_linf', type=float, default=0.02, help='step length in each step.')
-max_adv_argparse.add_argument('--atta_lr', type=float, default=0.1, help='learning rate for pgd adam attack.')
-max_adv_argparse.add_argument('--random_start', action='store_true', default=False, help='randomly initialize the start points.')
-max_adv_argparse.add_argument('--round_threshold', type=float, default=0.98, help='threshold for rounding real scalars.')
+max_adv_argparse.add_argument('--n_step', type=int, default=50,
+                              help='maximum number of steps for base attacks.')
+max_adv_argparse.add_argument('--step_length_l2', type=float, default=2.,
+                              help='step length in each step.')
+max_adv_argparse.add_argument('--step_length_linf', type=float, default=0.02,
+                              help='step length in each step.')
+max_adv_argparse.add_argument('--atta_lr', type=float, default=0.1,
+                              help='learning rate for pgd adam attack.')
+max_adv_argparse.add_argument('--random_start', action='store_true', default=False,
+                              help='randomly initialize the start points.')
+max_adv_argparse.add_argument('--round_threshold', type=float, default=0.98,
+                              help='threshold for rounding real scalars at the initialization step.')
 
 
 def _main():
