@@ -180,10 +180,8 @@ class SpGraphAttentionLayer(nn.Module):
         assert not torch.isnan(h).any()
 
         # Self-attention on the nodes - Shared attention mechanism
-        print(h.shape)
-        print(edge.shape)
         edge_h = torch.cat((h[edge[0, :], edge[1, :], :], h[edge[0, :], edge[2, :], :]), dim=1).t()
-        # edge: 2*D x E (note: batch of data is inapplicable)
+        # edge: 2*D x E
 
         edge_e = torch.exp(-self.activation(self.a.matmul(edge_h).squeeze()))
         assert not torch.isnan(edge_e).any()
