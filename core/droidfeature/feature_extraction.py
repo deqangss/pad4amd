@@ -287,6 +287,8 @@ class Apk2graphs(object):
         if cache_feature_path is not None:
             utils.dump_pickle_frd_space((sub_features, sub_adjs, label), cache_feature_path)
         print(sub_features)
+        import sys
+        sys.exit(1)
         return sub_features, sub_adjs, label
 
         # numerical_representation_dict = collections.defaultdict(tuple)
