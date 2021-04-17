@@ -129,13 +129,12 @@ def _main():
         print(np.sum(np.argmax(np.vstack(y_cent), axis=-1) == 0))
         print(mal_count)
         print(np.sum(np.argmax(np.vstack(y_cent), axis=-1) == 0) / mal_count)
-        import sys
-        sys.exit(1)
         y_cent_list.append(np.vstack(y_cent))
         x_density_list.append(np.concatenate(x_density))
         x_mod_integrated = dataset.modification_integ(x_mod_integrated, x_mod)
     y_cent = np.mean(np.stack(y_cent_list, axis=1), axis=1)
     y_pred = np.argmax(y_cent, axis=-1)
+    print(np.sum(y_pred))
     logger.info(f'The mean accuracy on perturbed malware is {sum(y_pred == 1.) / mal_count * 100:.3f}%')
 
     if 'indicator' in type(model).__dict__.keys():
