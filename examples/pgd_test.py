@@ -126,7 +126,8 @@ def _main():
             y_cent.append(y_cent_batch)
             x_density.append(x_density_batch)
             x_mod.extend(dataset.get_modification(adv_x_batch, x, g_ind, True))
-        print(np.vstack(y_cent))
+        print(np.sum(np.argmax(np.vstack(y_cent), axis=-1) == 1))
+        print(mal_count)
         import sys
         sys.exit(1)
         y_cent_list.append(np.vstack(y_cent))
