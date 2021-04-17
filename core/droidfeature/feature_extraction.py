@@ -277,7 +277,6 @@ class Apk2graphs(object):
         for i, (root_call, cg) in enumerate(cg_dict.items()):
             res = _graph2rpst_wrapper((cg, vocabulary, is_adj))
             if isinstance(res, Exception):
-                print('ok')
                 continue
             sub_feature, sub_adj = res
             sub_features.append(sub_feature)
@@ -287,9 +286,6 @@ class Apk2graphs(object):
 
         if cache_feature_path is not None:
             utils.dump_pickle_frd_space((sub_features, sub_adjs, label), cache_feature_path)
-        print(sub_features)
-        import sys
-        sys.exit(1)
         return sub_features, sub_adjs, label
 
         # numerical_representation_dict = collections.defaultdict(tuple)
