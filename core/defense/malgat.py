@@ -120,7 +120,9 @@ class MalGAT(nn.Module):
 
         if adjs is None:
             self.filter = self.filter.to(x.device)
+            print('before:', torch.sum(x))
             x = x * self.filter
+            print('after:', torch.sum(x))
             if self.sparse:
                 adjs = torch.stack([
                     torch.stack([torch.matmul(_x_e.unsqueeze(-1), _x_e.unsqueeze(0)).to_sparse() for _x_e in _x]) \
