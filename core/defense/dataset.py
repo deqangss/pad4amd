@@ -90,9 +90,6 @@ class Dataset(torch.utils.data.Dataset):
             print('updating test data')
             self.feature_extractor.update_cg(self.test_dataset[0])
 
-        import sys
-        sys.exit(1)
-
     def data_split(self, feature_paths, labels):
         assert len(feature_paths) == len(labels)
         train_dn, validation_dn, test_dn = None, None, None
