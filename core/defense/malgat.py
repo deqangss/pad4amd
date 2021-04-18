@@ -15,12 +15,16 @@ class MalGAT(nn.Module):
                  dropout,
                  alpha_,
                  k,
+                 width,
                  use_fusion,
                  sparse,
                  smooth=False,
                  activation=F.elu):
         """
         Graph ATtention networks for malware detection
+
+        Parameters
+        --------
         :param vocab_size: Integer, the number of words in the  dictionary
         :param embedding_dim: Integer, the number of embedding codes
         :param n_hidden_units: List, a list of integers denote the number of neurons of hidden layers
@@ -29,6 +33,7 @@ class MalGAT(nn.Module):
         :param dropout: Float, dropout rate applied to attention layer
         :param alpha_: Float, the slope coefficient of leaky-relu or elu
         :param k: Integer, the sampling size
+        :param width: Integer, window size for filtering our un-attended api
         :param use_fusion: Boolean, combing the graph-type feature and binary bag-of-words feature
         :param sparse: GAT in sparse version or not
         :param smooth: replace lrelu of elu
@@ -44,6 +49,7 @@ class MalGAT(nn.Module):
         self.dropout = dropout
         self.alpha = alpha_
         self.k = k
+        self.width = width
         self.use_fusion = use_fusion
         self.sparse = sparse
         self.smooth = smooth
@@ -94,6 +100,9 @@ class MalGAT(nn.Module):
         self.mod_frq_dense = nn.Linear(self.vocab_size, self.embedding_dim)
         self.mod_frq_cls_dense = nn.Linear(self.embedding_dim, self.penultimate_hidden_unit)
 
+        self.filter = torch.zeros((self.vocab_size,))
+        self.filter[:self.width] = 1.
+
     def forward(self, x, adjs=None):
         """
         forward the neural network
@@ -110,6 +119,8 @@ class MalGAT(nn.Module):
             return self.activation(self.mod_frq_cls_dense(mod1_code))
 
         if adjs is None:
+            self.filter = self.filter.to(x.device)
+            x = x * self.filter
             if self.sparse:
                 adjs = torch.stack([
                     torch.stack([torch.matmul(_x_e.unsqueeze(-1), _x_e.unsqueeze(0)).to_sparse() for _x_e in _x]) \

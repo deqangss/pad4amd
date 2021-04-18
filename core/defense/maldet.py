@@ -52,6 +52,7 @@ class MalwareDetector(nn.Module):
                              self.dropout,
                              self.alpha_,  # slope coefficient of leaky relu
                              self.k,
+                             self.width,
                              self.use_fusion,
                              self.sparse,
                              self.smooth)
@@ -68,6 +69,7 @@ class MalwareDetector(nn.Module):
                    dropout=0.6,
                    alpha_=0.2,
                    k=10,
+                   width=5000,
                    use_fusion=True,
                    sparse=True,
                    smooth=False,
@@ -84,6 +86,7 @@ class MalwareDetector(nn.Module):
         self.dropout = dropout
         self.alpha_ = alpha_
         self.k = k
+        self.width = width
         self.use_fusion = use_fusion
         self.sparse = sparse
         self.smooth = smooth
