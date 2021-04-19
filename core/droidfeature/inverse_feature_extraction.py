@@ -128,7 +128,7 @@ class InverseDroidFeature(object):
         """
         interdependent_apis = ['Ljava/lang/Object;->getClass', 'Ljava/lang/Class;->getMethod',
                                'Ljava/lang/reflect/Method;->invoke']
-        omega = [self.vocab.index(api) for api in interdependent_apis]
+        omega = [self.vocab.index(api) for api in interdependent_apis if api in self.vocab]
         return omega
 
     @staticmethod
