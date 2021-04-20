@@ -13,7 +13,6 @@ class OMPA(BaseAttack):
     Parameters
     ---------
     @param is_attacker, Boolean, play the role of attacker (note: the defender conducts adversarial training)
-    @param use_dependent_api, Boolean, whether use interdependent api
     @param centers, torch.tensor, hidden representation of examples (center points)
     @param bandwidth: float, variance of gaussian distribution
     @param kappa, float, attack confidence
@@ -22,11 +21,10 @@ class OMPA(BaseAttack):
     @param device, 'cpu' or 'cuda'
     """
 
-    def __init__(self, is_attacker=True, use_dependent_api=True, centers=None, bandwidth=20.,
+    def __init__(self, is_attacker=True, centers=None, bandwidth=20.,
                  kappa=1., manipulation_x=None, omega=None, device=None):
         super(OMPA, self).__init__(kappa, manipulation_x, omega, device)
         self.is_attacker = is_attacker
-        self.use_dependent_api = use_dependent_api
         self.centers = centers
         self.bandwidth = bandwidth
         self.lambda_ = 1.
@@ -105,7 +103,7 @@ class OMPA(BaseAttack):
         grad4insertion = (gradients > 0) * pos_insertion * gradients  # owing to gradient ascent
         #    2.2 api removal
         pos_removal = (adv_features > 0.5) * 1
-        if self.use_dependent_api:
+        if self.is_attacker:
             #     2.2.1 cope with the interdependent apis (note: application-specific)
             checking_nonexist_api = (pos_removal ^ self.omega) & self.omega
             grad4removal = torch.sum(gradients * checking_nonexist_api, dim=-1, keepdim=True) + gradients
@@ -125,7 +123,7 @@ class OMPA(BaseAttack):
         perturbations = perturbations.reshape(features.shape)
         directions = torch.sign(gradients) * (perturbations > 1e-6)
 
-        if self.use_dependent_api:
+        if self.is_attacker:
             # 5. tailor the interdependent apis (note: application-specific)
             perturbations += (torch.sum(directions, dim=-1, keepdim=True) < 0) * checking_nonexist_api
             directions += perturbations * self.omega
