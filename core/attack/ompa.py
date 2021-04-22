@@ -23,7 +23,7 @@ class OMPA(BaseAttack):
 
     def __init__(self, is_attacker=True, centers=None, bandwidth=20.,
                  kappa=1., manipulation_x=None, omega=None, device=None):
-        super(OMPA, self).__init__(kappa, manipulation_x, omega, device)
+        super(OMPA, self).__init__(is_attacker, kappa, manipulation_x, omega, device)
         self.is_attacker = is_attacker
         self.centers = centers
         self.bandwidth = bandwidth
