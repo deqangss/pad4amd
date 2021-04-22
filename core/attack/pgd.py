@@ -29,14 +29,16 @@ class PGD(BaseAttack):
     @param norm, 'l2' or 'linf'
     @param use_random, Boolean,  whether use random start point
     @param rounding_threshold, float, a threshold for rounding real scalars
+    @param is_attacker, Boolean, play the role of attacker (note: the defender conducts adversarial training)
     @param kappa, attack confidence
     @param manipulation_x, manipulations
     @param omega, the indices of interdependent apis corresponding to each api
     @param device, 'cpu' or 'cuda'
     """
 
-    def __init__(self, norm, use_random=False, rounding_threshold=0.5, kappa=1., manipulation_x=None, omega=None, device=None):
-        super(PGD, self).__init__(kappa, manipulation_x, omega, device)
+    def __init__(self, norm, use_random=False, rounding_threshold=0.5,
+                 is_attacker=True, kappa=1., manipulation_x=None, omega=None, device=None):
+        super(PGD, self).__init__(is_attacker, kappa, manipulation_x, omega, device)
         assert norm == 'l2' or norm == 'linf', "Expect 'l2' or 'linf'."
         self.norm = norm
         self.use_random = use_random
@@ -133,10 +135,13 @@ class PGD(BaseAttack):
         # grad4insertion = (gradients > 0) * gradients
         #    2.2 api removal
         pos_removal = (adv_features > 0.5) * 1
-        #     2.2.1 cope with the interdependent apis
-        checking_nonexist_api = (pos_removal ^ self.omega) & self.omega
-        grad4removal = torch.sum(gradients * checking_nonexist_api, dim=-1, keepdim=True) + gradients
-        grad4removal *= (grad4removal < 0) * (pos_removal & self.manipulation_x)
+        # if self.is_attacker:
+        #     #     2.2.1 cope with the interdependent apis
+        #     checking_nonexist_api = (pos_removal ^ self.omega) & self.omega
+        #     grad4removal = torch.sum(gradients * checking_nonexist_api, dim=-1, keepdim=True) + gradients
+        #     grad4removal *= (grad4removal < 0) * (pos_removal & self.manipulation_x)
+        # else:
+        grad4removal = (gradients < 0) * (pos_removal & self.manipulation_x) * gradients
         gradients = grad4removal + grad4insertion
 
         # 3. norm
