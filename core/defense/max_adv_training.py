@@ -45,7 +45,7 @@ class MaxAdvTraining(object):
                                          'model.pth')
         self.model.model_save_path = self.model_save_path
 
-    def fit(self, train_data_producer, validation_data_producer=None, epochs=10, adv_epochs=20,
+    def fit(self, train_data_producer, validation_data_producer=None, epochs=5, adv_epochs=20,
             beta_a=0.001,
             lambda_lower_bound=1e-3,
             lambda_upper_bound=1e3,
