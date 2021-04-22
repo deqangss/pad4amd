@@ -37,32 +37,57 @@ class MaxAdvTraining(object):
             assert isinstance(attack_model, Max)
         self.attack_model = attack_model
         self.attack_param = attack_param
+        if 'is_attacker' in self.attack_model.__dict__.keys():
+            assert self.attack_model.is_attacker==False
 
         self.name = self.model.name
         self.model_save_path = path.join(config.get('experiments', 'm_adv_training') + '_' + self.name,
                                          'model.pth')
         self.model.model_save_path = self.model_save_path
 
-    def fit(self, train_data_producer, validation_data_producer, epochs=30, lr=0.005, weight_decay=5e-4, verbose=True):
+    def fit(self, train_data_producer, validation_data_producer=None, epochs=10, adv_epochs=20,
+            beta_a=0.001,
+            lambda_lower_bound=1e-3,
+            lambda_upper_bound=1e3,
+            granularity=1,
+            lr=0.005,
+            weight_decay=5e-4, verbose=True):
         """
-        Applying adversarial train to enhance the malware detector. Actually, we do not ensure this will
-        produce a malware detector with principled adversarial training because we adjust the hyper-parameter
-        lambda empirically.
+        Applying adversarial train to enhance the malware detector.
 
         Parameters
         -------
         @param train_data_producer: Object, an dataloader object for producing a batch of training data
         @param validation_data_producer: Object, an dataloader object for producing validation dataset
         @param epochs: Integer, epochs for adversarial training
+        @param adv_epochs: Integer, epochs for adversarial training
+        @param beta_a: Float, penalty factor for adversarial loss
+        @param lambda_lower_bound: Float, lower boundary of penalty factor
+        @param lambda_upper_bound: Float, upper boundary of penalty factor
+        @param granularity: Integer, 10^base exp-space between penalty factors
         @param lr: Float, learning rate of Adam optimizer
         @param weight_decay: Float, penalty factor, default value 5e-4 in Graph ATtention layer (GAT)
         @param verbose: Boolean, whether to show verbose info
         """
+        # normal training is used for obtaining the initial indicator g
+        logger.info("Normal training is starting...")
+        self.model.fit(train_data_producer,
+                       validation_data_producer,
+                       epochs=epochs,
+                       lr=lr,
+                       weight_decay=weight_decay)
+        # get threshold tau
+        self.model.get_threshold(validation_data_producer)
+        logger.info(f"The threshold is {self.model.tau:.3f}.")
+
         optimizer = optim.Adam(self.model.customize_param(weight_decay), lr=lr, weight_decay=weight_decay)
         total_time = 0.
         nbatches = len(train_data_producer)
+        lambda_space = np.logspace(np.log10(lambda_lower_bound),
+                                   np.log10(lambda_upper_bound),
+                                   num=int(np.log10(lambda_upper_bound / lambda_lower_bound) // granularity) + 1)
         logger.info("Max adversarial training is starting ...")
-        for i in range(epochs):
+        for i in range(adv_epochs):
             losses, accuracies = [], []
             for ith_batch, res in enumerate(train_data_producer):
                 x_batch, adj_batch, y_batch, _1 = res
@@ -81,6 +106,7 @@ class MaxAdvTraining(object):
                 # adversarial examples as much as possible
                 pertb_mal_x = self.attack_model.perturb(self.model, mal_x_batch, mal_adj_batch, mal_y_batch,
                                                         steps=self.attack_param['steps'],
+                                                        lambda_=np.random.choice(lambda_space),
                                                         verbose=self.attack_param['verbose']
                                                         )
                 total_time += time.time() - start_time
@@ -97,10 +123,13 @@ class MaxAdvTraining(object):
                                                        hidden[:batch_size],
                                                        ith_batch)
                 # appending adversarial training loss
-                loss_train += self.model.customize_loss(logits[batch_size: batch_size + mal_batch_size],
-                                                        mal_y_batch,
-                                                        hidden[batch_size: batch_size + mal_batch_size],
-                                                        ith_batch)
+                # loss_train += self.model.customize_loss(logits[batch_size: batch_size + mal_batch_size],
+                #                                         mal_y_batch,
+                #                                         hidden[batch_size: batch_size + mal_batch_size],
+                #                                         ith_batch)
+                # appending adversarial training loss
+                loss_train += beta_a * torch.mean(
+                    torch.log(self.model.forward_g(hidden[batch_size: batch_size + mal_batch_size]) + EXP_OVER_FLOW))
 
                 loss_train.backward()
                 optimizer.step()
