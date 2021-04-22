@@ -24,14 +24,16 @@ class BaseAttack(Module):
 
     Parameters
     ---------
+    @param is_attacker, Boolean, play the role of attacker (note: the defender conducts adversarial training)
     @param kappa, float, attack confidence
     @param manipulation_x, boolean vector shows the modifiable apis
     @param omega, list of 4 sets, each set contains the indices of interdependent apis corresponding to each api
     @param device, 'cpu' or 'cuda'
     """
 
-    def __init__(self, kappa=1., manipulation_x=None, omega=None, device=None):
+    def __init__(self, is_attacker=True, kappa=1., manipulation_x=None, omega=None, device=None):
         super(BaseAttack, self).__init__()
+        self.is_attacker = is_attacker
         self.kappa = kappa
         self.manipulation_x = manipulation_x
         self.device = device
@@ -108,9 +110,12 @@ class BaseAttack(Module):
             assert lambda_ is not None
             de = model.forward_g(hidden, y_pred)
             tau = model.get_tau_sample_wise(y_pred)
-            loss_no_reduction = ce + lambda_ * (torch.clamp(
-                    torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW), max=self.kappa))
-            # loss_no_reduction = ce + self.lambda_ * (de - model.tau)
+            if self.is_attacker:
+                loss_no_reduction = ce + lambda_ * (torch.clamp(
+                        torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW), max=self.kappa))
+            else:
+                loss_no_reduction = ce + self.lambda_ * (torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW))
+                # loss_no_reduction = ce + self.lambda_ * (de - model.tau)
             done = (y_pred == 0.) & (de >= tau)
         else:
             loss_no_reduction = ce
