@@ -36,8 +36,8 @@ class MalGAN(BaseAttack, nn.Module):
     """
 
     def __init__(self, input_dim, noise_dim=28, model_path=None,
-                 kappa=1., manipulation_x=None, omega=None, device=None):
-        BaseAttack.__init__(self, kappa, manipulation_x, omega, device)
+                 is_attacker=True, kappa=1., manipulation_x=None, omega=None, device=None):
+        BaseAttack.__init__(self, is_attacker, kappa, manipulation_x, omega, device)
         nn.Module.__init__(self)
         self.input_dim = input_dim
         self.noise_dim = noise_dim
@@ -151,9 +151,11 @@ class MalGAN(BaseAttack, nn.Module):
             assert lambda_ is not None
             de = model.forward_g(hidden, y_pred)
             tau = model.get_tau_sample_wise(y_pred)
-            loss_no_reduction = ce + lambda_ * (torch.clamp(
+            if self.is_attacker:
+                loss_no_reduction = ce + lambda_ * (torch.clamp(
                     torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW), max=self.kappa))
-            # loss_no_reduction = ce + self.lambda_ * (de - model.tau)
+            else:
+                loss_no_reduction = ce + self.lambda_ * (torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW))
             done = (y_pred == 0.) & (de >= tau)
         else:
             loss_no_reduction = ce

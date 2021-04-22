@@ -26,14 +26,15 @@ class PGDl1(BaseAttack):
 
     Parameters
     ---------
+    @param is_attacker, Boolean, play the role of attacker (note: the defender conducts adversarial training)
     @param kappa, attack confidence
     @param manipulation_x, manipulations
     @param omega, the indices of interdependent apis corresponding to each api
     @param device, 'cpu' or 'cuda'
     """
 
-    def __init__(self, kappa=1., manipulation_x=None, omega=None, device=None):
-        super(PGDl1, self).__init__(kappa, manipulation_x, omega, device)
+    def __init__(self, is_attacker=True, kappa=1., manipulation_x=None, omega=None, device=None):
+        super(PGDl1, self).__init__(is_attacker, kappa, manipulation_x, omega, device)
         self.lambda_ = 1.
 
     def _perturb(self, model, x, adj=None, label=None,
@@ -120,10 +121,13 @@ class PGDl1(BaseAttack):
         grad4insertion = (gradients > 0) * pos_insertion * gradients
         #    2.2 api removal
         pos_removal = (adv_features > 0.5) * 1
-        #     2.2.1 cope with the interdependent apis
-        checking_nonexist_api = (pos_removal ^ self.omega) & self.omega
-        grad4removal = torch.sum(gradients * checking_nonexist_api, dim=-1, keepdim=True) + gradients
-        grad4removal *= (grad4removal < 0) * (pos_removal & self.manipulation_x)
+        if self.is_attacker:
+            #     2.2.1 cope with the interdependent apis
+            checking_nonexist_api = (pos_removal ^ self.omega) & self.omega
+            grad4removal = torch.sum(gradients * checking_nonexist_api, dim=-1, keepdim=True) + gradients
+            grad4removal *= (grad4removal < 0) * (pos_removal & self.manipulation_x)
+        else:
+            grad4removal = (gradients < 0) * (pos_removal & self.manipulation_x) * gradients
         gradients = grad4removal + grad4insertion
 
         # 3. remove duplications

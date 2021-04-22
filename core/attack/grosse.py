@@ -27,14 +27,15 @@ class Groose(BaseAttack):
 
     Parameters
     ---------
+    @param is_attacker, Boolean, play the role of attacker (note: the defender conducts adversarial training)
     @param kappa, attack confidence
     @param manipulation_x, manipulations
     @param omega, the indices of interdependent apis corresponding to each api
     @param device, 'cpu' or 'cuda'
     """
 
-    def __init__(self, kappa=1., manipulation_x=None, omega=None, device=None):
-        super(Groose, self).__init__(kappa, manipulation_x, omega, device)
+    def __init__(self, is_attacker=True, kappa=1., manipulation_x=None, omega=None, device=None):
+        super(Groose, self).__init__(is_attacker, kappa, manipulation_x, omega, device)
         self.omega = None  # no interdependent apis if just api insertion is considered
         self.manipulation_z = None  # all apis are insertable
         self.lambda_ = 1.
@@ -131,7 +132,12 @@ class Groose(BaseAttack):
         if 'forward_g' in type(model).__dict__.keys():
             de = model.forward_g(hidden, y_pred)
             tau = model.get_tau_sample_wise(y_pred)
-            loss_no_reduction = softmax_loss + self.lambda_ * (torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW))
+            if self.is_attacker:
+                loss_no_reduction = softmax_loss + self.lambda_ * (torch.clamp(
+                        torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW), max=self.kappa))
+            else:
+                loss_no_reduction = softmax_loss + self.lambda_ * (torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW))
+
             done = (y_pred == 0.) & (de >= tau)
         else:
             loss_no_reduction = softmax_loss

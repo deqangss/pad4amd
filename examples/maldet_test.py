@@ -42,7 +42,7 @@ detector_argparse.add_argument('--hidden_units', type=lambda s: [int(u) for u in
 detector_argparse.add_argument('--penultimate_hidden_unit', type=int, default=64, help='dimension of penultimate layer')
 detector_argparse.add_argument('--n_heads', type=int, default=2, help='number of headers')
 detector_argparse.add_argument('--dropout', type=float, default=0.6, help='dropout rate')
-detector_argparse.add_argument('--k', type=int, default=32, help='sampling size')
+detector_argparse.add_argument('--k', type=int, default=0, help='sampling size (<=N)')
 detector_argparse.add_argument('--width', type=int, default=5000, help='window size for filtering un-attended apis')
 detector_argparse.add_argument('--use_fusion', action='store_true', help='whether use feature fusion or not')
 detector_argparse.add_argument('--n_sample_times', type=int, default=5, help='times of sampling')
