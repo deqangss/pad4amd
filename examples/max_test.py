@@ -13,7 +13,7 @@ import numpy as np
 from core.defense import Dataset
 from core.defense import MalwareDetector, KernelDensityEstimation, MalwareDetectorIndicator, MaxAdvTraining, PrincipledAdvTraining
 from core.attack import Max
-from core.attack import GDKDE, PGDAdam, PGD, PGDl1
+from core.attack import GDKDEl1, PGDAdam, PGD, PGDl1
 from tools import utils
 from config import config, logging, ErrorHandler
 
@@ -129,11 +129,11 @@ def _main():
                 break
         ben_hidden = torch.vstack(ben_hidden)[:c]
 
-    gdkde = GDKDE(ben_hidden,
-                  args.bandwidth,
-                  kappa=args.kappa,
-                  device=model.device
-                  )
+    gdkde = GDKDEl1(ben_hidden,
+                    args.bandwidth,
+                    kappa=args.kappa,
+                    device=model.device
+                    )
     gdkde.perturb = partial(gdkde.perturb,
                             m=args.m_pertb,
                             min_lambda_=1e-5,
