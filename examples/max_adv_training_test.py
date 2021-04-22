@@ -9,12 +9,16 @@ from core.defense import Dataset
 from core.defense import MalwareDetectorIndicator, MaxAdvTraining
 from core.attack import Max, PGD, OMPA, PGDAdam
 from tools.utils import save_args, get_group_args, dump_pickle
-from examples.maldet_test import cmd_md
+from examples.advdet_gmm_test import cmd_md
 
 max_adv_argparse = cmd_md.add_argument_group(title='max adv training')
-max_adv_argparse.add_argument('--m', type=int, default=20, help='maximum number of perturbations.')
-max_adv_argparse.add_argument('--step_length_l1', type=float, default=1., help='step length.')
+max_adv_argparse.add_argument('--beta_a', type=float, default=0.005, help='penalty factor on adversarial loss.')
+max_adv_argparse.add_argument('--adv_epochs', type=int, default=20, help='epochs for adversarial training.')
 
+max_adv_argparse.add_argument('--m', type=int, default=20,
+                              help='maximum number of perturbations.')
+max_adv_argparse.add_argument('--step_length_ompa', type=float, default=1.,
+                              help='step length.')
 max_adv_argparse.add_argument('--n_step', type=int, default=50,
                               help='maximum number of steps for base attacks.')
 max_adv_argparse.add_argument('--step_length_l2', type=float, default=2.,
@@ -28,8 +32,6 @@ max_adv_argparse.add_argument('--random_start', action='store_true', default=Fal
 max_adv_argparse.add_argument('--round_threshold', type=float, default=0.98,
                               help='threshold for rounding real scalars at the initialization step.')
 
-max_adv_argparse.add_argument('--beta_a', type=float, default=0.005, help='penalty factor on adversarial loss.')
-max_adv_argparse.add_argument('--adv_epochs', type=int, default=20, help='epochs for adversarial training.')
 
 
 def _main():
@@ -68,7 +70,7 @@ def _main():
     ompa = OMPA(is_attacker=False, device=model.device)
     ompa._perturb = partial(ompa.perturb,
                             m=args.m,
-                            step_length=args.step_length_l1,
+                            step_length=args.step_length_ompa,
                             verbose=False,
                             )
 
@@ -110,6 +112,8 @@ def _main():
         max_adv_training_model.fit(train_dataset_producer,
                                    val_dataset_producer,
                                    epochs=args.epochs,
+                                   adv_epochs=args.adv_epochs,
+                                   beta_a=args.beta_a,
                                    lr=args.lr,
                                    weight_decay=args.weight_decay
                                    )
