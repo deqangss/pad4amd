@@ -28,14 +28,16 @@ class PGDAdam(BaseAttack):
     ---------
     @param use_random, Boolean,  whether use random start point
     @param rounding_threshold, float, a threshold for rounding real scalars
+    @param is_attacker, Boolean, play the role of attacker (note: the defender conducts adversarial training)
     @param kappa, attack confidence
     @param manipulation_x, manipulations
     @param omega, the indices of interdependent apis corresponding to each api
     @param device, 'cpu' or 'cuda'
     """
 
-    def __init__(self, use_random=False, rounding_threshold=0.98, kappa=1., manipulation_x=None, omega=None, device=None):
-        super(PGDAdam, self).__init__(kappa, manipulation_x, omega, device)
+    def __init__(self, use_random=False, rounding_threshold=0.98,
+                 is_attacker=True, kappa=1., manipulation_x=None, omega=None, device=None):
+        super(PGDAdam, self).__init__(is_attacker, kappa, manipulation_x, omega, device)
         self.use_random = use_random
         self.round_threshold = rounding_threshold
         self.lambda_ = 1.
@@ -122,6 +124,5 @@ class PGDAdam(BaseAttack):
             hidden, logit = model.forward(adv_x, adj)
             _, done = self.get_loss(model, logit, label, hidden, self.lambda_)
             if verbose:
-                logger.info(
-                    f"pgd adam attack: attack effectiveness {done.sum().item() / x.size()[0]}.")
+                logger.info(f"pgd adam attack: attack effectiveness {done.sum().item() / x.size()[0]}.")
         return adv_x
