@@ -120,6 +120,8 @@ class PGD(BaseAttack):
             _, done = self.get_loss(model, logit, label, hidden, self.lambda_)
             if verbose:
                 logger.info(f"pgd {self.norm}: attack effectiveness {done.sum().item() / done.size()[0] * 100:.3f}%.")
+            import sys
+            sys.exit(1)
         return adv_x
 
     def get_perturbation(self, gradients, features, adv_features):
