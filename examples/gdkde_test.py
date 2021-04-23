@@ -63,10 +63,10 @@ def _main():
     if mal_count <= 0 and ben_count <= 0:
         return
     mal_test_dataset_producer = dataset.get_input_producer(mal_test_x, mal_testy,
-                                                           batch_size=hp_params['batch_size'],
+                                                           batch_size=hp_params['batch_size']//2,
                                                            name='test')
     ben_test_dataset_producer = dataset.get_input_producer(ben_test_x, ben_testy,
-                                                           batch_size=hp_params['batch_size'],
+                                                           batch_size=hp_params['batch_size']//2,
                                                            name='test'
                                                            )
 
