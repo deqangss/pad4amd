@@ -69,8 +69,6 @@ class GDKDE(BaseAttack):
             var_adv_x = torch.autograd.Variable(adv_x, requires_grad=True)
             hidden, logit = model.forward(var_adv_x, adj)
             loss, done = self.get_loss(model, logit, label, hidden)
-            if verbose:
-                print(f"\n Iteration {t}: the accuracy is {(logit.argmax(1) == 1.).sum().item() / adv_x.size()[0] * 100:.3f}.")
             grad = torch.autograd.grad(torch.mean(loss), var_adv_x)[0]
             perturbation = self.get_perturbation(grad, x, adv_x)
             # avoid to perturb the examples that are successful to evade the victim
@@ -93,8 +91,6 @@ class GDKDE(BaseAttack):
         while self.lambda_ <= max_lambda_:
             hidden, logit = model.forward(adv_x, adj)
             _, done = self.get_loss(model, logit, label, hidden)
-            if verbose:
-                logger.info(f"GD-KDE: attack effectiveness {done.sum().item() / float(x.size()[0])*100:.3f}% with lambda {self.lambda_}.")
             if torch.all(done):
                 break
             adv_x[~done] = x[~done]  # recompute the perturbation under other penalty factors
