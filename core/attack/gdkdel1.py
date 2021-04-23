@@ -114,7 +114,7 @@ class GDKDEl1(BaseAttack):
             _, done = self.get_loss(model, logit, label, hidden)
             if verbose:
                 logger.info(
-                    f"GD-KDE: attack effectiveness {done.sum().item() / float(x.size()[0])*100:.3f}% with lambda {self.lambda_}.")
+                    f"GD-KDE l1: attack effectiveness {done.sum().item() / float(x.size()[0])*100:.3f}% with lambda {self.lambda_}.")
             if torch.all(done):
                 break
             adv_x[~done] = x[~done]  # recompute the perturbation under other penalty factors
@@ -132,8 +132,7 @@ class GDKDEl1(BaseAttack):
             hidden, logit = model.forward(adv_x, adj)
             _, done = self.get_loss(model, logit, label, hidden)
             if verbose:
-                logger.info(
-                    f"gdkde: attack effectiveness {done.sum().item() / x.size()[0] * 100:.3}%.")
+                logger.info(f"gdkdel1: attack effectiveness {done.sum().item() / x.size()[0] * 100:.3}%.")
         return adv_x
 
     def get_perturbation(self, gradients, features, adv_features):
