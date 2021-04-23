@@ -98,6 +98,8 @@ class PGD(BaseAttack):
         """
         assert 0 < min_lambda_ <= max_lambda_
         self.lambda_ = min_lambda_
+        if model.k > 0:
+            logger.warning("The attack leads to dense graph and trigger the issue of out of memory.")
         adv_x = x.detach().clone().to(torch.float)
         while self.lambda_ <= max_lambda_:
             hidden, logit = model.forward(adv_x, adj)
