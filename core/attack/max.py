@@ -90,7 +90,7 @@ class Max(BaseAttack):
                 if verbose:
                     hidden, logit = model.forward(adv_x, adj)
                     _, done = self.get_loss_without_lambda(model, logit, label, hidden)
-                    logger.info(f"max: attack effectiveness {done.sum().item() / x.size()[0]}.")
+                    logger.info(f"max: attack effectiveness {done.sum().item() / x.size()[0] * 100}%.")
         return adv_x
 
     def get_loss_without_lambda(self, model, logit, label, hidden=None):
