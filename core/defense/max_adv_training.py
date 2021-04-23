@@ -142,7 +142,7 @@ class MaxAdvTraining(object):
                 losses.append(loss_train.item())
                 accuracies.append(acc_train)
                 if verbose:
-                    logger.info(f'Mini batch: {i * nbatches + ith_batch + 1}/{epochs * nbatches} | training time in {mins:.0f} minutes, {secs} seconds.')
+                    logger.info(f'Mini batch: {i * nbatches + ith_batch + 1}/{adv_epochs * nbatches} | training time in {mins:.0f} minutes, {secs} seconds.')
                     logger.info(f'Training loss (batch level): {losses[-1]:.4f} | Train accuracy: {acc_train * 100:.2f}')
 
             if not path.exists(self.model_save_path):
