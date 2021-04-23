@@ -100,6 +100,7 @@ class PGD(BaseAttack):
         self.lambda_ = min_lambda_
         adv_x = x.detach().clone().to(torch.float)
         while self.lambda_ <= max_lambda_:
+            print(self.lambda_)
             hidden, logit = model.forward(adv_x, adj)
             _, done = self.get_loss(model, logit, label, hidden, self.lambda_)
             if torch.all(done):
@@ -115,6 +116,7 @@ class PGD(BaseAttack):
             self.lambda_ *= base
             if not self.check_lambda(model):
                 break
+            print(torch.sum(done))
         with torch.no_grad():
             hidden, logit = model.forward(adv_x, adj)
             _, done = self.get_loss(model, logit, label, hidden, self.lambda_)
