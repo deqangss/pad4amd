@@ -73,9 +73,9 @@ class GDKDE(BaseAttack):
                 print(f"\n Iteration {t}: the accuracy is {(logit.argmax(1) == 1.).sum().item() / adv_x.size()[0] * 100:.3f}.")
             grad = torch.autograd.grad(torch.mean(loss), var_adv_x)[0]
             perturbation = self.get_perturbation(grad, x, adv_x)
-            print(torch.sum(perturbation, dim=-1))
             # avoid to perturb the examples that are successful to evade the victim
             adv_x = torch.clamp(adv_x + perturbation * step_length, min=0., max=1.)
+        print(torch.sum(torch.abs(round_x(adv_x) - x), dim=-1))
         return round_x(adv_x)
 
     def perturb(self, model, x, adj=None, label=None,
