@@ -19,12 +19,16 @@ max_adv_argparse.add_argument('--m', type=int, default=20,
                               help='maximum number of perturbations.')
 max_adv_argparse.add_argument('--step_length_ompa', type=float, default=1.,
                               help='step length.')
-max_adv_argparse.add_argument('--n_step', type=int, default=50,
+max_adv_argparse.add_argument('--n_step_l2', type=int, default=50,
                               help='maximum number of steps for base attacks.')
 max_adv_argparse.add_argument('--step_length_l2', type=float, default=2.,
                               help='step length in each step.')
-max_adv_argparse.add_argument('--step_length_linf', type=float, default=0.02,
+max_adv_argparse.add_argument('--n_step_linf', type=int, default=100,
+                              help='maximum number of steps for base attacks.')
+max_adv_argparse.add_argument('--step_length_linf', type=float, default=0.01,
                               help='step length in each step.')
+max_adv_argparse.add_argument('--n_step_adam', type=int, default=50,
+                              help='maximum number of steps for base attacks.')
 max_adv_argparse.add_argument('--atta_lr', type=float, default=0.05,
                               help='learning rate for pgd adam attack.')
 max_adv_argparse.add_argument('--random_start', action='store_true', default=False,
@@ -76,7 +80,7 @@ def _main():
 
     pgdl2 = PGD(norm='l2', use_random=False, is_attacker=False, device=model.device)
     pgdl2._perturb = partial(pgdl2._perturb,
-                             steps=args.n_step,
+                             steps=args.n_step_l2,
                              step_length=args.step_length_l2
                              )
 
@@ -85,7 +89,7 @@ def _main():
                   rounding_threshold=args.round_threshold,
                   device=model.device)
     pgdlinf._perturb = partial(pgdlinf._perturb,
-                               steps=args.n_step,
+                               steps=args.n_step_linf,
                                step_length=args.step_length_linf
                                )
 
@@ -93,7 +97,7 @@ def _main():
                       is_attacker=False,
                       device=model.device)
     pgdadma._perturb = partial(pgdadma._perturb,
-                               steps=args.n_step,
+                               steps=args.n_step_adam,
                                lr=args.atta_lr)
 
     attack = Max(attack_list=[ompa, pgdl2, pgdlinf, pgdadma],
