@@ -35,10 +35,11 @@ class MaxAdvTraining(object):
         self.model = model
         if attack_model is not None:
             assert isinstance(attack_model, Max)
+            if 'is_attacker' in self.attack_model.__dict__.keys():
+                assert not self.attack_model.is_attacker
         self.attack_model = attack_model
         self.attack_param = attack_param
-        if 'is_attacker' in self.attack_model.__dict__.keys():
-            assert self.attack_model.is_attacker==False
+
 
         self.name = self.model.name
         self.model_save_path = path.join(config.get('experiments', 'm_adv_training') + '_' + self.name,
