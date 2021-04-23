@@ -100,8 +100,9 @@ class PGD(BaseAttack):
         self.lambda_ = min_lambda_
         adv_x = x.detach().clone().to(torch.float)
         while self.lambda_ <= max_lambda_:
+            print(self.lambda_)
             hidden, logit = model.forward(adv_x, adj)
-            _, done = self.get_loss(model, logit, label, hidden, self.lambda_)
+            _, done = self.get_loss(model, logit, label, hidden, self.lambda_, True)
             if torch.all(done):
                 break
             adv_x[~done] = x[~done]  # recompute the perturbation under other penalty factors
@@ -117,7 +118,7 @@ class PGD(BaseAttack):
                 break
         with torch.no_grad():
             hidden, logit = model.forward(adv_x, adj)
-            _, done = self.get_loss(model, logit, label, hidden, self.lambda_)
+            _, done = self.get_loss(model, logit, label, hidden, self.lambda_, True)
             if verbose:
                 logger.info(f"pgd {self.norm}: attack effectiveness {done.sum().item() / done.size()[0] * 100:.3f}%.")
             import sys

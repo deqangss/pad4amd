@@ -103,7 +103,7 @@ class BaseAttack(Module):
         else:
             return False
 
-    def get_loss(self, model, logit, label, hidden=None, lambda_=None):
+    def get_loss(self, model, logit, label, hidden=None, lambda_=None, flag=False):
         ce = F.cross_entropy(logit, label, reduction='none')
         y_pred = logit.argmax(1)
         if 'forward_g' in type(model).__dict__.keys():
@@ -116,9 +116,10 @@ class BaseAttack(Module):
             else:
                 loss_no_reduction = ce + self.lambda_ * (torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW))
                 # loss_no_reduction = ce + self.lambda_ * (de - model.tau)
-            print(y_pred)
-            print(de)
-            print(de >= tau)
+            if flag:
+                print(y_pred)
+                print(de)
+                print(de >= tau)
             done = (y_pred == 0.) & (de >= tau)
         else:
             loss_no_reduction = ce
