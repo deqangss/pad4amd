@@ -21,7 +21,7 @@ logger.addHandler(ErrorHandler)
 atta_argparse = argparse.ArgumentParser(description='arguments for l1 norm based projected gradient descent attack')
 atta_argparse.add_argument('--lambda_', type=float, default=1., help='balance factor for waging attack.')
 atta_argparse.add_argument('--n_step', type=int, default=50, help='maximum number of steps.')
-atta_argparse.add_argument('--step_length', type=float, default=0.2, help='step length in each step.')
+atta_argparse.add_argument('--step_length', type=float, default=2., help='step length in each step.')
 atta_argparse.add_argument('--bandwidth', type=float, default=20., help='variance of Gaussian distribution.')
 atta_argparse.add_argument('--n_center', type=int, default=1000, help='number of centers.')
 atta_argparse.add_argument('--base', type=float, default=10., help='base of a logarithm function.')
@@ -105,7 +105,7 @@ def _main():
 
     model.load()
     logger.info("Load model parameters from {}.".format(model.model_save_path))
-    model.predict(mal_test_dataset_producer)
+    # model.predict(mal_test_dataset_producer)
 
     ben_hidden = []
     with torch.no_grad():
@@ -124,7 +124,6 @@ def _main():
                    device=model.device
                    )
 
-    logger.info("\nThe maximum number of perturbations for each example is {}:".format(args.m_pertb))
     y_cent_list, x_density_list = [], []
     x_mod_integrated = []
     model.eval()
