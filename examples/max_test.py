@@ -30,9 +30,9 @@ atta_argparse.add_argument('--m_pertb', type=int, default=10, help='maximum numb
 atta_argparse.add_argument('--bandwidth', type=float, default=20., help='variance of Gaussian distribution.')
 atta_argparse.add_argument('--n_benware', type=int, default=5000, help='number of centers.')
 
-atta_argparse.add_argument('--n_step', type=int, default=50, help='maximum number of steps.')
-atta_argparse.add_argument('--step_length_l2', type=float, default=2., help='step length in each step.')
-atta_argparse.add_argument('--step_length_linf', type=float, default=0.02, help='step length in each step.')
+atta_argparse.add_argument('--n_step', type=int, default=100, help='maximum number of steps.')
+atta_argparse.add_argument('--step_length_l2', type=float, default=1., help='step length in each step.')
+atta_argparse.add_argument('--step_length_linf', type=float, default=0.01, help='step length in each step.')
 atta_argparse.add_argument('--lr', type=float, default=0.1, help='learning rate.')
 atta_argparse.add_argument('--random_start', action='store_true', default=False, help='randomly initialize the start points.')
 atta_argparse.add_argument('--round_threshold', type=float, default=0.98, help='threshold for rounding real scalars.')
