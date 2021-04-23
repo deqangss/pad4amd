@@ -69,7 +69,7 @@ class MalwareDetector(nn.Module):
                    dropout=0.6,
                    alpha_=0.2,
                    k=10,
-                   width=3000,
+                   width=2000,
                    use_fusion=True,
                    sparse=True,
                    smooth=False,
