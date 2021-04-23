@@ -133,7 +133,7 @@ def _main():
         for x, a, y, g_ind in mal_test_dataset_producer:
             x, a, y = utils.to_tensor(x, a, y, model.device)
             adv_x_batch = attack.perturb(model, x, a, y,
-                                         args.steps,
+                                         args.n_step,
                                          args.step_length,
                                          min_lambda_=1e-5,
                                          max_lambda_=1e5,
