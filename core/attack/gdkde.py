@@ -109,8 +109,7 @@ class GDKDE(BaseAttack):
             hidden, logit = model.forward(adv_x, adj)
             _, done = self.get_loss(model, logit, label, hidden)
             if verbose:
-                logger.info(
-                    f"gdkde: attack effectiveness {done.sum().item() / x.size()[0] * 100:.3}%.")
+                logger.info(f"gdkde: attack effectiveness {done.sum().item() / x.size()[0] * 100:.3}%.")
         return adv_x
 
     def get_perturbation(self, gradients, features, adv_features):
