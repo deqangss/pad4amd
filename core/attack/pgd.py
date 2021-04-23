@@ -149,7 +149,7 @@ class PGD(BaseAttack):
             perturbation = torch.sign(gradients)
         elif self.norm == 'l2':
             l2norm = torch.sqrt(torch.max(div_zero_overflow, torch.sum(gradients ** 2, dim=red_ind, keepdim=True)))
-            perturbation = torch.min(
+            perturbation = torch.minimum(
                 torch.tensor(1., dtype=features.dtype, device=features.device),
                 gradients / l2norm
             )
