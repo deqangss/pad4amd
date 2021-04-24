@@ -147,6 +147,7 @@ class MaxAdvTraining(object):
 
             if not path.exists(self.model_save_path):
                 utils.mkdir(path.dirname(self.model_save_path))
+            self.model.get_threshold(validation_data_producer)
             torch.save(self.model.state_dict(), self.model_save_path)
             torch.save(self.model.state_dict(), self.model_save_path + str(i // 5 + 1))
             if verbose:
