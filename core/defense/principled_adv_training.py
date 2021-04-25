@@ -141,14 +141,26 @@ class PrincipledAdvTraining(object):
             if not path.exists(self.model_save_path):
                 utils.mkdir(path.dirname(self.model_save_path))
             self.model.get_threshold(validation_data_producer)
-            torch.save(self.model.state_dict(), self.model_save_path)
+            torch.save({'model_state_dict': self.model.state_dict(),
+                        'epoch': adv_epochs,
+                        'optimizer_state_dict': optimizer.state_dict()
+                        },
+                       self.model_save_path)
             # relief the worse model selection
-            torch.save(self.model.state_dict(), self.model_save_path + str(i // 5 + 1))
+            torch.save({'model_state_dict': self.model.state_dict(),
+                        'epoch': adv_epochs,
+                        'optimizer_state_dict': optimizer.state_dict()
+                        },
+                       self.model_save_path + str(i // 5 + 1))
             if verbose:
                 logger.info(f'Training loss (epoch level): {np.mean(losses):.4f} | Train accuracy: {np.mean(accuracies) * 100:.2f}')
                 logger.info(
                     f'The threshold is {self.model.tau}.'
                 )
+
+    def load(self):
+        ckpt = torch.load(self.model_save_path)
+        self.model.load_state_dict(ckpt['model_state_dict'])
 
     @staticmethod
     def get_mal_data(x_batch, adj_batch, y_batch):
