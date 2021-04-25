@@ -67,15 +67,15 @@ class PrincipledAdvTraining(object):
         @param verbose: Boolean, whether to show verbose info
         """
         # normal training is used for obtaining the initial indicator g
-        # logger.info("Normal training is starting...")
-        # self.model.fit(train_data_producer,
-        #                validation_data_producer,
-        #                epochs=epochs,
-        #                lr=lr,
-        #                weight_decay=weight_decay)
-        # # get threshold tau
-        # self.model.get_threshold(validation_data_producer)
-        # logger.info(f"The threshold is {self.model.tau:.3f}.")
+        logger.info("Normal training is starting...")
+        self.model.fit(train_data_producer,
+                       validation_data_producer,
+                       epochs=epochs,
+                       lr=lr,
+                       weight_decay=weight_decay)
+        # get threshold tau
+        self.model.get_threshold(validation_data_producer)
+        logger.info(f"The threshold is {self.model.tau:.3f}.")
 
         optimizer = optim.Adam(self.model.customize_param(weight_decay), lr=lr, weight_decay=weight_decay)
         total_time = 0.
