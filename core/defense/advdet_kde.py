@@ -180,8 +180,7 @@ class KernelDensityEstimation(DensityEstimator):
                 x_hidden, _ = self.forward(x, a)
                 X_hidden.append(x_hidden)
                 Y.append(y)
-                print(Y)
-                _, count = torch.unique(torch.cat(Y))
+                _, count = torch.unique(torch.cat(Y), return_counts=True)
                 if torch.min(count) >= self.n_centers:
                     break
             X_hidden = torch.vstack(X_hidden)
