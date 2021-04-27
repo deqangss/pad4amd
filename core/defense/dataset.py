@@ -184,7 +184,7 @@ class Dataset(torch.utils.data.Dataset):
                     indices = np.concatenate([indices, np.arange(n_feature, n_sg_used)])
                     feature = np.vstack([feature, np.zeros((n_padded, self.vocab_size), dtype=np.float32)])
                 if self.is_adj:
-                    adjs[i].extend([csr_matrix(adjs[i][0].shape, dtype=np.float32)] * n_padded)
+                    adjs[i].extend([csr_matrix((self.vocab_size, self.vocab_size), dtype=np.float32)] * n_padded)
             indices_slicing = np.array(list(map(dict(zip(indices, range(n_sg_used))).get, range(n_sg_used))))
             g_ind.append(indices_slicing)
             features_padded.append(feature)
