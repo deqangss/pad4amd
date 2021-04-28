@@ -25,15 +25,17 @@ class BaseAttack(Module):
     Parameters
     ---------
     @param is_attacker, Boolean, play the role of attacker (note: the defender conducts adversarial training)
+    @param oblivion, Boolean, whether know the adversary indicator or not
     @param kappa, float, attack confidence
     @param manipulation_x, boolean vector shows the modifiable apis
     @param omega, list of 4 sets, each set contains the indices of interdependent apis corresponding to each api
     @param device, 'cpu' or 'cuda'
     """
 
-    def __init__(self, is_attacker=True, kappa=1., manipulation_x=None, omega=None, device=None):
+    def __init__(self, is_attacker=True, oblivion=False, kappa=1., manipulation_x=None, omega=None, device=None):
         super(BaseAttack, self).__init__()
         self.is_attacker = is_attacker
+        self.oblivion = oblivion
         self.kappa = kappa
         self.manipulation_x = manipulation_x
         self.device = device
@@ -96,9 +98,8 @@ class BaseAttack(Module):
         for x_mod_instr, feature_path, app_path in zip(x_mod_instructions, feature_path_list, app_path_list):
             self.inverse_feature.modify(x_mod_instr, feature_path, app_path)
 
-    @staticmethod
-    def check_lambda(model):
-        if 'forward_g' in type(model).__dict__.keys():
+    def check_lambda(self, model):
+        if 'forward_g' in type(model).__dict__.keys() and (not self.oblivion):
             return True
         else:
             return False
@@ -106,7 +107,7 @@ class BaseAttack(Module):
     def get_loss(self, model, logit, label, hidden=None, lambda_=None):
         ce = F.cross_entropy(logit, label, reduction='none')
         y_pred = logit.argmax(1)
-        if 'forward_g' in type(model).__dict__.keys():
+        if 'forward_g' in type(model).__dict__.keys() and (not self.oblivion):
             assert lambda_ is not None
             de = model.forward_g(hidden, y_pred)
             tau = model.get_tau_sample_wise(y_pred)

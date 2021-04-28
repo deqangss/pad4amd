@@ -21,10 +21,12 @@ class Mimicry(object):
 
     Parameters
     ---------
+    @param oblivion, Boolean, whether know the adversary indicator or not
     @param device, 'cpu' or 'cuda'
     """
 
-    def __init__(self, device=None):
+    def __init__(self, oblivion=False, device=None):
+        self.oblivion = oblivion
         self.device = device
         self.inversedorid = inverse_feature_extraction.InverseDroidFeature()
 
@@ -77,7 +79,7 @@ class Mimicry(object):
                     y_cent = np.mean(np.stack(y_cent, axis=1), axis=1)
                     y_pred = np.argmax(y_cent, axis=-1)
                     x_density = np.mean(np.stack(x_density, axis=1), axis=1)
-                    if 'indicator' in type(model).__dict__.keys():
+                    if 'indicator' in type(model).__dict__.keys() and (not self.oblivion):
                         attack_success_flag = (y_pred == 0) & (model.indicator(x_density, y_pred))
                     else:
                         attack_success_flag = (y_pred == 0)

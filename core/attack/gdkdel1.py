@@ -40,17 +40,20 @@ class GDKDEl1(BaseAttack):
     ---------
     @param ben_hidden: torch.Tensor, hidden representation of benign files on the hidden space
     @param bandwidth: float, variance of gaussian distribution
+    @param is_attacker, Boolean, play the role of attacker (note: the defender conducts adversarial training)
+    @param oblivion, Boolean, whether know the adversary indicator or not
     @param kappa, float, attack confidence
     @param manipulation_x, manipulations
     @param omega, the indices of interdependent apis corresponding to each api
     @param device, 'cpu' or 'cuda'
     """
 
-    def __init__(self, ben_hidden=None, bandwidth=20.,
-                 is_attacker=True, kappa=1., manipulation_x=None, omega=None, device=None):
-        super(GDKDEl1, self).__init__(is_attacker, kappa, manipulation_x, omega, device)
+    def __init__(self, ben_hidden=None, bandwidth=20., penalty_factor=1000.,
+                 is_attacker=True, oblivion=False, kappa=1., manipulation_x=None, omega=None, device=None):
+        super(GDKDEl1, self).__init__(is_attacker, oblivion, kappa, manipulation_x, omega, device)
         self.ben_hidden = ben_hidden
         self.bandwidth = bandwidth
+        self.penalty_factor = penalty_factor
         self.lambda_ = 1.
         if isinstance(self.ben_hidden, torch.Tensor):
             pass
@@ -176,8 +179,8 @@ class GDKDEl1(BaseAttack):
         y_pred = logit.argmax(1)
         square = torch.sum(torch.square(self.ben_hidden.unsqueeze(dim=0) - hidden.unsqueeze(dim=1)), dim=-1)
         kde = torch.mean(torch.exp(-square / self.bandwidth), dim=-1)
-        loss_no_reduction = ce + 1000 * kde
-        if 'forward_g' in type(model).__dict__.keys():
+        loss_no_reduction = ce + self.penalty_factor * kde
+        if 'forward_g' in type(model).__dict__.keys() and (not self.oblivion):
             de = model.forward_g(hidden, y_pred)
             tau = model.get_tau_sample_wise(y_pred)
             if self.is_attacker:

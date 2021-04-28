@@ -21,17 +21,21 @@ class GDKDE(BaseAttack):
     ---------
     @param ben_hidden: torch.Tensor, hidden representation of benign files on the hidden space
     @param bandwidth: float, variance of gaussian distribution
+    @param penalty_factor: float, penalty factor on kernel density estimation
+    @param is_attacker, Boolean, play the role of attacker (note: the defender conducts adversarial training)
+    @param oblivion, Boolean, whether know the adversary indicator or not
     @param kappa, float, attack confidence
     @param manipulation_x, manipulations
     @param omega, the indices of interdependent apis corresponding to each api
     @param device, 'cpu' or 'cuda'
     """
 
-    def __init__(self, ben_hidden=None, bandwidth=20.,
-                 is_attacker=True, kappa=1., manipulation_x=None, omega=None, device=None):
-        super(GDKDE, self).__init__(is_attacker, kappa, manipulation_x, omega, device)
+    def __init__(self, ben_hidden=None, bandwidth=20., penalty_factor=1000.,
+                 is_attacker=True, oblivion=False, kappa=1., manipulation_x=None, omega=None, device=None):
+        super(GDKDE, self).__init__(is_attacker, oblivion, kappa, manipulation_x, omega, device)
         self.ben_hidden = ben_hidden
         self.bandwidth = bandwidth
+        self.penalty_factor = penalty_factor
         self.lambda_ = 1.
         if isinstance(self.ben_hidden, torch.Tensor):
             pass
@@ -43,8 +47,7 @@ class GDKDE(BaseAttack):
     def _perturb(self, model, x, adj=None, label=None,
                  steps=10,
                  step_length=1.,
-                 lambda_=1.,
-                 verbose=False):
+                 lambda_=1.):
         """
         perturb node feature vectors
 
@@ -57,7 +60,6 @@ class GDKDE(BaseAttack):
         @param steps: Integer, maximum number of iterations
         @param step_length: float, the step length in each iteration
         @param lambda_, float, penalty factor
-        @param verbose, Boolean, whether present attack information or not
         """
         if x is None or x.shape[0] <= 0:
             return []
@@ -100,8 +102,7 @@ class GDKDE(BaseAttack):
             pert_x = self._perturb(model, adv_x[~done], adv_adj, label[~done],
                                    steps,
                                    step_length,
-                                   lambda_=self.lambda_,
-                                   verbose=False
+                                   lambda_=self.lambda_
                                    )
             adv_x[~done] = pert_x
             self.lambda_ *= base
@@ -146,8 +147,8 @@ class GDKDE(BaseAttack):
         y_pred = logit.argmax(1)
         square = torch.sum(torch.square(self.ben_hidden.unsqueeze(dim=0) - hidden.unsqueeze(dim=1)), dim=-1)
         kde = torch.mean(torch.exp(-square / self.bandwidth), dim=-1)
-        loss_no_reduction = ce + 1000 * kde
-        if 'forward_g' in type(model).__dict__.keys():
+        loss_no_reduction = ce + self.penalty_factor * kde
+        if 'forward_g' in type(model).__dict__.keys() and (not self.oblivion):
             de = model.forward_g(hidden, y_pred)
             tau = model.get_tau_sample_wise(y_pred)
             if self.is_attacker:

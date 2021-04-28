@@ -30,6 +30,7 @@ class PGD(BaseAttack):
     @param use_random, Boolean,  whether use random start point
     @param rounding_threshold, float, a threshold for rounding real scalars
     @param is_attacker, Boolean, play the role of attacker (note: the defender conducts adversarial training)
+    @param oblivion, Boolean, whether know the adversary indicator or not
     @param kappa, attack confidence
     @param manipulation_x, manipulations
     @param omega, the indices of interdependent apis corresponding to each api
@@ -37,8 +38,8 @@ class PGD(BaseAttack):
     """
 
     def __init__(self, norm, use_random=False, rounding_threshold=0.5,
-                 is_attacker=True, kappa=1., manipulation_x=None, omega=None, device=None):
-        super(PGD, self).__init__(is_attacker, kappa, manipulation_x, omega, device)
+                 is_attacker=True, oblivion=False, kappa=1., manipulation_x=None, omega=None, device=None):
+        super(PGD, self).__init__(is_attacker, oblivion, kappa, manipulation_x, omega, device)
         assert norm == 'l2' or norm == 'linf', "Expect 'l2' or 'linf'."
         self.norm = norm
         self.use_random = use_random

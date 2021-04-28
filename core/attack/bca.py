@@ -29,14 +29,15 @@ class BCA(BaseAttack):
     Parameters
     ---------
     @param is_attacker, Boolean, play the role of attacker (note: the defender conducts adversarial training)
+    @param oblivion, Boolean, whether know the adversary indicator or not
     @param kappa, attack confidence
     @param manipulation_x, manipulations
     @param omega, the indices of interdependent apis corresponding to each api
     @param device, 'cpu' or 'cuda'
     """
 
-    def __init__(self, is_attacker=True, kappa=1., manipulation_x=None, omega=None, device=None):
-        super(BCA, self).__init__(is_attacker, kappa, manipulation_x, omega, device)
+    def __init__(self, is_attacker=True, oblivion=False, kappa=1., manipulation_x=None, omega=None, device=None):
+        super(BCA, self).__init__(is_attacker, oblivion, kappa, manipulation_x, omega, device)
         self.omega = None  # no interdependent apis if just api insertion is considered
         self.manipulation_z = None  # all apis are permitted to be insertable
         self.lambda_ = 1.

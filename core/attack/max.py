@@ -18,8 +18,9 @@ class Max(BaseAttack):
     @param attack_list: List, a list of instantiated attack object
     @param varepsilon: Float, a scaler for justifying the convergence
     """
-    def __init__(self, attack_list, varepsilon=1e-9, is_attacker=True, kappa=1., manipulation_x=None, omega=None, device=None):
-        super(Max, self).__init__(is_attacker, kappa, manipulation_x, omega, device)
+    def __init__(self, attack_list, varepsilon=1e-9,
+                 is_attacker=True, oblivion=False, kappa=1., manipulation_x=None, omega=None, device=None):
+        super(Max, self).__init__(is_attacker, oblivion, kappa, manipulation_x, omega, device)
         assert len(attack_list) > 0, 'Expect one attack at least.'
         self.attack_list = attack_list
         self.varepsilon = varepsilon
@@ -96,7 +97,7 @@ class Max(BaseAttack):
     def get_loss_without_lambda(self, model, logit, label, hidden=None):
         ce = F.cross_entropy(logit, label, reduction='none')
         y_pred = logit.argmax(1)
-        if 'forward_g' in type(model).__dict__.keys():
+        if 'forward_g' in type(model).__dict__.keys() and (not self.oblivion):
             de = model.forward_g(hidden, y_pred)
             tau = model.get_tau_sample_wise(y_pred)
             loss_no_reduction = ce + torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW)

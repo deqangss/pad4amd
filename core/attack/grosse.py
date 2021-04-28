@@ -28,14 +28,15 @@ class Groose(BaseAttack):
     Parameters
     ---------
     @param is_attacker, Boolean, play the role of attacker (note: the defender conducts adversarial training)
+    @param oblivion, Boolean, whether know the adversary indicator or not
     @param kappa, attack confidence
     @param manipulation_x, manipulations
     @param omega, the indices of interdependent apis corresponding to each api
     @param device, 'cpu' or 'cuda'
     """
 
-    def __init__(self, is_attacker=True, kappa=1., manipulation_x=None, omega=None, device=None):
-        super(Groose, self).__init__(is_attacker, kappa, manipulation_x, omega, device)
+    def __init__(self, is_attacker=True, oblivion=False, kappa=1., manipulation_x=None, omega=None, device=None):
+        super(Groose, self).__init__(is_attacker, oblivion, kappa, manipulation_x, omega, device)
         self.omega = None  # no interdependent apis if just api insertion is considered
         self.manipulation_z = None  # all apis are insertable
         self.lambda_ = 1.
@@ -129,7 +130,7 @@ class Groose(BaseAttack):
     def get_loss(self, model, logit, label, hidden=None):
         softmax_loss = torch.softmax(logit, dim=-1)[torch.arange(label.size()[0]), label]
         y_pred = logit.argmax(1)
-        if 'forward_g' in type(model).__dict__.keys():
+        if 'forward_g' in type(model).__dict__.keys() and (not self.oblivion):
             de = model.forward_g(hidden, y_pred)
             tau = model.get_tau_sample_wise(y_pred)
             if self.is_attacker:

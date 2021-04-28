@@ -13,20 +13,16 @@ class OMPA(BaseAttack):
     Parameters
     ---------
     @param is_attacker, Boolean, play the role of attacker (note: the defender conducts adversarial training)
-    @param centers, torch.tensor, hidden representation of examples (center points)
-    @param bandwidth: float, variance of gaussian distribution
+    @param oblivion, Boolean, whether know the adversary indicator or not
     @param kappa, float, attack confidence
     @param manipulation_x, manipulations
     @param omega, the indices of interdependent apis corresponding to each api
     @param device, 'cpu' or 'cuda'
     """
 
-    def __init__(self, is_attacker=True, centers=None, bandwidth=20.,
-                 kappa=1., manipulation_x=None, omega=None, device=None):
-        super(OMPA, self).__init__(is_attacker, kappa, manipulation_x, omega, device)
+    def __init__(self, is_attacker=True, oblivion=False, kappa=1., manipulation_x=None, omega=None, device=None):
+        super(OMPA, self).__init__(is_attacker, oblivion, kappa, manipulation_x, omega, device)
         self.is_attacker = is_attacker
-        self.centers = centers
-        self.bandwidth = bandwidth
         self.lambda_ = 1.
 
     def perturb(self, model, x, adj=None, label=None,
@@ -132,7 +128,7 @@ class OMPA(BaseAttack):
     def get_loss(self, model, logit, label, hidden=None):
         ce = F.cross_entropy(logit, label, reduction='none')
         y_pred = logit.argmax(1)
-        if 'forward_g' in type(model).__dict__.keys():
+        if 'forward_g' in type(model).__dict__.keys() and (not self.oblivion):
             de = model.forward_g(hidden, y_pred)
             tau = model.get_tau_sample_wise(y_pred)
             if self.is_attacker:
@@ -142,18 +138,7 @@ class OMPA(BaseAttack):
                 loss_no_reduction = ce + self.lambda_ * (torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW))
             # loss_no_reduction = ce + self.lambda_ * (de - model.tau)
             done = (y_pred == 0.) & (de >= tau)
-        elif self.centers is not None:
-            de = self.density_estimation(hidden)
-            loss_no_reduction = ce + self.lambda_ * (torch.log(de + EXP_OVER_FLOW))
-            done = y_pred == 0.
-        else:  # degrade to pgd l1 attack
+        else:
             loss_no_reduction = ce
             done = y_pred == 0.
         return loss_no_reduction, done
-
-    def density_estimation(self, hidden):
-        """
-        use kernel density estimation and no class is attended
-        """
-        square = torch.sum(torch.square(self.centers.unsqueeze(dim=0) - hidden.unsqueeze(dim=1)), dim=-1)
-        return torch.mean(torch.exp(-square / self.bandwidth), dim=-1)

@@ -29,6 +29,8 @@ class MalGAN(BaseAttack, nn.Module):
     @param input_dim, the size of an input
     @param noise_dim, the dimension of noise vector
     @param model_path, string, model path for saving the generator
+    @param is_attacker, Boolean, play the role of attacker (note: the defender conducts adversarial training)
+    @param oblivion, Boolean, whether know the adversary indicator or not
     @param kappa, attack confidence
     @param manipulation_x, manipulations
     @param omega, the indices of interdependent apis corresponding to each api
@@ -36,8 +38,8 @@ class MalGAN(BaseAttack, nn.Module):
     """
 
     def __init__(self, input_dim, noise_dim=28, model_path=None,
-                 is_attacker=True, kappa=1., manipulation_x=None, omega=None, device=None):
-        BaseAttack.__init__(self, is_attacker, kappa, manipulation_x, omega, device)
+                 is_attacker=True, oblivion=False, kappa=1., manipulation_x=None, omega=None, device=None):
+        BaseAttack.__init__(self, is_attacker, oblivion, kappa, manipulation_x, omega, device)
         nn.Module.__init__(self)
         self.input_dim = input_dim
         self.noise_dim = noise_dim
@@ -149,7 +151,7 @@ class MalGAN(BaseAttack, nn.Module):
         hidden, logit = model.forward(x_pertb, adj)
         ce = -1 * F.cross_entropy(logit, label, reduction='none')
         y_pred = logit.argmax(1)
-        if 'forward_g' in type(model).__dict__.keys():
+        if 'forward_g' in type(model).__dict__.keys() and (not self.oblivion):
             assert lambda_ is not None
             de = model.forward_g(hidden, y_pred)
             tau = model.get_tau_sample_wise(y_pred)
