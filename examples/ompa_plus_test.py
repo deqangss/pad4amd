@@ -104,20 +104,18 @@ def _main():
     logger.info("Load model parameters from {}.".format(model.model_save_path))
     # model.predict(mal_test_dataset_producer)
 
-    test_dataset_producer = dataset.get_input_producer(test_x, testy, batch_size=hp_params['batch_size'], name='test')
-    center_hidden = []
-    with torch.no_grad():
-        c = args.n_center if args.n_center < len(testy) else len(testy)
-        for x, a, y, _1 in test_dataset_producer:
-            x, a, y = utils.to_tensor(x, a, y, device=dv)
-            x_hidden, _ = model.forward(x, a)
-            center_hidden.append(x_hidden)
-            if len(center_hidden) * hp_params['batch_size'] >= c:
-                break
-        center_hidden = torch.vstack(center_hidden)[:c]
-    attack = OMPAP(centers=center_hidden,
-                   bandwidth=args.bandwidth,
-                   kappa=args.kappa,
+    # test_dataset_producer = dataset.get_input_producer(test_x, testy, batch_size=hp_params['batch_size'], name='test')
+    # center_hidden = []
+    # with torch.no_grad():
+    #     c = args.n_center if args.n_center < len(testy) else len(testy)
+    #     for x, a, y, _1 in test_dataset_producer:
+    #         x, a, y = utils.to_tensor(x, a, y, device=dv)
+    #         x_hidden, _ = model.forward(x, a)
+    #         center_hidden.append(x_hidden)
+    #         if len(center_hidden) * hp_params['batch_size'] >= c:
+    #             break
+    #     center_hidden = torch.vstack(center_hidden)[:c]
+    attack = OMPAP(kappa=args.kappa,
                    device=model.device)
 
     logger.info("\nThe maximum number of perturbations for each example is {}:".format(args.m_pertb))
