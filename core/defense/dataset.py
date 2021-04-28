@@ -42,7 +42,8 @@ class Dataset(torch.utils.data.Dataset):
 
         if feature_ext_args is None:
             self.feature_extractor = Apk2graphs(config.get('metadata', 'naive_data_pool'),
-                                                config.get('dataset', 'intermediate'))
+                                                config.get('dataset', 'intermediate')
+                                                )
         else:
             assert isinstance(feature_ext_args, dict)
             self.feature_extractor = Apk2graphs(config.get('metadata', 'naive_data_pool'),

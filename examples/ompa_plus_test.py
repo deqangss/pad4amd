@@ -18,16 +18,21 @@ logger = logging.getLogger('examples.omp_plus_attack_test')
 logger.addHandler(ErrorHandler)
 
 atta_argparse = argparse.ArgumentParser(description='arguments for enhancing orthogonal matching pursuit attack')
-atta_argparse.add_argument('--m_pertb', type=int, default=100, help='maximum number of perturbations.')
-atta_argparse.add_argument('--n_center', type=int, default=5000, help='number of centers.')
-atta_argparse.add_argument('--bandwidth', type=float, default=20., help='variance of Gaussian distribution.')
-atta_argparse.add_argument('--base', type=float, default=10., help='base of a logarithm function.')
-atta_argparse.add_argument('--kappa', type=float, default=1., help='attack confidence.')
-atta_argparse.add_argument('--real', action='store_true', default=False, help='whether produce the perturbed apks.')
+atta_argparse.add_argument('--m_pertb', type=int, default=100,
+                           help='maximum number of perturbations.')
+atta_argparse.add_argument('--base', type=float, default=10.,
+                           help='base of a logarithm function.')
+atta_argparse.add_argument('--oblivion', action='store_true', default=False,
+                           help='whether know the adversary indicator or not.')
+atta_argparse.add_argument('--kappa', type=float, default=1.,
+                           help='attack confidence.')
+atta_argparse.add_argument('--real', action='store_true', default=False,
+                           help='whether produce the perturbed apks.')
 atta_argparse.add_argument('--model', type=str, default='maldet',
                            choices=['maldet', 'kde', 'advmaldet', 'madvtrain', 'padvtrain'],
                            help="model type, either of 'maldet', 'advmaldet' and 'padvtrain'.")
-atta_argparse.add_argument('--model_name', type=str, default='xxxxxxxx-xxxxxx', help='model timestamp.')
+atta_argparse.add_argument('--model_name', type=str, default='xxxxxxxx-xxxxxx',
+                           help='model timestamp.')
 
 
 def _main():
@@ -61,11 +66,11 @@ def _main():
                                                            name='test')
     assert dataset.n_classes == 2
 
-    # test
     if not hp_params['cuda']:
         dv = 'cpu'
     else:
         dv = 'cuda'
+    # initial model
     if args.model == 'maldet' or args.model == 'kde':
         model = MalwareDetector(dataset.vocab_size,
                                 dataset.n_classes,
@@ -102,20 +107,10 @@ def _main():
         model.load()
 
     logger.info("Load model parameters from {}.".format(model.model_save_path))
-    # model.predict(mal_test_dataset_producer)
+    model.predict(mal_test_dataset_producer)
 
-    # test_dataset_producer = dataset.get_input_producer(test_x, testy, batch_size=hp_params['batch_size'], name='test')
-    # center_hidden = []
-    # with torch.no_grad():
-    #     c = args.n_center if args.n_center < len(testy) else len(testy)
-    #     for x, a, y, _1 in test_dataset_producer:
-    #         x, a, y = utils.to_tensor(x, a, y, device=dv)
-    #         x_hidden, _ = model.forward(x, a)
-    #         center_hidden.append(x_hidden)
-    #         if len(center_hidden) * hp_params['batch_size'] >= c:
-    #             break
-    #     center_hidden = torch.vstack(center_hidden)[:c]
-    attack = OMPAP(kappa=args.kappa,
+    attack = OMPAP(oblivion=args.oblivion,
+                   kappa=args.kappa,
                    device=model.device)
 
     logger.info("\nThe maximum number of perturbations for each example is {}:".format(args.m_pertb))
@@ -142,14 +137,16 @@ def _main():
         x_mod_integrated = dataset.modification_integ(x_mod_integrated, x_mod)
     y_cent = np.mean(np.stack(y_cent_list, axis=1), axis=1)
     y_pred = np.argmax(y_cent, axis=-1)
-    logger.info(
-        f'The mean accuracy on perturbed malware is {sum(y_pred == 1.) / mal_count * 100:.3f}%')
+    logger.info(f'The mean accuracy on perturbed malware is {sum(y_pred == 1.) / mal_count * 100:.3f}%')
 
     if 'indicator' in type(model).__dict__.keys():
         indicator_flag = model.indicator(np.mean(np.stack(x_density_list, axis=1), axis=1), y_pred)
         logger.info(f"The effectiveness of indicator is {sum(~indicator_flag) / mal_count * 100:.3f}%")
         acc_w_indicator = (sum(~indicator_flag) + sum((y_pred == 1.) & indicator_flag)) / mal_count * 100
         logger.info(f'The mean accuracy on adversarial malware (w/ indicator) is {acc_w_indicator:.3f}%.')
+
+    utils.dump_pickle_frd_space(x_mod_integrated,
+                                os.path.join(config.get('experiments', 'ompa'), 'x_mod.list'))
 
     if args.real:
         attack.produce_adv_mal(x_mod_integrated, mal_test_x.tolist(),

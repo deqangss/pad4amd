@@ -147,8 +147,7 @@ def _main():
         x_mod_integrated = dataset.modification_integ(x_mod_integrated, x_mod)
     y_cent = np.mean(np.stack(y_cent_list, axis=1), axis=1)
     y_pred = np.argmax(y_cent, axis=-1)
-    logger.info(
-        f'The mean accuracy on perturbed malware is {sum(y_pred == 1.) / len(mal_testy) * 100:.3f}%')
+    logger.info(f'The mean accuracy on perturbed malware is {sum(y_pred == 1.) / len(mal_testy) * 100:.3f}%')
 
     if 'indicator' in type(model).__dict__.keys():
         indicator_flag = model.indicator(np.mean(np.stack(x_density_list, axis=1), axis=1), y_pred)
