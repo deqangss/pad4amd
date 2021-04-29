@@ -6,7 +6,7 @@ import torch
 from core.attack import OMPA
 from config import logging, ErrorHandler
 
-logger = logging.getLogger('core.attack.ompa_plus')
+logger = logging.getLogger('core.attack.ompa_wrapper')
 logger.addHandler(ErrorHandler)
 
 

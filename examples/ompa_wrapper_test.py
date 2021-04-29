@@ -4,7 +4,6 @@ from __future__ import print_function
 import os
 import argparse
 
-import torch
 import numpy as np
 
 from core.defense import Dataset
@@ -124,7 +123,7 @@ def _main():
             x, a, y = utils.to_tensor(x, a, y, model.device)
             adv_x_batch = attack.perturb(model, x, a, y,
                                          args.m_pertb,
-                                         min_lambda_=1e-5,
+                                         min_lambda_=1,
                                          max_lambda_=1e5,
                                          base=args.base,
                                          verbose=True)
@@ -146,7 +145,7 @@ def _main():
         logger.info(f'The mean accuracy on adversarial malware (w/ indicator) is {acc_w_indicator:.3f}%.')
 
     utils.dump_pickle_frd_space(x_mod_integrated,
-                                os.path.join(config.get('experiments', 'ompa'), 'x_mod.list'))
+                                os.path.join(config.get('experiments', 'ompap'), 'x_mod.list'))
 
     if args.real:
         attack.produce_adv_mal(x_mod_integrated, mal_test_x.tolist(),
