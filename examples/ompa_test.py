@@ -107,10 +107,7 @@ def _main():
         model = adv_model.model
     else:
         model.load()
-
-    model.load()
     logger.info("Load model parameters from {}.".format(model.model_save_path))
-
     model.predict(mal_test_dataset_producer)
 
     attack = OMPA(oblivion=args.oblivion,

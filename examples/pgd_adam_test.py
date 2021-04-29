@@ -16,18 +16,29 @@ logger = logging.getLogger('examples.pgd_adam_test')
 logger.addHandler(ErrorHandler)
 
 atta_argparse = argparse.ArgumentParser(description='arguments for projected gradient descent attack')
-atta_argparse.add_argument('--lambda_', type=float, default=0.01, help='balance factor for waging attack.')
-atta_argparse.add_argument('--n_step', type=int, default=100, help='maximum number of steps.')
-atta_argparse.add_argument('--lr', type=float, default=0.1, help='learning rate.')
-atta_argparse.add_argument('--random_start', action='store_true', default=False, help='randomly initialize the start points.')
-atta_argparse.add_argument('--round_threshold', type=float, default=0.98, help='threshold for rounding real scalars.')
-atta_argparse.add_argument('--base', type=float, default=10., help='base of a logarithm function.')
-atta_argparse.add_argument('--kappa', type=float, default=1., help='attack confidence.')
-atta_argparse.add_argument('--real', action='store_true', default=False, help='whether produce the perturbed apks.')
+atta_argparse.add_argument('--lambda_', type=float, default=0.01,
+                           help='balance factor for waging attack.')
+atta_argparse.add_argument('--n_step', type=int, default=100,
+                           help='maximum number of steps.')
+atta_argparse.add_argument('--lr', type=float, default=0.1,
+                           help='learning rate.')
+atta_argparse.add_argument('--random_start', action='store_true', default=False,
+                           help='randomly initialize the start points.')
+atta_argparse.add_argument('--round_threshold', type=float, default=0.98,
+                           help='threshold for rounding real scalars.')
+atta_argparse.add_argument('--base', type=float, default=10.,
+                           help='base of a logarithm function.')
+atta_argparse.add_argument('--oblivion', action='store_true', default=False,
+                           help='whether know the adversary indicator or not.')
+atta_argparse.add_argument('--kappa', type=float, default=1.,
+                           help='attack confidence.')
+atta_argparse.add_argument('--real', action='store_true', default=False,
+                           help='whether produce the perturbed apks.')
 atta_argparse.add_argument('--model', type=str, default='maldet',
                            choices=['maldet', 'kde', 'advmaldet', 'madvtrain', 'padvtrain'],
                            help="model type, either of 'maldet', 'advmaldet' and 'padvtrain'.")
-atta_argparse.add_argument('--model_name', type=str, default='xxxxxxxx-xxxxxx', help='model timestamp.')
+atta_argparse.add_argument('--model_name', type=str, default='xxxxxxxx-xxxxxx',
+                           help='model timestamp.')
 
 
 def _main():
@@ -91,17 +102,23 @@ def _main():
                                         n_classes=dataset.n_classes,
                                         ratio=hp_params['ratio']
                                         )
-    if args.model == 'madvtrain':
-        MaxAdvTraining(model)
-    if args.model == 'padvtrain':
-        PrincipledAdvTraining(model)
-
-    model.load()
+        model.load()
+    elif args.model == 'madvtrain':
+        adv_model = MaxAdvTraining(model)
+        adv_model.load()
+        model = adv_model.model
+    elif args.model == 'padvtrain':
+        adv_model = PrincipledAdvTraining(model)
+        adv_model.load()
+        model = adv_model.model
+    else:
+        model.load()
     logger.info("Load model parameters from {}.".format(model.model_save_path))
 
     # model.predict(mal_test_dataset_producer)
     attack = PGDAdam(use_random=args.random_start,
                      rounding_threshold=args.round_threshold,
+                     oblivion=args.oblivion,
                      kappa=args.kappa,
                      device=model.device)
 
@@ -116,7 +133,7 @@ def _main():
             adv_x_batch = attack.perturb(model, x, a, y,
                                          args.n_step,
                                          args.lr,
-                                         1e-5,
+                                         1.,
                                          1e5,
                                          base=args.base,
                                          verbose=True)
@@ -137,6 +154,12 @@ def _main():
         logger.info(f"The effectiveness of indicator is {sum(~indicator_flag) / mal_count * 100:.3f}%")
         acc_w_indicator = (sum(~indicator_flag) + sum((y_pred == 1.) & indicator_flag)) / mal_count * 100
         logger.info(f'The mean accuracy on adversarial malware (w/ indicator) is {acc_w_indicator:.3f}%.')
+
+    save_dir = os.path.join(config.get('experiments', 'pgdadam'), args.model)
+    if not os.path.exists(save_dir):
+        utils.mkdir(save_dir)
+    utils.dump_pickle_frd_space(x_mod_integrated,
+                                os.path.join(save_dir, 'x_mod.list'))
 
     if args.real:
         attack.produce_adv_mal(x_mod_integrated, mal_test_x.tolist(),

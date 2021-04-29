@@ -22,28 +22,50 @@ logger.addHandler(ErrorHandler)
 
 atta_argparse = argparse.ArgumentParser(description='arguments for l1 norm based projected gradient descent attack')
 
-atta_argparse.add_argument('--n_step_max', type=int, default=5, help='maximum number of steps in max attack.')
-atta_argparse.add_argument('--varepsilon', type=float, default=1e-9, help='small value for checking convergence.')
+atta_argparse.add_argument('--n_step_max', type=int, default=5,
+                           help='maximum number of steps in max attack.')
+atta_argparse.add_argument('--varepsilon', type=float, default=1e-9,
+                           help='small value for checking convergence.')
 
-atta_argparse.add_argument('--lambda_', type=float, default=1., help='balance factor for waging attack.')
-atta_argparse.add_argument('--m_pertb', type=int, default=10, help='maximum number of perturbations.')
-atta_argparse.add_argument('--bandwidth', type=float, default=20., help='variance of Gaussian distribution.')
-atta_argparse.add_argument('--n_benware', type=int, default=5000, help='number of centers.')
+atta_argparse.add_argument('--lambda_', type=float, default=1.,
+                           help='balance factor for waging attack.')
+atta_argparse.add_argument('--m_pertb', type=int, default=10,
+                           help='maximum number of perturbations.')
+atta_argparse.add_argument('--bandwidth', type=float, default=20.,
+                           help='variance of Gaussian distribution.')
+atta_argparse.add_argument('--n_benware', type=int, default=5000,
+                           help='number of centers.')
 
-atta_argparse.add_argument('--n_step', type=int, default=100, help='maximum number of steps.')
-atta_argparse.add_argument('--step_length_l2', type=float, default=1., help='step length in each step.')
-atta_argparse.add_argument('--step_length_linf', type=float, default=0.01, help='step length in each step.')
-atta_argparse.add_argument('--lr', type=float, default=0.1, help='learning rate.')
-atta_argparse.add_argument('--random_start', action='store_true', default=False, help='randomly initialize the start points.')
-atta_argparse.add_argument('--round_threshold', type=float, default=0.98, help='threshold for rounding real scalars.')
+atta_argparse.add_argument('--n_step_l2', type=int, default=100,
+                           help='maximum number of steps.')
+atta_argparse.add_argument('--step_length_l2', type=float, default=1.,
+                           help='step length in each step.')
+atta_argparse.add_argument('--n_step_linf', type=int, default=100,
+                           help='maximum number of steps.')
+atta_argparse.add_argument('--step_length_linf', type=float, default=0.01,
+                           help='step length in each step.')
+atta_argparse.add_argument('--n_step_adam', type=int, default=100,
+                           help='maximum number of steps.')
+atta_argparse.add_argument('--lr', type=float, default=0.1,
+                           help='learning rate.')
+atta_argparse.add_argument('--random_start', action='store_true', default=False,
+                           help='randomly initialize the start points.')
+atta_argparse.add_argument('--round_threshold', type=float, default=0.98,
+                           help='threshold for rounding real scalars.')
 
-atta_argparse.add_argument('--base', type=float, default=10., help='base of a logarithm function.')
-atta_argparse.add_argument('--kappa', type=float, default=1., help='attack confidence.')
-atta_argparse.add_argument('--real', action='store_true', default=False, help='whether produce the perturbed apks.')
+atta_argparse.add_argument('--base', type=float, default=10.,
+                           help='base of a logarithm function.')
+atta_argparse.add_argument('--oblivion', action='store_true', default=False,
+                           help='whether know the adversary indicator or not.')
+atta_argparse.add_argument('--kappa', type=float, default=1.,
+                           help='attack confidence.')
+atta_argparse.add_argument('--real', action='store_true', default=False,
+                           help='whether produce the perturbed apks.')
 atta_argparse.add_argument('--model', type=str, default='maldet',
                            choices=['maldet', 'kde', 'advmaldet', 'madvtrain', 'padvtrain'],
                            help="model type, either of 'maldet', 'advmaldet' and 'padvtrain'.")
-atta_argparse.add_argument('--model_name', type=str, default='xxxxxxxx-xxxxxx', help='model timestamp.')
+atta_argparse.add_argument('--model_name', type=str, default='xxxxxxxx-xxxxxx',
+                           help='model timestamp.')
 
 
 def _main():
@@ -111,12 +133,17 @@ def _main():
                                         n_classes=dataset.n_classes,
                                         ratio=hp_params['ratio']
                                         )
-    if args.model == 'madvtrain':
-        MaxAdvTraining(model)
-    if args.model == 'padvtrain':
-        PrincipledAdvTraining(model)
-
-    model.load()
+        model.load()
+    elif args.model == 'madvtrain':
+        adv_model = MaxAdvTraining(model)
+        adv_model.load()
+        model = adv_model.model
+    elif args.model == 'padvtrain':
+        adv_model = PrincipledAdvTraining(model)
+        adv_model.load()
+        model = adv_model.model
+    else:
+        model.load()
     logger.info("Load model parameters from {}.".format(model.model_save_path))
     # model.predict(mal_test_dataset_producer)
 
@@ -133,59 +160,62 @@ def _main():
 
     gdkde = GDKDEl1(ben_hidden,
                     args.bandwidth,
+                    oblivion=args.oblivion,
                     kappa=args.kappa,
                     device=model.device
                     )
     gdkde.perturb = partial(gdkde.perturb,
                             m=args.m_pertb,
-                            min_lambda_=1e-5,
+                            min_lambda_=1.,
                             max_lambda_=1e5,
                             base=args.base,
                             verbose=False
                             )
 
-    pgdl1 = PGDl1(kappa=args.kappa, device=model.device)
+    pgdl1 = PGDl1(oblivion=args.oblivion, kappa=args.kappa, device=model.device)
     pgdl1.perturb = partial(pgdl1.perturb,
                             m=args.m_pertb,
-                            min_lambda_=1e-5,
+                            min_lambda_=1.,
                             max_lambda_=1e5,
                             base=args.base,
                             verbose=False
                             )
 
-    pgdl2 = PGD(norm='l2', use_random=False, kappa=args.kappa, device=model.device)
+    pgdl2 = PGD(norm='l2', use_random=False,
+                oblivion=args.oblivion, kappa=args.kappa, device=model.device)
     pgdl2.perturb = partial(pgdl2.perturb,
-                            steps=args.n_step,
+                            steps=args.n_step_l2,
                             step_length=args.step_length_l2,
-                            min_lambda_=1e-5,
+                            min_lambda_=1.,
                             max_lambda_=1e5,
                             base=args.base,
                             verbose=False
                             )
 
     pgdlinf = PGD(norm='linf', use_random=args.random_start, rounding_threshold=args.round_threshold,
-                  kappa=args.kappa, device=model.device)
+                  oblivion=args.oblivion, kappa=args.kappa, device=model.device)
     pgdlinf.perturb = partial(pgdlinf.perturb,
-                              steps=args.n_step,
+                              steps=args.n_step_linf,
                               step_length=args.step_length_linf,
-                              min_lambda_=1e-5,
+                              min_lambda_=1.,
                               max_lambda_=1e5,
                               base=args.base,
                               verbose=False
                               )
 
     pgdadma = PGDAdam(use_random=args.random_start, rounding_threshold=args.round_threshold,
-                      kappa=args.kappa, device=model.device)
+                      oblivion=args.oblivion, kappa=args.kappa, device=model.device)
     pgdadma.perturb = partial(pgdadma.perturb,
-                              steps=args.n_step,
+                              steps=args.n_step_adam,
                               lr=args.lr,
-                              min_lambda_=1e-5,
+                              min_lambda_=1.,
                               max_lambda_=1e5,
                               base=args.base,
                               verbose=False)
 
     attack = Max(attack_list=[pgdl1, pgdl2, pgdlinf, pgdadma],
                  varepsilon=1e-9,
+                 oblivion=args.oblivion,
                  device=model.device
                  )
 
@@ -207,14 +237,19 @@ def _main():
         x_mod_integrated = dataset.modification_integ(x_mod_integrated, x_mod)
     y_cent = np.mean(np.stack(y_cent_list, axis=1), axis=1)
     y_pred = np.argmax(y_cent, axis=-1)
-    logger.info(
-        f'The mean accuracy on perturbed malware is {sum(y_pred == 1.) / mal_count * 100:.3f}%')
+    logger.info(f'The mean accuracy on perturbed malware is {sum(y_pred == 1.) / mal_count * 100:.3f}%')
 
     if 'indicator' in type(model).__dict__.keys():
         indicator_flag = model.indicator(np.mean(np.stack(x_density_list, axis=1), axis=1), y_pred)
         logger.info(f"The effectiveness of indicator is {sum(~indicator_flag) / mal_count * 100:.3f}%")
         acc_w_indicator = (sum(~indicator_flag) + sum((y_pred == 1.) & indicator_flag)) / mal_count * 100
         logger.info(f'The mean accuracy on adversarial malware (w/ indicator) is {acc_w_indicator:.3f}%.')
+
+    save_dir = os.path.join(config.get('experiments', 'max'), args.model)
+    if not os.path.exists(save_dir):
+        utils.mkdir(save_dir)
+    utils.dump_pickle_frd_space(x_mod_integrated,
+                                os.path.join(save_dir, 'x_mod.list'))
 
     if args.real:
         attack.produce_adv_mal(x_mod_integrated, mal_test_x.tolist(),

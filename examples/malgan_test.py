@@ -27,6 +27,8 @@ atta_argparse.add_argument('--epochs', type=int, default=100,
                            help='number of epochs for training generator.')
 atta_argparse.add_argument('--lr', type=float, default=0.001,
                            help='initial learning rate.')
+atta_argparse.add_argument('--oblivion', action='store_true', default=False,
+                           help='whether know the adversary indicator or not.')
 atta_argparse.add_argument('--kappa', type=float, default=1.,
                            help='attack confidence.')
 atta_argparse.add_argument('--real', action='store_true', default=False,
@@ -105,18 +107,24 @@ def _main():
                                         n_classes=dataset.n_classes,
                                         ratio=hp_params['ratio']
                                         )
-    if args.model == 'madvtrain':
-        MaxAdvTraining(model)
-    if args.model == 'padvtrain':
-        PrincipledAdvTraining(model)
-
-    model.load()
+        model.load()
+    elif args.model == 'madvtrain':
+        adv_model = MaxAdvTraining(model)
+        adv_model.load()
+        model = adv_model.model
+    elif args.model == 'padvtrain':
+        adv_model = PrincipledAdvTraining(model)
+        adv_model.load()
+        model = adv_model.model
+    else:
+        model.load()
     logger.info("Load model parameters from {}.".format(model.model_save_path))
     model.predict(mal_test_dataset_producer)
 
     attack = MalGAN(input_dim=dataset.n_sgs_max * dataset.vocab_size,
                     noise_dim=args.noise_dim,
                     model_path=config.get('experiments', 'malgan'),
+                    oblivion=args.oblivion,
                     kappa=args.kappa,
                     device=model.device
                     )
@@ -155,6 +163,11 @@ def _main():
         acc_w_indicator = (sum(~indicator_flag) + sum((y_pred == 1.) & indicator_flag)) / len(mal_testy) * 100
         logger.info(f'The mean accuracy on adversarial malware (w/ indicator) is {acc_w_indicator:.3f}%.')
 
+    save_dir = os.path.join(config.get('experiments', 'malgan'), args.model)
+    if not os.path.exists(save_dir):
+        utils.mkdir(save_dir)
+    utils.dump_pickle_frd_space(x_mod_integrated,
+                                os.path.join(save_dir, 'x_mod.list'))
     if args.real:
         attack.produce_adv_mal(x_mod_integrated, mal_test_x.tolist(),
                                config.get('dataset', 'malware_dir'),
