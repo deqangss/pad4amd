@@ -144,6 +144,8 @@ def _main():
         acc_w_indicator = (sum(~indicator_flag) + sum((y_pred == 1.) & indicator_flag)) / mal_count * 100
         logger.info(f'The mean accuracy on adversarial malware (w/ indicator) is {acc_w_indicator:.3f}%.')
 
+    if not os.path.exists(config.get('experiments', 'ompap')):
+        utils.mkdir(config.get('experiments', 'ompap'))
     utils.dump_pickle_frd_space(x_mod_integrated,
                                 os.path.join(config.get('experiments', 'ompap'), 'x_mod.list'))
 
