@@ -115,9 +115,6 @@ class GDKDEl1(BaseAttack):
         while self.lambda_ <= max_lambda_:
             hidden, logit = model.forward(adv_x, adj)
             _, done = self.get_loss(model, logit, label, hidden)
-            if verbose:
-                logger.info(
-                    f"GD-KDE l1: attack effectiveness {done.sum().item() / float(x.size()[0])*100:.3f}% with lambda {self.lambda_}.")
             if torch.all(done):
                 break
             adv_x[~done] = x[~done]  # recompute the perturbation under other penalty factors
