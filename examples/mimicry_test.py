@@ -20,8 +20,8 @@ atta_argparse.add_argument('--trials', type=int, default=10, help='number of ben
 atta_argparse.add_argument('--oblivion', action='store_true', default=False,
                            help='whether know the adversary indicator or not.')
 atta_argparse.add_argument('--model', type=str, default='maldet',
-                           choices=['maldet', 'kde', 'advmaldet', 'madvtrain', 'padvtrain'],
-                           help="model type, either of 'maldet', 'advmaldet' and 'padvtrain'.")
+                           choices=['maldet', 'kde', 'gmm', 'madvtrain', 'padvtrain'],
+                           help="model type, either of 'maldet', 'kde', 'gmm', 'madvtrain', or 'padvtrain'.")
 atta_argparse.add_argument('--model_name', type=str, default='xxxxxxxx-xxxxxx', help='model timestamp.')
 
 
@@ -31,14 +31,14 @@ def _main():
         save_dir = config.get('experiments', 'malware_detector') + '_' + args.model_name
     elif args.model == 'kde':
         save_dir = config.get('experiments', 'kde') + '_' + args.model_name
-    elif args.model == 'advmaldet':
-        save_dir = config.get('experiments', 'malware_detector_indicator') + '_' + args.model_name
+    elif args.model == 'gmm':
+        save_dir = config.get('experiments', 'gmm') + '_' + args.model_name
     elif args.model == 'madvtrain':
         save_dir = config.get('experiments', 'm_adv_training') + '_' + args.model_name
     elif args.model == 'padvtrain':
         save_dir = config.get('experiments', 'p_adv_training') + '_' + args.model_name
     else:
-        raise TypeError("Expected 'maldet', 'advmaldet' or 'padvtrain'.")
+        raise TypeError("Expected 'maldet', 'kde', 'gmm', 'madvtrain' or 'padvtrain'.")
 
     hp_params = utils.read_pickle(os.path.join(save_dir, 'hparam.pkl'))
     dataset = Dataset(k=hp_params['k'],
