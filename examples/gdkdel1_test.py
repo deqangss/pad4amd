@@ -63,8 +63,17 @@ def _main():
                       feature_ext_args={'proc_number': hp_params['proc_number']}
                       )
     test_x, testy = dataset.test_dataset
-    mal_test_x, mal_testy = test_x[testy == 1], testy[testy == 1]
-    mal_count = len(mal_testy)
+    mal_save_path = os.path.join(config.get('dataset', 'dataset_dir'), 'attack.idx')
+    if not os.path.exists(mal_save_path):
+        mal_test_x, mal_testy = test_x[testy == 1], testy[testy == 1]
+        from numpy import random
+        mal_count = len(mal_testy) if len(mal_testy) < 1000 else 1000
+        mal_test_x = random.choice(mal_test_x, mal_count, replace=False)
+        mal_testy = mal_testy[:mal_count]
+        utils.dump_pickle_frd_space((mal_test_x, mal_testy), mal_save_path)
+    else:
+        mal_test_x, mal_testy = utils.read_pickle_frd_space(mal_save_path)
+        mal_count = len(mal_testy)
     ben_test_x, ben_testy = test_x[testy == 0], testy[testy == 0]
     ben_count = len(ben_test_x)
     if mal_count <= 0 and ben_count <= 0:
