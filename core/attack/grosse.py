@@ -43,8 +43,7 @@ class Groose(BaseAttack):
 
     def _perturb(self, model, x, adj=None, label=None,
                  m=10,
-                 lambda_=1.,
-                 verbose=False):
+                 lambda_=1.):
         """
         perturb node feature vectors
 
@@ -56,7 +55,6 @@ class Groose(BaseAttack):
         @param label: torch.LongTensor, ground truth labels
         @param m: Integer, maximum number of perturbations
         @param lambda_, float, penalty factor
-        @param verbose, Boolean, whether present attack information or not
         """
         if x is None or x.shape[0] <= 0:
             return []
@@ -68,9 +66,6 @@ class Groose(BaseAttack):
             var_adv_x = torch.autograd.Variable(adv_x, requires_grad=True)
             hidden, logit = model.forward(var_adv_x, adj)
             loss, done = self.get_loss(model, logit, label, hidden)
-            if verbose:
-                print(
-                    f"\n Iteration {t}: the accuracy is {(logit.argmax(1) == 1.).sum().item() / adv_x.size()[0] * 100:.3f}.")
             if torch.all(done):
                 break
             grad = torch.autograd.grad(torch.mean(loss), var_adv_x)[0].data
@@ -102,17 +97,13 @@ class Groose(BaseAttack):
         while self.lambda_ <= max_lambda_:
             hidden, logit = model.forward(adv_x, adj)
             _, done = self.get_loss(model, logit, label, hidden)
-            if verbose:
-                logger.info(
-                    f"Grosse: attack effectiveness {done.sum().item() / float(x.size()[0]):.3f} with lambda {self.lambda_}.")
             if torch.all(done):
                 break
             adv_x[~done] = x[~done]  # recompute the perturbation under other penalty factors
             adv_adj = None if adj is None else adj[~done]
             pert_x = self._perturb(model, adv_x[~done], adv_adj, label[~done],
                                    m,
-                                   lambda_=self.lambda_,
-                                   verbose=False
+                                   lambda_=self.lambda_
                                    )
             adv_x[~done] = pert_x
             self.lambda_ *= base
@@ -122,8 +113,7 @@ class Groose(BaseAttack):
             hidden, logit = model.forward(adv_x, adj)
             _, done = self.get_loss(model, logit, label, hidden)
             if verbose:
-                logger.info(
-                    f"grosse: attack effectiveness {done.sum().item() / x.size()[0]}.")
+                logger.info(f"grosse: attack effectiveness {done.sum().item() / x.size()[0]}.")
 
         return adv_x
 
