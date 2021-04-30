@@ -108,8 +108,6 @@ class PGDAdam(BaseAttack):
         while self.lambda_ <= max_lambda_:
             hidden, logit = model.forward(adv_x, adj)
             _, done = self.get_loss(model, logit, label, hidden, self.lambda_)
-            if verbose:
-                logger.info(f"PGD adam attack: attack effectiveness {done.sum().item() / float(x.size()[0]):.3f} with lambda {self.lambda_}.")
             if torch.all(done):
                 break
             adv_x[~done] = x[~done]  # recompute the perturbation under other penalty factors

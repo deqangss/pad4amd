@@ -52,7 +52,6 @@ class PGDl1(BaseAttack):
         @param label: torch.LongTensor, ground truth labels
         @param m_perturbations: Integer, maximum number of perturbations
         @param lambda_, float, penalty factor
-        @param verbose, Boolean, whether present attack information or not
         """
         if x is None or x.shape[0] <= 0:
             return []
@@ -64,8 +63,6 @@ class PGDl1(BaseAttack):
             var_adv_x = torch.autograd.Variable(adv_x, requires_grad=True)
             hidden, logit = model.forward(var_adv_x, adj)
             loss, done = self.get_loss(model, logit, label, hidden, self.lambda_)
-            # if verbose:
-            #     print(f"\n Iteration {t}: the accuracy is {(logit.argmax(1) == 1.).sum().item() / adv_x.size()[0] * 100:.3f}.")
             if torch.all(done):
                 break
             grad = torch.autograd.grad(torch.mean(loss), var_adv_x)[0]
@@ -90,9 +87,6 @@ class PGDl1(BaseAttack):
         while self.lambda_ <= max_lambda_:
             hidden, logit = model.forward(adv_x, adj)
             _, done = self.get_loss(model, logit, label, hidden, self.lambda_)
-            if verbose:
-                logger.info(
-                    f"PGD l1: attack effectiveness {done.sum().item() / float(x.size()[0]) * 100:.3f}% with lambda {self.lambda_}.")
             if torch.all(done):
                 break
             adv_x[~done] = x[~done]  # recompute the perturbation under other penalty factors
@@ -143,6 +137,7 @@ class PGDl1(BaseAttack):
         directions = torch.sign(gradients) * (perturbations > 1e-6)
 
         # 5. tailor the interdependent apis
-        perturbations += (torch.sum(directions, dim=-1, keepdim=True) < 0) * checking_nonexist_api
-        directions += perturbations * self.omega
+        if self.is_attacker:
+            perturbations += (torch.sum(directions, dim=-1, keepdim=True) < 0) * checking_nonexist_api
+            directions += perturbations * self.omega
         return perturbations, directions
