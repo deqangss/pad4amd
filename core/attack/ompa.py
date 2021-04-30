@@ -138,7 +138,7 @@ class OMPA(BaseAttack):
                 loss_no_reduction = ce + self.lambda_ * (torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW))
             # loss_no_reduction = ce + self.lambda_ * (de - model.tau)
             print(y_pred==0.)
-            print(de, tau)
+            print(de, tau, self.lambda_)
             done = (y_pred == 0.) & (de >= tau)
         else:
             loss_no_reduction = ce
