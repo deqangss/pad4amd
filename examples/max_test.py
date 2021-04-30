@@ -177,7 +177,7 @@ def _main():
                     )
     gdkde.perturb = partial(gdkde.perturb,
                             m=args.m_pertb,
-                            min_lambda_=1.,
+                            min_lambda_=1e-5,
                             max_lambda_=1e5,
                             base=args.base,
                             verbose=False
@@ -186,7 +186,7 @@ def _main():
     pgdl1 = PGDl1(oblivion=args.oblivion, kappa=args.kappa, device=model.device)
     pgdl1.perturb = partial(pgdl1.perturb,
                             m=args.m_pertb,
-                            min_lambda_=1.,
+                            min_lambda_=1e-5,
                             max_lambda_=1e5,
                             base=args.base,
                             verbose=False
@@ -197,7 +197,7 @@ def _main():
     pgdl2.perturb = partial(pgdl2.perturb,
                             steps=args.n_step_l2,
                             step_length=args.step_length_l2,
-                            min_lambda_=1.,
+                            min_lambda_=1e-5,
                             max_lambda_=1e5,
                             base=args.base,
                             verbose=False
@@ -208,7 +208,7 @@ def _main():
     pgdlinf.perturb = partial(pgdlinf.perturb,
                               steps=args.n_step_linf,
                               step_length=args.step_length_linf,
-                              min_lambda_=1.,
+                              min_lambda_=1e-5,
                               max_lambda_=1e5,
                               base=args.base,
                               verbose=False
@@ -219,7 +219,7 @@ def _main():
     pgdadma.perturb = partial(pgdadma.perturb,
                               steps=args.n_step_adam,
                               lr=args.lr,
-                              min_lambda_=1.,
+                              min_lambda_=1e-5,
                               max_lambda_=1e5,
                               base=args.base,
                               verbose=False)
