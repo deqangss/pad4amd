@@ -39,11 +39,9 @@ class OMPAP(OMPA):
             with torch.no_grad():
                 hidden, logit = model.forward(adv_x, adj)
                 _, done = self.get_loss(model, logit, label, hidden)
-            if verbose:
-                logger.info(f"Ompa attack: attack effectiveness {done.sum().item() / x.size()[0] * 100:.3}% with lambda {self.lambda_}.")
             if torch.all(done):
                 break
-            adv_x[~done] = x[~done]  # recompute the perturbation under other penalty factors
+            adv_x[~done] = x[~done]  # recompute the perturbation under larger penalty factors
             adv_adj = None if adj is None else adj[~done]
             pert_x = super(OMPAP, self).perturb(model, adv_x[~done], adv_adj, label[~done],
                                                 m,

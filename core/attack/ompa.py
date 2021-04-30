@@ -55,7 +55,7 @@ class OMPA(BaseAttack):
         else:
             adv_x = x
         self.lambda_ = lambda_
-        self.padding_mask = torch.sum(x, dim=-1, keepdim=True) > 1  # we set a graph contains two apis at least
+        self.padding_mask = torch.sum(x, dim=-1, keepdim=True) > 1  # we set a graph contains at least two apis
         model.eval()
         for t in range(m):
             var_adv_x = torch.autograd.Variable(adv_x, requires_grad=True)
@@ -66,7 +66,7 @@ class OMPA(BaseAttack):
             grad = torch.autograd.grad(torch.mean(adv_loss), var_adv_x)[0]
             perturbation, direction = self.get_perturbation(grad, x, adv_x)
             # avoid to perturb the examples that are successful to evade the victim
-            # note: this decreases the transferability of adversarial examples
+            # note: this can decrease the transferability of adversarial examples
             perturbation[done] = 0.
             # cope with step length < 1.
             if 0 < step_length <= .5 and (not self.is_attacker):
@@ -100,7 +100,7 @@ class OMPA(BaseAttack):
         #    2.2 api removal
         pos_removal = (adv_features > 0.5) * 1
         if self.is_attacker:
-            #     2.2.1 cope with the interdependent apis (note: application-specific)
+            #     2.2.1 cope with the interdependent apis (note: the following is application-specific)
             checking_nonexist_api = (pos_removal ^ self.omega) & self.omega
             grad4removal = torch.sum(gradients * checking_nonexist_api, dim=-1, keepdim=True) + gradients
             grad4removal *= (grad4removal < 0) * (pos_removal & self.manipulation_x)
