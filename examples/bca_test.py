@@ -16,8 +16,6 @@ logger = logging.getLogger('examples.bca_test')
 logger.addHandler(ErrorHandler)
 
 atta_argparse = argparse.ArgumentParser(description='arguments for bca')
-atta_argparse.add_argument('--lambda_', type=float, default=0.01,
-                           help='balance factor for waging attack.')
 atta_argparse.add_argument('--m_pertb', type=int, default=100,
                            help='maximum number of perturbations.')
 atta_argparse.add_argument('--oblivion', action='store_true', default=False,
