@@ -133,7 +133,7 @@ def _main():
 
     attack = MalGAN(input_dim=dataset.n_sgs_max * dataset.vocab_size,
                     noise_dim=args.noise_dim,
-                    model_path=config.get('experiments', 'malgan'),
+                    model_path=os.path.join(config.get('experiments', 'malgan'), 'gan-model.pkl'),
                     oblivion=args.oblivion,
                     kappa=args.kappa,
                     device=model.device
