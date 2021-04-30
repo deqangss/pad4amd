@@ -27,6 +27,8 @@ atta_argparse.add_argument('--step_length', type=float, default=2.,
                            help='step length in each step.')
 atta_argparse.add_argument('--bandwidth', type=float, default=20.,
                            help='variance of Gaussian distribution.')
+atta_argparse.add_argument('--penalty_factor', type=float, default=1000.,
+                           help='penalty factor for density estimation.')
 atta_argparse.add_argument('--n_center', type=int, default=1000,
                            help='number of centers.')
 atta_argparse.add_argument('--base', type=float, default=10.,
@@ -146,6 +148,7 @@ def _main():
 
     attack = GDKDE(ben_hidden,
                    args.bandwidth,
+                   penalty_factor=args.penalty_factor,
                    oblivion=args.oblivion,
                    kappa=args.kappa,
                    device=model.device
