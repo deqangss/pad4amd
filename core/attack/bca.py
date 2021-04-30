@@ -107,12 +107,10 @@ class BCA(BaseAttack):
         while self.lambda_ <= max_lambda_:
             hidden, logit = model.forward(adv_x, adj)
             _, done = self.get_loss(model, logit, label, hidden, self.lambda_)
-            if verbose:
-                logger.info(f"BCA: attack effectiveness {done.sum().item() / x.size()[0]*100:.3f}% with lambda {self.lambda_}.")
             if torch.all(done):
                 break
             adv_x[~done] = x[~done]  # recompute the perturbation under other penalty factors
-            adv_adj = None if adj is None else adv_adj[~done]
+            adv_adj = None if adj is None else adj[~done]
             pert_x = self._perturb(model, adv_x[~done], adv_adj, label[~done],
                                    m,
                                    lambda_=self.lambda_,
