@@ -73,7 +73,7 @@ def _main():
         mal_count = len(mal_testy) if len(mal_testy) < 1000 else 1000
         mal_test_data = random.choice(mal_test_data, mal_count, replace=False)
         mal_testy = mal_testy[:mal_count]
-        utils.dump_pickle_frd_space((mal_test_data, mal_testy), save_dir)
+        utils.dump_pickle_frd_space((mal_test_data, mal_testy), mal_save_path)
     else:
         mal_test_data, mal_testy = utils.read_pickle_frd_space(mal_save_path)
 
