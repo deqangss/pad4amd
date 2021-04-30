@@ -58,7 +58,7 @@ class MalGAN(BaseAttack, nn.Module):
             *block(128, 512),
             *block(512, 1024),
             nn.Linear(1024, self.input_dim),
-            nn.Softmax()
+            nn.Sigmoid()
         )
         self.generator.to(self.device)
 
@@ -68,7 +68,7 @@ class MalGAN(BaseAttack, nn.Module):
         padding_mask = torch.sum(x, dim=-1, keepdim=True) > 1
         x_ext = torch.cat([x.reshape(size[0], -1), torch.rand((size[0], self.noise_dim), device=self.device)], dim=1)
         x_pertb = torch.round(self.generator(x_ext)).reshape(size) * padding_mask
-        return torch.maximum(x, x_pertb)
+        return torch.maximum(x, x_pertb)  # only feature addition is considered
 
     def fit(self, train_data_producer, validation_data_producer, detector, epochs=100, lr=0.001, lambda_=1e4, verbose=True):
         """
@@ -89,7 +89,7 @@ class MalGAN(BaseAttack, nn.Module):
         best_epoch = 0
         total_time = 0
         if detector.k > 0:
-            logger.warning("The attack leads to dense graph and trigger the issue of out of memory.")
+            logger.warning("The attack will lead to dense graph and trigger the issue of out of memory.")
         nbatches = len(train_data_producer)
         for i in range(epochs):
             self.train()
@@ -110,10 +110,8 @@ class MalGAN(BaseAttack, nn.Module):
                 losses.append(loss_train.item())
                 accuracies.append(acc_train)
                 if verbose:
-                    print(
-                        f'Mini batch: {i * nbatches + idx_batch + 1}/{epochs * nbatches} | training time in {mins:.0f} minutes, {secs} seconds.')
-                    logger.info(
-                        f'Training loss (batch level): {losses[-1]:.4f} | Train accuracy: {acc_train * 100:.2f}')
+                    print(f'Mini batch: {i * nbatches + idx_batch + 1}/{epochs * nbatches} | training time in {mins:.0f} minutes, {secs} seconds.')
+                    logger.info(f'Training loss (batch level): {losses[-1]:.4f} | Train accuracy: {acc_train * 100:.2f}')
 
             self.eval()
             avg_acc_val = []
@@ -137,10 +135,8 @@ class MalGAN(BaseAttack, nn.Module):
                     print(f'Model saved at path: {self.model_path}')
 
             if verbose:
-                logger.info(
-                    f'Training loss (epoch level): {np.mean(losses):.4f} | Train accuracy: {np.mean(accuracies) * 100:.2f}')
-                logger.info(
-                    f'Validation accuracy: {avg_acc_val * 100:.2f} | The best validation accuracy: {best_avg_acc * 100:.2f} at epoch: {best_epoch}')
+                logger.info(f'Training loss (epoch level): {np.mean(losses):.4f} | Train accuracy: {np.mean(accuracies) * 100:.2f}')
+                logger.info(f'Validation accuracy: {avg_acc_val * 100:.2f} | The best validation accuracy: {best_avg_acc * 100:.2f} at epoch: {best_epoch}')
 
     def perturb(self, x):
         self.generator.load_state_dict(torch.load(self.model_path))

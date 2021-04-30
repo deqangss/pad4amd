@@ -18,7 +18,7 @@ logger = logging.getLogger('examples.malgan_test')
 logger.addHandler(ErrorHandler)
 
 atta_argparse = argparse.ArgumentParser(description='arguments for l1 norm based projected gradient descent attack')
-atta_argparse.add_argument('--lambda_', type=float, default=10000.,
+atta_argparse.add_argument('--lambda_', type=float, default=100000.,
                            help='balance factor for waging attack.')
 atta_argparse.add_argument('--noise_dim', type=int, default=28,
                            help='dimension of noise vector.')
@@ -29,7 +29,7 @@ atta_argparse.add_argument('--lr', type=float, default=0.001,
                            help='initial learning rate.')
 atta_argparse.add_argument('--oblivion', action='store_true', default=False,
                            help='whether know the adversary indicator or not.')
-atta_argparse.add_argument('--kappa', type=float, default=1.,
+atta_argparse.add_argument('--kappa', type=float, default=10.,
                            help='attack confidence.')
 atta_argparse.add_argument('--real', action='store_true', default=False,
                            help='whether produce the perturbed apks.')
@@ -66,7 +66,17 @@ def _main():
 
     mal_train_data,  mal_trainy = train_data[trainy == 1], trainy[trainy == 1]
     mal_val_data, mal_valy = val_data[valy == 1], valy[valy == 1]
-    mal_test_data, mal_testy = test_data[testy == 1], testy[testy == 1]
+    mal_save_path = os.path.join(config.get('dataset', 'dataset_dir'), 'attack.idx')
+    if not os.path.exists(mal_save_path):
+        mal_test_data, mal_testy = test_data[testy == 1], testy[testy == 1]
+        from numpy import random
+        mal_count = len(mal_testy) if len(mal_testy) < 1000 else 1000
+        mal_test_data = random.choice(mal_test_data, mal_count, replace=False)
+        mal_testy = mal_testy[:mal_count]
+        utils.dump_pickle_frd_space((mal_test_data, mal_testy), save_dir)
+    else:
+        mal_test_data, mal_testy = utils.read_pickle_frd_space(mal_save_path)
+
     if len(mal_trainy) <= 0 or len(mal_valy) <= 0 or len(mal_testy) <= 0:
         return
     mal_train_dataset_producer = dataset.get_input_producer(mal_train_data, mal_trainy,
