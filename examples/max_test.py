@@ -35,7 +35,8 @@ atta_argparse.add_argument('--bandwidth', type=float, default=20.,
                            help='variance of Gaussian distribution.')
 atta_argparse.add_argument('--n_benware', type=int, default=5000,
                            help='number of centers.')
-
+atta_argparse.add_argument('--penalty_factor', type=float, default=1000.,
+                           help='penalty factor for density estimation.')
 atta_argparse.add_argument('--n_step_l2', type=int, default=100,
                            help='maximum number of steps.')
 atta_argparse.add_argument('--step_length_l2', type=float, default=1.,
@@ -169,6 +170,7 @@ def _main():
 
     gdkde = GDKDEl1(ben_hidden,
                     args.bandwidth,
+                    penalty_factor=args.penalty_factor,
                     oblivion=args.oblivion,
                     kappa=args.kappa,
                     device=model.device
