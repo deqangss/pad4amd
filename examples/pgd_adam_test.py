@@ -16,8 +16,6 @@ logger = logging.getLogger('examples.pgd_adam_test')
 logger.addHandler(ErrorHandler)
 
 atta_argparse = argparse.ArgumentParser(description='arguments for projected gradient descent attack')
-atta_argparse.add_argument('--lambda_', type=float, default=0.01,
-                           help='balance factor for waging attack.')
 atta_argparse.add_argument('--n_step', type=int, default=100,
                            help='maximum number of steps.')
 atta_argparse.add_argument('--lr', type=float, default=0.1,
