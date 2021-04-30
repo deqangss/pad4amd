@@ -131,9 +131,12 @@ def _main():
     logger.info("Load model parameters from {}.".format(model.model_save_path))
     model.predict(mal_test_dataset_producer)
 
+    save_dir = os.path.join(config.get('experiments', 'malgan'), args.model)
+    if not os.path.exists(save_dir):
+        utils.mkdir(save_dir)
     attack = MalGAN(input_dim=dataset.n_sgs_max * dataset.vocab_size,
                     noise_dim=args.noise_dim,
-                    model_path=os.path.join(config.get('experiments', 'malgan'), 'gan-model.pkl'),
+                    model_path=os.path.join(save_dir, 'gan-model.pkl'),
                     oblivion=args.oblivion,
                     kappa=args.kappa,
                     device=model.device
@@ -173,9 +176,6 @@ def _main():
         acc_w_indicator = (sum(~indicator_flag) + sum((y_pred == 1.) & indicator_flag)) / len(mal_testy) * 100
         logger.info(f'The mean accuracy on adversarial malware (w/ indicator) is {acc_w_indicator:.3f}%.')
 
-    save_dir = os.path.join(config.get('experiments', 'malgan'), args.model)
-    if not os.path.exists(save_dir):
-        utils.mkdir(save_dir)
     utils.dump_pickle_frd_space(x_mod_integrated,
                                 os.path.join(save_dir, 'x_mod.list'))
     if args.real:
