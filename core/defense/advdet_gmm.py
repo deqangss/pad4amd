@@ -47,7 +47,7 @@ class MalwareDetectorIndicator(MalwareDetector, DensityEstimator):
             self.sample_weights = torch.ones((n_classes,), dtype=torch.float, device=self.dense)
         else:
             self.sample_weights = torch.from_numpy(np.array(self.sample_weights)).to(self.device)
-        self.model_save_path = path.join(config.get('experiments', 'malware_detector_indicator') + '_' + self.name,
+        self.model_save_path = path.join(config.get('experiments', 'gmm') + '_' + self.name,
                                          'model.pth')
 
     def predict(self, test_data_producer):
