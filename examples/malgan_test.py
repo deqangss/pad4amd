@@ -23,7 +23,7 @@ atta_argparse.add_argument('--lambda_', type=float, default=100000.,
 atta_argparse.add_argument('--noise_dim', type=int, default=28,
                            help='dimension of noise vector.')
 atta_argparse.add_argument('--batch_size', type=int, default=16, help='mini-batch size')
-atta_argparse.add_argument('--epochs', type=int, default=100,
+atta_argparse.add_argument('--epochs', type=int, default=20,
                            help='number of epochs for training generator.')
 atta_argparse.add_argument('--lr', type=float, default=0.001,
                            help='initial learning rate.')
