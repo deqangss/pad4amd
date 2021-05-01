@@ -78,9 +78,6 @@ class Dataset(torch.utils.data.Dataset):
 
         # self.feature_extractor.merge_cg(self.train_dataset[0])
         # self.feature_extractor.merge_cg(self.validation_dataset[0])
-        print(self.feature_extractor.N)
-        import sys
-        sys.exit(1)
         self.feature_extractor.merge_cg(self.test_dataset[0])
         import sys
         sys.exit(1)
