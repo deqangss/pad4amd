@@ -7,6 +7,7 @@ import subprocess
 
 import re
 import numpy as np
+import networkx as nx
 import torch
 
 from core.droidfeature import Apk2graphs
@@ -133,11 +134,17 @@ class InverseDroidFeature(object):
 
     @staticmethod
     def merge_features(cg_dict1, cg_dict2):
-        # avoid duplication of root call
-        for root_call, _ in cg_dict1.items():
-            if root_call in cg_dict2.keys():
-                cg_dict2.pop(root_call)
-        return {**cg_dict1, **cg_dict2}
+        """
+        randomly pick a graph from cg1 and inject a graph into it
+        """
+        if len(cg_dict1) <= 0:
+            return cg_dict2
+        for root_call, cg in cg_dict2:
+            src_root_call, src_cg = random.choice(list(cg_dict1.items()))
+            # src_root_call = list(src_root_call).extend(list(root_call))
+            src_cg = nx.compose(src_cg, cg)
+            cg_dict1[src_root_call] = src_cg
+        return cg_dict1
 
     @staticmethod
     def approx_check_public_method(word, word_info):
