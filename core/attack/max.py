@@ -78,7 +78,7 @@ class Max(BaseAttack):
                 done = done.reshape(len(self.attack_list), num_sample_red).permute(1, 0)
                 success_flag = torch.any(done, dim=-1)
                 # for a sample, if there is at least one successful attack, we will select the one with maximum loss;
-                # while if no attacks evade the victim successful, all perturbed examples are reminded for future selection
+                # while if no attacks evade the victim successful, all perturbed examples are reminded for selection
                 done[~torch.any(done, dim=-1)] = 1
                 loss = (loss * done.to(torch.float)) + torch.min(loss) * (~done).to(torch.float)
                 pertbx = pertbx.reshape(len(self.attack_list), num_sample_red, *red_n).permute([1, 0, *red_ind])
