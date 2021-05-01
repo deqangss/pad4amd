@@ -135,11 +135,11 @@ class InverseDroidFeature(object):
     @staticmethod
     def merge_features(cg_dict1, cg_dict2):
         """
-        randomly pick a graph from cg1 and inject a graph into it
+        randomly pick a graph from cg1 and inject a graph of cg_dict2 into it
         """
         if len(cg_dict1) <= 0:
             return cg_dict2
-        for root_call, cg in cg_dict2:
+        for root_call, cg in cg_dict2.items():
             src_root_call, src_cg = random.choice(list(cg_dict1.items()))
             # src_root_call = list(src_root_call).extend(list(root_call))
             src_cg = nx.compose(src_cg, cg)
