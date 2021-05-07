@@ -88,7 +88,7 @@ class GDKDE(BaseAttack):
         enhance attack
         """
         assert 0 < min_lambda_ <= max_lambda_
-        if model.k > 0:
+        if 'k' in list(model.__dict__.keys()) and model.k > 0:
             logger.warning("The attack leads to dense graph and trigger the issue of out of memory.")
         self.lambda_ = min_lambda_
         adv_x = x.detach().clone().to(torch.float)
