@@ -118,7 +118,7 @@ class Groose(BaseAttack):
         return adv_x
 
     def get_loss(self, model, logit, label, hidden=None):
-        softmax_loss = torch.softmax(logit, dim=-1)[torch.arange(label.size()[0]), label]
+        softmax_loss = torch.softmax(logit, dim=-1)[torch.arange(label.size()[0]), 0]
         y_pred = logit.argmax(1)
         if 'forward_g' in type(model).__dict__.keys() and (not self.oblivion):
             de = model.forward_g(hidden, y_pred)
