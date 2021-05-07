@@ -65,7 +65,7 @@ class Groose(BaseAttack):
         for t in range(m):
             var_adv_x = torch.autograd.Variable(adv_x, requires_grad=True)
             hidden, logit = model.forward(var_adv_x, adj)
-            loss, done = self.get_loss(model, logit, label, hidden)
+            loss, done = self.get_loss(model, logit, torch.zeros_like(label, device=self.device), hidden)
             if torch.all(done):
                 break
             grad = torch.autograd.grad(torch.mean(loss), var_adv_x)[0].data
@@ -111,14 +111,14 @@ class Groose(BaseAttack):
                 break
         with torch.no_grad():
             hidden, logit = model.forward(adv_x, adj)
-            _, done = self.get_loss(model, logit, label, hidden)
+            _, done = self.get_loss(model, logit, torch.zeros_like(label, device=self.device), hidden)
             if verbose:
                 logger.info(f"grosse: attack effectiveness {done.sum().item() / x.size()[0] * 100}\%.")
 
         return adv_x
 
-    def get_loss(self, model, logit, label, hidden=None):
-        softmax_loss = torch.softmax(logit, dim=-1)[torch.arange(label.size()[0]), 0]
+    def get_loss(self, model, logit, tar_label, hidden=None):
+        softmax_loss = torch.softmax(logit, dim=-1)[torch.arange(tar_label.size()[0]), tar_label]
         y_pred = logit.argmax(1)
         if 'forward_g' in type(model).__dict__.keys() and (not self.oblivion):
             de = model.forward_g(hidden, y_pred)
