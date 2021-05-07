@@ -17,8 +17,6 @@ logger.addHandler(ErrorHandler)
 
 atta_argparse = argparse.ArgumentParser(description='arguments for mimicry attack')
 atta_argparse.add_argument('--trials', type=int, default=10, help='number of benign samples for perturbing one malicious file.')
-atta_argparse.add_argument('--oblivion', action='store_true', default=False,
-                           help='whether know the adversary indicator or not.')
 atta_argparse.add_argument('--model', type=str, default='maldet',
                            choices=['maldet', 'kde', 'gmm', 'madvtrain', 'padvtrain'],
                            help="model type, either of 'maldet', 'kde', 'gmm', 'madvtrain', or 'padvtrain'.")
@@ -103,7 +101,7 @@ def _main():
     else:
         model.load()
     logger.info("Load model parameters from {}.".format(model.model_save_path))
-    attack = Mimicry(oblivion=args.oblivion, device=model.device)
+    attack = Mimicry(device=model.device)
 
     model.eval()
     mal_test_dataset_producer = dataset.get_input_producer(mal_test_x, mal_testy, batch_size=hp_params['batch_size'],
