@@ -113,7 +113,7 @@ class Groose(BaseAttack):
             hidden, logit = model.forward(adv_x, adj)
             _, done = self.get_loss(model, logit, label, hidden)
             if verbose:
-                logger.info(f"grosse: attack effectiveness {done.sum().item() / x.size()[0]}.")
+                logger.info(f"grosse: attack effectiveness {done.sum().item() / x.size()[0] * 100}\%.")
 
         return adv_x
 
