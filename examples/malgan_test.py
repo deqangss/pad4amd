@@ -31,6 +31,8 @@ atta_argparse.add_argument('--oblivion', action='store_true', default=False,
                            help='whether know the adversary indicator or not.')
 atta_argparse.add_argument('--kappa', type=float, default=10.,
                            help='attack confidence.')
+atta_argparse.add_argument('--n_sample_times', type=int, default=1,
+                           help='data sampling times when waging attacks')
 atta_argparse.add_argument('--real', action='store_true', default=False,
                            help='whether produce the perturbed apks.')
 atta_argparse.add_argument('--model', type=str, default='maldet',
@@ -153,7 +155,7 @@ def _main():
     y_cent_list, x_density_list = [], []
     x_mod_integrated = []
 
-    for i in range(hp_params['n_sample_times']):
+    for i in range(args.n_sample_times):
         y_cent, x_density = [], []
         x_mod = []
         for x, a, y, g_ind in mal_test_dataset_producer:

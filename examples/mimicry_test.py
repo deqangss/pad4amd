@@ -17,6 +17,8 @@ logger.addHandler(ErrorHandler)
 
 atta_argparse = argparse.ArgumentParser(description='arguments for mimicry attack')
 atta_argparse.add_argument('--trials', type=int, default=10, help='number of benign samples for perturbing one malicious file.')
+atta_argparse.add_argument('--n_sample_times', type=int, default=1,
+                           help='data sampling times when waging attacks')
 atta_argparse.add_argument('--model', type=str, default='maldet',
                            choices=['maldet', 'kde', 'gmm', 'madvtrain', 'padvtrain'],
                            help="model type, either of 'maldet', 'kde', 'gmm', 'madvtrain', or 'padvtrain'.")
@@ -113,7 +115,7 @@ def _main():
                                   trials=args.trials,
                                   data_fn=dataset.get_input_producer,
                                   seed=0,
-                                  n_sample_times=hp_params['n_sample_times'],
+                                  n_sample_times=args.n_sample_times,
                                   verbose=True)
     logger.info(f"The attack effectiveness under mimicry attack is {np.sum(success_flag) / float(mal_count) * 100}%.")
 
