@@ -118,6 +118,7 @@ def _main():
                                   n_sample_times=args.n_sample_times,
                                   verbose=True)
     logger.info(f"The attack effectiveness under mimicry attack is {np.sum(success_flag) / float(mal_count) * 100}%.")
+    logger.info(f"The mean accuracy on perturbed malware is {(1. - np.sum(success_flag) / float(mal_count)) * 100}%.")
 
 
 if __name__ == '__main__':
