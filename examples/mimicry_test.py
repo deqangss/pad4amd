@@ -117,7 +117,7 @@ def _main():
                                   seed=0,
                                   n_sample_times=hp_params['n_sample_times'],
                                   verbose=True)
-    logger.info(f"The attack effectiveness under mimicry attack is {np.sum(success_flag) / float(mal_count)}.")
+    logger.info(f"The attack effectiveness under mimicry attack is {np.sum(success_flag) / float(mal_count) * 100}%.")
 
 
 if __name__ == '__main__':
