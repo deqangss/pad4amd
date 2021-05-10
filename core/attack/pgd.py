@@ -169,3 +169,26 @@ class PGD(BaseAttack):
         # 5. tailor the interdependent apis, application specific
         # perturbation += torch.any(perturbation < 0, dim=-1, keepdim=True) * checking_nonexist_api * perturbation
         return perturbation
+
+    def get_loss(self, model, logit, label, hidden=None, lambda_=None):
+        ce = F.cross_entropy(logit, label, reduction='none')
+        y_pred = logit.argmax(1)
+        if 'forward_g' in type(model).__dict__.keys() and (not self.oblivion):
+            # assert lambda_ is not None
+            de = model.forward_g(hidden, y_pred)
+            tau = model.get_tau_sample_wise(y_pred)
+            if self.is_attacker:
+                loss_no_reduction = ce + self.lambda_ * (torch.clamp(
+                        torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW), max=self.kappa))
+            else:
+                loss_no_reduction = ce + self.lambda_ * (torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW))
+                # loss_no_reduction = ce + self.lambda_ * (de - model.tau)
+            # print('----start-----')
+            # print(de)
+            # print(tau)
+            # print(y_pred)
+            done = (y_pred == 0.) & (de >= tau)
+        else:
+            loss_no_reduction = ce
+            done = y_pred == 0.
+        return loss_no_reduction, done
