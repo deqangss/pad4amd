@@ -71,7 +71,6 @@ class PGD(BaseAttack):
         self.padding_mask = torch.sum(adv_x, dim=-1, keepdim=True) > 1  # we set a graph contains two apis at least
         model.eval()
         for t in range(steps):
-            print(t)
             if t == 0 and self.use_random:
                 adv_x = get_x0(adv_x, rounding_threshold=self.round_threshold, is_sample=True)
             var_adv_x = torch.autograd.Variable(adv_x, requires_grad=True)
