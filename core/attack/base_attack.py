@@ -109,6 +109,7 @@ class BaseAttack(Module):
         y_pred = logit.argmax(1)
         if 'forward_g' in type(model).__dict__.keys() and (not self.oblivion):
             assert lambda_ is not None
+            print(lambda_)
             de = model.forward_g(hidden, y_pred)
             tau = model.get_tau_sample_wise(y_pred)
             if self.is_attacker:
