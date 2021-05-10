@@ -183,10 +183,6 @@ class PGD(BaseAttack):
             else:
                 loss_no_reduction = ce + self.lambda_ * (torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW))
                 # loss_no_reduction = ce + self.lambda_ * (de - model.tau)
-            # print('----start-----')
-            # print(de)
-            # print(tau)
-            # print(y_pred)
             done = (y_pred == 0.) & (de >= tau)
         else:
             loss_no_reduction = ce
