@@ -78,7 +78,6 @@ class PGD(BaseAttack):
             loss, done = self.get_loss(model, logit, label, hidden, self.lambda_)
             grad = torch.autograd.grad(torch.mean(loss), var_adv_x)[0]
             perturbation = self.get_perturbation(grad, x, adv_x)
-            print(t)
             adv_x = torch.clamp(adv_x + perturbation * step_length, min=0., max=1.)
         # round
         if self.norm == 'linf':
