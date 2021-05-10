@@ -122,6 +122,7 @@ class BaseAttack(Module):
             # print(de)
             # print(tau)
             # print(y_pred)
+            print(lambda_, self.lambda_)
             done = (y_pred == 0.) & (de >= tau)
         else:
             loss_no_reduction = ce
