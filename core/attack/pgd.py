@@ -79,6 +79,8 @@ class PGD(BaseAttack):
             grad = torch.autograd.grad(torch.mean(loss), var_adv_x)[0]
             perturbation = self.get_perturbation(grad, x, adv_x)
             adv_x = torch.clamp(adv_x + perturbation * step_length, min=0., max=1.)
+        logger.info(
+            f"pgd {self.norm}: attack effectiveness {done.sum().item() / done.size()[0] * 100:.3f}%:{lambda_}.")
         # round
         if self.norm == 'linf':
             # see paper: Adversarial Deep Learning for Robust Detection of Binary Encoded Malware
@@ -115,8 +117,6 @@ class PGD(BaseAttack):
                                    lambda_=self.lambda_
                                    )
             adv_x[~done] = pert_x
-            logger.info(
-                f"pgd {self.norm}: attack effectiveness {done.sum().item() / done.size()[0] * 100:.3f}%:{self.lambda_}.")
             self.lambda_ *= base
             if not self.check_lambda(model):
                 break
