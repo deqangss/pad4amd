@@ -85,7 +85,6 @@ class PGD(BaseAttack):
             round_threshold = torch.rand(adv_x.size()).to(self.device)
         else:
             round_threshold = 0.5
-        print(torch.sum(torch.abs(round_x(adv_x, round_threshold) - x), dim=-1))
         return round_x(adv_x, round_threshold)
 
     def perturb(self, model, x, adj=None, label=None,
@@ -119,7 +118,6 @@ class PGD(BaseAttack):
             self.lambda_ *= base
             if not self.check_lambda(model):
                 break
-            print(self.lambda_)
         with torch.no_grad():
             hidden, logit = model.forward(adv_x, adj)
             _, done = self.get_loss(model, logit, label, hidden, self.lambda_)
