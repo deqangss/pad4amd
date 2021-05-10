@@ -112,7 +112,7 @@ class PGD(BaseAttack):
             _, done = self.get_loss(model, logit, label, hidden, self.lambda_)
             if torch.all(done):
                 break
-            # adv_x[~done] = x[~done]  # recompute the perturbation under other penalty factors
+            adv_x[~done] = x[~done]  # recompute the perturbation under other penalty factors
             adv_adj = None if adj is None else adj[~done]
             pert_x = self._perturb(model, adv_x[~done], adv_adj, label[~done],
                                    steps,
