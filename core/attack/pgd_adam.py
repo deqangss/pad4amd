@@ -86,7 +86,6 @@ class PGDAdam(BaseAttack):
             adv_x.grad = grad
             optimizer.step()
             adv_x.data = adv_x.data.clamp(min=0., max=1.)
-        print(torch.sum(torch.abs(adv_x.round() - x), dim=-1))
         # round
         return adv_x.round().detach()
 
