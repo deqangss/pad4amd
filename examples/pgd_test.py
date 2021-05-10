@@ -61,8 +61,8 @@ def _main():
     hp_params = utils.read_pickle(os.path.join(save_dir, 'hparam.pkl'))
     dataset = Dataset(k=hp_params['k'],
                       is_adj=hp_params['is_adj'],
-                      n_sgs_max=1,
-                      use_cache=True,
+                      n_sgs_max=hp_params['N'],
+                      use_cache=hp_params['cache'],
                       feature_ext_args={'proc_number': hp_params['proc_number']}
                       )
     test_x, testy = dataset.test_dataset
