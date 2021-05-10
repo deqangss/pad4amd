@@ -62,7 +62,7 @@ def _main():
     dataset = Dataset(k=hp_params['k'],
                       is_adj=hp_params['is_adj'],
                       n_sgs_max=1,
-                      use_cache=hp_params['cache'],
+                      use_cache=True,
                       feature_ext_args={'proc_number': hp_params['proc_number']}
                       )
     test_x, testy = dataset.test_dataset
