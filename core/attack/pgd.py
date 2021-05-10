@@ -70,7 +70,6 @@ class PGD(BaseAttack):
         self.lambda_ = lambda_
         self.padding_mask = torch.sum(adv_x, dim=-1, keepdim=True) > 1  # we set a graph contains two apis at least
         model.eval()
-        done1 = None
         for t in range(steps):
             if t == 0 and self.use_random:
                 adv_x = get_x0(adv_x, rounding_threshold=self.round_threshold, is_sample=True)
@@ -80,10 +79,6 @@ class PGD(BaseAttack):
             grad = torch.autograd.grad(torch.mean(loss), var_adv_x)[0]
             perturbation = self.get_perturbation(grad, x, adv_x)
             adv_x = torch.clamp(adv_x + perturbation * step_length, min=0., max=1.)
-            done1 = done
-        print(torch.amax(torch.abs(adv_x - x), dim=-1))
-        logger.info(
-            f"pgd {self.norm}: attack effectiveness {done1.sum().item() / done1.size()[0] * 100:.3f}%:{lambda_}.")
         # round
         if self.norm == 'linf':
             # see paper: Adversarial Deep Learning for Robust Detection of Binary Encoded Malware
