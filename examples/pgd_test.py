@@ -129,6 +129,7 @@ def _main():
     attack = PGD(norm=args.norm,
                  use_random=args.random_start,
                  rounding_threshold=args.round_threshold,
+                 is_attacker=False,
                  oblivion=args.oblivion,
                  kappa=args.kappa,
                  device=model.device
