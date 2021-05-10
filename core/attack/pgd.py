@@ -81,7 +81,7 @@ class PGD(BaseAttack):
             perturbation = self.get_perturbation(grad, x, adv_x)
             adv_x = torch.clamp(adv_x + perturbation * step_length, min=0., max=1.)
             done1 = done
-        print(torch.sum(torch.abs(adv_x - x), dim=-1))
+        print(torch.amax(torch.abs(adv_x - x), dim=-1))
         logger.info(
             f"pgd {self.norm}: attack effectiveness {done1.sum().item() / done1.size()[0] * 100:.3f}%:{lambda_}.")
         # round
