@@ -22,7 +22,7 @@ atta_argparse.add_argument('--lr', type=float, default=0.1,
                            help='learning rate.')
 atta_argparse.add_argument('--random_start', action='store_true', default=False,
                            help='randomly initialize the start points.')
-atta_argparse.add_argument('--round_threshold', type=float, default=0.98,
+atta_argparse.add_argument('--round_threshold', type=float, default=0.5,
                            help='threshold for rounding real scalars.')
 atta_argparse.add_argument('--base', type=float, default=10.,
                            help='base of a logarithm function.')
