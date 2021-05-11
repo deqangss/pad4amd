@@ -51,7 +51,7 @@ atta_argparse.add_argument('--lr', type=float, default=0.1,
                            help='learning rate.')
 atta_argparse.add_argument('--random_start', action='store_true', default=False,
                            help='randomly initialize the start points.')
-atta_argparse.add_argument('--round_threshold', type=float, default=0.98,
+atta_argparse.add_argument('--round_threshold', type=float, default=0.5,
                            help='threshold for rounding real scalars.')
 
 atta_argparse.add_argument('--base', type=float, default=10.,
@@ -194,7 +194,7 @@ def _main():
                             verbose=False
                             )
 
-    pgdl2 = PGD(norm='l2', use_random=False,
+    pgdl2 = PGD(norm='l2', use_random=args.random_start, rounding_threshold=args.round_threshold,
                 oblivion=args.oblivion, kappa=args.kappa, device=model.device)
     pgdl2.perturb = partial(pgdl2.perturb,
                             steps=args.n_step_l2,
@@ -205,7 +205,7 @@ def _main():
                             verbose=False
                             )
 
-    pgdlinf = PGD(norm='linf', use_random=args.random_start, rounding_threshold=args.round_threshold,
+    pgdlinf = PGD(norm='linf', use_random=False,
                   oblivion=args.oblivion, kappa=args.kappa, device=model.device)
     pgdlinf.perturb = partial(pgdlinf.perturb,
                               steps=args.n_step_linf,
