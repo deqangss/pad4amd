@@ -73,9 +73,6 @@ class PGD(BaseAttack):
         for t in range(steps):
             if t == 0 and self.use_random:
                 adv_x = get_x0(adv_x, rounding_threshold=self.round_threshold, is_sample=True)
-                print(True)
-                import sys
-                sys.exit(1)
             var_adv_x = torch.autograd.Variable(adv_x, requires_grad=True)
             hidden, logit = model.forward(var_adv_x, adj)
             loss, done = self.get_loss(model, logit, label, hidden, self.lambda_)
