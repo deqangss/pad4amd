@@ -91,7 +91,7 @@ class PGD(BaseAttack):
         else:
             round_threshold = 0.5
         # print(torch.topk(torch.abs(round_x(adv_x, round_threshold) - x), k=100, dim=-1))
-        return round_x(adv_x, round_threshold)
+        return round_x(adv_x, 0.5)
 
     def perturb(self, model, x, adj=None, label=None,
                 steps=10,
