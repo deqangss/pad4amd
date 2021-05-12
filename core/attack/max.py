@@ -42,6 +42,7 @@ class Max(BaseAttack):
         """
         if x is None or x.shape[0] <= 0:
             return []
+        model.eval()
         with torch.no_grad():
             hidden, logit = model.forward(x, adj)
             loss, done = self.get_loss_without_lambda(model, logit, label, hidden)

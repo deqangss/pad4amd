@@ -102,6 +102,7 @@ class BCA(BaseAttack):
         enhance attack
         """
         assert 0 < min_lambda_ <= max_lambda_
+        model.eval()
         self.lambda_ = min_lambda_
         adv_x = x.detach().clone().to(torch.float)
         while self.lambda_ <= max_lambda_:

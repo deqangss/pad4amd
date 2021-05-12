@@ -92,8 +92,9 @@ class GDKDE(BaseAttack):
         assert steps >= 0 and step_check > 0 and step_length >= 0
         if 'k' in list(model.__dict__.keys()) and model.k > 0:
             logger.warning("The attack leads to dense graph and trigger the issue of out of memory.")
-        self.lambda_ = min_lambda_
+        model.eval()
 
+        self.lambda_ = min_lambda_
         mini_steps = [step_check] * (steps // step_check)
         mini_steps = mini_steps + [steps % step_check] if steps % step_check != 0 else mini_steps
 

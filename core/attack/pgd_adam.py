@@ -109,6 +109,8 @@ class PGDAdam(BaseAttack):
             logger.warning("The attack leads to dense graph and trigger the issue of out of memory.")
         self.lambda_ = min_lambda_
         assert steps >= 0 and step_check > 0 and lr >= 0
+        model.eval()
+
         mini_steps = [step_check] * (steps // step_check)
         mini_steps = mini_steps + [steps % step_check] if steps % step_check != 0 else mini_steps
 

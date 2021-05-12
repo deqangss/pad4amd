@@ -96,6 +96,7 @@ class PGD(BaseAttack):
         if 'k' in list(model.__dict__.keys()) and model.k > 0:
             logger.warning("The attack leads to dense graph and trigger the issue of out of memory.")
         assert steps >= 0 and step_check > 0 and step_length >= 0
+        model.eval()
 
         mini_steps = [step_check] * (steps // step_check)
         mini_steps = mini_steps + [steps % step_check] if steps % step_check != 0 else mini_steps
@@ -104,7 +105,6 @@ class PGD(BaseAttack):
         while self.lambda_ <= max_lambda_:
             pert_x_cont = None
             prev_done = None
-            prev_adv = None
             for i, mini_step in enumerate(mini_steps):
                 hidden, logit = model.forward(adv_x, adj)
                 _, done = self.get_loss(model, logit, label, hidden, self.lambda_)
@@ -114,15 +114,7 @@ class PGD(BaseAttack):
                     adv_x[~done] = x[~done]  # recompute the perturbation under other penalty factors
                     adv_adj = None if adj is None else adj[~done]
                     prev_done = done
-                    prev_adv = adv_x.clone()
-                    print('init done:', prev_done)
                 else:
-                    print(i)
-                    print("done:", done)
-                    print("pre_done:", prev_done)
-                    print("pert_x:", pert_x_cont.shape)
-                    print('advx:', adv_x.shape)
-                    print(torch.sum(adv_x[prev_done] - prev_adv[prev_done], dim=-1))
                     adv_x[~done] = pert_x_cont[~done[~prev_done]]
                     adv_adj = None if adj is None else adj[~done]
                     prev_done = done

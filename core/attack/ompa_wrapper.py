@@ -35,6 +35,8 @@ class OMPAP(OMPA):
                 step_length=1.,
                 verbose=False):
         assert 0 < min_lambda_ <= max_lambda_
+        model.eval()
+
         adv_x = x.detach().clone().to(torch.float)
         self.lambda_ = min_lambda_
         while self.lambda_ <= max_lambda_:

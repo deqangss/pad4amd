@@ -91,6 +91,7 @@ class MalGAN(BaseAttack, nn.Module):
         if 'k' in list(detector.__dict__.keys()) and detector.k > 0:
             logger.warning("The attack will lead to dense graph and trigger the issue of out of memory.")
         nbatches = len(train_data_producer)
+        detector.eval()
         for i in range(epochs):
             self.train()
             losses, accuracies = [], []
