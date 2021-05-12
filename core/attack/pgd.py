@@ -109,13 +109,6 @@ class PGD(BaseAttack):
             logger.warning("The attack leads to dense graph and trigger the issue of out of memory.")
         adv_x = x.detach().clone().to(torch.float)
 
-        adv_adj = None if adj is None else adj
-        adv_x_init = self._perturb(model, adv_x, adv_adj, label,
-                                   steps,
-                                   step_length,
-                                   lambda_=0.
-                                   )
-
         while (self.lambda_ <= max_lambda_) and (self.check_lambda(model)):
             hidden, logit = model.forward(adv_x, adj)
             _, done = self.get_loss(model, logit, label, hidden, self.lambda_)
@@ -131,7 +124,13 @@ class PGD(BaseAttack):
             adv_x[~done] = pert_x
             self.lambda_ *= base
         else:
-            adv_x = adv_x_init
+            # adv_x = adv_x_init
+            adv_adj = None if adj is None else adj
+            adv_x = self._perturb(model, adv_x, adv_adj, label,
+                                  steps,
+                                  step_length,
+                                  lambda_=0.
+                                  )
 
         with torch.no_grad():
             hidden, logit = model.forward(adv_x, adj)
