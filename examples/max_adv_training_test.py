@@ -111,7 +111,7 @@ def _main():
                  )
 
     attack_param = {
-        'steps': 1,
+        'steps': 1,  # steps for max attack
         'verbose': False
     }
     max_adv_training_model = MaxAdvTraining(model, attack, attack_param)

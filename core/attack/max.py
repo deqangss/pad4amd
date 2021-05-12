@@ -26,7 +26,7 @@ class Max(BaseAttack):
         self.varepsilon = varepsilon
         self.device = device
 
-    def perturb(self, model, x, adj=None, label=None, steps=5, min_lambda_=1e-5, max_lambda_=1e5, verbose=False):
+    def perturb(self, model, x, adj=None, label=None, steps_of_max=5, min_lambda_=1e-5, max_lambda_=1e5, verbose=False):
         """
         perturb node features
 
@@ -36,7 +36,7 @@ class Max(BaseAttack):
         @param x: torch.FloatTensor, node feature vectors (each represents the occurrences of apis in a graph) with shape [batch_size, number_of_graphs, vocab_dim]
         @param adj: torch.FloatTensor or None, adjacency matrix (if not None, the shape is [number_of_graphs, batch_size, vocab_dim, vocab_dim])
         @param label: torch.LongTensor, ground truth labels
-        @param steps: Integer, maximum number of iterations
+        @param steps_of_max: Integer, maximum number of iterations
         @param lambda_, float, penalty factor
         @param verbose: Boolean, print verbose log
         """
@@ -50,7 +50,7 @@ class Max(BaseAttack):
         red_ind = list(range(2, len(x.size()) + 1))
         adv_x = x.detach().clone()
         stop_flag = torch.zeros(n, dtype=torch.bool, device=self.device)
-        for t in range(steps):
+        for t in range(steps_of_max):
             num_sample_red = n - torch.sum(stop_flag)
             if num_sample_red <= 0:
                 return adv_x
