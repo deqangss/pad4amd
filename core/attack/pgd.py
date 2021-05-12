@@ -83,7 +83,8 @@ class PGD(BaseAttack):
         with torch.no_grad():
             hidden, logit = model.forward(adv_x, adj)
             _, done = self.get_loss(model, logit, label, hidden, self.lambda_)
-            logger.info(f"\t continuous pgd {self.norm}: attack effectiveness {done.sum().item() / done.size()[0] * 100:.3f}%:{self.lambda_}.")
+            logger.info(
+                f"\t continuous pgd {self.norm}: attack effectiveness {done.sum().item() / done.size()[0] * 100:.3f}%:{self.lambda_}.")
         # round
         if self.norm == 'linf':
             # see paper: Adversarial Deep Learning for Robust Detection of Binary Encoded Malware
@@ -108,12 +109,20 @@ class PGD(BaseAttack):
         if 'k' in list(model.__dict__.keys()) and model.k > 0:
             logger.warning("The attack leads to dense graph and trigger the issue of out of memory.")
         adv_x = x.detach().clone().to(torch.float)
+
+        adv_adj = None if adj is None else adj
+        adv_x_init = self._perturb(model, adv_x, adv_adj, label,
+                                   steps,
+                                   step_length,
+                                   lambda_=0.
+                                   )
+
         while self.lambda_ <= max_lambda_:
             hidden, logit = model.forward(adv_x, adj)
             _, done = self.get_loss(model, logit, label, hidden, self.lambda_)
             if torch.all(done):
                 break
-            adv_x[~done] = x[~done]  # recompute the perturbation under other penalty factors
+            adv_x[~done] = adv_x_init[~done]  # recompute the perturbation under other penalty factors
             adv_adj = None if adj is None else adj[~done]
             pert_x = self._perturb(model, adv_x[~done], adv_adj, label[~done],
                                    steps,
@@ -170,4 +179,3 @@ class PGD(BaseAttack):
         # 5. tailor the interdependent apis, application specific
         # perturbation += torch.any(perturbation < 0, dim=-1, keepdim=True) * checking_nonexist_api * perturbation
         return perturbation
-
