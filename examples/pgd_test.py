@@ -145,6 +145,7 @@ def _main():
             adv_x_batch = attack.perturb(model, x, a, y,
                                          args.n_step,
                                          args.step_length,
+                                         step_check=10,
                                          min_lambda_=1e-5,
                                          max_lambda_=1e5,
                                          verbose=True)
