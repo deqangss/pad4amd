@@ -133,6 +133,7 @@ class PGDAdam(BaseAttack):
                     adam_state['state'][0]['exp_avg_sq'] = adam_state['state'][0]['exp_avg_sq'][~done[~prev_done]]
                     print(adam_state['state'][0]['exp_avg'].shape)
                     print('adv:', adv_x[~done].shape)
+                print(i)
                 pert_x_cont, adam_state = self._perturb(model, adv_x[~done], adv_adj, label[~done],
                                                         mini_step,
                                                         lr,
