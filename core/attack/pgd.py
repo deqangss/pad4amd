@@ -113,7 +113,9 @@ class PGD(BaseAttack):
                     adv_x[~done] = x[~done]  # recompute the perturbation under other penalty factors
                     adv_adj = None if adj is None else adj[~done]
                     prev_done = done
+                    print('init done:', prev_done)
                 else:
+                    print(i)
                     print("done:", done)
                     print("pre_done:", prev_done)
                     print("pert_x:", pert_x_cont.shape)
