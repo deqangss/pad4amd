@@ -82,6 +82,9 @@ class PGD(BaseAttack):
             adv_x = torch.clamp(adv_x + perturbation * step_length, min=0., max=1.)
             print(torch.sum(torch.abs(adv_x - adv_tmp), dim=-1))
             adv_tmp = adv_x
+        print(torch.amax(adv_x - x, dim=-1))
+        import sys
+        sys.exit(1)
         # round
         if self.norm == 'linf':
             # see paper: Adversarial Deep Learning for Robust Detection of Binary Encoded Malware
