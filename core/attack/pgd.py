@@ -114,6 +114,10 @@ class PGD(BaseAttack):
                     adv_adj = None if adj is None else adj[~done]
                     prev_done = done
                 else:
+                    print("done:", done.shape)
+                    print("pre_done:", prev_done.shape)
+                    print("pert_x:", pert_x_cont.shape)
+                    print('advx:', adv_x.shape)
                     adv_x[~done] = pert_x_cont[~done[~prev_done]]
                     adv_adj = None if adj is None else adj[~done]
                     prev_done = done
