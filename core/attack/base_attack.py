@@ -112,7 +112,7 @@ class BaseAttack(Module):
             de = model.forward_g(hidden, y_pred)
             tau = model.get_tau_sample_wise(y_pred)
             if self.is_attacker:
-                loss_no_reduction = ce - lambda_ * (torch.clamp(
+                loss_no_reduction = ce + lambda_ * (torch.clamp(
                         torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW), max=self.kappa))
             else:
                 loss_no_reduction = ce + lambda_ * (torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW))
