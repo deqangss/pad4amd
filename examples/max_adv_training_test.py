@@ -73,36 +73,36 @@ def _main():
 
     # initialize the base attack model of max attack
     ompap = OMPAP(is_attacker=False, device=model.device)
-    ompap._perturb = partial(ompap.perturb,
-                             m=args.m,
-                             step_length=args.step_length_ompa,
-                             verbose=False,
-                             )
+    ompap.perturb = partial(ompap.perturb,
+                            m=args.m,
+                            step_length=args.step_length_ompa,
+                            verbose=False,
+                            )
 
     pgdl2 = PGD(norm='l2', use_random=False, is_attacker=False, device=model.device)
-    pgdl2._perturb = partial(pgdl2.perturb,
-                             steps=args.n_step_l2,
-                             step_length=args.step_length_l2,
-                             step_check=args.step_check
-                             )
+    pgdl2.perturb = partial(pgdl2.perturb,
+                            steps=args.n_step_l2,
+                            step_length=args.step_length_l2,
+                            step_check=args.step_check
+                            )
 
     pgdlinf = PGD(norm='linf', use_random=False,
                   is_attacker=False,
                   device=model.device)
-    pgdlinf._perturb = partial(pgdlinf.perturb,
-                               steps=args.n_step_linf,
-                               step_length=args.step_length_linf,
-                               step_check=args.step_check
-                               )
+    pgdlinf.perturb = partial(pgdlinf.perturb,
+                              steps=args.n_step_linf,
+                              step_length=args.step_length_linf,
+                              step_check=args.step_check
+                              )
 
     pgdadma = PGDAdam(use_random=False,
                       is_attacker=False,
                       device=model.device)
-    pgdadma._perturb = partial(pgdadma.perturb,
-                               steps=args.n_step_adam,
-                               lr=args.atta_lr,
-                               step_check=args.step_check
-                               )
+    pgdadma.perturb = partial(pgdadma.perturb,
+                              steps=args.n_step_adam,
+                              lr=args.atta_lr,
+                              step_check=args.step_check
+                              )
 
     attack = Max(attack_list=[ompap, pgdl2, pgdlinf, pgdadma],
                  varepsilon=1e-9,
