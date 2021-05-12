@@ -117,7 +117,7 @@ class PGD(BaseAttack):
                                    lambda_=0.
                                    )
 
-        while self.lambda_ <= max_lambda_:
+        while (self.lambda_ <= max_lambda_) and (self.check_lambda(model)):
             hidden, logit = model.forward(adv_x, adj)
             _, done = self.get_loss(model, logit, label, hidden, self.lambda_)
             if torch.all(done):
@@ -131,8 +131,8 @@ class PGD(BaseAttack):
                                    )
             adv_x[~done] = pert_x
             self.lambda_ *= base
-            if not self.check_lambda(model):
-                break
+        else:
+            adv_x = adv_x_init
 
         with torch.no_grad():
             hidden, logit = model.forward(adv_x, adj)
