@@ -26,7 +26,7 @@ class MaxAdvTraining(object):
     """max adversarial training
 
     Parameters
-    ------------------
+    -------
     @param model, Object,  a model to be protected, e.g., MalwareDetector
     @attack_model: Object, adversary's model for generating adversarial malware on the feature space
     """
@@ -105,10 +105,11 @@ class MaxAdvTraining(object):
                 start_time = time.time()
                 # the attack perturbs feature vectors using various hyper-parameter lambda, aiming to obtain
                 # adversarial examples as much as possible
+                lambda_ = np.random.choice(lambda_space)
                 pertb_mal_x = self.attack_model.perturb(self.model, mal_x_batch, mal_adj_batch, mal_y_batch,
                                                         steps=self.attack_param['steps'],
-                                                        min_lambda_=np.random.choice(lambda_space),
-                                                        max_lambda_=np.random.choice(lambda_space),
+                                                        min_lambda_=lambda_,
+                                                        max_lambda_=lambda_,
                                                         verbose=self.attack_param['verbose']
                                                         )
                 total_time += time.time() - start_time
