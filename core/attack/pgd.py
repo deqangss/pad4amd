@@ -104,6 +104,7 @@ class PGD(BaseAttack):
         while self.lambda_ <= max_lambda_:
             pert_x_cont = None
             prev_done = None
+            prev_adv = None
             for i, mini_step in enumerate(mini_steps):
                 hidden, logit = model.forward(adv_x, adj)
                 _, done = self.get_loss(model, logit, label, hidden, self.lambda_)
@@ -113,6 +114,7 @@ class PGD(BaseAttack):
                     adv_x[~done] = x[~done]  # recompute the perturbation under other penalty factors
                     adv_adj = None if adj is None else adj[~done]
                     prev_done = done
+                    prev_adv = adv_x.copy()
                     print('init done:', prev_done)
                 else:
                     print(i)
@@ -120,6 +122,7 @@ class PGD(BaseAttack):
                     print("pre_done:", prev_done)
                     print("pert_x:", pert_x_cont.shape)
                     print('advx:', adv_x.shape)
+                    print(torch.sum(adv_x[prev_done] - prev_adv[prev_done], dim=-1))
                     adv_x[~done] = pert_x_cont[~done[~prev_done]]
                     adv_adj = None if adj is None else adj[~done]
                     prev_done = done

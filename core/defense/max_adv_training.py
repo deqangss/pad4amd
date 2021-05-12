@@ -106,6 +106,7 @@ class MaxAdvTraining(object):
                 # the attack perturbs feature vectors using various hyper-parameter lambda, aiming to obtain
                 # adversarial examples as much as possible
                 lambda_ = np.random.choice(lambda_space)
+                self.model.eval()
                 pertb_mal_x = self.attack_model.perturb(self.model, mal_x_batch, mal_adj_batch, mal_y_batch,
                                                         steps_of_max=self.attack_param['steps'],
                                                         min_lambda_=lambda_,
