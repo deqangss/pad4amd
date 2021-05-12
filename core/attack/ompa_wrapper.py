@@ -32,6 +32,7 @@ class OMPAP(OMPA):
                 min_lambda_=1e-5,
                 max_lambda_=1e5,
                 base=10.,
+                step_length=1.,
                 verbose=False):
         assert 0 < min_lambda_ <= max_lambda_
         adv_x = x.detach().clone().to(torch.float)
@@ -47,7 +48,7 @@ class OMPAP(OMPA):
             pert_x = super(OMPAP, self).perturb(model, adv_x[~done], adv_adj, label[~done],
                                                 m,
                                                 self.lambda_,
-                                                step_length=1.,
+                                                step_length=step_length,
                                                 clone=False,
                                                 verbose=False
                                                 )
