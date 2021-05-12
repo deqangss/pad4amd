@@ -144,7 +144,7 @@ class PGD(BaseAttack):
                     round_threshold = torch.rand(pert_x_cont.size()).to(self.device)
                 else:
                     round_threshold = 0.5
-                pert_x_disc = round_x(pert_x_cont, round_threshold)
+                pert_x_disc = round_x(pert_x_cont, 0.5)
                 adv_x[~done] = pert_x_disc
 
             # adv_x[~done] = pert_x
