@@ -194,7 +194,7 @@ def _main():
                             verbose=False
                             )
 
-    pgdl2 = PGD(norm='l2', use_random=False,
+    pgdl2 = PGD(norm='l2', use_random=args.random_start, rounding_threshold=args.round_threshold,
                 oblivion=args.oblivion, kappa=args.kappa, device=model.device)
     pgdl2.perturb = partial(pgdl2.perturb,
                             steps=args.n_step_l2,
@@ -216,7 +216,7 @@ def _main():
                               verbose=False
                               )
 
-    pgdadma = PGDAdam(use_random=False,
+    pgdadma = PGDAdam(use_random=args.random_start, rounding_threshold=args.round_threshold,
                       oblivion=args.oblivion, kappa=args.kappa, device=model.device)
     pgdadma.perturb = partial(pgdadma.perturb,
                               steps=args.n_step_adam,
