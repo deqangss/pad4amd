@@ -22,6 +22,8 @@ atta_argparse.add_argument('--n_step', type=int, default=50,
                            help='maximum number of steps.')
 atta_argparse.add_argument('--step_length', type=float, default=0.2,
                            help='step length in each step.')
+atta_argparse.add_argument('--step_check', type=float, default=10,
+                           help='number of steps when checking the effectiveness of continuous perturbations')
 atta_argparse.add_argument('--random_start', action='store_true', default=False,
                            help='randomly initialize the start points.')
 atta_argparse.add_argument('--round_threshold', type=float, default=0.5,
@@ -145,7 +147,7 @@ def _main():
             adv_x_batch = attack.perturb(model, x, a, y,
                                          args.n_step,
                                          args.step_length,
-                                         step_check=10,
+                                         step_check=args.step_check,
                                          min_lambda_=1e-5,
                                          max_lambda_=1e5,
                                          verbose=True)

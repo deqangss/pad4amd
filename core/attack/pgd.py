@@ -8,7 +8,6 @@
 """
 
 import torch
-import torch.nn.functional as F
 
 from core.attack.base_attack import BaseAttack
 from tools.utils import get_x0, round_x
@@ -80,14 +79,6 @@ class PGD(BaseAttack):
             perturbation = self.get_perturbation(grad, x, adv_x)
             adv_x = torch.clamp(adv_x + perturbation * step_length, min=0., max=1.)
         return adv_x
-        # # round
-        # if self.norm == 'linf' and self.is_attacker:
-        #     # see paper: Adversarial Deep Learning for Robust Detection of Binary Encoded Malware
-        #     round_threshold = torch.rand(adv_x.size()).to(self.device)
-        # else:
-        #     round_threshold = 0.5
-        # print(torch.sum(torch.abs(round_x(adv_x, 0.5) - x), dim=-1))
-        # return round_x(adv_x, 0.5)
 
     def perturb(self, model, x, adj=None, label=None,
                 steps=10,
@@ -112,12 +103,6 @@ class PGD(BaseAttack):
         adv_x = x.detach().clone().to(torch.float)
 
         while self.lambda_ <= max_lambda_:
-            # hidden, logit = model.forward(adv_x, adj)
-            # _, done = self.get_loss(model, logit, label, hidden, self.lambda_)
-            # if torch.all(done):
-            #     break
-            # adv_x[~done] = x[~done]  # recompute the perturbation under other penalty factors
-            # adv_adj = None if adj is None else adj[~done]
             pert_x_cont = None
             prev_done = None
             for i, mini_step in enumerate(mini_steps):
@@ -144,10 +129,9 @@ class PGD(BaseAttack):
                     round_threshold = torch.rand(pert_x_cont.size()).to(self.device)
                 else:
                     round_threshold = 0.5
-                pert_x_disc = round_x(pert_x_cont, 0.5)
+                pert_x_disc = round_x(pert_x_cont, round_threshold)
                 adv_x[~done] = pert_x_disc
 
-            # adv_x[~done] = pert_x
             self.lambda_ *= base
             if not self.check_lambda(model):
                 break
