@@ -46,7 +46,8 @@ class PGDAdam(BaseAttack):
     def _perturb(self, model, x, adj=None, label=None,
                  steps=10,
                  lr=1.,
-                 lambda_=1.):
+                 lambda_=1.,
+                 adam_state=None):
         """
         perturb node feature vectors
 
@@ -70,6 +71,8 @@ class PGDAdam(BaseAttack):
         padding_mask = torch.sum(adv_x, dim=-1, keepdim=True) > 1
         adv_x.requires_grad = True
         optimizer = torch.optim.Adam([adv_x], lr=lr)
+        if adam_state is not None:
+            optimizer.load_state_dict(adam_state)
         model.eval()
         for t in range(steps):
             optimizer.zero_grad()
@@ -80,14 +83,14 @@ class PGDAdam(BaseAttack):
             grad = adv_x.grad * padding_mask
             pos_insertion = (adv_x <= 0.5) * 1 * (adv_x >= 0.)
             grad4insertion = (
-                                         grad < 0) * pos_insertion * grad  # positions of gradient value smaller than zero are used for insertion
+                                     grad < 0) * pos_insertion * grad  # positions of gradient value smaller than zero are used for insertion
             pos_removal = (adv_x > 0.5) * 1 * (adv_x <= 1.)
             grad4removal = (grad > 0) * (pos_removal & self.manipulation_x) * grad
             adv_x.grad = (grad4removal + grad4insertion)
             adv_x.grad = grad
             optimizer.step()
             adv_x.data = adv_x.data.clamp(min=0., max=1.)
-        return adv_x.detach()
+        return adv_x.detach(), optimizer.state_dict()
 
     def perturb(self, model, x, adj=None, label=None,
                 steps=10,
@@ -112,6 +115,7 @@ class PGDAdam(BaseAttack):
         while self.lambda_ <= max_lambda_:
             pert_x_cont = None
             prev_done = None
+            adam_state = None
             for i, mini_step in enumerate(mini_steps):
                 hidden, logit = model.forward(adv_x, adj)
                 _, done = self.get_loss(model, logit, label, hidden, self.lambda_)
@@ -125,11 +129,12 @@ class PGDAdam(BaseAttack):
                     adv_x[~done] = pert_x_cont[~done[~prev_done]]
                     adv_adj = None if adj is None else adj[~done]
                     prev_done = done
-                pert_x_cont = self._perturb(model, adv_x[~done], adv_adj, label[~done],
-                                            steps,
-                                            lr,
-                                            lambda_=self.lambda_
-                                            )
+                pert_x_cont, adam_state = self._perturb(model, adv_x[~done], adv_adj, label[~done],
+                                                        steps,
+                                                        lr,
+                                                        lambda_=self.lambda_,
+                                                        adam_state=adam_state
+                                                        )
                 # round
                 adv_x[~done] = pert_x_cont.round()
 
