@@ -105,6 +105,7 @@ class PGD(BaseAttack):
         enhance attack
         """
         assert 0 < min_lambda_ <= max_lambda_
+        print('ok')
         self.lambda_ = min_lambda_
         if 'k' in list(model.__dict__.keys()) and model.k > 0:
             logger.warning("The attack leads to dense graph and trigger the issue of out of memory.")
