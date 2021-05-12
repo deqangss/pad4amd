@@ -72,7 +72,7 @@ class PGDAdam(BaseAttack):
         adv_x.requires_grad = True
         optimizer = torch.optim.Adam([adv_x], lr=lr)
         print('adv:', adv_x.shape)
-        print(optimizer.state_dict()['state'][0]['exp_avg'].shape)
+        print(optimizer.state_dict())
 
         if adam_state is not None:
             optimizer.load_state_dict(adam_state)
