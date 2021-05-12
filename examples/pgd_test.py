@@ -22,7 +22,7 @@ atta_argparse.add_argument('--n_step', type=int, default=50,
                            help='maximum number of steps.')
 atta_argparse.add_argument('--step_length', type=float, default=0.2,
                            help='step length in each step.')
-atta_argparse.add_argument('--step_check', type=float, default=10,
+atta_argparse.add_argument('--step_check', type=int, default=10,
                            help='number of steps when checking the effectiveness of continuous perturbations')
 atta_argparse.add_argument('--random_start', action='store_true', default=False,
                            help='randomly initialize the start points.')
