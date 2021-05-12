@@ -23,6 +23,8 @@ atta_argparse.add_argument('--n_step', type=int, default=50,
                            help='maximum number of steps.')
 atta_argparse.add_argument('--step_length', type=float, default=2.,
                            help='step length in each step.')
+atta_argparse.add_argument('--step_check', type=int, default=10,
+                           help='number of steps when checking the effectiveness of continuous perturbations')
 atta_argparse.add_argument('--bandwidth', type=float, default=20.,
                            help='variance of Gaussian distribution.')
 atta_argparse.add_argument('--penalty_factor', type=float, default=1000.,
@@ -165,6 +167,7 @@ def _main():
             adv_x_batch = attack.perturb(model, x, a, y,
                                          args.n_step,
                                          args.step_length,
+                                         args.step_check,
                                          min_lambda_=1e-5,
                                          max_lambda_=1e5,
                                          verbose=True)
