@@ -101,7 +101,6 @@ class PGD(BaseAttack):
         mini_steps = mini_steps + [steps % step_check] if steps % step_check != 0 else mini_steps
 
         adv_x = x.detach().clone().to(torch.float)
-
         while self.lambda_ <= max_lambda_:
             pert_x_cont = None
             prev_done = None
@@ -129,8 +128,7 @@ class PGD(BaseAttack):
                     round_threshold = torch.rand(pert_x_cont.size()).to(self.device)
                 else:
                     round_threshold = 0.5
-                pert_x_disc = round_x(pert_x_cont, round_threshold)
-                adv_x[~done] = pert_x_disc
+                adv_x[~done] = round_x(pert_x_cont, round_threshold)
 
             self.lambda_ *= base
             if not self.check_lambda(model):

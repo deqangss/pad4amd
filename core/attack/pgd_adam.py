@@ -79,19 +79,20 @@ class PGDAdam(BaseAttack):
             loss.backward()
             grad = adv_x.grad * padding_mask
             pos_insertion = (adv_x <= 0.5) * 1 * (adv_x >= 0.)
-            grad4insertion = (grad < 0) * pos_insertion * grad  # positions of gradient value smaller than zero are used for insertion
+            grad4insertion = (
+                                         grad < 0) * pos_insertion * grad  # positions of gradient value smaller than zero are used for insertion
             pos_removal = (adv_x > 0.5) * 1 * (adv_x <= 1.)
             grad4removal = (grad > 0) * (pos_removal & self.manipulation_x) * grad
             adv_x.grad = (grad4removal + grad4insertion)
             adv_x.grad = grad
             optimizer.step()
             adv_x.data = adv_x.data.clamp(min=0., max=1.)
-        # round
-        return adv_x.round().detach()
+        return adv_x.detach()
 
     def perturb(self, model, x, adj=None, label=None,
                 steps=10,
                 lr=1.,
+                step_check=10,
                 min_lambda_=1e-5,
                 max_lambda_=1e5,
                 base=10.,
@@ -103,20 +104,35 @@ class PGDAdam(BaseAttack):
         if 'k' in list(model.__dict__.keys()) and model.k > 0:
             logger.warning("The attack leads to dense graph and trigger the issue of out of memory.")
         self.lambda_ = min_lambda_
+        assert steps >= 0 and step_check > 0 and step_length >= 0
+        mini_steps = [step_check] * (steps // step_check)
+        mini_steps = mini_steps + [steps % step_check] if steps % step_check != 0 else mini_steps
+
         adv_x = x.detach().clone().to(torch.float)
         while self.lambda_ <= max_lambda_:
-            hidden, logit = model.forward(adv_x, adj)
-            _, done = self.get_loss(model, logit, label, hidden, self.lambda_)
-            if torch.all(done):
-                break
-            adv_x[~done] = x[~done]  # recompute the perturbation under other penalty factors
-            adv_adj = None if adj is None else adj[~done]
-            pert_x = self._perturb(model, adv_x[~done], adv_adj, label[~done],
-                                   steps,
-                                   lr,
-                                   lambda_=self.lambda_
-                                   )
-            adv_x[~done] = pert_x
+            pert_x_cont = None
+            prev_done = None
+            for i, mini_step in enumerate(mini_steps):
+                hidden, logit = model.forward(adv_x, adj)
+                _, done = self.get_loss(model, logit, label, hidden, self.lambda_)
+                if torch.all(done):
+                    break
+                if i == 0:
+                    adv_x[~done] = x[~done]  # recompute the perturbation under other penalty factors
+                    adv_adj = None if adj is None else adj[~done]
+                    prev_done = done
+                else:
+                    adv_x[~done] = pert_x_cont[~done[~prev_done]]
+                    adv_adj = None if adj is None else adj[~done]
+                    prev_done = done
+                pert_x_cont = self._perturb(model, adv_x[~done], adv_adj, label[~done],
+                                            steps,
+                                            lr,
+                                            lambda_=self.lambda_
+                                            )
+                # round
+                adv_x[~done] = pert_x_cont.round()
+
             self.lambda_ *= base
             if not self.check_lambda(model):
                 break
