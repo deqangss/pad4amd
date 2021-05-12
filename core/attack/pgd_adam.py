@@ -72,7 +72,7 @@ class PGDAdam(BaseAttack):
         adv_x.requires_grad = True
         optimizer = torch.optim.Adam([adv_x], lr=lr)
         print('adv:', adv_x.shape)
-        print(optimizer.state_dict())
+
 
         if adam_state is not None:
             optimizer.load_state_dict(adam_state)
@@ -93,6 +93,7 @@ class PGDAdam(BaseAttack):
             adv_x.grad = grad
             optimizer.step()
             adv_x.data = adv_x.data.clamp(min=0., max=1.)
+        print(optimizer.state_dict())
         return adv_x.detach(), optimizer.state_dict()
 
     def perturb(self, model, x, adj=None, label=None,
