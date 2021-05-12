@@ -71,8 +71,6 @@ class PGDAdam(BaseAttack):
         padding_mask = torch.sum(adv_x, dim=-1, keepdim=True) > 1
         adv_x.requires_grad = True
         optimizer = torch.optim.Adam([adv_x], lr=lr)
-        print('adv:', adv_x.shape)
-
 
         if adam_state is not None:
             optimizer.load_state_dict(adam_state)
@@ -93,7 +91,6 @@ class PGDAdam(BaseAttack):
             adv_x.grad = grad
             optimizer.step()
             adv_x.data = adv_x.data.clamp(min=0., max=1.)
-        print(adam_state['state'][0]['exp_avg'].shape)
         return adv_x.detach(), optimizer.state_dict()
 
     def perturb(self, model, x, adj=None, label=None,
@@ -119,7 +116,6 @@ class PGDAdam(BaseAttack):
         while self.lambda_ <= max_lambda_:
             pert_x_cont = None
             prev_done = None
-            adam_state = None
             for i, mini_step in enumerate(mini_steps):
                 hidden, logit = model.forward(adv_x, adj)
                 _, done = self.get_loss(model, logit, label, hidden, self.lambda_)
@@ -133,17 +129,12 @@ class PGDAdam(BaseAttack):
                     adv_x[~done] = pert_x_cont[~done[~prev_done]]
                     adv_adj = None if adj is None else adj[~done]
                     prev_done = done
-                    # adam_state['state'][0]['exp_avg'] = adam_state['state'][0]['exp_avg'][~done[~prev_done]]
-                    # adam_state['state'][0]['exp_avg_sq'] = adam_state['state'][0]['exp_avg_sq'][~done[~prev_done]]
-                    # print(adam_state['state'][0]['exp_avg'].shape)
-                    # print('adv:', adv_x[~done].shape)
-                print(i)
-                pert_x_cont, adam_state = self._perturb(model, adv_x[~done], adv_adj, label[~done],
-                                                        mini_step,
-                                                        lr,
-                                                        lambda_=self.lambda_,
-                                                        adam_state=None
-                                                        )
+                pert_x_cont, _ = self._perturb(model, adv_x[~done], adv_adj, label[~done],
+                                               mini_step,
+                                               lr,
+                                               lambda_=self.lambda_,
+                                               adam_state=None
+                                               )
                 # round
                 adv_x[~done] = pert_x_cont.round()
 
