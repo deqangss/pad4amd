@@ -121,5 +121,4 @@ class BaseAttack(Module):
         else:
             loss_no_reduction = ce
             done = y_pred == 0.
-        print(de)
         return loss_no_reduction, done
