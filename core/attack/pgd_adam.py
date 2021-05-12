@@ -135,6 +135,7 @@ class PGDAdam(BaseAttack):
                                                         lambda_=self.lambda_,
                                                         adam_state=adam_state
                                                         )
+                print(adam_state)
                 # round
                 adv_x[~done] = pert_x_cont.round()
 
