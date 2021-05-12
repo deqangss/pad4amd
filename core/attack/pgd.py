@@ -67,6 +67,7 @@ class PGD(BaseAttack):
         if x is None or x.shape[0] <= 0:
             return []
         adv_x = x
+        self.lambda_ = lambda_
         self.padding_mask = torch.sum(adv_x, dim=-1, keepdim=True) > 1  # we set a graph contains two apis at least
         model.eval()
         for t in range(steps):
@@ -74,16 +75,15 @@ class PGD(BaseAttack):
                 adv_x = get_x0(adv_x, rounding_threshold=self.round_threshold, is_sample=True)
             var_adv_x = torch.autograd.Variable(adv_x, requires_grad=True)
             hidden, logit = model.forward(var_adv_x, adj)
-            loss, done = self.get_loss(model, logit, label, hidden, lambda_)
+            loss, done = self.get_loss(model, logit, label, hidden, self.lambda_)
             grad = torch.autograd.grad(torch.mean(loss), var_adv_x)[0]
             perturbation = self.get_perturbation(grad, x, adv_x)
             adv_x = torch.clamp(adv_x + perturbation * step_length, min=0., max=1.)
         # print(torch.topk(torch.abs(adv_x - x), k=100, dim=-1))
         with torch.no_grad():
             hidden, logit = model.forward(adv_x, adj)
-            _, done = self.get_loss(model, logit, label, hidden, lambda_)
-            logger.info(
-                f"\t continuous pgd {self.norm}: attack effectiveness {done.sum().item() / done.size()[0] * 100:.3f}%:{lambda_}.")
+            _, done = self.get_loss(model, logit, label, hidden, self.lambda_)
+            logger.info(f"\t continuous pgd {self.norm}: attack effectiveness {done.sum().item() / done.size()[0] * 100:.3f}%:{self.lambda_}.")
         # round
         if self.norm == 'linf':
             # see paper: Adversarial Deep Learning for Robust Detection of Binary Encoded Malware
@@ -109,12 +109,12 @@ class PGD(BaseAttack):
             logger.warning("The attack leads to dense graph and trigger the issue of out of memory.")
         adv_x = x.detach().clone().to(torch.float)
 
-        while (self.lambda_ <= max_lambda_) and (self.check_lambda(model)):
+        while self.lambda_ <= max_lambda_:
             hidden, logit = model.forward(adv_x, adj)
             _, done = self.get_loss(model, logit, label, hidden, self.lambda_)
             if torch.all(done):
                 break
-            adv_x[~done] = adv_x[~done]  # recompute the perturbation under other penalty factors
+            adv_x[~done] = x[~done]  # recompute the perturbation under other penalty factors
             adv_adj = None if adj is None else adj[~done]
             pert_x = self._perturb(model, adv_x[~done], adv_adj, label[~done],
                                    steps,
@@ -123,14 +123,8 @@ class PGD(BaseAttack):
                                    )
             adv_x[~done] = pert_x
             self.lambda_ *= base
-        else:
-            # adv_x = adv_x_init
-            adv_adj = None if adj is None else adj
-            adv_x = self._perturb(model, adv_x, adv_adj, label,
-                                  steps,
-                                  step_length,
-                                  lambda_=0.
-                                  )
+            if not self.check_lambda(model):
+                break
 
         with torch.no_grad():
             hidden, logit = model.forward(adv_x, adj)
@@ -177,3 +171,4 @@ class PGD(BaseAttack):
         # 5. tailor the interdependent apis, application specific
         # perturbation += torch.any(perturbation < 0, dim=-1, keepdim=True) * checking_nonexist_api * perturbation
         return perturbation
+
