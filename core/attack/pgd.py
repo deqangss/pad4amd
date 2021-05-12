@@ -83,7 +83,7 @@ class PGD(BaseAttack):
             hidden, logit = model.forward(adv_x, adj)
             _, done = self.get_loss(model, logit, label, hidden, lambda_)
             logger.info(
-                f"\t continuous pgd {self.norm}: attack effectiveness {done.sum().item() / done.size()[0] * 100:.3f}%:{self.lambda_}.")
+                f"\t continuous pgd {self.norm}: attack effectiveness {done.sum().item() / done.size()[0] * 100:.3f}%:{lambda_}.")
         # round
         if self.norm == 'linf':
             # see paper: Adversarial Deep Learning for Robust Detection of Binary Encoded Malware
