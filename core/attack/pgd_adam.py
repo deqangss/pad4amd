@@ -93,7 +93,7 @@ class PGDAdam(BaseAttack):
             adv_x.grad = grad
             optimizer.step()
             adv_x.data = adv_x.data.clamp(min=0., max=1.)
-        print(optimizer.state_dict())
+        print(adam_state['state'][0]['exp_avg'].shape)
         return adv_x.detach(), optimizer.state_dict()
 
     def perturb(self, model, x, adj=None, label=None,
