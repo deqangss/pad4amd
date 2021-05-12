@@ -79,7 +79,7 @@ class PGD(BaseAttack):
             grad = torch.autograd.grad(torch.mean(loss), var_adv_x)[0]
             perturbation = self.get_perturbation(grad, x, adv_x)
             adv_x = torch.clamp(adv_x + perturbation * step_length, min=0., max=1.)
-        print(torch.topk(torch.abs(adv_x - x), k=100, dim=-1))
+        print(torch.sum(torch.abs(adv_x - x), dim=-1))
         with torch.no_grad():
             hidden, logit = model.forward(adv_x, adj)
             _, done = self.get_loss(model, logit, label, hidden, self.lambda_)
@@ -90,7 +90,7 @@ class PGD(BaseAttack):
             round_threshold = torch.rand(adv_x.size()).to(self.device)
         else:
             round_threshold = 0.5
-        print(torch.topk(torch.abs(round_x(adv_x, 0.5) - x), k=100, dim=-1))
+        print(torch.sum(torch.abs(round_x(adv_x, 0.5) - x), dim=-1))
         return round_x(adv_x, 0.5)
 
     def perturb(self, model, x, adj=None, label=None,
