@@ -49,6 +49,8 @@ atta_argparse.add_argument('--n_step_adam', type=int, default=100,
                            help='maximum number of steps.')
 atta_argparse.add_argument('--lr', type=float, default=0.1,
                            help='learning rate.')
+max_adv_argparse.add_argument('--step_check', type=int, default=10,
+                              help='number of steps when checking the effectiveness of continuous perturbations.')
 atta_argparse.add_argument('--random_start', action='store_true', default=False,
                            help='randomly initialize the start points.')
 atta_argparse.add_argument('--round_threshold', type=float, default=0.5,
@@ -195,6 +197,7 @@ def _main():
     pgdl2.perturb = partial(pgdl2.perturb,
                             steps=args.n_step_l2,
                             step_length=args.step_length_l2,
+                            step_check=args.step_check,
                             base=args.base,
                             verbose=False
                             )
@@ -204,6 +207,7 @@ def _main():
     pgdlinf.perturb = partial(pgdlinf.perturb,
                               steps=args.n_step_linf,
                               step_length=args.step_length_linf,
+                              step_check=args.step_check,
                               base=args.base,
                               verbose=False
                               )
@@ -213,6 +217,7 @@ def _main():
     pgdadma.perturb = partial(pgdadma.perturb,
                               steps=args.n_step_adam,
                               lr=args.lr,
+                              step_check=args.step_check,
                               base=args.base,
                               verbose=False)
 

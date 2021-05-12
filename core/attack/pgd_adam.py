@@ -143,8 +143,6 @@ class PGDAdam(BaseAttack):
                 break
         with torch.no_grad():
             hidden, logit = model.forward(adv_x, adj)
-            print(adv_x)
-            print(torch.all((adv_x==0) | (adv_x == 1)))
             _, done = self.get_loss(model, logit, label, hidden, self.lambda_)
             if verbose:
                 logger.info(f"pgd adam attack: attack effectiveness {done.sum().item() / x.size()[0] * 100}%.")
