@@ -72,6 +72,7 @@ class PGDAdam(BaseAttack):
         adv_x.requires_grad = True
         optimizer = torch.optim.Adam([adv_x], lr=lr)
         print('adv:', adv_x.shape)
+        print(optimizer.state_dict()['state'][0]['exp_avg'].shape)
 
         if adam_state is not None:
             optimizer.load_state_dict(adam_state)
@@ -131,16 +132,16 @@ class PGDAdam(BaseAttack):
                     adv_x[~done] = pert_x_cont[~done[~prev_done]]
                     adv_adj = None if adj is None else adj[~done]
                     prev_done = done
-                    adam_state['state'][0]['exp_avg'] = adam_state['state'][0]['exp_avg'][~done[~prev_done]]
-                    adam_state['state'][0]['exp_avg_sq'] = adam_state['state'][0]['exp_avg_sq'][~done[~prev_done]]
-                    print(adam_state['state'][0]['exp_avg'].shape)
+                    # adam_state['state'][0]['exp_avg'] = adam_state['state'][0]['exp_avg'][~done[~prev_done]]
+                    # adam_state['state'][0]['exp_avg_sq'] = adam_state['state'][0]['exp_avg_sq'][~done[~prev_done]]
+                    # print(adam_state['state'][0]['exp_avg'].shape)
                     # print('adv:', adv_x[~done].shape)
                 print(i)
                 pert_x_cont, adam_state = self._perturb(model, adv_x[~done], adv_adj, label[~done],
                                                         mini_step,
                                                         lr,
                                                         lambda_=self.lambda_,
-                                                        adam_state=adam_state
+                                                        adam_state=None
                                                         )
                 # round
                 adv_x[~done] = pert_x_cont.round()
