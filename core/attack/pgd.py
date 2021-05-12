@@ -79,23 +79,20 @@ class PGD(BaseAttack):
             grad = torch.autograd.grad(torch.mean(loss), var_adv_x)[0]
             perturbation = self.get_perturbation(grad, x, adv_x)
             adv_x = torch.clamp(adv_x + perturbation * step_length, min=0., max=1.)
-        print(torch.sum(torch.abs(adv_x - x), dim=-1))
-        with torch.no_grad():
-            hidden, logit = model.forward(adv_x, adj)
-            _, done = self.get_loss(model, logit, label, hidden, self.lambda_)
-            logger.info(f"\t continuous pgd {self.norm}: attack effectiveness {done.sum().item() / done.size()[0] * 100:.3f}%:{self.lambda_}.")
-        # round
-        if self.norm == 'linf':
-            # see paper: Adversarial Deep Learning for Robust Detection of Binary Encoded Malware
-            round_threshold = torch.rand(adv_x.size()).to(self.device)
-        else:
-            round_threshold = 0.5
-        print(torch.sum(torch.abs(round_x(adv_x, 0.5) - x), dim=-1))
-        return round_x(adv_x, 0.5)
+        return adv_x
+        # # round
+        # if self.norm == 'linf' and self.is_attacker:
+        #     # see paper: Adversarial Deep Learning for Robust Detection of Binary Encoded Malware
+        #     round_threshold = torch.rand(adv_x.size()).to(self.device)
+        # else:
+        #     round_threshold = 0.5
+        # print(torch.sum(torch.abs(round_x(adv_x, 0.5) - x), dim=-1))
+        # return round_x(adv_x, 0.5)
 
     def perturb(self, model, x, adj=None, label=None,
                 steps=10,
                 step_length=1.,
+                step_check=10,
                 min_lambda_=1e-5,
                 max_lambda_=1e5,
                 base=10.,
@@ -107,21 +104,50 @@ class PGD(BaseAttack):
         self.lambda_ = min_lambda_
         if 'k' in list(model.__dict__.keys()) and model.k > 0:
             logger.warning("The attack leads to dense graph and trigger the issue of out of memory.")
+        assert steps >= 0 & step_check > 0 & step_length >= 0
+
+        mini_steps = [step_check] * (steps // step_check)
+        mini_steps = mini_steps + [steps % step_check] if steps % step_check != 0 else mini_steps
+
         adv_x = x.detach().clone().to(torch.float)
 
         while self.lambda_ <= max_lambda_:
-            hidden, logit = model.forward(adv_x, adj)
-            _, done = self.get_loss(model, logit, label, hidden, self.lambda_)
-            if torch.all(done):
-                break
-            adv_x[~done] = x[~done]  # recompute the perturbation under other penalty factors
-            adv_adj = None if adj is None else adj[~done]
-            pert_x = self._perturb(model, adv_x[~done], adv_adj, label[~done],
-                                   steps,
-                                   step_length,
-                                   lambda_=self.lambda_
-                                   )
-            adv_x[~done] = pert_x
+            # hidden, logit = model.forward(adv_x, adj)
+            # _, done = self.get_loss(model, logit, label, hidden, self.lambda_)
+            # if torch.all(done):
+            #     break
+            # adv_x[~done] = x[~done]  # recompute the perturbation under other penalty factors
+            # adv_adj = None if adj is None else adj[~done]
+            pert_x_cont = None
+            prev_done = None
+            for i, mini_step in enumerate(mini_steps):
+                hidden, logit = model.forward(adv_x, adj)
+                _, done = self.get_loss(model, logit, label, hidden, self.lambda_)
+                if torch.all(done):
+                    break
+                if i == 0:
+                    adv_x[~done] = x[~done]  # recompute the perturbation under other penalty factors
+                    adv_adj = None if adj is None else adj[~done]
+                    prev_done = done
+                else:
+                    adv_x[~done] = pert_x_cont[~done[~prev_done]]
+                    adv_adj = None if adj is None else adj[~done]
+                    prev_done = done
+                pert_x_cont = self._perturb(model, adv_x[~done], adv_adj, label[~done],
+                                            mini_step,
+                                            step_length,
+                                            lambda_=self.lambda_
+                                            )
+                # round
+                if self.norm == 'linf' and self.is_attacker:
+                    # see paper: Adversarial Deep Learning for Robust Detection of Binary Encoded Malware
+                    round_threshold = torch.rand(pert_x_cont.size()).to(self.device)
+                else:
+                    round_threshold = 0.5
+                pert_x_disc = round_x(pert_x_cont, round_threshold)
+                adv_x[~done] = pert_x_disc
+
+            # adv_x[~done] = pert_x
             self.lambda_ *= base
             if not self.check_lambda(model):
                 break
@@ -173,4 +199,3 @@ class PGD(BaseAttack):
         # 5. tailor the interdependent apis, application specific
         # perturbation += torch.any(perturbation < 0, dim=-1, keepdim=True) * checking_nonexist_api * perturbation
         return perturbation
-
