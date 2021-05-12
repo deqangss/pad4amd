@@ -130,7 +130,7 @@ class PGDAdam(BaseAttack):
                     adv_adj = None if adj is None else adj[~done]
                     prev_done = done
                 pert_x_cont, adam_state = self._perturb(model, adv_x[~done], adv_adj, label[~done],
-                                                        steps,
+                                                        mini_step,
                                                         lr,
                                                         lambda_=self.lambda_,
                                                         adam_state=adam_state
