@@ -67,7 +67,6 @@ class PGD(BaseAttack):
         if x is None or x.shape[0] <= 0:
             return []
         adv_x = x
-        self.lambda_ = lambda_
         self.padding_mask = torch.sum(adv_x, dim=-1, keepdim=True) > 1  # we set a graph contains two apis at least
         model.eval()
         for t in range(steps):
@@ -75,14 +74,14 @@ class PGD(BaseAttack):
                 adv_x = get_x0(adv_x, rounding_threshold=self.round_threshold, is_sample=True)
             var_adv_x = torch.autograd.Variable(adv_x, requires_grad=True)
             hidden, logit = model.forward(var_adv_x, adj)
-            loss, done = self.get_loss(model, logit, label, hidden, self.lambda_)
+            loss, done = self.get_loss(model, logit, label, hidden, lambda_)
             grad = torch.autograd.grad(torch.mean(loss), var_adv_x)[0]
             perturbation = self.get_perturbation(grad, x, adv_x)
             adv_x = torch.clamp(adv_x + perturbation * step_length, min=0., max=1.)
         # print(torch.topk(torch.abs(adv_x - x), k=100, dim=-1))
         with torch.no_grad():
             hidden, logit = model.forward(adv_x, adj)
-            _, done = self.get_loss(model, logit, label, hidden, self.lambda_)
+            _, done = self.get_loss(model, logit, label, hidden, lambda_)
             logger.info(
                 f"\t continuous pgd {self.norm}: attack effectiveness {done.sum().item() / done.size()[0] * 100:.3f}%:{self.lambda_}.")
         # round
