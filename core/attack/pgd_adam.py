@@ -129,14 +129,14 @@ class PGDAdam(BaseAttack):
                     adv_x[~done] = pert_x_cont[~done[~prev_done]]
                     adv_adj = None if adj is None else adj[~done]
                     prev_done = done
+                    adam_state['state'][0]['exp_avg'] = adam_state['state'][0]['exp_avg'][~done[~prev_done]]
+                    adam_state['state'][0]['exp_avg_sq'] = adam_state['state'][0]['exp_avg_sq'][~done[~prev_done]]
                 pert_x_cont, adam_state = self._perturb(model, adv_x[~done], adv_adj, label[~done],
                                                         mini_step,
                                                         lr,
                                                         lambda_=self.lambda_,
                                                         adam_state=adam_state
                                                         )
-                print(adam_state['state'][0]['exp_avg'].shape)
-                print(adam_state['state'][0]['exp_avg_sq'].shape)
                 # round
                 adv_x[~done] = pert_x_cont.round()
 
