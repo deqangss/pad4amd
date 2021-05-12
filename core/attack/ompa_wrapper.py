@@ -16,6 +16,7 @@ class OMPAP(OMPA):
 
     Parameters
     ---------
+    @param is_attacker, Boolean, play the role of attacker (note: the defender conducts adversarial training)
     @param oblivion, Boolean, whether know the adversary indicator or not
     @param kappa, attack confidence
     @param manipulation_x, manipulations
@@ -23,8 +24,8 @@ class OMPAP(OMPA):
     @param device, 'cpu' or 'cuda'
     """
 
-    def __init__(self, oblivion=False, kappa=1., manipulation_x=None, omega=None, device=None):
-        super(OMPAP, self).__init__(True, oblivion, kappa, manipulation_x, omega, device)
+    def __init__(self, is_attacker=True, oblivion=False, kappa=1., manipulation_x=None, omega=None, device=None):
+        super(OMPAP, self).__init__(is_attacker, oblivion, kappa, manipulation_x, omega, device)
 
     def perturb(self, model, x, adj=None, label=None,
                 m=10,

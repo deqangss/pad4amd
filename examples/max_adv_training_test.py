@@ -7,7 +7,7 @@ from functools import partial
 
 from core.defense import Dataset
 from core.defense import MalwareDetectorIndicator, MaxAdvTraining
-from core.attack import Max, PGD, OMPA, PGDAdam
+from core.attack import Max, PGD, OMPAP, PGDAdam
 from tools.utils import save_args, get_group_args, dump_pickle
 from examples.advdet_gmm_test import cmd_md
 
@@ -29,13 +29,14 @@ max_adv_argparse.add_argument('--step_length_linf', type=float, default=0.01,
                               help='step length in each step.')
 max_adv_argparse.add_argument('--n_step_adam', type=int, default=50,
                               help='maximum number of steps for base attacks.')
+max_adv_argparse.add_argument('--step_check', type=int, default=10,
+                              help='number of steps when checking the effectiveness of continuous perturbations.')
 max_adv_argparse.add_argument('--atta_lr', type=float, default=0.05,
                               help='learning rate for pgd adam attack.')
 max_adv_argparse.add_argument('--random_start', action='store_true', default=False,
                               help='randomly initialize the start points.')
 max_adv_argparse.add_argument('--round_threshold', type=float, default=0.98,
                               help='threshold for rounding real scalars at the initialization step.')
-
 
 
 def _main():
@@ -71,36 +72,39 @@ def _main():
     model = model.to(dv)
 
     # initialize the base attack model of max attack
-    ompa = OMPA(is_attacker=False, device=model.device)
-    ompa._perturb = partial(ompa.perturb,
-                            m=args.m,
-                            step_length=args.step_length_ompa,
-                            verbose=False,
-                            )
-
-    pgdl2 = PGD(norm='l2', use_random=False, is_attacker=False, device=model.device)
-    pgdl2._perturb = partial(pgdl2._perturb,
-                             steps=args.n_step_l2,
-                             step_length=args.step_length_l2
+    ompap = OMPAP(is_attacker=False, device=model.device)
+    ompap._perturb = partial(ompap.perturb,
+                             m=args.m,
+                             step_length=args.step_length_ompa,
+                             verbose=False,
                              )
 
-    pgdlinf = PGD(norm='linf', use_random=args.random_start,
+    pgdl2 = PGD(norm='l2', use_random=False, is_attacker=False, device=model.device)
+    pgdl2._perturb = partial(pgdl2.perturb,
+                             steps=args.n_step_l2,
+                             step_length=args.step_length_l2,
+                             step_check=args.step_check
+                             )
+
+    pgdlinf = PGD(norm='linf', use_random=False,
                   is_attacker=False,
-                  rounding_threshold=args.round_threshold,
                   device=model.device)
-    pgdlinf._perturb = partial(pgdlinf._perturb,
+    pgdlinf._perturb = partial(pgdlinf.perturb,
                                steps=args.n_step_linf,
-                               step_length=args.step_length_linf
+                               step_length=args.step_length_linf,
+                               step_check=args.step_check
                                )
 
-    pgdadma = PGDAdam(use_random=args.random_start, rounding_threshold=args.round_threshold,
+    pgdadma = PGDAdam(use_random=False,
                       is_attacker=False,
                       device=model.device)
-    pgdadma._perturb = partial(pgdadma._perturb,
+    pgdadma._perturb = partial(pgdadma.perturb,
                                steps=args.n_step_adam,
-                               lr=args.atta_lr)
+                               lr=args.atta_lr,
+                               step_check=args.step_check
+                               )
 
-    attack = Max(attack_list=[ompa, pgdl2, pgdlinf, pgdadma],
+    attack = Max(attack_list=[ompap, pgdl2, pgdlinf, pgdadma],
                  varepsilon=1e-9,
                  is_attacker=False,
                  device=model.device

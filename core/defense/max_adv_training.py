@@ -107,7 +107,8 @@ class MaxAdvTraining(object):
                 # adversarial examples as much as possible
                 pertb_mal_x = self.attack_model.perturb(self.model, mal_x_batch, mal_adj_batch, mal_y_batch,
                                                         steps=self.attack_param['steps'],
-                                                        lambda_=np.random.choice(lambda_space),
+                                                        min_lambda_=np.random.choice(lambda_space),
+                                                        max_lambda_=np.random.choice(lambda_space),
                                                         verbose=self.attack_param['verbose']
                                                         )
                 total_time += time.time() - start_time

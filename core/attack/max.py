@@ -26,7 +26,7 @@ class Max(BaseAttack):
         self.varepsilon = varepsilon
         self.device = device
 
-    def perturb(self, model, x, adj=None, label=None, steps=5, lambda_=1., verbose=False):
+    def perturb(self, model, x, adj=None, label=None, steps=5, min_lambda_=1e-5, max_lambda_=1e5, verbose=False):
         """
         perturb node features
 
@@ -63,10 +63,9 @@ class Max(BaseAttack):
                 if t > 0 and 'use_random' in attack.__dict__.keys():
                     attack.use_random = False
                 adj = None if adj is None else adj[~stop_flag]
-                if self.is_attacker:
-                    pertbx.append(attack.perturb(model=model, x=adv_x[~stop_flag], adj=red_adj, label=red_label))
-                else:
-                    pertbx.append(attack._perturb(model=model, x=adv_x[~stop_flag], adj=red_adj, label=red_label, lambda_=lambda_))
+                pertbx.append(attack.perturb(model=model, x=adv_x[~stop_flag], adj=red_adj, label=red_label,
+                                             min_lambda_=min_lambda_,
+                                             max_lambda_=max_lambda_))
             pertbx = torch.vstack(pertbx)
 
             with torch.no_grad():
