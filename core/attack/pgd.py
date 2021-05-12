@@ -81,7 +81,7 @@ class PGD(BaseAttack):
             perturbation = self.get_perturbation(grad, x, adv_x)
             adv_x = torch.clamp(adv_x + perturbation * step_length, min=0., max=1.)
             print(torch.sum(torch.abs(adv_x - adv_tmp), dim=-1))
-            print(torch.amax(perturbation, dim=-1))
+            print(torch.mean(perturbation, dim=-1))
             adv_tmp = adv_x
         import sys
         sys.exit(1)
