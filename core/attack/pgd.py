@@ -133,7 +133,6 @@ class PGD(BaseAttack):
             self.lambda_ *= base
             if not self.check_lambda(model):
                 break
-        print(torch.mean(torch.sum(torch.abs(adv_x - x), dim=-1)))
         with torch.no_grad():
             hidden, logit = model.forward(adv_x, adj)
             _, done = self.get_loss(model, logit, label, hidden, self.lambda_)
