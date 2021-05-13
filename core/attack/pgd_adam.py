@@ -140,6 +140,11 @@ class PGDAdam(BaseAttack):
                 # round
                 adv_x[~done] = pert_x_cont.round()
 
+            hidden, logit = model.forward(adv_x, adj)
+            _, done = self.get_loss(model, logit, label, hidden, self.lambda_)
+            logger.info(
+                f"pgd {self.norm}: attack effectiveness {done.sum().item() / done.size()[0] * 100:.3f}%:{self.lambda_}.")
+
             self.lambda_ *= base
             if not self.check_lambda(model):
                 break
