@@ -49,8 +49,8 @@ atta_argparse.add_argument('--n_step_adam', type=int, default=100,
                            help='maximum number of steps.')
 atta_argparse.add_argument('--lr', type=float, default=0.1,
                            help='learning rate.')
-max_adv_argparse.add_argument('--step_check', type=int, default=10,
-                              help='number of steps when checking the effectiveness of continuous perturbations.')
+atta_argparse.add_argument('--step_check', type=int, default=10,
+                            help='number of steps when checking the effectiveness of continuous perturbations.')
 atta_argparse.add_argument('--random_start', action='store_true', default=False,
                            help='randomly initialize the start points.')
 atta_argparse.add_argument('--round_threshold', type=float, default=0.5,
@@ -221,7 +221,7 @@ def _main():
                               base=args.base,
                               verbose=False)
 
-    attack = Max(attack_list=[pgdlinf],
+    attack = Max(attack_list=[pgdl1,pgdl2,pgdadma],
                  varepsilon=1e-9,
                  oblivion=args.oblivion,
                  device=model.device
