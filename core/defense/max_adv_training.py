@@ -84,9 +84,9 @@ class MaxAdvTraining(object):
         optimizer = optim.Adam(self.model.customize_param(weight_decay), lr=lr, weight_decay=weight_decay)
         total_time = 0.
         nbatches = len(train_data_producer)
-        # lambda_space = np.logspace(np.log10(lambda_lower_bound),
-        #                            np.log10(lambda_upper_bound),
-        #                            num=int(np.log10(lambda_upper_bound / lambda_lower_bound) // granularity) + 1)
+        lambda_space = np.logspace(np.log10(lambda_lower_bound),
+                                   np.log10(lambda_upper_bound),
+                                   num=int(np.log10(lambda_upper_bound / lambda_lower_bound) // granularity) + 1)
         logger.info("Max adversarial training is starting ...")
         for i in range(adv_epochs):
             losses, accuracies = [], []
@@ -105,11 +105,11 @@ class MaxAdvTraining(object):
                 start_time = time.time()
                 # the attack perturbs feature vectors using various hyper-parameter lambda, aiming to obtain
                 # adversarial examples as much as possible
-                # lambda_ = np.random.choice(lambda_space)
+                lambda_ = np.random.choice(lambda_space)
                 self.model.eval()
                 pertb_mal_x = self.attack_model.perturb(self.model, mal_x_batch, mal_adj_batch, mal_y_batch,
                                                         steps_of_max=self.attack_param['steps'],
-                                                        min_lambda_=lambda_lower_bound,
+                                                        min_lambda_=lambda_,  # when lambda is small, we cannot get effective attacks
                                                         max_lambda_=lambda_upper_bound,
                                                         verbose=self.attack_param['verbose']
                                                         )
