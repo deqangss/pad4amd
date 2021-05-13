@@ -131,6 +131,10 @@ class PGD(BaseAttack):
                     round_threshold = 0.5
                 adv_x[~done] = round_x(pert_x_cont, round_threshold)
 
+            hidden, logit = model.forward(adv_x, adj)
+            _, done = self.get_loss(model, logit, label, hidden, self.lambda_)
+            logger.info(f"pgd {self.norm}: attack effectiveness {done.sum().item() / done.size()[0] * 100:.3f}%:{self.lambda_}.")
+
             self.lambda_ *= base
             if not self.check_lambda(model):
                 break
