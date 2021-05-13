@@ -31,6 +31,8 @@ max_adv_argparse.add_argument('--n_step_adam', type=int, default=50,
                               help='maximum number of steps for base attacks.')
 max_adv_argparse.add_argument('--step_check', type=int, default=10,
                               help='number of steps when checking the effectiveness of continuous perturbations.')
+max_adv_argparse.add_argument('--step_check_linf', type=int, default=1,
+                              help='number of steps when checking the effectiveness of continuous perturbations.')
 max_adv_argparse.add_argument('--atta_lr', type=float, default=0.05,
                               help='learning rate for pgd adam attack.')
 max_adv_argparse.add_argument('--random_start', action='store_true', default=False,
@@ -93,7 +95,7 @@ def _main():
     pgdlinf.perturb = partial(pgdlinf.perturb,
                               steps=args.n_step_linf,
                               step_length=args.step_length_linf,
-                              step_check=args.step_check,
+                              step_check=args.step_check_linf,
                               verbose=False
                               )
 

@@ -119,8 +119,9 @@ class PGDAdam(BaseAttack):
             pert_x_cont = None
             prev_done = None
             for i, mini_step in enumerate(mini_steps):
-                hidden, logit = model.forward(adv_x, adj)
-                _, done = self.get_loss(model, logit, label, hidden, self.lambda_)
+                with torch.no_grad():
+                    hidden, logit = model.forward(adv_x, adj)
+                    _, done = self.get_loss(model, logit, label, hidden, self.lambda_)
                 if torch.all(done):
                     break
                 if i == 0:
