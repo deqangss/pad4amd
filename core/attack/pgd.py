@@ -124,7 +124,7 @@ class PGD(BaseAttack):
                                             lambda_=self.lambda_
                                             )
                 # round
-                if self.norm == 'linf' and self.is_attacker:
+                if self.norm == 'linf':
                     # see paper: Adversarial Deep Learning for Robust Detection of Binary Encoded Malware
                     round_threshold = torch.rand(pert_x_cont.size()).to(self.device)
                 else:
