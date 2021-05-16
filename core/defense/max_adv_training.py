@@ -77,9 +77,7 @@ class MaxAdvTraining(object):
                        epochs=epochs,
                        lr=lr,
                        weight_decay=weight_decay)
-        # get threshold tau
-        self.model.get_threshold(validation_data_producer)
-        logger.info(f"The threshold is {self.model.tau:.3f}.")
+
 
         optimizer = optim.Adam(self.model.customize_param(weight_decay), lr=lr, weight_decay=weight_decay)
         total_time = 0.
@@ -90,6 +88,9 @@ class MaxAdvTraining(object):
         logger.info("Max adversarial training is starting ...")
         for i in range(adv_epochs):
             losses, accuracies = [], []
+            # get threshold tau
+            self.model.get_threshold(validation_data_producer)
+            logger.info(f"The threshold is {self.model.tau:.3f}.")
             for ith_batch, res in enumerate(train_data_producer):
                 x_batch, adj_batch, y_batch, _1 = res
                 x_batch, adj_batch, y_batch = utils.to_tensor(x_batch, adj_batch, y_batch, self.model.device)
@@ -150,7 +151,6 @@ class MaxAdvTraining(object):
 
             if not path.exists(self.model_save_path):
                 utils.mkdir(path.dirname(self.model_save_path))
-            self.model.get_threshold(validation_data_producer)
             torch.save({'model_state_dict': self.model.state_dict(),
                         'epoch': adv_epochs,
                         'optimizer_state_dict': optimizer.state_dict()
