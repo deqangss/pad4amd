@@ -221,7 +221,7 @@ def _main():
                               base=args.base,
                               verbose=False)
 
-    attack = Max(attack_list=[pgdl1, pgdl2, pgdadma, pgdlinf],
+    attack = Max(attack_list=[pgdlinf],
                  varepsilon=1e-9,
                  oblivion=args.oblivion,
                  device=model.device
@@ -237,8 +237,8 @@ def _main():
             x, a, y = utils.to_tensor(x, a, y, model.device)
             adv_x_batch = attack.perturb(model, x, a, y,
                                          steps_of_max=args.n_step_max,
-                                         min_lambda_=1e-5,
-                                         max_lambda_=1e5,
+                                         min_lambda_=1e3,
+                                         max_lambda_=1e3,
                                          verbose=True)
             y_cent_batch, x_density_batch = model.inference_batch_wise(adv_x_batch, a, y, use_indicator=True)
             y_cent.append(y_cent_batch)
