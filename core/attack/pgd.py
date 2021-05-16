@@ -134,11 +134,11 @@ class PGD(BaseAttack):
             self.lambda_ *= base
             if not self.check_lambda(model):
                 break
-            with torch.no_grad():
-                hidden, logit = model.forward(adv_x, adj)
-                _, done = self.get_loss(model, logit, label, hidden, self.lambda_)
-                if verbose:
-                    logger.info(f"pgd {self.norm}: attack effectiveness {done.sum().item() / done.size()[0] * 100:.3f}%:{self.lambda_}.")
+        with torch.no_grad():
+            hidden, logit = model.forward(adv_x, adj)
+            _, done = self.get_loss(model, logit, label, hidden, self.lambda_)
+            if verbose:
+                logger.info(f"pgd {self.norm}: attack effectiveness {done.sum().item() / done.size()[0] * 100:.3f}%.")
         return adv_x
 
     def get_perturbation(self, gradients, features, adv_features):
