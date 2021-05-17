@@ -182,7 +182,7 @@ class MaxAdvTraining(object):
                 mal_x_batch, mal_adj_batch, mal_y_batch, null_flag = PrincipledAdvTraining.get_mal_data(x_val_batch,
                                                                                                         adj_val_batch,
                                                                                                         y_val_batch)
-                print(len(mal_x_batch))
+                print(len(y_val_batch))
                 if null_flag:
                     continue
                 with torch.no_grad():
