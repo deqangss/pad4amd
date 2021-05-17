@@ -198,6 +198,7 @@ class MaxAdvTraining(object):
                     y_pred = np.argmax(y_cent_batch, axis=-1)
                     indicator_flag = self.model.indicator(x_density_batch, y_pred)
                     res.append((~indicator_flag) | ((y_pred == 1.) & indicator_flag))
+                    print(res)
             res = np.concatenate(res)
             acc_val = np.sum(res).astype(np.float) / res.shape[0]
             if acc_val >= best_acc_val:
