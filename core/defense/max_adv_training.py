@@ -182,6 +182,7 @@ class MaxAdvTraining(object):
                 mal_x_batch, mal_adj_batch, mal_y_batch, null_flag = PrincipledAdvTraining.get_mal_data(x_val_batch,
                                                                                                         adj_val_batch,
                                                                                                         y_val_batch)
+                print(len(mal_x_batch))
                 if null_flag:
                     continue
                 with torch.no_grad():
@@ -198,7 +199,7 @@ class MaxAdvTraining(object):
                     y_pred = np.argmax(y_cent_batch, axis=-1)
                     indicator_flag = self.model.indicator(x_density_batch, y_pred)
                     res.append((~indicator_flag) | ((y_pred == 1.) & indicator_flag))
-                    print(res)
+            assert len(res) > 0
             res = np.concatenate(res)
             acc_val = np.sum(res).astype(np.float) / res.shape[0]
             if acc_val >= best_acc_val:
