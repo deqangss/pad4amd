@@ -157,6 +157,7 @@ class MaxAdvTraining(object):
                         'optimizer_state_dict': optimizer.state_dict()
                         },
                        self.model_save_path)
+            # save the inter-model periodically for model selection (: todo)
             torch.save({'model_state_dict': self.model.state_dict(),
                         'epoch': adv_epochs,
                         'optimizer_state_dict': optimizer.state_dict()
