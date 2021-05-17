@@ -168,7 +168,7 @@ class PrincipledAdvTraining(object):
         filter out malware feature vectors and adjacency matrix (if it is necessary)
         """
         mal_x_batch = x_batch[y_batch == 1]
-        print(y_batch == 1)
+        print(y_batch[:] == 1)
         print(mal_x_batch)
         print(len(mal_x_batch))
         mal_y_batch = y_batch[y_batch == 1]
