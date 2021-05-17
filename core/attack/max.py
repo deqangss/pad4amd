@@ -46,15 +46,14 @@ class Max(BaseAttack):
         with torch.no_grad():
             hidden, logit = model.forward(x, adj)
             loss, done = self.get_loss_without_lambda(model, logit, label, hidden)
-        worst_loss = loss
+        pre_loss = loss
         n, red_n = x.size()[0], x.size()[1:]
         red_ind = list(range(2, len(x.size()) + 1))
         adv_x = x.detach().clone()
         stop_flag = torch.zeros(n, dtype=torch.bool, device=self.device)
         for t in range(steps_of_max):
-            print(t, steps_of_max)
             num_sample_red = n - torch.sum(stop_flag)
-            print(num_sample_red)
+            print(t, num_sample_red)
             if num_sample_red <= 0:
                 return adv_x
 
@@ -87,8 +86,8 @@ class Max(BaseAttack):
                 _, indices = loss.max(dim=-1)
                 adv_x[~stop_flag] = pertbx[torch.arange(num_sample_red), indices]
                 a_loss = loss[torch.arange(num_sample_red), indices]
-                worst_loss[~stop_flag] = a_loss
-                stop_flag[~stop_flag] = (torch.abs(worst_loss[~stop_flag] - a_loss) < self.varepsilon) | success_flag
+                stop_flag[~stop_flag] = (torch.abs(pre_loss[~stop_flag] - a_loss) < self.varepsilon) | success_flag
+                pre_loss[~stop_flag] = a_loss
 
                 if verbose:
                     hidden, logit = model.forward(adv_x, adj)
