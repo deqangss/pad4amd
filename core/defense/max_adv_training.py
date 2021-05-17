@@ -204,7 +204,7 @@ class MaxAdvTraining(object):
             acc_val = np.sum(res).astype(np.float) / res.shape[0]
             if acc_val >= best_acc_val:
                 best_acc_val = acc_val
-                best_epoch = id * 5 - 1
+                best_epoch = id * 5
                 torch.save({'model_state_dict': self.model.state_dict(),
                             'epoch': ckpt['epoch'],
                             'optimizer_state_dict': ckpt['optimizer_state_dict']
