@@ -183,6 +183,7 @@ class MaxAdvTraining(object):
                                                                                                         adj_val_batch,
                                                                                                         y_val_batch)
                 print(y_val_batch)
+                print(null_flag)
                 if null_flag:
                     continue
                 with torch.no_grad():
