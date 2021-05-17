@@ -79,7 +79,7 @@ def _main():
         dv = 'cpu'
     else:
         dv = 'cuda'
-    if args.model == 'maldet' or args.model == 'kde' or args.model == 'madvtrain':
+    if args.model == 'maldet' or args.model == 'kde':
         model = MalwareDetector(dataset.vocab_size,
                                 dataset.n_classes,
                                 device=dv,
