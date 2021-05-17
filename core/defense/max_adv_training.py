@@ -183,24 +183,22 @@ class MaxAdvTraining(object):
                 mal_x_batch, mal_adj_batch, mal_y_batch, null_flag = PrincipledAdvTraining.get_mal_data(x_val_batch,
                                                                                                         adj_val_batch,
                                                                                                         y_val_batch)
-                print(y_val_batch)
-                print(null_flag)
                 if null_flag:
                     continue
-                with torch.no_grad():
-                    pertb_mal_x = self.attack_model.perturb(self.model, mal_x_batch, mal_adj_batch, mal_y_batch,
-                                                            steps_of_max=self.attack_param['steps'],
-                                                            min_lambda_=lambda_lower_bound,
-                                                            max_lambda_=lambda_upper_bound,
-                                                            verbose=self.attack_param['verbose']
-                                                            )
-                    y_cent_batch, x_density_batch = self.model.inference_batch_wise(pertb_mal_x,
-                                                                                    mal_adj_batch,
-                                                                                    mal_y_batch,
-                                                                                    use_indicator=True)
-                    y_pred = np.argmax(y_cent_batch, axis=-1)
-                    indicator_flag = self.model.indicator(x_density_batch, y_pred)
-                    res.append((~indicator_flag) | ((y_pred == 1.) & indicator_flag))
+                self.model.eval()
+                pertb_mal_x = self.attack_model.perturb(self.model, mal_x_batch, mal_adj_batch, mal_y_batch,
+                                                        steps_of_max=self.attack_param['steps'],
+                                                        min_lambda_=lambda_lower_bound,
+                                                        max_lambda_=lambda_upper_bound,
+                                                        verbose=self.attack_param['verbose']
+                                                        )
+                y_cent_batch, x_density_batch = self.model.inference_batch_wise(pertb_mal_x,
+                                                                                mal_adj_batch,
+                                                                                mal_y_batch,
+                                                                                use_indicator=True)
+                y_pred = np.argmax(y_cent_batch, axis=-1)
+                indicator_flag = self.model.indicator(x_density_batch, y_pred)
+                res.append((~indicator_flag) | ((y_pred == 1.) & indicator_flag))
             assert len(res) > 0
             res = np.concatenate(res)
             acc_val = np.sum(res).astype(np.float) / res.shape[0]
