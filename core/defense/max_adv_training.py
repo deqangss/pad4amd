@@ -179,6 +179,7 @@ class MaxAdvTraining(object):
             self.model.load_state_dict(ckpt['model_state_dict'])
             res = []
             for x_val_batch, adj_val_batch, y_val_batch, _1 in validation_data_producer:
+                x_val_batch, adj_val_batch, y_val_batch = utils.to_tensor(x_val_batch, adj_val_batch, y_val_batch, self.model.device)
                 mal_x_batch, mal_adj_batch, mal_y_batch, null_flag = PrincipledAdvTraining.get_mal_data(x_val_batch,
                                                                                                         adj_val_batch,
                                                                                                         y_val_batch)
