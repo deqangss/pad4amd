@@ -86,8 +86,9 @@ class Max(BaseAttack):
                 _, indices = loss.max(dim=-1)
                 adv_x[~stop_flag] = pertbx[torch.arange(num_sample_red), indices]
                 a_loss = loss[torch.arange(num_sample_red), indices]
+                pre_stop_flag = stop_flag
                 stop_flag[~stop_flag] = (torch.abs(pre_loss[~stop_flag] - a_loss) < self.varepsilon) | success_flag
-                pre_loss[~stop_flag] = a_loss
+                pre_loss[~pre_stop_flag] = a_loss
 
                 if verbose:
                     hidden, logit = model.forward(adv_x, adj)
