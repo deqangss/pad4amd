@@ -200,7 +200,7 @@ class MaxAdvTraining(object):
                            self.model_save_path)
 
             if verbose:
-                logger.info(f"\tVal: model select at epoch {best_epoch} with validation accuracy {best_acc_val * 100}% under attack.")
+                logger.info(f"\tVal accuracy {acc_val*100:.4}%: model select at epoch {best_epoch} with validation accuracy {best_acc_val * 100:.4}% under attack.")
 
     def load(self):
         ckpt = torch.load(self.model_save_path)
