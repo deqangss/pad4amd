@@ -53,7 +53,6 @@ class Max(BaseAttack):
         stop_flag = torch.zeros(n, dtype=torch.bool, device=self.device)
         for t in range(steps_of_max):
             num_sample_red = n - torch.sum(stop_flag)
-            print(t, num_sample_red)
             if num_sample_red <= 0:
                 return adv_x
 
