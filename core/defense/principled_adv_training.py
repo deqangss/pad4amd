@@ -142,13 +142,13 @@ class PrincipledAdvTraining(object):
                 utils.mkdir(path.dirname(self.model_save_path))
             self.model.get_threshold(validation_data_producer)
             torch.save({'model_state_dict': self.model.state_dict(),
-                        'epoch': adv_epochs,
+                        'epoch': i + 1,
                         'optimizer_state_dict': optimizer.state_dict()
                         },
                        self.model_save_path)
             # save the inter-model periodically for model selection (: todo)
             torch.save({'model_state_dict': self.model.state_dict(),
-                        'epoch': adv_epochs,
+                        'epoch': i + 1,
                         'optimizer_state_dict': optimizer.state_dict()
                         },
                        self.model_save_path + str(i // 5 + 1))
