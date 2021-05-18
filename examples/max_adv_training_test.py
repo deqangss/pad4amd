@@ -29,9 +29,11 @@ max_adv_argparse.add_argument('--step_length_linf', type=float, default=0.01,
                               help='step length in each step.')
 max_adv_argparse.add_argument('--n_step_adam', type=int, default=50,
                               help='maximum number of steps for base attacks.')
-max_adv_argparse.add_argument('--step_check', type=int, default=10,
+max_adv_argparse.add_argument('--step_check_l2', type=int, default=10,
                               help='number of steps when checking the effectiveness of continuous perturbations.')
 max_adv_argparse.add_argument('--step_check_linf', type=int, default=1,
+                              help='number of steps when checking the effectiveness of continuous perturbations.')
+max_adv_argparse.add_argument('--step_check_adam', type=int, default=10,
                               help='number of steps when checking the effectiveness of continuous perturbations.')
 max_adv_argparse.add_argument('--atta_lr', type=float, default=0.05,
                               help='learning rate for pgd adam attack.')
@@ -85,7 +87,7 @@ def _main():
     pgdl2.perturb = partial(pgdl2.perturb,
                             steps=args.n_step_l2,
                             step_length=args.step_length_l2,
-                            step_check=args.step_check,
+                            step_check=args.step_check_l2,
                             verbose=False
                             )
 
@@ -105,7 +107,7 @@ def _main():
     pgdadma.perturb = partial(pgdadma.perturb,
                               steps=args.n_step_adam,
                               lr=args.atta_lr,
-                              step_check=args.step_check,
+                              step_check=args.step_check_adam,
                               verbose=False
                               )
 
