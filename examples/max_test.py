@@ -51,6 +51,8 @@ atta_argparse.add_argument('--lr', type=float, default=0.1,
                            help='learning rate.')
 atta_argparse.add_argument('--step_check', type=int, default=10,
                             help='number of steps when checking the effectiveness of continuous perturbations.')
+atta_argparse.add_argument('--step_check_adam', type=int, default=10,
+                            help='number of steps when checking the effectiveness of continuous perturbations.')
 atta_argparse.add_argument('--random_start', action='store_true', default=False,
                            help='randomly initialize the start points.')
 atta_argparse.add_argument('--round_threshold', type=float, default=0.5,
@@ -217,7 +219,7 @@ def _main():
     pgdadma.perturb = partial(pgdadma.perturb,
                               steps=args.n_step_adam,
                               lr=args.lr,
-                              step_check=args.step_check,
+                              step_check=args.step_check_adam,
                               base=args.base,
                               verbose=False)
 
