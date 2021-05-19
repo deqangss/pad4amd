@@ -148,6 +148,9 @@ class MalGAN(BaseAttack, nn.Module):
         hidden, logit = model.forward(x_pertb, adj)
         ce = F.cross_entropy(logit, label, reduction='none')
         y_pred = logit.argmax(1)
+        print(y_pred)
+        import sys
+        sys.exit(1)
         if 'forward_g' in type(model).__dict__.keys() and (not self.oblivion):
             assert lambda_ is not None
             de = model.forward_g(hidden, y_pred)
