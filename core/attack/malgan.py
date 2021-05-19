@@ -54,9 +54,9 @@ class MalGAN(BaseAttack, nn.Module):
             return layers
 
         self.generator = nn.Sequential(
-            *block(self.latent_dim, 512, normalize=False),
-            # *block(128, 512, normalize=False),
-            # *block(512, 1024, normalize=False),
+            *block(self.latent_dim, 128, normalize=False),
+            *block(128, 512, normalize=False),
+            *block(512, 1024, normalize=False),
             nn.Linear(512, self.input_dim),
             nn.Sigmoid()
         )
@@ -152,6 +152,8 @@ class MalGAN(BaseAttack, nn.Module):
             assert lambda_ is not None
             de = model.forward_g(hidden, y_pred)
             tau = model.get_tau_sample_wise(y_pred)
+            print(de)
+            print(tau)
             if self.is_attacker:
                 loss_no_reduction = ce + lambda_ * (torch.clamp(
                     torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW), max=self.kappa))
