@@ -7,7 +7,8 @@ import argparse
 import numpy as np
 
 from core.defense import Dataset
-from core.defense import MalwareDetector, KernelDensityEstimation, MalwareDetectorIndicator, MaxAdvTraining, PrincipledAdvTraining
+from core.defense import MalwareDetector, KernelDensityEstimation, MalwareDetectorIndicator, MaxAdvTraining, \
+    PrincipledAdvTraining
 from core.attack import Mimicry
 from tools import utils
 from config import config, logging, ErrorHandler
@@ -16,7 +17,8 @@ logger = logging.getLogger('examples.mimicry')
 logger.addHandler(ErrorHandler)
 
 atta_argparse = argparse.ArgumentParser(description='arguments for mimicry attack')
-atta_argparse.add_argument('--trials', type=int, default=10, help='number of benign samples for perturbing one malicious file.')
+atta_argparse.add_argument('--trials', type=int, default=10,
+                           help='number of benign samples for perturbing one malicious file.')
 atta_argparse.add_argument('--n_sample_times', type=int, default=1,
                            help='data sampling times when waging attacks')
 atta_argparse.add_argument('--model', type=str, default='maldet',
@@ -109,16 +111,26 @@ def _main():
     mal_test_dataset_producer = dataset.get_input_producer(mal_test_x, mal_testy, batch_size=hp_params['batch_size'],
                                                            name='test')
     # model.predict(mal_test_dataset_producer)
-    success_flag = attack.perturb(model,
-                                  mal_test_x,
-                                  ben_test_x,
-                                  trials=args.trials,
-                                  data_fn=dataset.get_input_producer,
-                                  seed=0,
-                                  n_sample_times=args.n_sample_times,
-                                  verbose=True)
+    success_flag, x_mod_list = attack.perturb(model,
+                                              mal_test_x,
+                                              ben_test_x,
+                                              trials=args.trials,
+                                              data_fn=dataset.get_input_producer,
+                                              seed=0,
+                                              n_sample_times=args.n_sample_times,
+                                              verbose=True)
     logger.info(f"The attack effectiveness under mimicry attack is {np.sum(success_flag) / float(mal_count) * 100}%.")
     logger.info(f"The mean accuracy on perturbed malware is {(1. - np.sum(success_flag) / float(mal_count)) * 100}%.")
+
+    save_dir = os.path.join(config.get('experiments', 'mimicry'), args.model)
+    if not os.path.exists(save_dir):
+        utils.mkdir(save_dir)
+    utils.dump_pickle_frd_space(x_mod_list,
+                                os.path.join(save_dir, 'x_mod.list'))
+    if args.real:
+        attack.produce_adv_mal(x_mod_list, mal_test_x.tolist(),
+                               config.get('dataset', 'malware_dir'),
+                               adj_mod=None)
 
 
 if __name__ == '__main__':

@@ -10,7 +10,7 @@ import numpy as np
 import networkx as nx
 import torch
 
-from core.droidfeature import Apk2graphs
+from core.droidfeature import Apk2graphs, NULL_ID
 from core.droidfeature import sequence_generator as seq_gen
 from tools import dex_manip, xml_manip, utils
 from config import config, logging, ErrorHandler
@@ -106,8 +106,8 @@ class InverseDroidFeature(object):
     def __init__(self):
         meta_data_saving_dir = config.get('dataset', 'intermediate')
         naive_data_saving_dir = config.get('metadata', 'naive_data_pool')
-        feature_extractor = Apk2graphs(naive_data_saving_dir, meta_data_saving_dir)
-        InverseDroidFeature.vocab, InverseDroidFeature.vocab_info, _1 = feature_extractor.get_vocab()
+        self.feature_extractor = Apk2graphs(naive_data_saving_dir, meta_data_saving_dir)
+        InverseDroidFeature.vocab, InverseDroidFeature.vocab_info, _1 = self.feature_extractor.get_vocab()
         self.vocab = InverseDroidFeature.vocab
         self.vocab_info = InverseDroidFeature.vocab_info
 
@@ -135,16 +135,20 @@ class InverseDroidFeature(object):
     @staticmethod
     def merge_features(cg_dict1, cg_dict2):
         """
-        randomly pick a graph from cg1 and inject a graph of cg_dict2 into it
+        randomly pick a graph from cg1 and inject graphs of cg_dict2 into it
         """
-        if len(cg_dict1) <= 0:
+        n_src_cgs = len(cg_dict1)
+        if n_src_cgs <= 0:
             return cg_dict2
+        idx_mod = []
         for root_call, cg in cg_dict2.items():
-            src_root_call, src_cg = random.choice(list(cg_dict1.items()))
+            idx = random.choice(range(n_src_cgs))
+            src_root_call, src_cg = list(cg_dict1.items())[idx]
             # src_root_call = list(src_root_call).extend(list(root_call))
             src_cg = nx.compose(src_cg, cg)
             cg_dict1[src_root_call] = src_cg
-        return cg_dict1
+            idx_mod.append(idx)
+        return cg_dict1, idx_mod
 
     @staticmethod
     def approx_check_public_method(word, word_info):
@@ -179,6 +183,8 @@ class InverseDroidFeature(object):
         for i in range(num_cg):
             vocab_ind = indices[1][indices[0] == i]
             api = map(self.vocab.__getitem__, vocab_ind)
+            if api == NULL_ID:   # not an api
+                continue
             manip_x = values[indices[0] == i]
             op_info = map(lambda v: OP_INSERTION if v > 0 else OP_REMOVAL, manip_x)
             instruction.append(tuple(zip(api, op_info)))

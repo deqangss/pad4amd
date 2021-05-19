@@ -5,6 +5,7 @@ import torch
 
 import numpy as np
 
+from core.attack.base_attack import BaseAttack
 from core.droidfeature import inverse_feature_extraction
 from tools import utils
 from config import logging, ErrorHandler
@@ -15,7 +16,7 @@ logger.addHandler(ErrorHandler)
 EXP_OVER_FLOW = 1e-30
 
 
-class Mimicry(object):
+class Mimicry(BaseAttack):
     """
     Mimicry attack: inject the graph of benign file into malicious ones
 
@@ -25,10 +26,11 @@ class Mimicry(object):
     """
 
     def __init__(self, device=None):
+        super(Mimicry, self).__init__()
         self.device = device
         self.inversedorid = inverse_feature_extraction.InverseDroidFeature()
 
-    def perturb(self, model, x, ben_x, trials=10, data_fn=None, seed=0, n_sample_times=5, verbose=False):
+    def perturb(self, model, x, ben_x, trials=10, data_fn=None, seed=0, n_sample_times=1, is_apk=False, verbose=False):
         """
         inject the graph of benign file into malicious ones
 
@@ -40,8 +42,9 @@ class Mimicry(object):
         @param trials: Integer, repetition times
         @param data_fn: Function, yield numerical data
         @param seed: Integer, random seed
-        @param n_sample_times, Integer, sample times in the test phase
-        @param verbose, Boolean, whether present attack information or not
+        @param n_sample_times: Integer, sample times in the test phase
+        @param is_apk: Boolean, whether produce apks
+        @param verbose: Boolean, whether present attack information or not
         """
         assert trials > 0
         if x is None or len(x) <= 0:
@@ -52,20 +55,24 @@ class Mimicry(object):
         np.random.seed(seed)
         success_flag = np.array([])
         with torch.no_grad():
+            x_mod_list = []
             for _x in x:
                 mal_cg = inverse_feature_extraction.seq_gen.read_from_disk(_x)
                 mal_f_name = os.path.splitext(os.path.basename(_x))[0]
+                x_mod = np.zeros((np.max(idx_modif), len(self.inversedorid.vocab)), dtype=np.float)
                 # need more efficiency than this
-                _paths = []
                 with tempfile.TemporaryDirectory() as tmpdirname:
                     ben_samples = np.random.choice(ben_x, (trials,), replace=False)
+                    _paths = []
+                    _idc_modif = []
                     for ben_f in ben_samples:
                         ben_cg = inverse_feature_extraction.seq_gen.read_from_disk(ben_f)
-                        new_cg = self.inversedorid.merge_features(mal_cg, ben_cg)
+                        new_cg, idx_modif = self.inversedorid.merge_features(mal_cg, ben_cg)
                         tmp_fname = os.path.join(tmpdirname, mal_f_name + '_' + os.path.basename(ben_f))
                         inverse_feature_extraction.seq_gen.save_to_disk(new_cg, tmp_fname)
                         _paths.append(tmp_fname)
-                    ben_y = np.zeros((trials, ), dtype=np.int)
+                        _idc_modif.append(idx_modif)
+                    ben_y = np.zeros((trials,), dtype=np.int)
                     data_producer = data_fn(np.array(_paths), ben_y, batch_size=trials, name='test')
                     y_cent, x_density = [], []
                     for _ in range(n_sample_times):
@@ -81,6 +88,21 @@ class Mimicry(object):
                         attack_success_flag = (y_pred == 0) & (model.indicator(x_density, y_pred))
                     else:
                         attack_success_flag = (y_pred == 0)
+                    if is_apk:
+                        ben_id_sel = np.argmax(attack_success_flag)
+                        idx_modif = _idc_modif[ben_id_sel]
+                        ben_x_list, _1, _2 = self.inversedorid.feature_extractor.feature2ipt(ben_samples[ben_id_sel],
+                                                                                             label=0,
+                                                                                             is_adj=False,
+                                                                                             vocabulary=self.inversedorid.vocab,
+                                                                                             n_cg=len(idx_modif),
+                                                                                             cache_dir=None)
+                        assert len(ben_x_list) <= len(idx_modif)
+                        if len(ben_x_list) < len(idx_modif):
+                            logger.warning("inconsistent modification: Something may be wrong!")
+                        for idx in idx_modif:
+                            x_mod[idx] += ben_x_list[idx]
+
                     if not np.any(attack_success_flag):
                         success_flag = np.append(success_flag, [False])
                         if verbose:
@@ -89,4 +111,5 @@ class Mimicry(object):
                         success_flag = np.append(success_flag, [True])
                         if verbose:
                             logger.info("Success to perturb the file {}".format(mal_f_name))
-        return success_flag
+                x_mod_list.append(x_mod)
+        return success_flag, x_mod_list
