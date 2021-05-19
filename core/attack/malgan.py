@@ -101,7 +101,7 @@ class MalGAN(BaseAttack, nn.Module):
                 optimizer.zero_grad()
                 x_pertb = self.forward(x_batch)
                 loss_no_reduction, done = self.get_loss(detector, x_pertb, adj_batch, y_batch, lambda_)
-                loss_train = torch.mean(-1 * loss_no_reduction)
+                loss_train = -1 * torch.mean(loss_no_reduction)
                 loss_train.backward()
                 optimizer.step()
                 total_time += time.time() - start_time
@@ -157,8 +157,6 @@ class MalGAN(BaseAttack, nn.Module):
                     torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW), max=self.kappa))
             else:
                 loss_no_reduction = ce + self.lambda_ * (torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW))
-            print(y_pred)
-            print(de >= tau)
             done = (y_pred == 0.) & (de >= tau)
         else:
             loss_no_reduction = ce
