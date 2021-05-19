@@ -157,6 +157,8 @@ class MalGAN(BaseAttack, nn.Module):
                     torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW), max=self.kappa))
             else:
                 loss_no_reduction = ce + self.lambda_ * (torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW))
+            print('ce', ce)
+            print('de:', de)
             done = (y_pred == 0.) & (de >= tau)
         else:
             loss_no_reduction = ce
