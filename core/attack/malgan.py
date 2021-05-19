@@ -115,7 +115,7 @@ class MalGAN(BaseAttack, nn.Module):
                     print(f'Mini batch: {i * nbatches + idx_batch + 1}/{epochs * nbatches} | training time in {mins:.0f} minutes, {secs} seconds.')
                     logger.info(f'Training loss (batch level): {losses[-1]:.4f} | Train accuracy: {acc_train * 100:.2f}')
 
-            self.eval()
+            self.generator.eval()
             avg_acc_val = []
             with torch.no_grad():
                 for x_val, adj_val, y_val, _2 in validation_data_producer:
