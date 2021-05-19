@@ -26,8 +26,7 @@ class Mimicry(BaseAttack):
     """
 
     def __init__(self, device=None):
-        super(Mimicry, self).__init__()
-        self.device = device
+        super(Mimicry, self).__init__(device=device)
         self.inversedorid = inverse_feature_extraction.InverseDroidFeature()
 
     def perturb(self, model, x, ben_x, trials=10, data_fn=None, seed=0, n_sample_times=1, is_apk=False, verbose=False):
