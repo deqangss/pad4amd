@@ -153,7 +153,7 @@ class MalGAN(BaseAttack, nn.Module):
             de = model.forward_g(hidden, y_pred)
             tau = model.get_tau_sample_wise(y_pred)
             print(de)
-            print(tau)
+            print('tau:', tau)
             if self.is_attacker:
                 loss_no_reduction = ce + lambda_ * (torch.clamp(
                     torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW), max=self.kappa))
