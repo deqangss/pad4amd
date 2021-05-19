@@ -58,7 +58,7 @@ class MalGAN(BaseAttack, nn.Module):
             *block(128, 512, normalize=True),
             *block(512, 1024, normalize=True),
             nn.Linear(1024, self.input_dim),
-            nn.Dropout(),
+            nn.Dropout(0.4),
             nn.Sigmoid()
         )
         self.generator.to(self.device)
