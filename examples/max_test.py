@@ -41,16 +41,18 @@ atta_argparse.add_argument('--n_step_l2', type=int, default=100,
                            help='maximum number of steps.')
 atta_argparse.add_argument('--step_length_l2', type=float, default=1.,
                            help='step length in each step.')
+atta_argparse.add_argument('--step_check_l2', type=int, default=10,
+                            help='number of steps when checking the effectiveness of continuous perturbations.')
 atta_argparse.add_argument('--n_step_linf', type=int, default=100,
                            help='maximum number of steps.')
 atta_argparse.add_argument('--step_length_linf', type=float, default=0.01,
                            help='step length in each step.')
+atta_argparse.add_argument('--step_check_linf', type=int, default=10,
+                            help='number of steps when checking the effectiveness of continuous perturbations.')
 atta_argparse.add_argument('--n_step_adam', type=int, default=100,
                            help='maximum number of steps.')
 atta_argparse.add_argument('--lr', type=float, default=0.1,
                            help='learning rate.')
-atta_argparse.add_argument('--step_check', type=int, default=10,
-                            help='number of steps when checking the effectiveness of continuous perturbations.')
 atta_argparse.add_argument('--step_check_adam', type=int, default=10,
                             help='number of steps when checking the effectiveness of continuous perturbations.')
 atta_argparse.add_argument('--random_start', action='store_true', default=False,
@@ -199,7 +201,7 @@ def _main():
     pgdl2.perturb = partial(pgdl2.perturb,
                             steps=args.n_step_l2,
                             step_length=args.step_length_l2,
-                            step_check=args.step_check,
+                            step_check=args.step_check_l2,
                             base=args.base,
                             verbose=False
                             )
@@ -209,7 +211,7 @@ def _main():
     pgdlinf.perturb = partial(pgdlinf.perturb,
                               steps=args.n_step_linf,
                               step_length=args.step_length_linf,
-                              step_check=args.step_check,
+                              step_check=args.step_check_linf,
                               base=args.base,
                               verbose=False
                               )
