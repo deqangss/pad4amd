@@ -54,7 +54,7 @@ class MalGAN(BaseAttack, nn.Module):
             return layers
 
         self.generator = nn.Sequential(
-            *block(self.latent_dim, 128, normalize=False),
+            *block(self.latent_dim, 128, normalize=True),
             *block(128, 512),
             *block(512, 1024),
             nn.Linear(1024, self.input_dim),
