@@ -153,14 +153,13 @@ class MalGAN(BaseAttack, nn.Module):
             assert lambda_ is not None
             de = model.forward_g(hidden, y_pred)
             tau = model.get_tau_sample_wise(y_pred)
-            print(de)
-            print('tau', tau)
             if self.is_attacker:
                 loss_no_reduction = lambda_ * (torch.clamp(
                     torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW), max=self.kappa))
             else:
                 loss_no_reduction = ce + self.lambda_ * (torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW))
-            done = (y_pred == 0.) & (de >= tau)
+            # done = (y_pred == 0.) & (de >= tau)
+            done = de >= tau
         else:
             loss_no_reduction = ce
             done = y_pred == 0.
