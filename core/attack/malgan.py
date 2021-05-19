@@ -68,7 +68,7 @@ class MalGAN(BaseAttack, nn.Module):
         padding_mask = torch.sum(x, dim=-1, keepdim=True) > 1
         x_ext = torch.cat([x.reshape(size[0], -1), torch.rand((size[0], self.noise_dim), device=self.device)], dim=1)
         x_pertb = round_x(self.generator(x_ext), 0.5).reshape(size) * padding_mask
-        print(torch.sum(torch.maximum(x, x_pertb) - x), dim=-1)
+        print(torch.sum(torch.maximum(x, x_pertb) - x, dim=-1))
         return torch.maximum(x, x_pertb)  # only feature addition is considered
 
     def fit(self, train_data_producer, validation_data_producer, detector, epochs=100, lr=0.001, lambda_=1e4, verbose=True):
