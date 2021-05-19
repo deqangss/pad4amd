@@ -116,10 +116,10 @@ class GDKDE(BaseAttack):
                     adv_adj = None if adj is None else adj[~done]
                     prev_done = done
                 pert_x_cont = self._perturb(model, adv_x[~done], adv_adj, label[~done],
-                                       mini_step,
-                                       step_length,
-                                       lambda_=self.lambda_
-                                       )
+                                            mini_step,
+                                            step_length,
+                                            lambda_=self.lambda_
+                                            )
                 # round
                 adv_x[~done] = pert_x_cont.round()
 
@@ -174,7 +174,7 @@ class GDKDE(BaseAttack):
                     torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW), max=self.kappa))
             else:
                 loss_no_reduction += self.lambda_ * \
-                    torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW)
+                                     torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW)
             done = (y_pred == 0.) & (de >= tau)
         else:
             done = y_pred == 0.
