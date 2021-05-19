@@ -132,7 +132,7 @@ def _main():
     for i in range(args.n_sample_times):
         y_cent, x_density = [], []
         x_mod = []
-        for x, a, y, g_ind in mal_test_dataset_producer:
+        for x, a, y, idx in mal_test_dataset_producer:
             x, a, y = utils.to_tensor(x, a, y, model.device)
             adv_x_batch = attack.perturb(model, x, a, y,
                                          args.m_pertb,
@@ -142,7 +142,7 @@ def _main():
             y_cent_batch, x_density_batch = model.inference_batch_wise(adv_x_batch, a, y, use_indicator=True)
             y_cent.append(y_cent_batch)
             x_density.append(x_density_batch)
-            x_mod.extend(dataset.get_modification(adv_x_batch, x, g_ind, True))
+            x_mod.extend(dataset.get_modification(adv_x_batch, x, idx, True))
         y_cent_list.append(np.vstack(y_cent))
         x_density_list.append(np.concatenate(x_density))
         # following function: if both addition and removal operations are applied to a same API, we have it un-change

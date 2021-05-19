@@ -222,14 +222,14 @@ class Dataset(torch.utils.data.Dataset):
                                            **params)
 
     @staticmethod
-    def get_modification(adv_x, x, g_ind, sp=True):
+    def get_modification(adv_x, x, idx, sp=True):
         assert isinstance(adv_x, (np.ndarray, torch.Tensor))
         assert isinstance(x, (np.ndarray, torch.Tensor))
         x_mod = adv_x - x
         if isinstance(x_mod, np.ndarray):
-            x_mod = np.array([x_mod[i, g_ind[i]] for i in range(x.shape[0])])
+            x_mod = np.array([x_mod[i, idx[i]] for i in range(x.shape[0])])
         else:
-            x_mod = torch.stack([x_mod[i, g_ind[i]]for i in range(x.shape[0])])
+            x_mod = torch.stack([x_mod[i, idx[i]]for i in range(x.shape[0])])
 
         if sp:
             if isinstance(x_mod, torch.Tensor):
