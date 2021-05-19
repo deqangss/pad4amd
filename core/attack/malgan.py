@@ -137,8 +137,8 @@ class MalGAN(BaseAttack, nn.Module):
                     print(f'Model saved at path: {self.model_path}')
 
             if verbose:
-                logger.info(f'Training loss (epoch level): {np.mean(losses):.4f} | Train accuracy: {np.mean(accuracies) * 100:.2f}')
-                logger.info(f'Validation accuracy: {avg_acc_val * 100:.2f} | The best validation accuracy: {best_avg_acc * 100:.2f} at epoch: {best_epoch}')
+                logger.info(f'Training loss (epoch level): {np.mean(losses):.4f}% | Train accuracy: {np.mean(accuracies) * 100:.2f}%')
+                logger.info(f'Validation accuracy: {avg_acc_val * 100:.2f}% | The best validation accuracy: {best_avg_acc * 100:.2f}% at epoch: {best_epoch}')
 
     def perturb(self, x):
         self.generator.load_state_dict(torch.load(self.model_path))
