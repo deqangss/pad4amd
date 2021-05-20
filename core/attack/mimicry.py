@@ -58,7 +58,7 @@ class Mimicry(BaseAttack):
             for _x in x:
                 mal_cg = inverse_feature_extraction.seq_gen.read_from_disk(_x)
                 mal_f_name = os.path.splitext(os.path.basename(_x))[0]
-                x_mod = np.zeros((np.max(idx_modif), len(self.inversedorid.vocab)), dtype=np.float)
+                x_mod = None
                 # need more efficiency than this
                 with tempfile.TemporaryDirectory() as tmpdirname:
                     ben_samples = np.random.choice(ben_x, (trials,), replace=False)
@@ -90,6 +90,7 @@ class Mimicry(BaseAttack):
                     if is_apk:
                         ben_id_sel = np.argmax(attack_success_flag)
                         idx_modif = _idc_modif[ben_id_sel]
+                        x_mod = np.zeros((np.max(idx_modif), len(self.inversedorid.vocab)), dtype=np.float)
                         ben_x_list, _1, _2 = self.inversedorid.feature_extractor.feature2ipt(ben_samples[ben_id_sel],
                                                                                              label=0,
                                                                                              is_adj=False,
