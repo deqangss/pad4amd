@@ -101,7 +101,7 @@ class Max(BaseAttack):
         if 'forward_g' in type(model).__dict__.keys() and (not self.oblivion):
             de = model.forward_g(hidden, y_pred)
             tau = model.get_tau_sample_wise(y_pred)
-            loss_no_reduction = ce + torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW)
+            loss_no_reduction = torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW)
             done = (y_pred == 0.) & (de >= tau)
         else:
             loss_no_reduction = ce
