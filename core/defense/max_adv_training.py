@@ -192,7 +192,7 @@ class MaxAdvTraining(object):
             acc_val = np.sum(res_val).astype(np.float) / res_val.shape[0]
             # Owing to we look for a new threshold after each epoch, this hinders the convergence of training.
             # We save the model's parameters at last several epochs for a well-trained model may be achieved.
-            if ((i + 1) >= 30) and (acc_val >= best_acc_val):
+            if ((i + 1) >= adv_epochs - 10) and (acc_val >= best_acc_val):
                 best_acc_val = acc_val
                 best_epoch = i + 1
                 torch.save({'model_state_dict': self.model.state_dict(),
