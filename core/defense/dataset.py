@@ -76,10 +76,6 @@ class Dataset(torch.utils.data.Dataset):
         for i in range(_labels.shape[0]):
             self.sample_weights[_labels[i]] = _weights[i]
 
-        # self.feature_extractor.merge_cg(self.train_dataset[0])
-        # self.feature_extractor.merge_cg(self.validation_dataset[0])
-        # self.feature_extractor.merge_cg(self.test_dataset[0])
-
         self.vocab, _1, flag = self.feature_extractor.get_vocab(*self.train_dataset)
         self.vocab_size = len(self.vocab)
         self.n_classes = np.unique(self.train_dataset[1]).size
