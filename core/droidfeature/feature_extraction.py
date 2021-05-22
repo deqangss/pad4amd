@@ -190,44 +190,6 @@ class Apk2graphs(object):
             del cg_dict
         return
 
-    def feature_selection(self, train_features, train_y, vocab, dim):
-        """
-        feature selection
-        :param train_features: 2D feature
-        :type train_features: numpy object
-        :param train_y: ground truth labels
-        :param vocab: a list of words (i.e., features)
-        :param dim: the number of remained words
-        :return: chose vocab
-        """
-        is_malware = (train_y == 1)
-        mal_features = np.array(train_features, dtype=object)[is_malware]
-        ben_features = np.array(train_features, dtype=object)[~is_malware]
-
-        if (len(mal_features) <= 0) or (len(ben_features) <= 0):
-            return vocab
-
-        mal_representations = self.get_feature_representation(mal_features, vocab)
-        mal_frequency = np.sum(mal_representations, axis=0) / float(len(mal_features))
-        ben_representations = self.get_feature_representation(ben_features, vocab)
-        ben_frequency = np.sum(ben_representations, axis=0) / float(len(ben_features))
-
-        # eliminate the words showing zero occurrence in apk files
-        is_null_feature = np.all(mal_representations == 0, axis=0) & np.all(ben_representations, axis=0)
-        mal_representations, ben_representations = None, None
-        vocab_filtered = list(np.array(vocab)[~is_null_feature])
-
-        if len(vocab_filtered) <= dim:
-            return vocab_filtered
-        else:
-            feature_frq_diff = np.abs(mal_frequency[~is_null_feature] - ben_frequency[~is_null_feature])
-            position_flag = np.argsort(feature_frq_diff)[::-1][:dim]
-
-            vocab_selected = []
-            for p in position_flag:
-                vocab_selected.append(vocab_filtered[p])
-            return vocab_selected
-
     def feature_mapping(self, feature_path_list, dictionary):
         """
         mapping feature to numerical representation
