@@ -485,7 +485,7 @@ def merge_graphs(api_seq_dict, N=1):
 
     # merge all graph
     if N > 0 and N <= 1:
-        rn, g = merge(sorted(set(class_names), key=class_names.index))
+        rn, g = merge(sorted(set(class_names), key=class_names.index))  # remove duplicates and keep in order
         new_cg_dict[rn] = g
         return new_cg_dict
 

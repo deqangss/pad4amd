@@ -138,7 +138,7 @@ class Apk2graphs(object):
                 counter_ben.update(list(api_occurence))
         all_words = list(set(list(counter_ben.keys()) + list(counter_mal.keys())))
         if not self.use_feature_selection:  # no feature selection applied
-            return all_words
+            self.maximum_vocab_size = len(all_words) + 1
         mal_feature_frequency = np.array(list(map(counter_mal.get, all_words)))
         mal_feature_frequency[mal_feature_frequency == None] = 0
         mal_feature_frequency /= float(np.sum(gt_labels))

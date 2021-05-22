@@ -119,9 +119,13 @@ class Dataset(torch.utils.data.Dataset):
         test_y = labels[query_indicator(test_dn)]
         return (train_data, train_y), (val_data, val_y), (test_data, test_y)
 
-    def apk_preprocess(self, apk_paths, labels=None):
+    def apk_preprocess(self, apk_paths, labels=None, update_feature_extraction=False):
+        ori_status = self.feature_extractor.update
+        self.feature_extractor.update = update_feature_extraction
         if labels is None:
-            return self.feature_extractor.feature_extraction(apk_paths)
+            feature_paths = self.feature_extractor.feature_extraction(apk_paths)
+            self.feature_extractor.update = ori_status
+            return feature_paths
         else:
             assert len(apk_paths) == len(labels), \
                 'uncompilable data shape {} vs. {}'.format(len(apk_paths), len(labels))
@@ -131,7 +135,11 @@ class Dataset(torch.utils.data.Dataset):
                 fname = os.path.splitext(os.path.basename(feature_path))[0]
                 if fname in apk_paths[i]:
                     labels_.append(labels[i])
+            self.feature_extractor.update = ori_status
             return feature_paths, np.array(labels_)
+
+    def feature_preprocess(self, feature_paths):
+        self.feature_extractor.update_cg(feature_paths)
 
     def get_numerical_input(self, feature_path, label):
         """
