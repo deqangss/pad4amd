@@ -224,7 +224,7 @@ class InverseDroidFeature(object):
                     if op == OP_REMOVAL:
                         self.remove_api(api_name, cg, dst_file)
                     else:
-                        # A large scale of insertion will trigger unexpected issues such as method limitation in a class
+                        # A large scale of insertion operations will trigger unexpected issues, such as method limitation in a class
                         self.insert_api(api_name, root_call, dst_file)
             dst_file_apk = os.path.join(save_dir, os.path.splitext(os.path.basename(app_path))[0] + '_adv')
             cmd_response = subprocess.call("apktool -q b " + dst_file + " -o " + dst_file_apk, shell=True)
@@ -232,11 +232,13 @@ class InverseDroidFeature(object):
                 shutil.copytree(dst_file, os.path.join(TMP_DIR, os.path.basename(dst_file)),
                                 dirs_exist_ok=True)
                 logger.error("Unable to assemble app {} and move it to {}.".format(dst_file, TMP_DIR))
-                return
-            subprocess.call("jarsigner -sigalg MD5withRSA -digestalg SHA1 -keystore " + os.path.join(
-                config.get("DEFAULT", 'project_root'), "core/droidfeature/res/resignKey.keystore") + \
-                            " -storepass resignKey " + dst_file_apk + ' resignKey',
-                            shell=True)
+                return False
+            else:
+                subprocess.call("jarsigner -sigalg MD5withRSA -digestalg SHA1 -keystore " + os.path.join(
+                    config.get("DEFAULT", 'project_root'), "core/droidfeature/res/resignKey.keystore") + \
+                                " -storepass resignKey " + dst_file_apk + ' resignKey',
+                                shell=True)
+                logger.info("Apk signed: {}.".format(dst_file_apk))
 
     @staticmethod
     def remove_api(api_name, call_graph, disassemble_dir):

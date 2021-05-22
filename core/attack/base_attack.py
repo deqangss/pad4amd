@@ -67,7 +67,7 @@ class BaseAttack(Module):
         """
         raise NotImplementedError
 
-    def produce_adv_mal(self, x_mod_list, feature_path_list, app_dir, adj_mod=None):
+    def produce_adv_mal(self, x_mod_list, feature_path_list, app_dir, adj_mod=None, save_dir=None):
         """
         produce adversarial malware in practice
 
@@ -77,6 +77,7 @@ class BaseAttack(Module):
         @param feature_path_list, list of feature paths, each of which corresponds to the saved file of call graph
         @param app_dir, string, a directory (or a list of path) pointing to (pristine) malicious apps
         @param adj_mod, modifications on adjacency matrix
+        @param save_dir, directory for saving resultant apks
         """
         if adj_mod is not None:
             raise NotImplementedError("Un-support to apply the modifications of adjacency matrix to apps.")
@@ -92,11 +93,11 @@ class BaseAttack(Module):
         elif isinstance(app_dir, list):
             app_path_list = app_dir
         else:
-            raise ValueError("Expect app dir or paths, but got {}.".format(app_dir))
-        assert np.all([os.path.exists(app_path) for app_path in app_path_list])
+            raise ValueError("Expect app directory or a list of paths, but got {}.".format(type(app_dir)))
+        assert np.all([os.path.exists(app_path) for app_path in app_path_list]), "Unable to find all app paths."
 
         for x_mod_instr, feature_path, app_path in zip(x_mod_instructions, feature_path_list, app_path_list):
-            self.inverse_feature.modify(x_mod_instr, feature_path, app_path)
+            self.inverse_feature.modify(x_mod_instr, feature_path, app_path, save_dir)
 
     def check_lambda(self, model):
         if 'forward_g' in type(model).__dict__.keys() and (not self.oblivion):
