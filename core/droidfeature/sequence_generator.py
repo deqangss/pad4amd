@@ -459,7 +459,7 @@ def merge_graphs(api_seq_dict, N=1):
     if isinstance(root_nodes[0], tuple):
         class_names = [get_same_class_prefix(list(root_node)) for root_node in root_nodes]  # duplication exists
     elif isinstance(root_nodes[0], str):
-        class_names = [root_node.split(';')[0].split('$')[0].split('/') for root_node in root_nodes]
+        class_names = [root_node.split(';')[0].split('$')[0] for root_node in root_nodes]
     else:
         raise TypeError("Expect 'list' or 'tuple'.")
 
@@ -475,7 +475,9 @@ def merge_graphs(api_seq_dict, N=1):
         for class_name in class_name_list:
             root_node_list = map_class_to_node(class_name)
             for rn in root_node_list:
-                new_root_node += tuple(rn)
+                if not isinstance(rn, tuple):
+                    rn = (rn, )
+                new_root_node += rn
                 g = nx.compose(g, api_seq_dict[rn])
         return new_root_node, g
 

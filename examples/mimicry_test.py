@@ -17,7 +17,7 @@ logger = logging.getLogger('examples.mimicry')
 logger.addHandler(ErrorHandler)
 
 atta_argparse = argparse.ArgumentParser(description='arguments for mimicry attack')
-atta_argparse.add_argument('--trials', type=int, default=10,
+atta_argparse.add_argument('--trials', type=int, default=30,
                            help='number of benign samples for perturbing one malicious file.')
 atta_argparse.add_argument('--n_sample_times', type=int, default=1,
                            help='data sampling times when waging attacks')

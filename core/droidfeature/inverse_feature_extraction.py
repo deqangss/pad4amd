@@ -182,12 +182,11 @@ class InverseDroidFeature(object):
         instruction = []
         for i in range(num_cg):
             vocab_ind = indices[1][indices[0] == i]
-            api = map(self.vocab.__getitem__, vocab_ind)
-            if api == NULL_ID:   # not an api
-                continue
+            apis = list(map(self.vocab.__getitem__, vocab_ind))
+            apis.remove(NULL_ID)  # not an api
             manip_x = values[indices[0] == i]
             op_info = map(lambda v: OP_INSERTION if v > 0 else OP_REMOVAL, manip_x)
-            instruction.append(tuple(zip(api, op_info)))
+            instruction.append(tuple(zip(apis, op_info)))
         return instruction
 
     def modify(self, x_mod_instr, feature_path, app_path, save_dir=None):
@@ -252,7 +251,7 @@ class InverseDroidFeature(object):
         @param disassemble_dir, the work directory
         """
         if not (api_name in call_graph.nodes()):
-            logger.warning("No {} found in {}.".format(api_name, disassemble_dir))
+            logger.warning("Removing {}, but got it non-found in {}.".format(api_name, api_name, disassemble_dir))
             return
         api_tag = call_graph.nodes(data=True)[api_name]['tag'].pop()
         caller_class_name, caller_method_statement = seq_gen.get_caller_info(api_tag)

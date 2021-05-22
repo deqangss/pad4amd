@@ -8,7 +8,6 @@ import argparse
 from core.defense import Dataset
 from tools.utils import ivs_to_tensor_coo_sp
 
-from config import config
 
 cmd_md = argparse.ArgumentParser(description='arguments for feature extraction')
 cmd_md.add_argument('--proc_number', type=int, default=6,
@@ -23,7 +22,7 @@ cmd_md.add_argument('--use_feature_selection', action='store_true', default=True
                     help='Whether use feature selection or not.')
 cmd_md.add_argument('--N', type=int, default=1,
                     help='the maximum number of graphs for an app.')
-cmd_md.add_argument('--max_vocab_size', type=int, default=10000,
+cmd_md.add_argument('--max_vocab_size', type=int, default=5000,
                     help='The maximum number of vocabulary size')
 cmd_md.add_argument('--update', action='store_true', default=False,
                     help='Whether update the existed features.')
