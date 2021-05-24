@@ -125,8 +125,14 @@ def apk2graphs(apk_path, max_number_of_sequences=15000, max_recursive_depth=50, 
                                             max_recursive_depth,
                                             timeout
                                             )
+    # for c,g in api_sequence_dict.items():
+    #     for node in g.nodes(data=True):
+    #         if node[0] == 'Ljava/io/IOException;->getMessage':
+    #             print('tag: ', node[1])
+    #             print('root: ', c)
+    #             print('------------')
 
-    # 5. merge graphs based on class name
+    # 5. merge graphs
     api_sequence_dict = merge_graphs(api_sequence_dict, N)
 
     # 6. saving the results
@@ -476,8 +482,9 @@ def merge_graphs(api_seq_dict, N=1):
             root_node_list = map_class_to_node(class_name)
             for rn in root_node_list:
                 if not isinstance(rn, tuple):
-                    rn = (rn, )
-                new_root_node += rn
+                    new_root_node += (rn, )
+                else:
+                    new_root_node += rn
                 g = nx.compose(g, api_seq_dict[rn])
         return new_root_node, g
 
@@ -547,7 +554,13 @@ def get_caller_info(node_tag):
     assert TAG_SPLITTER in node_tag
     call_info = node_tag.split(TAG_SPLITTER)[1]
     class_name, method_statement = call_info.split(';', 1)
+    # tailor tab issue that may be triggered by encodedmethod of androidguard
+    method_statement = ';'.join([s.strip() for s in method_statement.split(';')])
     return class_name+';', method_statement
+
+
+def get_api_tag(api_ivk_line, api_callee_class_name, api_callee_name):
+    return api_ivk_line + TAG_SPLITTER + api_callee_class_name + api_callee_name
 
 
 def get_same_class_prefix(entry_node_list):

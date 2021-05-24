@@ -103,7 +103,8 @@ EMPTY_SERVICE_BODY = '''.class public L{fullClassName}
 class InverseDroidFeature(object):
     vocab, vocab_info = None, None
 
-    def __init__(self):
+    def __init__(self, seed=0):
+        random.seed(seed)
         meta_data_saving_dir = config.get('dataset', 'intermediate')
         naive_data_saving_dir = config.get('metadata', 'naive_data_pool')
         self.feature_extractor = Apk2graphs(naive_data_saving_dir, meta_data_saving_dir)
@@ -183,7 +184,7 @@ class InverseDroidFeature(object):
         for i in range(num_cg):
             vocab_ind = indices[1][indices[0] == i]
             apis = list(map(self.vocab.__getitem__, vocab_ind))
-            if NULL_ID in apis: # not an api
+            if NULL_ID in apis:  # not an api
                 apis = list(sorted(set(apis), key=apis.index))
                 apis.remove(NULL_ID)
             manip_x = values[indices[0] == i]
@@ -235,6 +236,8 @@ class InverseDroidFeature(object):
                 logger.error("Unable to assemble app {} and move it to {}.".format(dst_file, TMP_DIR))
                 return False
             else:
+                shutil.copytree(dst_file, os.path.join(TMP_DIR, os.path.basename(dst_file)),
+                                dirs_exist_ok=True)
                 subprocess.call("jarsigner -sigalg MD5withRSA -digestalg SHA1 -keystore " + os.path.join(
                     config.get("DEFAULT", 'project_root'), "core/droidfeature/res/resignKey.keystore") + \
                                 " -storepass resignKey " + dst_file_apk + ' resignKey',
@@ -242,7 +245,7 @@ class InverseDroidFeature(object):
                 logger.info("Apk signed: {}.".format(dst_file_apk))
 
     @staticmethod
-    def remove_api(api_name, call_graph, disassemble_dir):
+    def remove_api(api_name, call_graph, disassemble_dir, coarse=True):
         """
         remove an api
 
@@ -251,55 +254,75 @@ class InverseDroidFeature(object):
         @param api_name, composite of class name and method name
         @param call_graph, call graph
         @param disassemble_dir, the work directory
+        @param coarse, whether use reflection to all matched methods
         """
         if not (api_name in call_graph.nodes()):
             logger.warning("Removing {}, but got it non-found in {}.".format(api_name, disassemble_dir))
             return
-        api_tag = call_graph.nodes(data=True)[api_name]['tag'].pop()
-        caller_class_name, caller_method_statement = seq_gen.get_caller_info(api_tag)
-        smali_path_of_class = os.path.join(disassemble_dir + '/smali',
-                                           caller_class_name.lstrip('L').rstrip(';') + '.smali')
-        method_finder_flag = False
-        fh = dex_manip.read_file_by_fileinput(smali_path_of_class, inplace=True)
-        for line in fh:
-            if line.strip() == caller_method_statement:
-                method_finder_flag = True
-                print(line.rstrip())
-                continue
-            if line.strip() == '.end method':
-                method_finder_flag = False
 
-            if method_finder_flag:
-                invoke_match = re.search(
-                    r'^([ ]*?)(?P<invokeType>invoke\-([^ ]*?)) {(?P<invokeParam>([vp0-9,. ]*?))}, (?P<invokeObject>L(.*?);|\[L(.*?);)->(?P<invokeMethod>(.*?))\((?P<invokeArgument>(.*?))\)(?P<invokeReturn>(.*?))$',
-                    line)
-                if invoke_match is None:
+        api_tag_set = call_graph.nodes(data=True)[api_name]['tag']
+        # we attempt to obtain more relevant info about this api. Nonetheless, once there is class inheritance,
+        # we cannot make it.
+        if coarse:
+            api_info_list = dex_manip.retrive_api_caller_info(api_name, disassemble_dir)
+            for api_info in api_info_list:
+                api_tag_set.add(seq_gen.get_api_tag(api_info['ivk_method'],
+                                                    api_info['class_name'],
+                                                    api_info['callee_stm']
+                                                    )
+                                )
+        for api_tag in api_tag_set:
+            caller_class_name, caller_method_statement = seq_gen.get_caller_info(api_tag)
+            smali_path_of_class = os.path.join(disassemble_dir + '/smali',
+                                               caller_class_name.lstrip('L').rstrip(';') + '.smali')
+            method_finder_flag = False
+            # note: owing to the inplace 'print', do not use std.out operation again until the following file is closed
+            fh = dex_manip.read_file_by_fileinput(smali_path_of_class, inplace=True)
+            for line in fh:
+                if line.strip() == caller_method_statement:
+                    method_finder_flag = True
                     print(line.rstrip())
-                else:
-                    api_name_invoked = invoke_match.group('invokeObject') + '->' + invoke_match.group('invokeMethod')
-                    if api_name_invoked == api_name:
-                        new_file_name = 'Ref' + dex_manip.random_name(seed=int(time.time()), code=api_name)
-                        new_class_name = 'L' + DEFAULT_SMALI_DIR + new_file_name + ';'
-                        ref_class_body = REFLECTION_TEMPLATE.replace('MethodReflection', new_file_name)
-                        ref_class_body = dex_manip.change_invoke_by_ref(new_class_name,
-                                                                        ref_class_body,  # append method
-                                                                        invoke_match.group('invokeType'),
-                                                                        invoke_match.group('invokeParam'),
-                                                                        invoke_match.group('invokeObject'),
-                                                                        invoke_match.group('invokeMethod'),
-                                                                        invoke_match.group('invokeArgument'),
-                                                                        invoke_match.group('invokeReturn')
-                                                                        )
-                        ref_smail_path = os.path.join(disassemble_dir + '/smali',
-                                                      DEFAULT_SMALI_DIR + new_file_name + '.smali')
-                        if not os.path.exists(os.path.dirname(ref_smail_path)):
-                            utils.mkdir(os.path.dirname(ref_smail_path))
-                        dex_manip.write_whole_file(ref_class_body, ref_smail_path)
-                    else:
+                    continue
+                if line.strip() == '.end method':
+                    method_finder_flag = False
+
+                if method_finder_flag:
+                    invoke_match = re.search(
+                        r'^([ ]*?)(?P<invokeType>invoke\-([^ ]*?)) {(?P<invokeParam>([vp0-9,. ]*?))}, (?P<invokeObject>L(.*?);|\[L(.*?);)->(?P<invokeMethod>(.*?))\((?P<invokeArgument>(.*?))\)(?P<invokeReturn>(.*?))$',
+                        line)
+                    if invoke_match is None:
                         print(line.rstrip())
-            else:
-                print(line.rstrip())
-        fh.close()
+                    else:
+                        api_name_invoked = invoke_match.group('invokeObject') + '->' + invoke_match.group(
+                            'invokeMethod')
+                        potential_api_flag = (invoke_match.group('invokeMethod') == api_name.split('->')[1])
+                        if (api_name_invoked == api_name) or potential_api_flag:
+                            if not potential_api_flag:
+                                new_file_name = 'Ref' + dex_manip.random_name(seed=int(time.time()), code=api_name)
+                            else:
+                                _cur_api_name = invoke_match.group('invokeObject') + invoke_match.group('invokeMethod')
+                                new_file_name = 'Ref' + dex_manip.random_name(seed=int(time.time()), code=_cur_api_name)
+                            new_class_name = 'L' + DEFAULT_SMALI_DIR + new_file_name + ';'
+                            ref_class_body = REFLECTION_TEMPLATE.replace('MethodReflection', new_file_name)
+                            ref_class_body = dex_manip.change_invoke_by_ref(new_class_name,
+                                                                            ref_class_body,  # append method
+                                                                            invoke_match.group('invokeType'),
+                                                                            invoke_match.group('invokeParam'),
+                                                                            invoke_match.group('invokeObject'),
+                                                                            invoke_match.group('invokeMethod'),
+                                                                            invoke_match.group('invokeArgument'),
+                                                                            invoke_match.group('invokeReturn')
+                                                                            )
+                            ref_smail_path = os.path.join(disassemble_dir + '/smali',
+                                                          DEFAULT_SMALI_DIR + new_file_name + '.smali')
+                            if not os.path.exists(os.path.dirname(ref_smail_path)):
+                                utils.mkdir(os.path.dirname(ref_smail_path))
+                            dex_manip.write_whole_file(ref_class_body, ref_smail_path)
+                        else:
+                            print(line.rstrip())
+                else:
+                    print(line.rstrip())
+            fh.close()
 
     @staticmethod
     def create_entry_point(disassemble_dir):
@@ -329,6 +352,19 @@ class InverseDroidFeature(object):
             return 'L' + full_classname + '.method ' + ENTRY_METHOD_STATEMENT
 
     @staticmethod
+    def poten_ivk_api_check(api_name, invoke_class_name, invoke_method_name, disassembly_dir):
+        api_method_name = api_name.split('->')[1]
+        api_class_name = api_name.split('->')[0]
+        if api_method_name == invoke_method_name:
+            ext_path = invoke_class_name.strip().lstrip('L').rstrip(';') + '.smali'
+            ext_path.replace('/', '\\')
+            samli_path = os.path.join(disassembly_dir + '/smali', ext_path)
+            super_class_names = dex_manip.get_super_class_name(samli_path)
+            if api_class_name in super_class_names:
+                return True
+        return False
+
+    @staticmethod
     def insert_api(api_name, root_call, disassemble_dir):
         """
         insert an api.
@@ -341,7 +377,8 @@ class InverseDroidFeature(object):
         @param disassemble_dir, work directory
         """
         assert len(root_call) > 0, "Expect at least a root call."
-        root_call = random.choice(root_call)
+        # root_call = random.choice(root_call)
+        root_call = root_call[0]  # for simplifying analysis
         root_class_name, caller_method_statement = root_call.split(';', 1)
         smali_path = os.path.join(disassemble_dir + '/smali',
                                   root_class_name.lstrip('L') + '.smali')
@@ -385,6 +422,7 @@ class InverseDroidFeature(object):
             if line.strip() == caller_method_statement:
                 method_finder_flag = True
                 continue
+
             if method_finder_flag and line.strip() == '.end method':
                 method_finder_flag = False
                 # issue: injection ruins the correct line number in smali codes
@@ -400,7 +438,8 @@ class InverseDroidFeature(object):
 
             if method_finder_flag:
                 if re.match(r'^[ ]*?(.prologue)', line) is not None:
-                    print('    ' + invoke_virtual + ' {p0}, ' + root_class_name + ';->' + new_method_name + '()V' + '\n')
+                    print(
+                        '    ' + invoke_virtual + ' {p0}, ' + root_class_name + ';->' + new_method_name + '()V' + '\n')
         fh.close()
 
 

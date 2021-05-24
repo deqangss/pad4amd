@@ -477,6 +477,56 @@ def change_invoke_by_ref(new_class_name, method_fh, ivk_type, ivk_param, ivk_obj
     return method_fh
 
 
+def retrive_api_caller_info(api_name, disassembly_dir):
+    smali_dir = os.path.join(disassembly_dir, 'smali')
+    if not os.path.exists(smali_dir):
+        return []
+    if (not isinstance(api_name, str)) and len(api_name) <= 0:
+        return []
+
+    file_path_set = retrive_files_set(smali_dir, '', '.smali')
+    api_info = []
+    info_dict_temp = {'ivk_method': '',
+                      'class_name': '',
+                      'callee_stm': ''}
+    for file_path in file_path_set:
+        with open(file_path) as fh:
+            context = fh.read()
+            if api_name not in context:
+                continue
+            else:
+                lines = context.split('\n')
+                for line in lines:
+                    class_match = re.search(r'^([ ]*?)\.class(.*?)(?P<className>L([^;\(\) ]*?);)', line)
+                    if class_match is not None:
+                        callee_class_name = class_match.group('className')
+                    if '.method' in line:
+                        tmp_method_statement = line
+                    if api_name in line:
+                        invoke_match = re.search(
+                            r'^([ ]*?)(?P<invokeType>invoke\-([^ ]*?)) {(?P<invokeParam>([vp0-9,. ]*?))}, (?P<invokeObject>L(.*?);|\[L(.*?);)->(?P<invokeMethod>(.*?))\((?P<invokeArgument>(.*?))\)(?P<invokeReturn>(.*?))$',
+                            line)
+                        if invoke_match is not None:
+                            info_dict = info_dict_temp.copy()
+                            info_dict['ivk_method'] = invoke_match['invokeType'] + ' ' + api_name + invoke_match['invokeArgument'] + invoke_match['invokeReturn']
+                            info_dict['class_name'] = callee_class_name
+                            info_dict['callee_stm'] = tmp_method_statement
+                            api_info.append(info_dict)
+    return api_info
+
+
+def get_super_class_name(smali_path):
+    if not os.path.exists(smali_path):
+        return ''
+    super_class = []
+    with open(smali_path) as fh:
+        lines = fh.readlines()
+        for line in lines:
+            class_match = re.search(r'^([ ]*?)\.super(.*?)(?P<className>L([^;\(\) ]*?);)', line)
+            if class_match is not None:
+                super_class.append(class_match['className'])
+    return super_class
+
 def _main():
     plain_text = 'ui.finishscreen.buttons.exit.caption'
     encrypted_text = 'QQgbVlFXXBAJFwIXUVJbHwMXEBEKWRFKBE0KEUsCU0dACFpe'

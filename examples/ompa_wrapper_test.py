@@ -163,9 +163,25 @@ def _main():
                                 os.path.join(save_dir, 'x_mod.list'))
 
     if args.real:
-        attack.produce_adv_mal(x_mod_integrated, mal_test_x.tolist(),
+        adv_app_dir = os.path.join(save_dir, 'adv_apps')
+        print(y_pred[3])
+        print(mal_test_x.tolist()[3])
+        import torch
+        print(torch.sum(x_mod_integrated[3].to_dense() > 0))
+        print(torch.sum(x_mod_integrated[3].to_dense() < 0))
+        attack.produce_adv_mal(x_mod_integrated[3:4], mal_test_x.tolist()[3:4],
                                config.get('dataset', 'malware_dir'),
-                               adj_mod=None)
+                               adj_mod=None,
+                               save_dir=adv_app_dir)
+        adv_feature_paths = dataset.apk_preprocess(adv_app_dir, update_feature_extraction=True)
+        dataset.feature_preprocess(adv_feature_paths)
+        ben_test_dataset_producer = dataset.get_input_producer(adv_feature_paths,
+                                                               np.ones((len(adv_feature_paths, ))),
+                                                               batch_size=hp_params['batch_size'],
+                                                               name='test'
+                                                               )
+        model.predict(ben_test_dataset_producer)
+    dataset.clean_up()
 
 
 if __name__ == '__main__':
