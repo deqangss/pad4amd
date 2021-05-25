@@ -89,10 +89,11 @@ class Max(BaseAttack):
                 stop_flag[~stop_flag] = (torch.abs(pre_loss[~stop_flag] - a_loss) < self.varepsilon) | success_flag
                 pre_loss[~pre_stop_flag] = a_loss
 
-                if verbose:
-                    hidden, logit = model.forward(adv_x, adj)
-                    _, done = self.get_loss_without_lambda(model, logit, label, hidden)
-                    logger.info(f"max: attack effectiveness {done.sum().item() / x.size()[0] * 100}%.")
+        if verbose:
+            with torch.no_grad():
+                hidden, logit = model.forward(adv_x, adj)
+                _, done = self.get_loss_without_lambda(model, logit, label, hidden)
+                logger.info(f"max: attack effectiveness {done.sum().item() / x.size()[0] * 100}%.")
         return adv_x
 
     def get_loss_without_lambda(self, model, logit, label, hidden=None):
@@ -101,7 +102,7 @@ class Max(BaseAttack):
         if 'forward_g' in type(model).__dict__.keys() and (not self.oblivion):
             de = model.forward_g(hidden, y_pred)
             tau = model.get_tau_sample_wise(y_pred)
-            loss_no_reduction = ce + torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW)
+            loss_no_reduction = torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW)
             done = (y_pred == 0.) & (de >= tau)
         else:
             loss_no_reduction = ce

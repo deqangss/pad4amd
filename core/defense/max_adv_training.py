@@ -110,8 +110,7 @@ class MaxAdvTraining(object):
                 self.model.eval()
                 pertb_mal_x = self.attack_model.perturb(self.model, mal_x_batch, mal_adj_batch, mal_y_batch,
                                                         steps_of_max=self.attack_param['steps'],
-                                                        min_lambda_=lambda_,
-                                                        # when lambda is small, we cannot get effective attacks
+                                                        min_lambda_=lambda_, # when lambda is small, we cannot get effective attacks
                                                         max_lambda_=lambda_upper_bound,
                                                         verbose=self.attack_param['verbose']
                                                         )
