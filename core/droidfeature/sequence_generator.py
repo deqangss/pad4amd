@@ -555,7 +555,9 @@ def get_caller_info(node_tag):
     call_info = node_tag.split(TAG_SPLITTER)[1]
     class_name, method_statement = call_info.split(';', 1)
     # tailor tab issue that may be triggered by encodedmethod of androidguard
-    method_statement = ';'.join([s.strip() for s in method_statement.split(';')])
+    method_match = re.match(
+        r'^([ ]*?)\.method (?P<methodPre>([^ ].*?))\((?P<methodArg>(.*?))\)(?P<methodRtn>(.*?))$', method_statement)
+    method_statement = '.method ' + method_match['methodPre'].strip() + '(' + method_match['methodArg'].strip().replace(' ', '') + ')' + method_match['methodRtn'].strip()
     return class_name+';', method_statement
 
 

@@ -351,19 +351,6 @@ class InverseDroidFeature(object):
             return 'L' + full_classname + '.method ' + ENTRY_METHOD_STATEMENT
 
     @staticmethod
-    def poten_ivk_api_check(api_name, invoke_class_name, invoke_method_name, disassembly_dir):
-        api_method_name = api_name.split('->')[1]
-        api_class_name = api_name.split('->')[0]
-        if api_method_name == invoke_method_name:
-            ext_path = invoke_class_name.strip().lstrip('L').rstrip(';') + '.smali'
-            ext_path.replace('/', '\\')
-            samli_path = os.path.join(disassembly_dir + '/smali', ext_path)
-            super_class_names = dex_manip.get_super_class_name(samli_path)
-            if api_class_name in super_class_names:
-                return True
-        return False
-
-    @staticmethod
     def insert_api(api_name, root_call, disassemble_dir):
         """
         insert an api.
@@ -380,6 +367,10 @@ class InverseDroidFeature(object):
         root_call = root_call[0]  # for simplifying analysis
         print("root call: ", root_call)
         root_class_name, caller_method_statement = root_call.split(';', 1)
+        method_match = re.match(
+            r'^([ ]*?)\.method (?P<methodPre>([^ ].*?))\((?P<methodArg>(.*?))\)(?P<methodRtn>(.*?))$', caller_method_statement)
+        caller_method_statement = '.method ' + method_match['methodPre'].strip() + '(' + method_match[
+            'methodArg'].strip().replace(' ', '') + ')' + method_match['methodRtn'].strip()
         smali_path = os.path.join(disassemble_dir + '/smali',
                                   root_class_name.lstrip('L') + '.smali')
         assert os.path.exists(smali_path), 'Root call file {} is absent.'.format(smali_path)
