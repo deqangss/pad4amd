@@ -115,7 +115,7 @@ def _main():
     ben_count = len(ben_test_x)
     if mal_count <= 0 and ben_count <= 0:
         return
-    mal_test_dataset_producer = dataset.get_input_producer(mal_test_x[100:200], mal_testy[100:200],
+    mal_test_dataset_producer = dataset.get_input_producer(mal_test_x, mal_testy,
                                                            batch_size=hp_params['batch_size'],
                                                            name='test')
     ben_test_dataset_producer = dataset.get_input_producer(ben_test_x, ben_testy,
@@ -251,7 +251,7 @@ def _main():
         y_cent_list.append(np.vstack(y_cent))
         x_density_list.append(np.concatenate(x_density))
         x_mod_integrated = dataset.modification_integ(x_mod_integrated, x_mod)
-    print(y_cent_list)
+    print(y_cent_list[0][100:200])
     y_cent = np.mean(np.stack(y_cent_list, axis=1), axis=1)
     y_pred = np.argmax(y_cent, axis=-1)
     logger.info(f'The mean accuracy on perturbed malware is {sum(y_pred == 1.) / mal_count * 100:.3f}%')
