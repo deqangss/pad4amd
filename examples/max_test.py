@@ -269,7 +269,7 @@ def _main():
 
     if args.real:
         adv_app_dir = os.path.join(save_dir, 'adv_apps')
-        attack.produce_adv_mal(x_mod_integrated, mal_test_x.tolist(),
+        attack.produce_adv_mal(x_mod_integrated, mal_test_x[:100].tolist(),
                                config.get('dataset', 'malware_dir'),
                                adj_mod=None,
                                save_dir=adv_app_dir)
