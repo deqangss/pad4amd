@@ -237,9 +237,6 @@ class InverseDroidFeature(object):
                 logger.error("Unable to assemble app {} and move it to {}.".format(dst_file, TMP_DIR))
                 return False
             else:
-                if os.path.exists(os.path.join(TMP_DIR, os.path.basename(dst_file))):
-                    shutil.rmtree(os.path.join(TMP_DIR, os.path.basename(dst_file)))
-                shutil.copytree(dst_file, os.path.join(TMP_DIR, os.path.basename(dst_file)))
                 subprocess.call("jarsigner -sigalg MD5withRSA -digestalg SHA1 -keystore " + os.path.join(
                     config.get("DEFAULT", 'project_root'), "core/droidfeature/res/resignKey.keystore") + \
                                 " -storepass resignKey " + dst_file_apk + ' resignKey',
