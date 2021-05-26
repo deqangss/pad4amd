@@ -51,7 +51,14 @@ class MalwareDetectorIndicator(MalwareDetector, DensityEstimator):
                                          'model.pth')
 
     def predict(self, test_data_producer, indicator_masking=False):
-        # evaluation on detector & indicator
+        """
+        predict labels and conduct evaluation on detector & indicator
+
+        Parameters
+        --------
+        @param test_data_producer, torch.DataLoader
+        @param indicator_masking, whether filtering out the examples with low density or masking their values
+        """
         y_cent, x_prob, y_true = self.inference(test_data_producer)
         y_pred = y_cent.argmax(1).cpu().numpy()
         y_true = y_true.cpu().numpy()

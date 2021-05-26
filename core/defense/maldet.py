@@ -135,7 +135,15 @@ class MalwareDetector(nn.Module):
         _, logit = self.forward(x, a)
         return torch.softmax(logit, dim=-1).detach().cpu().numpy(), np.ones((logit.size()[0], ))
 
-    def predict(self, test_data_producer):
+    def predict(self, test_data_producer, indicator_masking=False):
+        """
+        predict labels and conduct evaluation
+
+        Parameters
+        --------
+        @param test_data_producer, torch.DataLoader
+        @param indicator_masking, here is used for the purpose of compilation.
+        """
         # evaluation
         confidence, y_true = self.inference(test_data_producer)
         y_pred = confidence.argmax(1).cpu().numpy()
