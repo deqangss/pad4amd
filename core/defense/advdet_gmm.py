@@ -50,14 +50,12 @@ class MalwareDetectorIndicator(MalwareDetector, DensityEstimator):
         self.model_save_path = path.join(config.get('experiments', 'gmm') + '_' + self.name,
                                          'model.pth')
 
-    def predict(self, test_data_producer):
+    def predict(self, test_data_producer, indicator_masking=False):
         # evaluation on detector & indicator
         y_cent, x_prob, y_true = self.inference(test_data_producer)
         y_pred = y_cent.argmax(1).cpu().numpy()
         y_true = y_true.cpu().numpy()
         indicator_flag = self.indicator(x_prob).cpu().numpy()
-
-        return y_pred, indicator_flag
 
         def measurement(_y_true, _y_pred):
             from sklearn.metrics import f1_score, accuracy_score, confusion_matrix, balanced_accuracy_score
@@ -81,9 +79,13 @@ class MalwareDetectorIndicator(MalwareDetector, DensityEstimator):
             logger.info(MSG.format(fnr * 100, fpr * 100, f1 * 100))
 
         measurement(y_true, y_pred)
-        # filter out examples in the low dense region
-        y_pred = y_pred[indicator_flag]
-        y_true = y_true[indicator_flag]
+        if not indicator_masking:
+            # filter out examples with low likelihood
+            y_pred = y_pred[indicator_flag]
+            y_true = y_true[indicator_flag]
+        else:
+            # instead filtering out examples, here resets the prediction as 1
+            y_pred[~indicator_flag] = 1.
         logger.info('The indicator is turning on...')
         measurement(y_true, y_pred)
 
