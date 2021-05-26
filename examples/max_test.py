@@ -273,29 +273,29 @@ def _main():
 
         # selected_id = mal_test_x.tolist().index('/mnt/74a99c3b-d122-43a5-a2f2-386921ccc892/database/android/naive_data/860baa5ea337d0a8a0ee351dc7f3b5927eca8af3044803cbf65138d45baedcb9.gpickle')
 
-        attack.produce_adv_mal(x_mod_integrated, mal_test_x.tolist()[:100],
-                               config.get('dataset', 'malware_dir'),
-                               adj_mod=None,
-                               save_dir=adv_app_dir)
-        adv_feature_paths = dataset.apk_preprocess(adv_app_dir, update_feature_extraction=True)
+        # attack.produce_adv_mal(x_mod_integrated, mal_test_x.tolist()[:100],
+        #                        config.get('dataset', 'malware_dir'),
+        #                        adj_mod=None,
+        #                        save_dir=adv_app_dir)
+        adv_feature_paths = dataset.apk_preprocess(adv_app_dir, update_feature_extraction=False)
         dataset.feature_preprocess(adv_feature_paths)
         ben_test_dataset_producer = dataset.get_input_producer(adv_feature_paths,
                                                                np.ones((len(adv_feature_paths, ))),
                                                                batch_size=hp_params['batch_size'],
                                                                name='test'
                                                                )
-        model.predict(ben_test_dataset_producer)
-        # y_pred2, indicator_flag2 = model.predict(ben_test_dataset_producer)
-        # pred_label2 = (~indicator_flag2) | ((y_pred2 == 1.) & indicator_flag2).tolist()
-        # pred_label = (~indicator_flag) | ((y_pred == 1.) & indicator_flag).tolist()
-        # for adv_fname, p2 in zip(adv_feature_paths, pred_label2.tolist()):
-        #     fname = adv_fname.rsplit('_', 1)[0] + '.gpickle'
-        #     idx = mal_test_x.tolist().index(fname)
-        #     x_mod = x_mod_integrated[idx]
-        #     p1 = pred_label[idx]
-        #     print(fname, p1, p2)
-        #     print(torch.sum(x_mod.to_dense() > 0))
-        #     print(torch.sum(x_mod.to_dense() < 0))
+        # model.predict(ben_test_dataset_producer)
+        y_pred2, indicator_flag2 = model.predict(ben_test_dataset_producer)
+        pred_label2 = (~indicator_flag2) | ((y_pred2 == 1.) & indicator_flag2).tolist()
+        pred_label = (~indicator_flag) | ((y_pred == 1.) & indicator_flag).tolist()
+        for adv_fname, p2 in zip(adv_feature_paths, pred_label2.tolist()):
+            fname = adv_fname.rsplit('_', 1)[0] + '.gpickle'
+            idx = mal_test_x.tolist().index(fname)
+            x_mod = x_mod_integrated[idx]
+            p1 = pred_label[idx]
+            print(fname, p1, p2)
+            print(torch.sum(x_mod.to_dense() > 0))
+            print(torch.sum(x_mod.to_dense() < 0))
 
 
 if __name__ == '__main__':
