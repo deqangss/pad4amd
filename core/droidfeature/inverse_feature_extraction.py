@@ -363,9 +363,8 @@ class InverseDroidFeature(object):
         @param disassemble_dir, work directory
         """
         assert len(root_call) > 0, "Expect at least a root call."
-        # root_call = random.choice(root_call)
-        root_call = root_call[0]  # for simplifying analysis
-        print("root call: ", root_call)
+        root_call = random.choice(root_call)
+        # root_call = root_call[0]  # for simplifying analysis
         root_class_name, caller_method_statement = root_call.split(';', 1)
         method_match = re.match(
             r'^([ ]*?)\.method (?P<methodPre>([^ ].*?))\((?P<methodArg>(.*?))\)(?P<methodRtn>(.*?))$', caller_method_statement)
@@ -407,13 +406,11 @@ class InverseDroidFeature(object):
         )
 
         method_finder_flag = False
-        fh = dex_manip.read_file_by_fileinput(smali_path, inplace=False)
+        fh = dex_manip.read_file_by_fileinput(smali_path, inplace=True)
         for line in fh:
-            # print(line.rstrip())
-            pass
+            print(line.rstrip())
 
             if line.strip() == caller_method_statement:
-                print('ok, find it')
                 method_finder_flag = True
                 continue
 
@@ -431,7 +428,7 @@ class InverseDroidFeature(object):
                     invoke_virtual = 'invoke-virtual/range'
 
             if method_finder_flag:
-                if re.match(r'^[ ]*?(.prologue)', line) is not None:
+                if re.match(r'^[ ]*?(.locals)', line) is not None:
                     print(
                         '    ' + invoke_virtual + ' {p0}, ' + root_class_name + ';->' + new_method_name + '()V' + '\n')
         fh.close()
