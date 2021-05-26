@@ -7,6 +7,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import multiprocessing
 
 import torch
 import torch.nn.functional as F
@@ -14,6 +15,7 @@ from torch.nn.modules.module import Module
 import numpy as np
 
 from core.droidfeature import InverseDroidFeature
+from tools import utils
 
 EXP_OVER_FLOW = 1e-30
 
@@ -96,8 +98,15 @@ class BaseAttack(Module):
             raise ValueError("Expect app directory or a list of paths, but got {}.".format(type(app_dir)))
         assert np.all([os.path.exists(app_path) for app_path in app_path_list]), "Unable to find all app paths."
 
-        for x_mod_instr, feature_path, app_path in zip(x_mod_instructions, feature_path_list, app_path_list):
-            self.inverse_feature.modify(x_mod_instr, feature_path, app_path, save_dir)
+        # for x_mod_instr, feature_path, app_path in zip(x_mod_instructions, feature_path_list, app_path_list):
+        #     InverseDroidFeature.modify(x_mod_instr, feature_path, app_path, save_dir)
+
+        pargs = [(x_mod_instr, feature_path, app_path, save_dir) for x_mod_instr, feature_path, app_path in
+                 zip(x_mod_instructions, feature_path_list, app_path_list)]
+        cpu_count = multiprocessing.cpu_count() - 2 if multiprocessing.cpu_count() - 2 > 1 else 1
+        pool = multiprocessing.Pool(cpu_count, initializer=utils.pool_initializer)
+        for _ in pool.map(InverseDroidFeature.modify_wrapper, pargs):  # keep in order
+            pass
 
     def check_lambda(self, model):
         if 'forward_g' in type(model).__dict__.keys() and (not self.oblivion):
