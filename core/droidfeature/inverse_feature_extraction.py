@@ -420,6 +420,10 @@ class InverseDroidFeature(object):
         for line in fh:
             # print(line.rstrip())
             pass
+
+            # debug
+            print(line.strip(), caller_method_statement)
+
             if line.strip() == caller_method_statement:
                 method_finder_flag = True
                 continue
