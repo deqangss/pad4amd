@@ -494,15 +494,15 @@ def retrive_api_caller_info(api_name, disassembly_dir):
     for file_path in file_path_set:
         with open(file_path) as fh:
             context = fh.read()
-            if (api_name in context) or ('->' + api_method_name in context):
+            if ('->' + api_method_name) in context:
                 lines = context.split('\n')
                 for line in lines:
                     class_match = re.search(r'^([ ]*?)\.class(.*?)(?P<className>L([^;\(\) ]*?);)', line)
                     if class_match is not None:
                         callee_class_name = class_match.group('className')
-                    if '.method' in line:
+                    if '.method ' in line:
                         tmp_method_statement = line
-                    if api_name in line:
+                    if ('->' + api_method_name) in line:
                         invoke_match = re.search(
                             r'^([ ]*?)(?P<invokeType>invoke\-([^ ]*?)) {(?P<invokeParam>([vp0-9,. ]*?))}, (?P<invokeObject>L(.*?);|\[L(.*?);)->(?P<invokeMethod>(.*?))\((?P<invokeArgument>(.*?))\)(?P<invokeReturn>(.*?))$',
                             line)
@@ -518,8 +518,6 @@ def retrive_api_caller_info(api_name, disassembly_dir):
                                 ext_path.replace('/', '\\')
                                 samli_path = os.path.join(disassembly_dir + '/smali', ext_path)
                                 super_class_names = get_super_class_name(samli_path)  # look for first-order predecessors
-                                print('api_class_name: ', api_class_name)
-                                print('super_classes: ', super_class_names)
                                 if api_class_name in super_class_names:
                                     api_info.append(info_dict)
                                 else:
