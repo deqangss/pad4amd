@@ -101,7 +101,6 @@ class Max(BaseAttack):
         y_pred = logit.argmax(1)
         if 'forward_g' in type(model).__dict__.keys() and (not self.oblivion):
             de = model.forward_g(hidden, y_pred)
-            print('de:', de)
             tau = model.get_tau_sample_wise(y_pred)
             loss_no_reduction = torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW)
             done = (y_pred == 0.) & (de >= tau)
