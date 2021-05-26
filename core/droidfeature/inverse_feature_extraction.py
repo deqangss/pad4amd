@@ -417,7 +417,8 @@ class InverseDroidFeature(object):
         method_finder_flag = False
         fh = dex_manip.read_file_by_fileinput(smali_path, inplace=False)
         for line in fh:
-            print(line.rstrip())
+            # print(line.rstrip())
+            pass
             if line.strip() == caller_method_statement:
                 method_finder_flag = True
                 continue
