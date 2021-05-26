@@ -86,15 +86,20 @@ class KernelDensityEstimation(DensityEstimator):
                 s, _ = torch.sort(prob_x_y, descending=True)
                 self.tau[i] = s[int((s.shape[0] - 1) * self.ratio)]
 
-    def predict(self, test_data_producer):
+    def predict(self, test_data_producer, indicator_masking=False):
         # evaluation on detector & indicator
         y_cent, x_prob, y_true = self.inference(test_data_producer)
         y_pred = y_cent.argmax(1).cpu().numpy()
         y_true = y_true.cpu().numpy()
         indicator_flag = self.indicator(x_prob, y_pred).cpu().numpy()
-        # filter out examples with low likelihood
-        y_pred = y_pred[indicator_flag]
-        y_true = y_true[indicator_flag]
+        if not indicator_masking:
+            # filter out examples with low likelihood
+            y_pred = y_pred[indicator_flag]
+            y_true = y_true[indicator_flag]
+        else:
+            # instead filtering out examples, here resets the prediction as 1
+            y_pred[~indicator_flag] = 1.
+
         logger.info('The indicator is turning on...')
         from sklearn.metrics import f1_score, accuracy_score, confusion_matrix, balanced_accuracy_score
         accuracy = accuracy_score(y_true, y_pred)
