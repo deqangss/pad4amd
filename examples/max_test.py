@@ -285,8 +285,8 @@ def _main():
         y_pred2, indicator_flag2 = model.predict(ben_test_dataset_producer)
         pred_label2 = (~indicator_flag2) | ((y_pred2 == 1.) & indicator_flag2).tolist()
         pred_label = (~indicator_flag) | ((y_pred == 1.) & indicator_flag).tolist()
-        for adv_fname, p2 in zip(adv_feature_paths, pred_label2):
-            fname = adv_fname.split('_')[0] + '.gpickle'
+        for adv_fname, p2 in zip(adv_feature_paths, pred_label2.tolist()):
+            fname = adv_fname.rsplit('_', 1)[0] + '.gpickle'
             idx = mal_test_x.tolist().index(fname)
             x_mod = x_mod_integrated[idx]
             p1 = pred_label[idx]
