@@ -169,7 +169,6 @@ class KernelDensityEstimation(DensityEstimator):
             raise TypeError("Tensor or numpy.ndarray are expected.")
         # res = probability.reshape(-1, 1).repeat_interleave(2, dim=1) >= self.tau
         # return res[torch.arange(res.size()[0]), y_pred]
-        return
 
     def fit(self, train_dataset_producer, val_dataet_producer):
         X_hidden, Y = [], []

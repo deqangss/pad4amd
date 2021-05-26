@@ -252,7 +252,6 @@ def _main():
         x_density_list.append(np.concatenate(x_density))
         x_mod_integrated = dataset.modification_integ(x_mod_integrated, x_mod)
     y_cent = np.mean(np.stack(y_cent_list, axis=1), axis=1)
-    print('y_cent:', y_cent)
     y_pred = np.argmax(y_cent, axis=-1)
     logger.info(f'The mean accuracy on perturbed malware is {sum(y_pred == 1.) / mal_count * 100:.3f}%')
 
@@ -271,7 +270,7 @@ def _main():
 
     if args.real:
         adv_app_dir = os.path.join(save_dir, 'adv_apps')
-        attack.produce_adv_mal(x_mod_integrated, mal_test_x.tolist(),
+        attack.produce_adv_mal(x_mod_integrated, mal_test_x[:100].tolist(),
                                config.get('dataset', 'malware_dir'),
                                adj_mod=None,
                                save_dir=adv_app_dir)
