@@ -37,7 +37,8 @@ class Max(BaseAttack):
         @param adj: torch.FloatTensor or None, adjacency matrix (if not None, the shape is [number_of_graphs, batch_size, vocab_dim, vocab_dim])
         @param label: torch.LongTensor, ground truth labels
         @param steps_of_max: Integer, maximum number of iterations
-        @param lambda_, float, penalty factor
+        @param min_lambda_, float, minimum value of penalty factor
+        @param max_lambda_, float, maximum value of penalty factor
         @param verbose: Boolean, print verbose log
         """
         if x is None or x.shape[0] <= 0:
@@ -54,7 +55,7 @@ class Max(BaseAttack):
         for t in range(steps_of_max):
             num_sample_red = n - torch.sum(stop_flag)
             if num_sample_red <= 0:
-                return adv_x
+                break
 
             red_adj = None if adj is None else adj[~stop_flag]
             red_label = label[~stop_flag]
@@ -88,7 +89,6 @@ class Max(BaseAttack):
                 pre_stop_flag = stop_flag.clone()
                 stop_flag[~stop_flag] = (torch.abs(pre_loss[~stop_flag] - a_loss) < self.varepsilon) | success_flag
                 pre_loss[~pre_stop_flag] = a_loss
-
         if verbose:
             with torch.no_grad():
                 hidden, logit = model.forward(adv_x, adj)
