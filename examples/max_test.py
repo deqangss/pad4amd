@@ -288,6 +288,9 @@ def _main():
         y_pred2, indicator_flag2 = model.predict(ben_test_dataset_producer)
         pred_label2 = (~indicator_flag2) | ((y_pred2 == 1.) & indicator_flag2).tolist()
         pred_label = (~indicator_flag) | ((y_pred == 1.) & indicator_flag).tolist()
+        acc_w_indicator = (sum(~indicator_flag2) + sum((y_pred2 == 1.) & indicator_flag2)) / 100 * 100
+        print('acc:', acc_w_indicator)
+        count = 0
         for adv_fname, p2 in zip(adv_feature_paths, pred_label2.tolist()):
             fname = adv_fname.rsplit('_', 1)[0] + '.gpickle'
             idx = mal_test_x.tolist().index(fname)
@@ -296,6 +299,9 @@ def _main():
             print(fname, p1, p2)
             print(torch.sum(x_mod.to_dense() > 0))
             print(torch.sum(x_mod.to_dense() < 0))
+            if p1 == p2:
+                count += 1
+        print('count: ', count)
 
 
 if __name__ == '__main__':
