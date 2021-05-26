@@ -226,6 +226,7 @@ class InverseDroidFeature(object):
                     if op == OP_REMOVAL:
                         self.remove_api(api_name, cg, dst_file)
                     else:
+                        continue
                         # A large scale of insertion operations will trigger unexpected issues, such as method limitation in a class
                         self.insert_api(api_name, root_call, dst_file)
             dst_file_apk = os.path.join(save_dir, os.path.splitext(os.path.basename(app_path))[0] + '_adv')
@@ -259,6 +260,9 @@ class InverseDroidFeature(object):
             logger.warning("Removing {}, but got it non-found in {}.".format(api_name, disassemble_dir))
             return
 
+        if api_name != 'Ljava/io/IOException;->getMessage':
+            return
+
         api_tag_set = call_graph.nodes(data=True)[api_name]['tag']
         # we attempt to obtain more relevant info about this api. Nonetheless, once there is class inheritance,
         # we cannot make it.
@@ -266,10 +270,13 @@ class InverseDroidFeature(object):
             api_info_list = dex_manip.retrive_api_caller_info(api_name, disassemble_dir)
             for api_info in api_info_list:
                 api_tag_set.add(seq_gen.get_api_tag(api_info['ivk_method'],
-                                                    api_info['class_name'],
-                                                    api_info['callee_stm']
+                                                    api_info['callee_cls_name'],
+                                                    api_info['callee_mth_stm']
                                                     )
                                 )
+        print(api_tag_set)
+        import sys
+        sys.exit(1)
         for api_tag in api_tag_set:
             caller_class_name, caller_method_statement = seq_gen.get_caller_info(api_tag)
             smali_path_of_class = os.path.join(disassemble_dir + '/smali',
