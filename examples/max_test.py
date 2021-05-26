@@ -105,7 +105,7 @@ def _main():
         mal_test_x, mal_testy = test_x[testy == 1], testy[testy == 1]
         from numpy import random
         mal_count = len(mal_testy) if len(mal_testy) < 1000 else 1000
-        mal_test_x = random.choice(mal_test_x[100:200], mal_count[100:200], replace=False)
+        mal_test_x = random.choice(mal_test_x, mal_count, replace=False)
         mal_testy = mal_testy[:mal_count]
         utils.dump_pickle_frd_space((mal_test_x, mal_testy), mal_save_path)
     else:
@@ -115,7 +115,7 @@ def _main():
     ben_count = len(ben_test_x)
     if mal_count <= 0 and ben_count <= 0:
         return
-    mal_test_dataset_producer = dataset.get_input_producer(mal_test_x, mal_testy,
+    mal_test_dataset_producer = dataset.get_input_producer(mal_test_x[100:200], mal_testy[100:200],
                                                            batch_size=hp_params['batch_size'],
                                                            name='test')
     ben_test_dataset_producer = dataset.get_input_producer(ben_test_x, ben_testy,
