@@ -4,6 +4,7 @@ import tempfile
 import torch
 
 import numpy as np
+import multiprocessing
 
 from core.attack.base_attack import BaseAttack
 from core.droidfeature import inverse_feature_extraction
@@ -28,6 +29,7 @@ class Mimicry(BaseAttack):
     def __init__(self, device=None):
         super(Mimicry, self).__init__(device=device)
         self.inversedorid = inverse_feature_extraction.InverseDroidFeature()
+
 
     def perturb(self, model, x, ben_x, trials=10, data_fn=None, seed=0, n_sample_times=1, is_apk=False, verbose=False):
         """
@@ -64,13 +66,23 @@ class Mimicry(BaseAttack):
                     ben_samples = np.random.choice(ben_x, (trials,), replace=False)
                     _paths = []
                     _idc_modif = []
-                    for ben_f in ben_samples:
-                        ben_cg = inverse_feature_extraction.seq_gen.read_from_disk(ben_f)
-                        new_cg, idx_modif = self.inversedorid.merge_features(mal_cg, ben_cg)
-                        tmp_fname = os.path.join(tmpdirname, mal_f_name + '_' + os.path.basename(ben_f))
-                        inverse_feature_extraction.seq_gen.save_to_disk(new_cg, tmp_fname)
-                        _paths.append(tmp_fname)
-                        _idc_modif.append(idx_modif)
+                    # for ben_f in ben_samples:
+                    #     ben_cg = inverse_feature_extraction.seq_gen.read_from_disk(ben_f)
+                    #     new_cg, idx_modif = self.inversedorid.merge_features(mal_cg, ben_cg)
+                    #     tmp_fname = os.path.join(tmpdirname, mal_f_name + '_' + os.path.basename(ben_f))
+                    #     inverse_feature_extraction.seq_gen.save_to_disk(new_cg, tmp_fname)
+                    #     _paths.append(tmp_fname)
+                    #     _idc_modif.append(idx_modif)
+                    pargs = [(mal_cg, _x, ben_f, tmpdirname) for ben_f in ben_samples]
+                    cpu_count = multiprocessing.cpu_count() // 2 if multiprocessing.cpu_count() // 2 > 1 else 1
+                    pool = multiprocessing.Pool(cpu_count, initializer=utils.pool_initializer)
+                    for res in pool.map(_perturb_wrapper, pargs):  # keep in order
+                        if not isinstance(res, Exception):
+                            _paths.append(res[0])
+                            _idc_modif.append(res[1])
+                        else:
+                            logger.error(str(res))
+
                     ben_y = np.zeros((trials,), dtype=np.int)
                     data_producer = data_fn(np.array(_paths), ben_y, batch_size=trials, name='test')
                     y_cent, x_density = [], []
@@ -113,3 +125,19 @@ class Mimicry(BaseAttack):
                             logger.info("Success to perturb the file {}".format(mal_f_name))
                 x_mod_list.append(x_mod)
         return success_flag, x_mod_list
+
+
+def _perturb(mal_cg, mal_sample, ben_sample, dir_saving):
+    mal_f_name = os.path.splitext(os.path.basename(mal_sample))[0]
+    ben_cg = inverse_feature_extraction.seq_gen.read_from_disk(ben_sample)
+    new_cg, idx_modif = inverse_feature_extraction.InverseDroidFeature.merge_features(mal_cg, ben_cg)
+    tmp_fname = os.path.join(dir_saving, mal_f_name + '_' + os.path.basename(ben_sample))
+    inverse_feature_extraction.seq_gen.save_to_disk(new_cg, tmp_fname)
+    return tmp_fname, idx_modif
+
+
+def _perturb_wrapper(args):
+    try:
+        return _perturb(*args)
+    except Exception as e:
+        return e

@@ -164,12 +164,7 @@ def _main():
 
     if args.real:
         adv_app_dir = os.path.join(save_dir, 'adv_apps')
-        print(y_pred[3])
-        print(mal_test_x.tolist()[3])
-        import torch
-        print(torch.sum(x_mod_integrated[3].to_dense() > 0))
-        print(torch.sum(x_mod_integrated[3].to_dense() < 0))
-        attack.produce_adv_mal(x_mod_integrated[3:4], mal_test_x.tolist()[3:4],
+        attack.produce_adv_mal(x_mod_integrated, mal_test_x.tolist(),
                                config.get('dataset', 'malware_dir'),
                                adj_mod=None,
                                save_dir=adv_app_dir)

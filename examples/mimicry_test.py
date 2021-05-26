@@ -139,7 +139,7 @@ def _main():
         adv_feature_paths = dataset.apk_preprocess(adv_app_dir, update_feature_extraction=True)
         dataset.feature_preprocess(adv_feature_paths)
         ben_test_dataset_producer = dataset.get_input_producer(adv_feature_paths,
-                                                               np.ones((len(adv_feature_paths, ))),
+                                                               np.ones((len(adv_feature_paths,))),
                                                                batch_size=hp_params['batch_size'],
                                                                name='test'
                                                                )
