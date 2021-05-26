@@ -367,7 +367,7 @@ class InverseDroidFeature(object):
         # root_call = root_call[0]  # for simplifying analysis
         root_class_name, caller_method_statement = root_call.split(';', 1)
         method_match = re.match(
-            r'^([ ]*?)\.method (?P<methodPre>([^ ].*?))\((?P<methodArg>(.*?))\)(?P<methodRtn>(.*?))$', caller_method_statement)
+            r'^([ ]*?)\.method\s+(?P<methodPre>([^ ].*?))\((?P<methodArg>(.*?))\)(?P<methodRtn>(.*?))$', caller_method_statement)
         caller_method_statement = '.method ' + method_match['methodPre'].strip() + '(' + method_match[
             'methodArg'].strip().replace(' ', '') + ')' + method_match['methodRtn'].strip()
         smali_path = os.path.join(disassemble_dir + '/smali',
