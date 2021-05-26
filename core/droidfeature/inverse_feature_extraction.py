@@ -231,11 +231,15 @@ class InverseDroidFeature(object):
             dst_file_apk = os.path.join(save_dir, os.path.splitext(os.path.basename(app_path))[0] + '_adv')
             cmd_response = subprocess.call("apktool -q b " + dst_file + " -o " + dst_file_apk, shell=True)
             if cmd_response != 0:
-                shutil.copytree(dst_file, os.path.join(TMP_DIR, os.path.basename(dst_file)),
-                                dirs_exist_ok=True)
+                if os.path.exists(os.path.join(TMP_DIR, os.path.basename(dst_file))):
+                    shutil.rmtree(os.path.join(TMP_DIR, os.path.basename(dst_file)))
+                shutil.copytree(dst_file, os.path.join(TMP_DIR, os.path.basename(dst_file)))
                 logger.error("Unable to assemble app {} and move it to {}.".format(dst_file, TMP_DIR))
                 return False
             else:
+                if os.path.exists(os.path.join(TMP_DIR, os.path.basename(dst_file))):
+                    shutil.rmtree(os.path.join(TMP_DIR, os.path.basename(dst_file)))
+                shutil.copytree(dst_file, os.path.join(TMP_DIR, os.path.basename(dst_file)))
                 subprocess.call("jarsigner -sigalg MD5withRSA -digestalg SHA1 -keystore " + os.path.join(
                     config.get("DEFAULT", 'project_root'), "core/droidfeature/res/resignKey.keystore") + \
                                 " -storepass resignKey " + dst_file_apk + ' resignKey',
