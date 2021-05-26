@@ -115,7 +115,7 @@ def _main():
     ben_count = len(ben_test_x)
     if mal_count <= 0 and ben_count <= 0:
         return
-    mal_count=100
+    mal_count = 100
     mal_test_dataset_producer = dataset.get_input_producer(mal_test_x[:100], mal_testy[:100],
                                                            batch_size=hp_params['batch_size'],
                                                            name='test')
@@ -267,6 +267,11 @@ def _main():
         utils.mkdir(save_dir)
     utils.dump_pickle_frd_space(x_mod_integrated,
                                 os.path.join(save_dir, 'x_mod.list'))
+
+    for x_mod, mal_name in zip(x_mod_integrated, mal_test_x.tolist()):
+        print(mal_name)
+        print(torch.sum(x_mod.to_dense() > 0))
+        print(torch.sum(x_mod.to_dense() < 0))
 
     if args.real:
         adv_app_dir = os.path.join(save_dir, 'adv_apps')
