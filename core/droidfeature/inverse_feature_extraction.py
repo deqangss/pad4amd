@@ -378,6 +378,7 @@ class InverseDroidFeature(object):
         assert len(root_call) > 0, "Expect at least a root call."
         # root_call = random.choice(root_call)
         root_call = root_call[0]  # for simplifying analysis
+        print("root call: ", root_call)
         root_class_name, caller_method_statement = root_call.split(';', 1)
         smali_path = os.path.join(disassemble_dir + '/smali',
                                   root_class_name.lstrip('L') + '.smali')
