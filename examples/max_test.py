@@ -285,12 +285,12 @@ def _main():
         y_pred2, indicator_flag2 = model.predict(ben_test_dataset_producer)
         pred_label2 = (~indicator_flag2) | ((y_pred2 == 1.) & indicator_flag2).tolist()
         pred_label = (~indicator_flag) | ((y_pred == 1.) & indicator_flag).tolist()
-        for idx, adv_fname, p2 in enumerate(zip(adv_feature_paths, pred_label2)):
+        for adv_fname, p2 in zip(adv_feature_paths, pred_label2):
             fname = adv_fname.split('_')[0] + '.gpickle'
             idx = mal_test_x.tolist().index(fname)
             x_mod = x_mod_integrated[idx]
             p1 = pred_label[idx]
-            print(idx, fname, p1, p2)
+            print(fname, p1, p2)
             print(torch.sum(x_mod.to_dense() > 0))
             print(torch.sum(x_mod.to_dense() < 0))
 
