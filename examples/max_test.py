@@ -251,6 +251,7 @@ def _main():
         y_cent_list.append(np.vstack(y_cent))
         x_density_list.append(np.concatenate(x_density))
         x_mod_integrated = dataset.modification_integ(x_mod_integrated, x_mod)
+    print(y_cent_list)
     y_cent = np.mean(np.stack(y_cent_list, axis=1), axis=1)
     y_pred = np.argmax(y_cent, axis=-1)
     logger.info(f'The mean accuracy on perturbed malware is {sum(y_pred == 1.) / mal_count * 100:.3f}%')
