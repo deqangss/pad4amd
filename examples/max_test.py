@@ -97,7 +97,7 @@ def _main():
                       is_adj=hp_params['is_adj'],
                       n_sgs_max=hp_params['N'],
                       use_cache=hp_params['cache'],
-                      feature_ext_args={'proc_number': hp_params['proc_number'], 'timeout': hp_params['timeout']}
+                      feature_ext_args={'proc_number': hp_params['proc_number'], 'timeout': float(hp_params['timeout']) / 1.7}
                       )
     test_x, testy = dataset.test_dataset
     mal_save_path = os.path.join(config.get('dataset', 'dataset_dir'), 'attack.idx')
