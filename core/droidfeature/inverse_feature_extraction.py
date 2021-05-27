@@ -275,10 +275,14 @@ def remove_api(api_name, call_graph, disassemble_dir, coarse=True):
         api_info_list = dex_manip.retrive_api_caller_info(api_name, disassemble_dir)
         for api_info in api_info_list:
             api_tag_set.add(seq_gen.get_api_tag(api_info['ivk_method'],
-                                                api_info['callee_cls_name'],
-                                                api_info['callee_mth_stm']
+                                                api_info['caller_cls_name'],
+                                                api_info['caller_mth_stm']
                                                 )
                             )
+    api_class_list = []
+    for api_tag in api_tag_set:
+        api_class_list.append(seq_gen.get_api_class(api_tag))
+
     for api_tag in api_tag_set:
         caller_class_name, caller_method_statement = seq_gen.get_caller_info(api_tag)
         smali_path_of_class = os.path.join(disassemble_dir + '/smali',
@@ -301,15 +305,11 @@ def remove_api(api_name, call_graph, disassemble_dir, coarse=True):
                 if invoke_match is None:
                     print(line.rstrip())
                 else:
-                    api_name_invoked = invoke_match.group('invokeObject') + '->' + invoke_match.group(
-                        'invokeMethod')
-                    potential_api_flag = (invoke_match.group('invokeMethod') == api_name.split('->')[1])
-                    if (api_name_invoked == api_name) or potential_api_flag:
-                        if not potential_api_flag:
-                            new_file_name = 'Ref' + dex_manip.random_name(seed=int(time.time()), code=api_name)
-                        else:
-                            _cur_api_name = invoke_match.group('invokeObject') + invoke_match.group('invokeMethod')
-                            new_file_name = 'Ref' + dex_manip.random_name(seed=int(time.time()), code=_cur_api_name)
+                    invoked_mth_name = invoke_match.group('invokeMethod')
+                    invoked_cls_name = invoke_match.group('invokeObject')
+                    if (invoked_mth_name == api_name.split('->')[1]) and (invoked_cls_name in api_class_list):
+                        cur_api_name = invoke_match.group('invokeObject') + '->' + invoke_match.group('invokeMethod')
+                        new_file_name = 'Ref' + dex_manip.random_name(seed=int(time.time()), code=cur_api_name)
                         new_class_name = 'L' + DEFAULT_SMALI_DIR + new_file_name + ';'
                         ref_class_body = REFLECTION_TEMPLATE.replace('MethodReflection', new_file_name)
                         ref_class_body = dex_manip.change_invoke_by_ref(new_class_name,

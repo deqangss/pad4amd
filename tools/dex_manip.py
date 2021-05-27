@@ -489,8 +489,8 @@ def retrive_api_caller_info(api_name, disassembly_dir):
     file_path_set = retrive_files_set(smali_dir, '', '.smali')
     api_info = []
     info_dict_temp = {'ivk_method': '',
-                      'callee_cls_name': '',
-                      'callee_mth_stm': ''}
+                      'caller_cls_name': '',
+                      'caller_mth_stm': ''}
     for file_path in file_path_set:
         with open(file_path) as fh:
             context = fh.read()
@@ -509,8 +509,8 @@ def retrive_api_caller_info(api_name, disassembly_dir):
                         if invoke_match is not None:
                             info_dict = info_dict_temp.copy()
                             info_dict['ivk_method'] = invoke_match['invokeType'] + ' ' + api_name + '(' + invoke_match['invokeArgument'] + ')' + invoke_match['invokeReturn']
-                            info_dict['callee_cls_name'] = callee_class_name
-                            info_dict['callee_mth_stm'] = tmp_method_statement
+                            info_dict['caller_cls_name'] = callee_class_name
+                            info_dict['caller_mth_stm'] = tmp_method_statement
                             if api_class_name in invoke_match['invokeObject']:
                                 api_info.append(info_dict)
                             else:

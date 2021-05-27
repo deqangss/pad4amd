@@ -548,12 +548,20 @@ def get_api_info(node_tag):
     return api_info
 
 
+def get_api_class(node_tag):
+    if not isinstance(node_tag, str):
+        raise TypeError
+    assert TAG_SPLITTER in node_tag
+    api_info = node_tag.split(TAG_SPLITTER)[0]
+    return api_info.split('->')[0]
+
+
 def get_caller_info(node_tag):
     if not isinstance(node_tag, str):
         raise TypeError
     assert TAG_SPLITTER in node_tag
-    call_info = node_tag.split(TAG_SPLITTER)[1]
-    class_name, method_statement = call_info.split(';', 1)
+    caller_info = node_tag.split(TAG_SPLITTER)[1]
+    class_name, method_statement = caller_info.split(';', 1)
     # tailor tab issue that may be triggered by encodedmethod of androidguard
     method_match = re.match(
         r'^([ ]*?)\.method\s+(?P<methodPre>([^ ].*?))\((?P<methodArg>(.*?))\)(?P<methodRtn>(.*?))$', method_statement)
