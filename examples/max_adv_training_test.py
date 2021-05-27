@@ -132,13 +132,13 @@ def _main():
                                    lr=args.lr,
                                    weight_decay=args.weight_decay
                                    )
-        # human readable parameters
-        save_args(path.join(path.dirname(max_adv_training_model.model_save_path), "hparam"), vars(args))
-        # save parameters for rebuilding the neural nets
-        dump_pickle(vars(args), path.join(path.dirname(max_adv_training_model.model_save_path), "hparam.pkl"))
+    # human readable parameters
+    save_args(path.join(path.dirname(max_adv_training_model.model_save_path), "hparam"), vars(args))
+    # save parameters for rebuilding the neural nets
+    dump_pickle(vars(args), path.join(path.dirname(max_adv_training_model.model_save_path), "hparam.pkl"))
     # test: accuracy
-    max_adv_training_model.load()
-    max_adv_training_model.model.predict(test_dataset_producer)
+    # max_adv_training_model.load()
+    # max_adv_training_model.model.predict(test_dataset_producer)
 
 
 if __name__ == '__main__':
