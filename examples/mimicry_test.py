@@ -112,7 +112,7 @@ def _main():
     model.eval()
     mal_test_dataset_producer = dataset.get_input_producer(mal_test_x, mal_testy, batch_size=hp_params['batch_size'],
                                                            name='test')
-    # model.predict(mal_test_dataset_producer)
+    # model.predict(mal_test_dataset_producer, indicator_masking=True)
     success_flag, x_mod_list = attack.perturb(model,
                                               mal_test_x,
                                               ben_test_x,
@@ -143,7 +143,7 @@ def _main():
                                                                batch_size=hp_params['batch_size'],
                                                                name='test'
                                                                )
-        model.predict(ben_test_dataset_producer)
+        model.predict(ben_test_dataset_producer, indicator_masking=True)
 
 
 if __name__ == '__main__':

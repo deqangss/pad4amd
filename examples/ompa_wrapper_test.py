@@ -118,7 +118,7 @@ def _main():
         model.load()
 
     logger.info("Load model parameters from {}.".format(model.model_save_path))
-    model.predict(mal_test_dataset_producer)
+    model.predict(mal_test_dataset_producer, indicator_masking=True)
 
     attack = OMPAP(oblivion=args.oblivion,
                    kappa=args.kappa,
@@ -175,7 +175,7 @@ def _main():
                                                                batch_size=hp_params['batch_size'],
                                                                name='test'
                                                                )
-        model.predict(ben_test_dataset_producer)
+        model.predict(ben_test_dataset_producer, indicator_masking=True)
     dataset.clean_up()
 
 
