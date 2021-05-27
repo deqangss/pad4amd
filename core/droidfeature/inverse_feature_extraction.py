@@ -372,8 +372,8 @@ def insert_api(api_name, root_call, disassemble_dir):
     @param disassemble_dir, work directory
     """
     assert len(root_call) > 0, "Expect at least a root call."
-    root_call = random.choice(root_call)
-    # root_call = root_call[0]  # for simplifying analysis
+    # root_call = random.choice(root_call)
+    root_call = root_call[0]  # for simplifying analysis
     root_class_name, caller_method_statement = root_call.split(';', 1)
     method_match = re.match(
         r'^([ ]*?)\.method\s+(?P<methodPre>([^ ].*?))\((?P<methodArg>(.*?))\)(?P<methodRtn>(.*?))$', caller_method_statement)
