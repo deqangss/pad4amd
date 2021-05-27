@@ -553,7 +553,7 @@ def get_api_class(node_tag):
         raise TypeError
     assert TAG_SPLITTER in node_tag
     api_info = node_tag.split(TAG_SPLITTER)[0]
-    return api_info.split('->')[0]
+    return api_info.split('->')[0].split(' ')[1].strip()
 
 
 def get_caller_info(node_tag):
