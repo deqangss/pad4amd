@@ -107,6 +107,8 @@ class BaseAttack(Module):
         pool = multiprocessing.Pool(cpu_count, initializer=utils.pool_initializer)
         for _ in pool.map(InverseDroidFeature.modify_wrapper, pargs):  # keep in order
             pass
+        pool.close()
+        pool.join()
 
     def check_lambda(self, model):
         if 'forward_g' in type(model).__dict__.keys() and (not self.oblivion):

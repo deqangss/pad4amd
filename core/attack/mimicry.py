@@ -82,6 +82,8 @@ class Mimicry(BaseAttack):
                             _idc_modif.append(res[1])
                         else:
                             logger.error(str(res))
+                    pool.close()
+                    pool.join()
 
                     ben_y = np.zeros((trials,), dtype=np.int)
                     data_producer = data_fn(np.array(_paths), ben_y, batch_size=trials, name='test')
