@@ -373,9 +373,6 @@ def insert_api(api_name, root_call, disassemble_dir):
     """
     assert len(root_call) > 0, "Expect at least a root call."
 
-    if api_name == 'Landroid/app/Application;->getMainLooper':
-        print('ok')
-
     api_info = InverseDroidFeature.vocab_info[InverseDroidFeature.vocab.index(api_name)]
     class_name, method_name = api_name.split('->')
     invoke_types, return_classes = set(), set()
@@ -410,6 +407,8 @@ def insert_api(api_name, root_call, disassemble_dir):
 
     injection_done = False
     for rc in root_call:
+        if api_name == 'Landroid/app/Application;->getMainLooper':
+            print('rc: ', rc)
         root_class_name, caller_method_statement = rc.split(';', 1)
         method_match = re.match(
             r'^([ ]*?)\.method\s+(?P<methodPre>([^ ].*?))\((?P<methodArg>(.*?))\)(?P<methodRtn>(.*?))$',
