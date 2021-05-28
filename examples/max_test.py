@@ -282,6 +282,8 @@ def _main():
                                config.get('dataset', 'malware_dir'),
                                adj_mod=None,
                                save_dir=adv_app_dir)
+        import sys
+        sys.exit(1)
         adv_feature_paths = dataset.apk_preprocess(adv_app_dir, update_feature_extraction=True)
         dataset.feature_preprocess(adv_feature_paths)
         ben_test_dataset_producer = dataset.get_input_producer(adv_feature_paths,
@@ -289,9 +291,6 @@ def _main():
                                                                batch_size=hp_params['batch_size'],
                                                                name='test'
                                                                )
-        import sys
-        sys.exit(1)
-
         # model.predict(ben_test_dataset_producer, indicator_masking=True)
         y_pred2, indicator_flag2 = model.predict(ben_test_dataset_producer)
         pred_label2 = (~indicator_flag2) | ((y_pred2 == 1.) & indicator_flag2).tolist()
