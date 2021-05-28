@@ -53,7 +53,10 @@ def _main():
     hp_params = utils.read_pickle(os.path.join(save_dir, 'hparam.pkl'))
     dataset = Dataset(k=hp_params['k'],
                       is_adj=hp_params['is_adj'],
-                      feature_ext_args={'proc_number': hp_params['proc_number']}
+                      feature_ext_args={'proc_number': hp_params['proc_number'],
+                                        'timeout': hp_params['timeout'],
+                                        'N': hp_params['N']
+                                        }
                       )
     test_x, testy = dataset.test_dataset
     mal_save_path = os.path.join(config.get('dataset', 'dataset_dir'), 'attack.idx')
