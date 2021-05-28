@@ -232,6 +232,7 @@ class InverseDroidFeature(object):
             for instruction, (root_call, cg) in zip(x_mod_instr, cg_dict.items()):
                 for api_name, op in instruction:
                     if op == OP_REMOVAL:
+                        continue
                         remove_api(api_name, cg, dst_file)
                     else:
                         # A large scale of insertion operations will trigger unexpected issues, such as method limitation in a class
@@ -373,8 +374,13 @@ def insert_api(api_name, root_call, disassemble_dir):
     """
     assert len(root_call) > 0, "Expect at least a root call."
     # root_call = random.choice(root_call)
+    if not api_name == 'Landroid/os/Parcel;->writeTypedArray':
+        return
+
     root_call = root_call[0]  # for simplifying analysis
     root_class_name, caller_method_statement = root_call.split(';', 1)
+    print(root_call)
+    print(api_name)
     method_match = re.match(
         r'^([ ]*?)\.method\s+(?P<methodPre>([^ ].*?))\((?P<methodArg>(.*?))\)(?P<methodRtn>(.*?))$', caller_method_statement)
     caller_method_statement = '.method ' + method_match['methodPre'].strip() + '(' + method_match[
@@ -415,9 +421,10 @@ def insert_api(api_name, root_call, disassemble_dir):
     )
 
     method_finder_flag = False
-    fh = dex_manip.read_file_by_fileinput(smali_path, inplace=True)
+    fh = dex_manip.read_file_by_fileinput(smali_path, inplace=False)
     for line in fh:
-        print(line.rstrip())
+        # print(line.rstrip())
+        pass
 
         if line.strip() == caller_method_statement:
             method_finder_flag = True

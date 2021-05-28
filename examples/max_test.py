@@ -276,13 +276,15 @@ def _main():
     if args.real:
         adv_app_dir = os.path.join(save_dir, 'adv_apps')
 
-        # selected_id = mal_test_x.tolist().index(
-        #     '/mnt/74a99c3b-d122-43a5-a2f2-386921ccc892/database/android/naive_data/0701f177451ac249ad472b70ee0d9b09439183bfb824ae6fa5f6faffd064b4bf.gpickle')
+        selected_id = mal_test_x.tolist().index(
+            '/mnt/74a99c3b-d122-43a5-a2f2-386921ccc892/database/android/naive_data/fec387721033597cbf85da706f6ec7023cbb37b1fea28fc8df94d175ab2bc4a7.gpickle')
 
-        attack.produce_adv_mal(x_mod_integrated, mal_test_x.tolist()[:100],
+        attack.produce_adv_mal(x_mod_integrated[selected_id + 1], mal_test_x.tolist()[selected_id + 1],
                                config.get('dataset', 'malware_dir'),
                                adj_mod=None,
                                save_dir=adv_app_dir)
+        import sys
+        sys.exit(1)
         adv_feature_paths = dataset.apk_preprocess(adv_app_dir, update_feature_extraction=True)
         dataset.feature_preprocess(adv_feature_paths)
         ben_test_dataset_producer = dataset.get_input_producer(adv_feature_paths,
