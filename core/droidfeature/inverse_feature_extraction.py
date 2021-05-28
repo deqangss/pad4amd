@@ -407,8 +407,6 @@ def insert_api(api_name, root_call, disassemble_dir):
 
     injection_done = False
     for rc in root_call:
-        if api_name == 'Landroid/app/Application;->getMainLooper':
-            print('rc: ', rc)
         root_class_name, caller_method_statement = rc.split(';', 1)
         method_match = re.match(
             r'^([ ]*?)\.method\s+(?P<methodPre>([^ ].*?))\((?P<methodArg>(.*?))\)(?P<methodRtn>(.*?))$',
@@ -451,15 +449,5 @@ def insert_api(api_name, root_call, disassemble_dir):
         fh.close()
         if injection_done:
             break
-    if not injection_done:
-        print(api_name)
 
-if __name__ == '__main__':
-    # w = 'Landroid/content/Context;->startService(Landroid/content/Intent;)Landroid/content/ComponentName;'
-    # w_info = set({'invoke-virtual Landroid/content/Context;->startService(Landroid/content/Intent;)Landroid/content/ComponentName;','invoke-virtual/range Landroid/content/Context;->startService(Landroid/content/Intent;)Landroid/content/ComponentName;'})
-    # w = 'Ljava/lang/Class;->getDeclaredMethod'
-    # w_info = set({'invoke-virtual Ljava/lang/Class;->getDeclaredMethod(Ljava/lang/String; [Ljava/lang/Class;)Ljava/lang/reflect/Method;',
-    # 'invoke-virtual/range Ljava/lang/Class;->getDeclaredMethod(Ljava/lang/String; [Ljava/lang/Class;)Ljava/lang/reflect/Method;'})
-    # InverseDroidFeature.approx_check_public_method(w, w_info)
-    inverse_droid = InverseDroidFeature()
-    print(inverse_droid.get_interdependent_apis())
+

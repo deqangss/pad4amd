@@ -276,7 +276,7 @@ def _main():
         adv_app_dir = os.path.join(save_dir, 'adv_apps')
 
         selected_id = mal_test_x.tolist().index(
-            '/mnt/74a99c3b-d122-43a5-a2f2-386921ccc892/database/android/naive_data/fec387721033597cbf85da706f6ec7023cbb37b1fea28fc8df94d175ab2bc4a7.gpickle')
+            '/mnt/74a99c3b-d122-43a5-a2f2-386921ccc892/database/android/naive_data/6d40ef784e64863f845d1a280246ae834be995b4c0e9f10da46788011f40f491.gpickle')
 
         attack.produce_adv_mal(x_mod_integrated[selected_id: selected_id + 1], mal_test_x.tolist()[selected_id: selected_id + 1],
                                config.get('dataset', 'malware_dir'),
