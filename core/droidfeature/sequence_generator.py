@@ -125,12 +125,6 @@ def apk2graphs(apk_path, max_number_of_sequences=15000, max_recursive_depth=50, 
                                             max_recursive_depth,
                                             timeout
                                             )
-    # for c,g in api_sequence_dict.items():
-    #     for node in g.nodes(data=True):
-    #         if node[0] == 'Ljava/io/IOException;->getMessage':
-    #             print('tag: ', node[1])
-    #             print('root: ', c)
-    #             print('------------')
 
     # 5. merge graphs
     api_sequence_dict = merge_graphs(api_sequence_dict, N)

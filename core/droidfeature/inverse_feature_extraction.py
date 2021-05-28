@@ -377,17 +377,6 @@ def insert_api(api_name, root_call, disassemble_dir):
     if not api_name == 'Landroid/os/Parcel;->writeTypedArray':
         return
 
-    root_call = root_call[0]  # for simplifying analysis
-    root_class_name, caller_method_statement = root_call.split(';', 1)
-    print(root_call)
-    print(api_name)
-    method_match = re.match(
-        r'^([ ]*?)\.method\s+(?P<methodPre>([^ ].*?))\((?P<methodArg>(.*?))\)(?P<methodRtn>(.*?))$', caller_method_statement)
-    caller_method_statement = '.method ' + method_match['methodPre'].strip() + '(' + method_match[
-        'methodArg'].strip().replace(' ', '') + ')' + method_match['methodRtn'].strip()
-    smali_path = os.path.join(disassemble_dir + '/smali',
-                              root_class_name.lstrip('L') + '.smali')
-    assert os.path.exists(smali_path), 'Root call file {} is absent.'.format(smali_path)
     api_info = InverseDroidFeature.vocab_info[InverseDroidFeature.vocab.index(api_name)]
     class_name, method_name = api_name.split('->')
     invoke_types, return_classes = set(), set()
@@ -420,34 +409,55 @@ def insert_api(api_name, root_call, disassemble_dir):
         returnType=return_class
     )
 
-    method_finder_flag = False
-    fh = dex_manip.read_file_by_fileinput(smali_path, inplace=False)
-    for line in fh:
-        # print(line.rstrip())
-        pass
+    injection_done = False
+    print(api_name)
+    for rc in root_call:
+        root_call = root_call[0]  # for simplifying analysis
+        root_class_name, caller_method_statement = rc.split(';', 1)
+        print(rc)
 
-        if line.strip() == caller_method_statement:
-            method_finder_flag = True
+        method_match = re.match(
+            r'^([ ]*?)\.method\s+(?P<methodPre>([^ ].*?))\((?P<methodArg>(.*?))\)(?P<methodRtn>(.*?))$',
+            caller_method_statement)
+        caller_method_statement = '.method ' + method_match['methodPre'].strip() + '(' + method_match[
+            'methodArg'].strip().replace(' ', '') + ')' + method_match['methodRtn'].strip()
+        smali_path = os.path.join(disassemble_dir + '/smali',
+                                  root_class_name.lstrip('L') + '.smali')
+        if not os.path.exists(smali_path):
+            logger.warning('root call file {} is absent.'.format(smali_path))
             continue
 
-        if method_finder_flag and line.strip() == '.end method':
-            method_finder_flag = False
-            # issue: injection ruins the correct line number in smali codes
-            print('\n')
-            print(new_method_body)
-            continue
+        method_finder_flag = False
+        fh = dex_manip.read_file_by_fileinput(smali_path, inplace=False)
+        for line in fh:
+            # print(line.rstrip())
+            pass
 
-        invoke_virtual = 'invoke-virtual'
-        if method_finder_flag and '.locals' in line:
-            reg_match = re.match(r'^[ ]*?(.locals)[ ]*?(?P<regNumber>\d)', line)
-            if int(reg_match.group('regNumber')) > 15:
-                invoke_virtual = 'invoke-virtual/range'
+            if line.strip() == caller_method_statement:
+                method_finder_flag = True
+                continue
 
-        if method_finder_flag:
-            if re.match(r'^[ ]*?(.locals)', line) is not None:
-                print(
-                    '    ' + invoke_virtual + ' {p0}, ' + root_class_name + ';->' + new_method_name + '()V' + '\n')
-    fh.close()
+            if method_finder_flag and line.strip() == '.end method':
+                method_finder_flag = False
+                # issue: injection ruins the correct line number in smali codes
+                print('\n')
+                print(new_method_body)
+                continue
+
+            invoke_virtual = 'invoke-virtual'
+            if method_finder_flag and '.locals' in line:
+                reg_match = re.match(r'^[ ]*?(.locals)[ ]*?(?P<regNumber>\d)', line)
+                if int(reg_match.group('regNumber')) > 15:
+                    invoke_virtual = 'invoke-virtual/range'
+
+            if method_finder_flag:
+                if re.match(r'^[ ]*?(.locals)', line) is not None:
+                    print(
+                        '    ' + invoke_virtual + ' {p0}, ' + root_class_name + ';->' + new_method_name + '()V' + '\n')
+                    injection_done = True
+        fh.close()
+        if injection_done:
+            break
 
 
 if __name__ == '__main__':
