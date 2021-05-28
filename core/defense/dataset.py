@@ -51,8 +51,6 @@ class Dataset(torch.utils.data.Dataset):
                                                 config.get('dataset', 'intermediate'),
                                                 **feature_ext_args)
 
-        mal_feature_paths = self.apk_preprocess(config.get('dataset', 'malware_dir'))
-        ben_feature_paths = self.apk_preprocess(config.get('dataset', 'benware_dir'))
         data_saving_path = os.path.join(config.get('dataset', 'intermediate'), 'dataset.idx')
         if os.path.exists(data_saving_path):
             (self.train_dataset, self.validation_dataset, self.test_dataset) = utils.read_pickle(data_saving_path)
@@ -64,6 +62,8 @@ class Dataset(torch.utils.data.Dataset):
             self.validation_dataset = (path_tran(self.validation_dataset[0]), self.validation_dataset[1])
             self.test_dataset = (path_tran(self.test_dataset[0]), self.test_dataset[1])
         else:
+            mal_feature_paths = self.apk_preprocess(config.get('dataset', 'malware_dir'))
+            ben_feature_paths = self.apk_preprocess(config.get('dataset', 'benware_dir'))
             feature_paths = mal_feature_paths + ben_feature_paths
             gt_labels = np.zeros((len(mal_feature_paths) + len(ben_feature_paths)), dtype=np.int32)
             gt_labels[:len(mal_feature_paths)] = 1

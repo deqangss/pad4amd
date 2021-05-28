@@ -115,6 +115,7 @@ def _main():
         mal_test_x, mal_testy = utils.read_pickle_frd_space(mal_save_path)
         mal_count = len(mal_testy)
     ben_test_x, ben_testy = test_x[testy == 0], testy[testy == 0]
+    dataset.feature_preprocess(ben_test_x.tolist())
     ben_count = len(ben_test_x)
     if mal_count <= 0 and ben_count <= 0:
         return
