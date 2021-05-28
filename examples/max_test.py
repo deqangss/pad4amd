@@ -289,6 +289,8 @@ def _main():
                                                                batch_size=hp_params['batch_size'],
                                                                name='test'
                                                                )
+        import sys
+        sys.exit(1)
 
         # model.predict(ben_test_dataset_producer, indicator_masking=True)
         y_pred2, indicator_flag2 = model.predict(ben_test_dataset_producer)
