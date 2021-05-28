@@ -414,7 +414,8 @@ def insert_api(api_name, root_call, disassemble_dir):
     for rc in root_call:
         root_call = root_call[0]  # for simplifying analysis
         root_class_name, caller_method_statement = rc.split(';', 1)
-        print(rc)
+        print('rc: ', rc)
+        print('method: ', caller_method_statement)
 
         method_match = re.match(
             r'^([ ]*?)\.method\s+(?P<methodPre>([^ ].*?))\((?P<methodArg>(.*?))\)(?P<methodRtn>(.*?))$',
