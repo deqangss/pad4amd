@@ -143,8 +143,7 @@ def _main():
                                 os.path.join(save_dir, 'x_mod.list'))
     if args.real:
         adv_app_dir = os.path.join(save_dir, 'adv_apps')
-        print(len(x_mod_list))
-        attack.produce_adv_mal(x_mod_list, mal_test_x.tolist()[selected_id:selected_id + 1],
+        attack.produce_adv_mal(x_mod_list, mal_test_x.tolist(),
                                config.get('dataset', 'malware_dir'),
                                adj_mod=None,
                                save_dir=adv_app_dir)
