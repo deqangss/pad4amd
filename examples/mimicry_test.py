@@ -72,6 +72,11 @@ def _main():
     if mal_count <= 0:
         return
 
+    mal_paths = mal_test_x.tolist()
+    selected_id = mal_paths.index('/mnt/74a99c3b-d122-43a5-a2f2-386921ccc892/database/android/naive_data/c129a55a6c11c945bb2ff99be4547eb1426228999b8afad9aebbbcb74beb400c.gpickle')
+    mal_test_x = mal_test_x[selected_id : selected_id + 1]
+    mal_testy = mal_testy[selected_id : selected_id + 1]
+
     # test
     if not hp_params['cuda']:
         dv = 'cpu'
@@ -135,12 +140,6 @@ def _main():
         utils.mkdir(save_dir)
     utils.dump_pickle_frd_space(x_mod_list,
                                 os.path.join(save_dir, 'x_mod.list'))
-
-
-
-    # x_mod_list = utils.read_pickle_frd_space(os.path.join(save_dir, 'x_mod.list'))
-    # mal_paths = mal_test_x.tolist()
-    # selected_id = mal_paths.index('/mnt/74a99c3b-d122-43a5-a2f2-386921ccc892/database/android/naive_data/c129a55a6c11c945bb2ff99be4547eb1426228999b8afad9aebbbcb74beb400c.gpickle')
 
 
     if args.real:
