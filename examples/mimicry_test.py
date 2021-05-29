@@ -130,7 +130,7 @@ def _main():
     # logger.info(f"The attack effectiveness under mimicry attack is {np.sum(success_flag) / float(mal_count) * 100}%.")
     # logger.info(f"The mean accuracy on perturbed malware is {(1. - np.sum(success_flag) / float(mal_count)) * 100}%.")
     #
-    # save_dir = os.path.join(config.get('experiments', 'mimicry'), args.model)
+    save_dir = os.path.join(config.get('experiments', 'mimicry'), args.model)
     # if not os.path.exists(save_dir):
     #     utils.mkdir(save_dir)
     # utils.dump_pickle_frd_space(x_mod_list,
