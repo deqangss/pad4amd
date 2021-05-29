@@ -72,11 +72,6 @@ def _main():
     if mal_count <= 0:
         return
 
-    mal_paths = mal_test_x.tolist()
-    selected_id = mal_paths.index('/mnt/74a99c3b-d122-43a5-a2f2-386921ccc892/database/android/naive_data/c129a55a6c11c945bb2ff99be4547eb1426228999b8afad9aebbbcb74beb400c.gpickle')
-    mal_test_x = mal_test_x[selected_id : selected_id + 1]
-    mal_testy = mal_testy[selected_id : selected_id + 1]
-
     # test
     if not hp_params['cuda']:
         dv = 'cpu'
@@ -135,20 +130,19 @@ def _main():
     logger.info(f"The attack effectiveness under mimicry attack is {np.sum(success_flag) / float(mal_count) * 100}%.")
     logger.info(f"The mean accuracy on perturbed malware is {(1. - np.sum(success_flag) / float(mal_count)) * 100}%.")
 
-    save_dir = os.path.join(config.get('experiments', 'mimicry'), args.model)
-    if not os.path.exists(save_dir):
-        utils.mkdir(save_dir)
-    utils.dump_pickle_frd_space(x_mod_list,
-                                os.path.join(save_dir, 'x_mod.list'))
-
-
     if args.real:
+        save_dir = os.path.join(config.get('experiments', 'mimicry'), args.model)
+        if not os.path.exists(save_dir):
+            utils.mkdir(save_dir)
+        utils.dump_pickle_frd_space(x_mod_list,
+                                    os.path.join(save_dir, 'x_mod.list'))
+
         adv_app_dir = os.path.join(save_dir, 'adv_apps')
-        # attack.produce_adv_mal(x_mod_list, mal_test_x.tolist(),
-        #                        config.get('dataset', 'malware_dir'),
-        #                        adj_mod=None,
-        #                        save_dir=adv_app_dir)
-        adv_feature_paths = dataset.apk_preprocess(adv_app_dir, update_feature_extraction=False)
+        attack.produce_adv_mal(x_mod_list, mal_test_x.tolist(),
+                               config.get('dataset', 'malware_dir'),
+                               adj_mod=None,
+                               save_dir=adv_app_dir)
+        adv_feature_paths = dataset.apk_preprocess(adv_app_dir, update_feature_extraction=True)
         # dataset.feature_preprocess(adv_feature_paths)
         ben_test_dataset_producer = dataset.get_input_producer(adv_feature_paths,
                                                                np.ones((len(adv_feature_paths,))),
@@ -159,8 +153,8 @@ def _main():
         y_pred, indicator = model.predict(ben_test_dataset_producer, indicator_masking=True)
 
         y_pred = (y_pred == 0) & indicator
-        for y_p, feature_path in zip(y_pred.tolist(), adv_feature_paths):
-            print(feature_path, y_p)
+        for y_p1, y_p, feature_path in zip(success_flag.tolist(), y_pred.tolist(), adv_feature_paths):
+            print(feature_path, y_p1, y_p)
 
 
 if __name__ == '__main__':
