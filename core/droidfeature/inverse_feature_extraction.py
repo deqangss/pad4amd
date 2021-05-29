@@ -437,8 +437,8 @@ def insert_api(api_name, root_call, disassemble_dir):
 
             invoke_virtual = 'invoke-virtual'
             if method_finder_flag and '.locals' in line:
-                reg_match = re.match(r'^[ ]*?(.locals)[ ]*?(?P<regNumber>\d)', line)
-                if int(reg_match.group('regNumber')) > 15:
+                reg_match = re.match(r'^[ ]*?(.locals)[ ]*?(?P<regNumber>\d+)', line)
+                if reg_match is not None and int(reg_match.group('regNumber')) > 15:
                     invoke_virtual = 'invoke-virtual/range'
 
             if method_finder_flag:
