@@ -118,8 +118,6 @@ def _main():
     ben_count = len(ben_test_x)
     if mal_count <= 0 and ben_count <= 0:
         return
-    dataset.feature_preprocess(mal_test_x.tolist())
-
     mal_test_dataset_producer = dataset.get_input_producer(mal_test_x, mal_testy,
                                                            batch_size=hp_params['batch_size'],
                                                            name='test')
