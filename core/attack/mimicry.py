@@ -60,9 +60,9 @@ class Mimicry(BaseAttack):
                 mal_cg = inverse_feature_extraction.seq_gen.read_from_disk(_x)
                 mal_f_name = os.path.splitext(os.path.basename(_x))[0]
                 x_mod = None
-                ben_samples = np.random.choice(ben_x, (trials,), replace=False)
                 # need more efficiency than this
                 with tempfile.TemporaryDirectory() as tmpdirname:
+                    ben_samples = np.random.choice(ben_x, (trials,), replace=False)
                     _paths = []
                     _idc_modif = []
                     for ben_f in ben_samples:
@@ -72,18 +72,6 @@ class Mimicry(BaseAttack):
                         inverse_feature_extraction.seq_gen.save_to_disk(new_cg, tmp_fname)
                         _paths.append(tmp_fname)
                         _idc_modif.append(idx_modif)
-                    # pargs = [(mal_cg, _x, ben_f, tmpdirname) for ben_f in ben_samples]
-                    # cpu_count = multiprocessing.cpu_count() - 2 if multiprocessing.cpu_count() - 2 > 1 else 1
-                    # pool = multiprocessing.Pool(cpu_count, initializer=utils.pool_initializer)
-                    # for res in pool.map(_perturb_wrapper, pargs):  # keep in order
-                    #     if not isinstance(res, Exception):
-                    #         _paths.append(res[0])
-                    #         _idc_modif.append(res[1])
-                    #     else:
-                    #         logger.error(str(res))
-                    # pool.close()
-                    # pool.join()
-
                     ben_y = np.zeros((trials,), dtype=np.int)
                     data_producer = data_fn(np.array(_paths), ben_y, batch_size=trials, name='test')
                     y_cent, x_density = [], []
