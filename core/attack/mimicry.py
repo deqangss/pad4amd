@@ -85,15 +85,15 @@ class Mimicry(BaseAttack):
                     y_pred = np.argmax(y_cent, axis=-1)
                     x_density = np.mean(np.stack(x_density, axis=1), axis=1)
                     if ('indicator' in type(model).__dict__.keys()) and (not self.oblivion):
-                        attack_success_flag = (y_pred == 0) & (model.indicator(x_density, y_pred))
+                        attack_flag = (y_pred == 0) & (model.indicator(x_density, y_pred))
                     else:
-                        attack_success_flag = (y_pred == 0)
-                    ben_id_sel = np.argmax(attack_success_flag)
+                        attack_flag = (y_pred == 0)
+                    ben_id_sel = np.argmax(attack_flag)
 
                     if 'indicator' in type(model).__dict__.keys():
                         use_flag = (y_pred == 0) & (model.indicator(x_density, y_pred))
                     else:
-                        use_flag = attack_success_flag
+                        use_flag = attack_flag
 
                     if is_apk:
                         idx_modif = _idc_modif[ben_id_sel]
