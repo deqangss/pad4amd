@@ -102,7 +102,7 @@ class BaseAttack(Module):
         #     InverseDroidFeature.modify(x_mod_instr, feature_path, app_path, save_dir)
 
         pargs = [(x_mod_instr, feature_path, app_path, save_dir) for x_mod_instr, feature_path, app_path in
-                 zip(x_mod_instructions, feature_path_list, app_path_list) if not os.path.exists(os.path.join(save_dir, os.path.splitext(os.path.basename(app_path))[0] + '_adv'))]
+                 zip(x_mod_instructions, feature_path_list, app_path_list)]
         cpu_count = multiprocessing.cpu_count() - 2 if multiprocessing.cpu_count() - 2 > 1 else 1
         pool = multiprocessing.Pool(cpu_count, initializer=utils.pool_initializer)
         for _ in pool.map(InverseDroidFeature.modify_wrapper, pargs):  # keep in order
