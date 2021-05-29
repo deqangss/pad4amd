@@ -72,6 +72,12 @@ def _main():
     if mal_count <= 0:
         return
 
+    selected_id = mal_test_x.tolist().index(
+        '/mnt/74a99c3b-d122-43a5-a2f2-386921ccc892/database/android/naive_data/553085a138c80ca6c55334b9b7c50e7caa24bd17f54949505790293ab82a2d4f.gpickle')
+    mal_test_x = mal_test_x[selected_id: selected_id + 1]
+    mal_testy = mal_testy[selected_id: selected_id + 1]
+
+
     # test
     if not hp_params['cuda']:
         dv = 'cpu'
@@ -137,7 +143,7 @@ def _main():
                                 os.path.join(save_dir, 'x_mod.list'))
     if args.real:
         adv_app_dir = os.path.join(save_dir, 'adv_apps')
-        attack.produce_adv_mal(x_mod_list, mal_test_x.tolist(),
+        attack.produce_adv_mal(x_mod_list, mal_test_x.tolist()[selected_id:selected_id + 1],
                                config.get('dataset', 'malware_dir'),
                                adj_mod=None,
                                save_dir=adv_app_dir)
