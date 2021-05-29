@@ -86,12 +86,14 @@ class Mimicry(BaseAttack):
                     x_density = np.mean(np.stack(x_density, axis=1), axis=1)
                     if ('indicator' in type(model).__dict__.keys()) and (not self.oblivion):
                         attack_flag = (y_pred == 0) & (model.indicator(x_density, y_pred))
+                        print('ok1')
                     else:
                         attack_flag = (y_pred == 0)
                     ben_id_sel = np.argmax(attack_flag)
 
                     if 'indicator' in type(model).__dict__.keys():
                         use_flag = (y_pred == 0) & (model.indicator(x_density, y_pred))
+                        print('ok2')
                     else:
                         use_flag = attack_flag
 
