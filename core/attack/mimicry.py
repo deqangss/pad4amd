@@ -88,8 +88,14 @@ class Mimicry(BaseAttack):
                         attack_success_flag = (y_pred == 0) & (model.indicator(x_density, y_pred))
                     else:
                         attack_success_flag = (y_pred == 0)
+                    ben_id_sel = np.argmax(attack_success_flag)
+
+                    if 'indicator' in type(model).__dict__.keys():
+                        use_flag = (y_pred == 0) & (model.indicator(x_density, y_pred))
+                    else:
+                        use_flag = attack_success_flag
+
                     if is_apk:
-                        ben_id_sel = np.argmax(attack_success_flag)
                         idx_modif = _idc_modif[ben_id_sel]
                         x_mod = np.zeros((np.max(idx_modif) + 1, len(self.inversedorid.vocab)), dtype=np.float)
                         ben_x_list, _1, _2 = self.inversedorid.feature_extractor.feature2ipt(ben_samples[ben_id_sel],
@@ -104,7 +110,7 @@ class Mimicry(BaseAttack):
                         for idx in idx_modif:
                             x_mod[idx] += ben_x_list[idx]
 
-                    if not np.any(attack_success_flag):
+                    if not use_flag[ben_id_sel]:
                         success_flag = np.append(success_flag, [False])
                         if verbose:
                             logger.info("Fail to perturb the file {}.".format(mal_f_name))
