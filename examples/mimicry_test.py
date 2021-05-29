@@ -72,12 +72,6 @@ def _main():
     if mal_count <= 0:
         return
 
-    selected_id = mal_test_x.tolist().index(
-        '/mnt/74a99c3b-d122-43a5-a2f2-386921ccc892/database/android/naive_data/553085a138c80ca6c55334b9b7c50e7caa24bd17f54949505790293ab82a2d4f.gpickle')
-    mal_test_x = mal_test_x[selected_id: selected_id + 1]
-    mal_testy = mal_testy[selected_id: selected_id + 1]
-
-
     # test
     if not hp_params['cuda']:
         dv = 'cpu'
