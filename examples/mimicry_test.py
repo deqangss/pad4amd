@@ -21,6 +21,8 @@ atta_argparse.add_argument('--trials', type=int, default=30,
                            help='number of benign samples for perturbing one malicious file.')
 atta_argparse.add_argument('--n_sample_times', type=int, default=1,
                            help='data sampling times when waging attacks')
+atta_argparse.add_argument('--oblivion', action='store_true', default=False,
+                           help='whether know the adversary indicator or not.')
 atta_argparse.add_argument('--real', action='store_true', default=False,
                            help='whether produce the perturbed apks.')
 atta_argparse.add_argument('--model', type=str, default='maldet',
@@ -110,7 +112,7 @@ def _main():
     else:
         model.load()
     logger.info("Load model parameters from {}.".format(model.model_save_path))
-    attack = Mimicry(device=model.device)
+    attack = Mimicry(oblivion=args.oblivion, device=model.device)
 
     model.eval()
     mal_test_dataset_producer = dataset.get_input_producer(mal_test_x, mal_testy, batch_size=hp_params['batch_size'],
