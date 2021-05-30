@@ -149,12 +149,7 @@ def _main():
                                                                batch_size=hp_params['batch_size'],
                                                                name='test'
                                                                )
-        # model.predict(ben_test_dataset_producer, indicator_masking=True)
-        y_pred, indicator = model.predict(ben_test_dataset_producer, indicator_masking=True)
-
-        y_pred = (y_pred == 0) & indicator
-        for y_p, feature_path in zip(y_pred.tolist(), adv_feature_paths):
-            print(feature_path, y_p)
+        model.predict(ben_test_dataset_producer, indicator_masking=True)
 
 
 if __name__ == '__main__':
