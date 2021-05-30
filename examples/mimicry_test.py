@@ -118,31 +118,31 @@ def _main():
     mal_test_dataset_producer = dataset.get_input_producer(mal_test_x, mal_testy, batch_size=hp_params['batch_size'],
                                                            name='test')
     model.predict(mal_test_dataset_producer, indicator_masking=True)
-    success_flag, x_mod_list = attack.perturb(model,
-                                              mal_test_x,
-                                              ben_test_x,
-                                              trials=args.trials,
-                                              data_fn=dataset.get_input_producer,
-                                              seed=0,
-                                              n_sample_times=args.n_sample_times,
-                                              is_apk=args.real,
-                                              verbose=True)
-    logger.info(f"The attack effectiveness under mimicry attack is {np.sum(success_flag) / float(mal_count) * 100}%.")
-    logger.info(f"The mean accuracy on perturbed malware is {(1. - np.sum(success_flag) / float(mal_count)) * 100}%.")
+    # success_flag, x_mod_list = attack.perturb(model,
+    #                                           mal_test_x,
+    #                                           ben_test_x,
+    #                                           trials=args.trials,
+    #                                           data_fn=dataset.get_input_producer,
+    #                                           seed=0,
+    #                                           n_sample_times=args.n_sample_times,
+    #                                           is_apk=args.real,
+    #                                           verbose=True)
+    # logger.info(f"The attack effectiveness under mimicry attack is {np.sum(success_flag) / float(mal_count) * 100}%.")
+    # logger.info(f"The mean accuracy on perturbed malware is {(1. - np.sum(success_flag) / float(mal_count)) * 100}%.")
 
     if args.real:
         save_dir = os.path.join(config.get('experiments', 'mimicry'), args.model)
-        if not os.path.exists(save_dir):
-            utils.mkdir(save_dir)
-        utils.dump_pickle_frd_space(x_mod_list,
-                                    os.path.join(save_dir, 'x_mod.list'))
-
         adv_app_dir = os.path.join(save_dir, 'adv_apps')
-        attack.produce_adv_mal(x_mod_list, mal_test_x.tolist(),
-                               config.get('dataset', 'malware_dir'),
-                               adj_mod=None,
-                               save_dir=adv_app_dir)
-        adv_feature_paths = dataset.apk_preprocess(adv_app_dir, update_feature_extraction=True)
+        # if not os.path.exists(save_dir):
+        #     utils.mkdir(save_dir)
+        # utils.dump_pickle_frd_space(x_mod_list,
+        #                             os.path.join(save_dir, 'x_mod.list'))
+        #
+        # attack.produce_adv_mal(x_mod_list, mal_test_x.tolist(),
+        #                        config.get('dataset', 'malware_dir'),
+        #                        adj_mod=None,
+        #                        save_dir=adv_app_dir)
+        adv_feature_paths = dataset.apk_preprocess(adv_app_dir, update_feature_extraction=False)
         dataset.feature_preprocess(adv_feature_paths)
         ben_test_dataset_producer = dataset.get_input_producer(adv_feature_paths,
                                                                np.ones((len(adv_feature_paths,))),
@@ -153,8 +153,8 @@ def _main():
         y_pred, indicator = model.predict(ben_test_dataset_producer, indicator_masking=True)
 
         y_pred = (y_pred == 0) & indicator
-        for y_p1, y_p, feature_path in zip(success_flag.tolist(), y_pred.tolist(), adv_feature_paths):
-            print(feature_path, y_p1, y_p)
+        for y_p, feature_path in zip(y_pred.tolist(), adv_feature_paths):
+            print(feature_path, y_p)
 
 
 if __name__ == '__main__':
