@@ -144,8 +144,8 @@ class InverseDroidFeature(object):
         idx_mod = []
         for root_call, cg in cg_dict2.items():
             idx = random.choice(range(n_src_cgs))
+            print(idx)
             src_root_call, src_cg = list(cg_dict1.items())[idx]
-            # src_root_call = list(src_root_call).extend(list(root_call))
             src_cg = nx.compose(src_cg, cg)
             cg_dict1[src_root_call] = src_cg
             idx_mod.append(idx)
