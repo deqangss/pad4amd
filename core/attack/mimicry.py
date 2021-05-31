@@ -3,6 +3,7 @@ import tempfile
 
 import torch
 
+import copy
 import numpy as np
 import multiprocessing
 
@@ -73,7 +74,7 @@ class Mimicry(BaseAttack):
                     #     _paths.append(tmp_fname)
                     #     _idc_modif.append(idx_modif)
 
-                    pargs = [(mal_cg, _x, ben_f, tmpdirname) for ben_f in ben_samples]
+                    pargs = [(copy.deepcopy(mal_cg), _x, ben_f, tmpdirname) for ben_f in ben_samples]
                     cpu_count = multiprocessing.cpu_count() // 2 if multiprocessing.cpu_count() // 2 > 1 else 1
                     pool = multiprocessing.Pool(cpu_count, initializer=utils.pool_initializer)
                     for res in pool.imap(_perturb_wrapper, pargs):  # keep in order
