@@ -103,6 +103,7 @@ class Mimicry(BaseAttack):
                     else:
                         attack_flag = (y_pred == 0)
                     ben_id_sel = np.argmax(attack_flag)
+                    print(ben_id_sel)
 
                     if 'indicator' in type(model).__dict__.keys():
                         use_flag = (y_pred == 0) & (model.indicator(x_density, y_pred))
