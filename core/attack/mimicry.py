@@ -64,7 +64,6 @@ class Mimicry(BaseAttack):
                 # need more efficiency than this
                 with tempfile.TemporaryDirectory() as tmpdirname:
                     ben_samples = np.random.choice(ben_x, (trials,), replace=False)
-                    print(ben_samples)
                     _paths = []
                     _idc_modif = []
                     # for ben_f in ben_samples:
@@ -74,8 +73,7 @@ class Mimicry(BaseAttack):
                     #     inverse_feature_extraction.seq_gen.save_to_disk(new_cg, tmp_fname)
                     #     _paths.append(tmp_fname)
                     #     _idc_modif.append(idx_modif)
-
-                    pargs = [(copy.deepcopy(mal_cg), _x, ben_f, tmpdirname) for ben_f in ben_samples]
+                    pargs = [(mal_cg, _x, ben_f, tmpdirname) for ben_f in ben_samples]
                     cpu_count = multiprocessing.cpu_count() // 2 if multiprocessing.cpu_count() // 2 > 1 else 1
                     pool = multiprocessing.Pool(cpu_count, initializer=utils.pool_initializer)
                     for res in pool.imap(_perturb_wrapper, pargs):  # keep in order
@@ -141,7 +139,7 @@ class Mimicry(BaseAttack):
 def _perturb(mal_cg, mal_sample, ben_sample, dir_saving):
     mal_f_name = os.path.splitext(os.path.basename(mal_sample))[0]
     ben_cg = inverse_feature_extraction.seq_gen.read_from_disk(ben_sample)
-    new_cg, idx_modif = inverse_feature_extraction.InverseDroidFeature.merge_features(mal_cg, ben_cg)
+    new_cg, idx_modif = inverse_feature_extraction.InverseDroidFeature.merge_features(copy.deepcopy(mal_cg), ben_cg)
     tmp_fname = os.path.join(dir_saving, mal_f_name + '_' + os.path.basename(ben_sample))
     inverse_feature_extraction.seq_gen.save_to_disk(new_cg, tmp_fname)
     return tmp_fname, idx_modif
