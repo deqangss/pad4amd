@@ -142,15 +142,14 @@ class InverseDroidFeature(object):
         if n_src_cgs <= 0:
             return cg_dict2
         idx_mod = []
-        new_cg_dict = cg_dict1.copy()
         for root_call, cg in cg_dict2.items():
             idx = random.choice(range(n_src_cgs))
-            src_root_call, src_cg = list(new_cg_dict.items())[idx]
+            src_root_call, src_cg = list(cg_dict1.items())[idx]
             # src_root_call = list(src_root_call).extend(list(root_call))
             src_cg = nx.compose(src_cg, cg)
-            new_cg_dict[src_root_call] = src_cg
+            cg_dict1[src_root_call] = src_cg
             idx_mod.append(idx)
-        return new_cg_dict, idx_mod
+        return cg_dict1, idx_mod
 
     @staticmethod
     def approx_check_public_method(word, word_info):
