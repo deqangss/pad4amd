@@ -64,6 +64,7 @@ class Mimicry(BaseAttack):
                 # need more efficiency than this
                 with tempfile.TemporaryDirectory() as tmpdirname:
                     ben_samples = np.random.choice(ben_x, (trials,), replace=False)
+                    print(ben_samples)
                     _paths = []
                     _idc_modif = []
                     for ben_f in ben_samples:
