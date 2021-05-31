@@ -66,24 +66,24 @@ class Mimicry(BaseAttack):
                     print(ben_samples)
                     _paths = []
                     _idc_modif = []
-                    # for ben_f in ben_samples:
-                    #     ben_cg = inverse_feature_extraction.seq_gen.read_from_disk(ben_f)
-                    #     new_cg, idx_modif = self.inversedorid.merge_features(mal_cg, ben_cg)
-                    #     tmp_fname = os.path.join(tmpdirname, mal_f_name + '_' + os.path.basename(ben_f))
-                    #     inverse_feature_extraction.seq_gen.save_to_disk(new_cg, tmp_fname)
-                    #     _paths.append(tmp_fname)
-                    #     _idc_modif.append(idx_modif)
-                    pargs = [(mal_cg, _x, ben_f, tmpdirname) for ben_f in ben_samples]
-                    cpu_count = multiprocessing.cpu_count() // 2 if multiprocessing.cpu_count() // 2 > 1 else 1
-                    pool = multiprocessing.Pool(cpu_count, initializer=utils.pool_initializer)
-                    for res in pool.imap(_perturb_wrapper, pargs):  # keep in order
-                        if not isinstance(res, Exception):
-                            _paths.append(res[0])
-                            _idc_modif.append(res[1])
-                        else:
-                            logger.error(str(res))
-                    pool.close()
-                    pool.join()
+                    for ben_f in ben_samples:
+                        ben_cg = inverse_feature_extraction.seq_gen.read_from_disk(ben_f)
+                        new_cg, idx_modif = self.inversedorid.merge_features(mal_cg, ben_cg)
+                        tmp_fname = os.path.join(tmpdirname, mal_f_name + '_' + os.path.basename(ben_f))
+                        inverse_feature_extraction.seq_gen.save_to_disk(new_cg, tmp_fname)
+                        _paths.append(tmp_fname)
+                        _idc_modif.append(idx_modif)
+                    # pargs = [(mal_cg, _x, ben_f, tmpdirname) for ben_f in ben_samples]
+                    # cpu_count = multiprocessing.cpu_count() // 2 if multiprocessing.cpu_count() // 2 > 1 else 1
+                    # pool = multiprocessing.Pool(cpu_count, initializer=utils.pool_initializer)
+                    # for res in pool.imap(_perturb_wrapper, pargs):  # keep in order
+                    #     if not isinstance(res, Exception):
+                    #         _paths.append(res[0])
+                    #         _idc_modif.append(res[1])
+                    #     else:
+                    #         logger.error(str(res))
+                    # pool.close()
+                    # pool.join()
 
                     ben_y = np.zeros((trials,), dtype=np.int)
                     data_producer = data_fn(np.array(_paths), ben_y, batch_size=trials, name='test')
