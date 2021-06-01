@@ -4,6 +4,7 @@ import tempfile
 import torch
 
 import copy
+import random
 import numpy as np
 import multiprocessing
 
@@ -54,6 +55,7 @@ class Mimicry(BaseAttack):
             return x
         trials = trials if trials < len(ben_x) else len(ben_x)
         np.random.seed(seed)
+        random.seed(seed)
         success_flag = np.array([])
         with torch.no_grad():
             x_mod_list = []
