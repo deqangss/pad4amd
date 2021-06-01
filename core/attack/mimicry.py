@@ -116,7 +116,7 @@ class Mimicry(BaseAttack):
                                                                                              label=0,
                                                                                              is_adj=False,
                                                                                              vocabulary=self.inversedorid.vocab,
-                                                                                             n_cg=len(idx_modif),
+                                                                                             n_cg=max(idx_modif),
                                                                                              cache_dir=None)
                         assert len(ben_x_list) <= len(idx_modif)
                         if len(ben_x_list) < len(idx_modif):
