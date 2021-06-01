@@ -118,13 +118,13 @@ class Mimicry(BaseAttack):
                                                                                              label=0,
                                                                                              is_adj=False,
                                                                                              vocabulary=self.inversedorid.vocab,
-                                                                                             n_cg=np.max(idx_modif) + 1,
+                                                                                             n_cg=len(idx_modif),
                                                                                              cache_dir=None)
-                        print(len(idx_modif), np.max(idx_modif) + 1, len(ben_x_list))
-                        assert len(ben_x_list) <= np.max(idx_modif) + 1
-                        if len(ben_x_list) <= np.max(idx_modif):
+                        assert len(ben_x_list) <= len(idx_modif)
+                        if len(ben_x_list) < len(idx_modif):
                             logger.warning("Inconsistent modification: Something in feature extraction may be incorrect!")
 
+                        print(len(idx_modif), np.max(idx_modif) + 1, len(ben_x_list))
                         for idx in idx_modif:
                             x_mod[idx] += ben_x_list[idx]
 
