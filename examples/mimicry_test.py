@@ -138,12 +138,8 @@ def _main():
         # utils.dump_pickle_frd_space(x_mod_list,
         #                             os.path.join(save_dir, 'x_mod.list'))
         x_mod_list = utils.read_pickle_frd_space(os.path.join(save_dir, 'x_mod.list'))
-        selected_id = mal_test_x.tolist().index('/mnt/74a99c3b-d122-43a5-a2f2-386921ccc892/database/android/naive_data/1b1ba37e5fc03449f4e656254c11c20346ca0836a7ea6b362ace959d1b8de5e6.gpickle')
 
-        print(selected_id)
-        print(np.sum(x_mod_list[selected_id] > 0))
-
-        attack.produce_adv_mal(x_mod_list[selected_id: selected_id+1], mal_test_x.tolist()[selected_id: selected_id+1],
+        attack.produce_adv_mal(x_mod_list, mal_test_x.tolist(),
                                config.get('dataset', 'malware_dir'),
                                adj_mod=None,
                                save_dir=adv_app_dir)

@@ -211,18 +211,11 @@ class InverseDroidFeature(object):
         @param save_dir, String, saving directory
         """
         cg_dict = seq_gen.read_from_disk(feature_path)
-        # we use feature padding, leading to more items of instructions than call graph
-        # assert len(x_mod_instr) >= len(
-        #     cg_dict), 'Expected items of instructions greater than call graph, but got {} vs {}'.format(
-        #     len(x_mod_instr),
-        #     len(cg_dict)
-        #     )
         assert os.path.isfile(app_path)
         if save_dir is None:
             save_dir = os.path.join(TMP_DIR, 'adv_mal_cache')
         if not os.path.exists(save_dir):
             utils.mkdir(save_dir)
-        print('ok2')
         with tempfile.TemporaryDirectory() as tmpdirname:
             dst_file = os.path.join(tmpdirname, os.path.splitext(os.path.basename(app_path))[0])
             cmd_response = subprocess.call("apktool -q d " + app_path + " -o " + dst_file, shell=True)
