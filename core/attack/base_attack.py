@@ -96,7 +96,6 @@ class BaseAttack(Module):
         else:
             raise ValueError("Expect app directory or a list of paths, but got {}.".format(type(app_dir)))
         assert np.all([os.path.exists(app_path) for app_path in app_path_list]), "Unable to find all app paths."
-        print('ok1')
         # for x_mod_instr, feature_path, app_path in zip(x_mod_instructions, feature_path_list, app_path_list):
         #     InverseDroidFeature.modify(x_mod_instr, feature_path, app_path, save_dir)
 
@@ -104,8 +103,11 @@ class BaseAttack(Module):
                  zip(x_mod_instructions, feature_path_list, app_path_list)]
         cpu_count = multiprocessing.cpu_count() - 2 if multiprocessing.cpu_count() - 2 > 1 else 1
         pool = multiprocessing.Pool(cpu_count, initializer=utils.pool_initializer)
-        for _ in pool.map(InverseDroidFeature.modify_wrapper, pargs):  # keep in order
-            pass
+        for res in pool.map(InverseDroidFeature.modify_wrapper, pargs):  # keep in order
+            if isinstance(res, Exception):
+                print(str(res))
+            else:
+                pass
         pool.close()
         pool.join()
 
