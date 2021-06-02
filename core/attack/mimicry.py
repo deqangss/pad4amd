@@ -124,10 +124,8 @@ class Mimicry(BaseAttack):
                         if len(ben_x_list) < len(idx_modif):
                             logger.warning("Inconsistent modification: Something in feature extraction may be incorrect!")
 
-                        for idx in idx_modif:
-                            if idx + 1 >= len(ben_x_list):
-                                break
-                            x_mod[idx] += ben_x_list[idx]
+                        for i, ben_x in enumerate(ben_x_list):
+                            x_mod[idx_modif[i]] += ben_x
 
                     if not use_flag[ben_id_sel]:
                         success_flag = np.append(success_flag, [False])
