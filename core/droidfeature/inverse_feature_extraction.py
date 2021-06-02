@@ -212,11 +212,11 @@ class InverseDroidFeature(object):
         """
         cg_dict = seq_gen.read_from_disk(feature_path)
         # we use feature padding, leading to more items of instructions than call graph
-        assert len(x_mod_instr) >= len(
-            cg_dict), 'Expect items of instructions greater than call graph, but got {} vs {}'.format(
-            len(x_mod_instr),
-            len(cg_dict)
-            )
+        # assert len(x_mod_instr) >= len(
+        #     cg_dict), 'Expected items of instructions greater than call graph, but got {} vs {}'.format(
+        #     len(x_mod_instr),
+        #     len(cg_dict)
+        #     )
         assert os.path.isfile(app_path)
         if save_dir is None:
             save_dir = os.path.join(TMP_DIR, 'adv_mal_cache')
