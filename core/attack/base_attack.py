@@ -16,6 +16,10 @@ import numpy as np
 
 from core.droidfeature import InverseDroidFeature
 from tools import utils
+from config import logging, ErrorHandler
+
+logger = logging.getLogger('examples.base_attack')
+logger.addHandler(ErrorHandler)
 
 EXP_OVER_FLOW = 1e-30
 
@@ -105,9 +109,7 @@ class BaseAttack(Module):
         pool = multiprocessing.Pool(cpu_count, initializer=utils.pool_initializer)
         for res in pool.map(InverseDroidFeature.modify_wrapper, pargs):  # keep in order
             if isinstance(res, Exception):
-                print(str(res))
-            else:
-                pass
+                logger.error(str(res))
         pool.close()
         pool.join()
 
