@@ -87,7 +87,6 @@ class BaseAttack(Module):
             return
         assert len(x_mod_list) == len(feature_path_list)
         assert isinstance(x_mod_list[0], (torch.Tensor, np.ndarray))
-        print('ok1')
         x_mod_instructions = [self.inverse_feature.inverse_map_manipulation(x_mod) for x_mod in x_mod_list]
         if os.path.isdir(app_dir):
             app_path_list = [os.path.join(app_dir, os.path.basename(os.path.splitext(feat_p)[0])) for \
@@ -97,7 +96,7 @@ class BaseAttack(Module):
         else:
             raise ValueError("Expect app directory or a list of paths, but got {}.".format(type(app_dir)))
         assert np.all([os.path.exists(app_path) for app_path in app_path_list]), "Unable to find all app paths."
-
+        print('ok1')
         # for x_mod_instr, feature_path, app_path in zip(x_mod_instructions, feature_path_list, app_path_list):
         #     InverseDroidFeature.modify(x_mod_instr, feature_path, app_path, save_dir)
 
