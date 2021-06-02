@@ -115,30 +115,32 @@ def _main():
     attack = Mimicry(oblivion=args.oblivion, device=model.device)
 
     model.eval()
-    mal_test_dataset_producer = dataset.get_input_producer(mal_test_x, mal_testy, batch_size=hp_params['batch_size'],
-                                                           name='test')
-    model.predict(mal_test_dataset_producer, indicator_masking=True)
-    success_flag, x_mod_list = attack.perturb(model,
-                                              mal_test_x,
-                                              ben_test_x,
-                                              trials=args.trials,
-                                              data_fn=dataset.get_input_producer,
-                                              seed=0,
-                                              n_sample_times=args.n_sample_times,
-                                              is_apk=args.real,
-                                              verbose=True)
-    logger.info(f"The attack effectiveness under mimicry attack is {np.sum(success_flag) / float(mal_count) * 100}%.")
-    logger.info(f"The mean accuracy on perturbed malware is {(1. - np.sum(success_flag) / float(mal_count)) * 100}%.")
+    # mal_test_dataset_producer = dataset.get_input_producer(mal_test_x, mal_testy, batch_size=hp_params['batch_size'],
+    #                                                        name='test')
+    # model.predict(mal_test_dataset_producer, indicator_masking=True)
+    # success_flag, x_mod_list = attack.perturb(model,
+    #                                           mal_test_x,
+    #                                           ben_test_x,
+    #                                           trials=args.trials,
+    #                                           data_fn=dataset.get_input_producer,
+    #                                           seed=0,
+    #                                           n_sample_times=args.n_sample_times,
+    #                                           is_apk=args.real,
+    #                                           verbose=True)
+    # logger.info(f"The attack effectiveness under mimicry attack is {np.sum(success_flag) / float(mal_count) * 100}%.")
+    # logger.info(f"The mean accuracy on perturbed malware is {(1. - np.sum(success_flag) / float(mal_count)) * 100}%.")
 
     if args.real:
         save_dir = os.path.join(config.get('experiments', 'mimicry'), args.model)
         adv_app_dir = os.path.join(save_dir, 'adv_apps')
-        if not os.path.exists(save_dir):
-            utils.mkdir(save_dir)
-        utils.dump_pickle_frd_space(x_mod_list,
-                                    os.path.join(save_dir, 'x_mod.list'))
+        # if not os.path.exists(save_dir):
+        #     utils.mkdir(save_dir)
+        # utils.dump_pickle_frd_space(x_mod_list,
+        #                             os.path.join(save_dir, 'x_mod.list'))
+        x_mod_list = utils.read_pickle_frd_space(os.path.join(save_dir, 'x_mod.list'))
+        selected_id = mal_test_x.tolist().index('/mnt/74a99c3b-d122-43a5-a2f2-386921ccc892/database/android/naive_data/1b1ba37e5fc03449f4e656254c11c20346ca0836a7ea6b362ace959d1b8de5e6.gpickle')
 
-        attack.produce_adv_mal(x_mod_list, mal_test_x.tolist(),
+        attack.produce_adv_mal(x_mod_list[selected_id: selected_id+1], mal_test_x.tolist()[selected_id: selected_id+1],
                                config.get('dataset', 'malware_dir'),
                                adj_mod=None,
                                save_dir=adv_app_dir)
