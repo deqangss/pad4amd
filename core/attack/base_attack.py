@@ -87,7 +87,7 @@ class BaseAttack(Module):
             return
         assert len(x_mod_list) == len(feature_path_list)
         assert isinstance(x_mod_list[0], (torch.Tensor, np.ndarray))
-
+        print('ok1')
         x_mod_instructions = [self.inverse_feature.inverse_map_manipulation(x_mod) for x_mod in x_mod_list]
         if os.path.isdir(app_dir):
             app_path_list = [os.path.join(app_dir, os.path.basename(os.path.splitext(feat_p)[0])) for \
