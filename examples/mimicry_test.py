@@ -118,6 +118,10 @@ def _main():
     mal_test_dataset_producer = dataset.get_input_producer(mal_test_x, mal_testy, batch_size=hp_params['batch_size'],
                                                            name='test')
     model.predict(mal_test_dataset_producer, indicator_masking=True)
+
+    print(ben_test_x)
+    import sys
+    sys.exit(1)
     success_flag, x_mod_list = attack.perturb(model,
                                               mal_test_x,
                                               ben_test_x,
