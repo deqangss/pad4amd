@@ -119,9 +119,6 @@ def _main():
                                                            name='test')
     model.predict(mal_test_dataset_producer, indicator_masking=True)
 
-    print(ben_test_x)
-    import sys
-    sys.exit(1)
     success_flag, x_mod_list = attack.perturb(model,
                                               mal_test_x,
                                               ben_test_x,
