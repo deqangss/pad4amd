@@ -109,7 +109,7 @@ class BaseAttack(Module):
         pool = multiprocessing.Pool(cpu_count, initializer=utils.pool_initializer)
         for res in pool.map(InverseDroidFeature.modify_wrapper, pargs):  # keep in order
             if isinstance(res, Exception):
-                logger.error(str(res))
+                logger.exception(res)
         pool.close()
         pool.join()
 
