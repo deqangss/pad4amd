@@ -277,8 +277,17 @@ def remove_api(api_name, call_graph, disassemble_dir, coarse=True):
 
     for api_tag in api_tag_set:
         caller_class_name, caller_method_statement = seq_gen.get_caller_info(api_tag)
-        smali_path_of_class = os.path.join(disassemble_dir + '/smali',
-                                           caller_class_name.lstrip('L').rstrip(';') + '.smali')
+        smali_dirs = dex_manip.retrieve_smali_dirs(disassemble_dir)
+        smali_path_of_class = None
+        for smali_dir in smali_dirs:
+            if os.path.join(smali_path_of_class):
+                smali_path_of_class = os.path.join(smali_dir,
+                                                   caller_class_name.lstrip('L').rstrip(';') + '.smali')
+                break
+        if smali_path_of_class is None:
+            logger.warning('File {} has no root call {}.'.format(disassemble_dir,
+                                                                 caller_class_name.lstrip('L').rstrip(';') + '.smali'))
+            continue
         method_finder_flag = False
         # note: owing to the inplace 'print', do not use std.out operation again until the following file is closed
         fh = dex_manip.read_file_by_fileinput(smali_path_of_class, inplace=True)

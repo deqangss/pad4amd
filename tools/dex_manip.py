@@ -489,50 +489,50 @@ def retrieve_smali_dirs(disassembly_dir):
 
 
 def retrieve_api_caller_info(api_name, disassembly_dir):
-    smali_dir = os.path.join(disassembly_dir, 'smali')
-    if not os.path.exists(smali_dir):
-        return []
+    smali_dirs = retrieve_smali_dirs(disassembly_dir)
     if (not isinstance(api_name, str)) and len(api_name) <= 0:
         return []
 
     api_method_name = api_name.split('->')[1]
     api_class_name = api_name.split('->')[0]
-    file_path_set = retrive_files_set(smali_dir, '', '.smali')
     api_info = []
     info_dict_temp = {'ivk_method': '',
                       'caller_cls_name': '',
                       'caller_mth_stm': ''}
-    for file_path in file_path_set:
-        with open(file_path) as fh:
-            context = fh.read()
-            if ('->' + api_method_name) in context:
-                lines = context.split('\n')
-                for line in lines:
-                    class_match = re.search(r'^([ ]*?)\.class(.*?)(?P<className>L([^;\(\) ]*?);)', line)
-                    if class_match is not None:
-                        callee_class_name = class_match.group('className')
-                    if '.method ' in line:
-                        tmp_method_statement = line
-                    if ('->' + api_method_name) in line:
-                        invoke_match = re.search(
-                            r'^([ ]*?)(?P<invokeType>invoke\-([^ ]*?)) {(?P<invokeParam>([vp0-9,. ]*?))}, (?P<invokeObject>L(.*?);|\[L(.*?);)->(?P<invokeMethod>(.*?))\((?P<invokeArgument>(.*?))\)(?P<invokeReturn>(.*?))$',
-                            line)
-                        if invoke_match is not None:
-                            info_dict = info_dict_temp.copy()
-                            info_dict['ivk_method'] = invoke_match['invokeType'] + ' ' + invoke_match['invokeObject'] + '->' + invoke_match['invokeMethod'] + '(' + invoke_match['invokeArgument'] + ')' + invoke_match['invokeReturn']
-                            info_dict['caller_cls_name'] = callee_class_name
-                            info_dict['caller_mth_stm'] = tmp_method_statement
-                            if api_class_name in invoke_match['invokeObject']:
-                                api_info.append(info_dict)
-                            else:
-                                ext_path = invoke_match['invokeObject'].strip().lstrip('L').rstrip(';') + '.smali'
-                                ext_path.replace('/', '\\')
-                                samli_path = os.path.join(disassembly_dir + '/smali', ext_path)
-                                super_class_names = get_super_class_name(samli_path)  # look for first-order predecessors
-                                if api_class_name in super_class_names:
+    for smali_dir in smali_dirs:
+        file_path_set = retrive_files_set(smali_dir, '', '.smali')
+
+        for file_path in file_path_set:
+            with open(file_path) as fh:
+                context = fh.read()
+                if ('->' + api_method_name) in context:
+                    lines = context.split('\n')
+                    for line in lines:
+                        class_match = re.search(r'^([ ]*?)\.class(.*?)(?P<className>L([^;\(\) ]*?);)', line)
+                        if class_match is not None:
+                            callee_class_name = class_match.group('className')
+                        if '.method ' in line:
+                            tmp_method_statement = line
+                        if ('->' + api_method_name) in line:
+                            invoke_match = re.search(
+                                r'^([ ]*?)(?P<invokeType>invoke\-([^ ]*?)) {(?P<invokeParam>([vp0-9,. ]*?))}, (?P<invokeObject>L(.*?);|\[L(.*?);)->(?P<invokeMethod>(.*?))\((?P<invokeArgument>(.*?))\)(?P<invokeReturn>(.*?))$',
+                                line)
+                            if invoke_match is not None:
+                                info_dict = info_dict_temp.copy()
+                                info_dict['ivk_method'] = invoke_match['invokeType'] + ' ' + invoke_match['invokeObject'] + '->' + invoke_match['invokeMethod'] + '(' + invoke_match['invokeArgument'] + ')' + invoke_match['invokeReturn']
+                                info_dict['caller_cls_name'] = callee_class_name
+                                info_dict['caller_mth_stm'] = tmp_method_statement
+                                if api_class_name in invoke_match['invokeObject']:
                                     api_info.append(info_dict)
                                 else:
-                                    pass
+                                    ext_path = invoke_match['invokeObject'].strip().lstrip('L').rstrip(';') + '.smali'
+                                    ext_path.replace('/', '\\')
+                                    samli_path = os.path.join(smali_dir, ext_path)
+                                    super_class_names = get_super_class_name(samli_path)  # look for first-order predecessors
+                                    if api_class_name in super_class_names:
+                                        api_info.append(info_dict)
+                                    else:
+                                        pass
 
     return api_info
 
