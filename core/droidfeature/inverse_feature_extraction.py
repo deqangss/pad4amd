@@ -398,6 +398,8 @@ def insert_api(api_name, root_call, disassemble_dir):
     )
 
     injection_done = False
+    if isinstance(root_call, str):
+        root_call = (root_call,)
     for rc in root_call:
         try:
             root_class_name, caller_method_statement = rc.split(';', 1)
