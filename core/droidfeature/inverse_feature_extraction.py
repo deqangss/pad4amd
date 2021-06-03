@@ -231,7 +231,7 @@ class InverseDroidFeature(object):
                         remove_api(api_name, cg, dst_file)
                     else:
                         # A large scale of insertion operations will trigger unexpected issues, such as method limitation in a class
-                        print('before insert: ', root_call[0])
+                        print('before insert: ', root_call[0], type(root_call))
                         insert_api(api_name, root_call, dst_file)
             dst_file_apk = os.path.join(save_dir, os.path.splitext(os.path.basename(app_path))[0] + '_adv')
             cmd_response = subprocess.call("apktool -q b " + dst_file + " -o " + dst_file_apk, shell=True)
