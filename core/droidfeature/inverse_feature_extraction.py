@@ -406,6 +406,7 @@ def insert_api(api_name, root_call, disassemble_dir):
             root_class_name, caller_method_statement = rc.split(';', 1)
         except Exception as e:
             print('root call: ', rc)
+            print(disassemble_dir)
             raise Exception(e)
         method_match = re.match(
             r'^([ ]*?)\.method\s+(?P<methodPre>([^ ].*?))\((?P<methodArg>(.*?))\)(?P<methodRtn>(.*?))$',
