@@ -9,7 +9,7 @@ import re
 import numpy as np
 import networkx as nx
 import torch
-
+import traceback
 from core.droidfeature import Apk2graphs, NULL_ID
 from core.droidfeature import sequence_generator as seq_gen
 from tools import dex_manip, xml_manip, utils
@@ -196,6 +196,8 @@ class InverseDroidFeature(object):
         try:
             return InverseDroidFeature.modify(*args)
         except Exception as e:
+            traceback.print_exc()
+            traceback.print_stack()
             return e
 
     @staticmethod
