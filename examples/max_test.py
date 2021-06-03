@@ -168,29 +168,29 @@ def _main():
     logger.info("Load model parameters from {}.".format(model.model_save_path))
     model.predict(mal_test_dataset_producer, indicator_masking=True)
 
-    ben_hidden = []
-    with torch.no_grad():
-        c = args.n_benware if args.n_benware < ben_count else ben_count
-        for ben_x, ben_a, ben_y, _1 in ben_test_dataset_producer:
-            ben_x, ben_a, ben_y = utils.to_tensor(ben_x, ben_a, ben_y, device=dv)
-            ben_x_hidden, _2 = model.forward(ben_x, ben_a)
-            ben_hidden.append(ben_x_hidden)
-            if len(ben_hidden) * hp_params['batch_size'] >= c:
-                break
-        ben_hidden = torch.vstack(ben_hidden)[:c]
-
-    gdkde = GDKDEl1(ben_hidden,
-                    args.bandwidth,
-                    penalty_factor=args.penalty_factor,
-                    oblivion=args.oblivion,
-                    kappa=args.kappa,
-                    device=model.device
-                    )
-    gdkde.perturb = partial(gdkde.perturb,
-                            m=args.m_pertb,
-                            base=args.base,
-                            verbose=False
-                            )
+    # ben_hidden = []
+    # with torch.no_grad():
+    #     c = args.n_benware if args.n_benware < ben_count else ben_count
+    #     for ben_x, ben_a, ben_y, _1 in ben_test_dataset_producer:
+    #         ben_x, ben_a, ben_y = utils.to_tensor(ben_x, ben_a, ben_y, device=dv)
+    #         ben_x_hidden, _2 = model.forward(ben_x, ben_a)
+    #         ben_hidden.append(ben_x_hidden)
+    #         if len(ben_hidden) * hp_params['batch_size'] >= c:
+    #             break
+    #     ben_hidden = torch.vstack(ben_hidden)[:c]
+    #
+    # gdkde = GDKDEl1(ben_hidden,
+    #                 args.bandwidth,
+    #                 penalty_factor=args.penalty_factor,
+    #                 oblivion=args.oblivion,
+    #                 kappa=args.kappa,
+    #                 device=model.device
+    #                 )
+    # gdkde.perturb = partial(gdkde.perturb,
+    #                         m=args.m_pertb,
+    #                         base=args.base,
+    #                         verbose=False
+    #                         )
 
     pgdl1 = PGDl1(oblivion=args.oblivion, kappa=args.kappa, device=model.device)
     pgdl1.perturb = partial(pgdl1.perturb,
