@@ -213,6 +213,7 @@ class InverseDroidFeature(object):
         @param save_dir, String, saving directory
         """
         cg_dict = seq_gen.read_from_disk(feature_path)
+        print(feature_path)
         assert os.path.isfile(app_path)
         if save_dir is None:
             save_dir = os.path.join(TMP_DIR, 'adv_mal_cache')
