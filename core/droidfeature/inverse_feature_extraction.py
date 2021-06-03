@@ -264,7 +264,7 @@ def remove_api(api_name, call_graph, disassemble_dir, coarse=True):
     # we attempt to obtain more relevant info about this api. Nonetheless, once there is class inheritance,
     # we cannot make it.
     if coarse:
-        api_info_list = dex_manip.retrive_api_caller_info(api_name, disassemble_dir)
+        api_info_list = dex_manip.retrieve_api_caller_info(api_name, disassemble_dir)
         for api_info in api_info_list:
             api_tag_set.add(seq_gen.get_api_tag(api_info['ivk_method'],
                                                 api_info['caller_cls_name'],
@@ -407,9 +407,15 @@ def insert_api(api_name, root_call, disassemble_dir):
             caller_method_statement)
         caller_method_statement = '.method ' + method_match['methodPre'].strip() + '(' + method_match[
             'methodArg'].strip().replace(' ', '') + ')' + method_match['methodRtn'].strip()
-        smali_path = os.path.join(disassemble_dir + '/smali',
-                                  root_class_name.lstrip('L') + '.smali')
-        if not os.path.exists(smali_path):
+
+        smali_dirs = dex_manip.retrieve_smali_dirs(disassemble_dir)
+        smali_path = None
+        for smali_dir in smali_dirs:
+            _path = os.path.join(smali_dir, root_class_name.lstrip('L') + '.smali')
+            if os.path.exists(_path):
+                smali_path = _path
+                break
+        if smali_path is None:
             logger.warning('root call file {} is absent.'.format(smali_path))
             continue
 

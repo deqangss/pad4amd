@@ -477,7 +477,18 @@ def change_invoke_by_ref(new_class_name, method_fh, ivk_type, ivk_param, ivk_obj
     return method_fh
 
 
-def retrive_api_caller_info(api_name, disassembly_dir):
+def retrieve_smali_dirs(disassembly_dir):
+    smali_dirs = []
+    if not os.path.exists(disassembly_dir):
+        return smali_dirs
+    contents = os.listdir(disassembly_dir)
+    for cont in contents:
+        if 'smali' in cont:
+            smali_dirs.append(os.path.join(disassembly_dir, cont))
+    return smali_dirs
+
+
+def retrieve_api_caller_info(api_name, disassembly_dir):
     smali_dir = os.path.join(disassembly_dir, 'smali')
     if not os.path.exists(smali_dir):
         return []
