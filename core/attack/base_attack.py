@@ -94,7 +94,7 @@ class BaseAttack(Module):
         x_mod_instructions = [self.inverse_feature.inverse_map_manipulation(x_mod) for x_mod in x_mod_list]
         if os.path.isdir(app_dir):
             app_path_list = [os.path.join(app_dir, os.path.basename(os.path.splitext(feat_p)[0])) for \
-                             feat_p in feature_path_list]
+                             feat_p in feature_path_list if not os.path.exists(os.path.join(save_dir, os.path.splitext(os.path.basename(feat_p))[0] + '_adv'))]
         elif isinstance(app_dir, list):
             app_path_list = app_dir
         else:
