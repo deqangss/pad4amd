@@ -9,7 +9,6 @@ import re
 import numpy as np
 import networkx as nx
 import torch
-import traceback
 from core.droidfeature import Apk2graphs, NULL_ID
 from core.droidfeature import sequence_generator as seq_gen
 from tools import dex_manip, xml_manip, utils
@@ -196,8 +195,6 @@ class InverseDroidFeature(object):
         try:
             return InverseDroidFeature.modify(*args)
         except Exception as e:
-            traceback.print_exc()
-            traceback.print_stack()
             return e
 
     @staticmethod
@@ -213,7 +210,6 @@ class InverseDroidFeature(object):
         @param save_dir, String, saving directory
         """
         cg_dict = seq_gen.read_from_disk(feature_path)
-        print(feature_path)
         assert os.path.isfile(app_path)
         if save_dir is None:
             save_dir = os.path.join(TMP_DIR, 'adv_mal_cache')
@@ -231,7 +227,8 @@ class InverseDroidFeature(object):
                         remove_api(api_name, cg, dst_file)
                     else:
                         # A large scale of insertion operations will trigger unexpected issues, such as method limitation in a class
-                        print('before insert: ', root_call[0], type(root_call))
+                        if root_call is not tuple:
+                            root_call = (root_call, )
                         insert_api(api_name, root_call, dst_file)
             dst_file_apk = os.path.join(save_dir, os.path.splitext(os.path.basename(app_path))[0] + '_adv')
             cmd_response = subprocess.call("apktool -q b " + dst_file + " -o " + dst_file_apk, shell=True)
@@ -404,12 +401,7 @@ def insert_api(api_name, root_call, disassemble_dir):
 
     injection_done = False
     for rc in root_call:
-        try:
-            root_class_name, caller_method_statement = rc.split(';', 1)
-        except Exception as e:
-            print('root call: ', rc)
-            print(disassemble_dir)
-            raise Exception(e)
+        root_class_name, caller_method_statement = rc.split(';', 1)
         method_match = re.match(
             r'^([ ]*?)\.method\s+(?P<methodPre>([^ ].*?))\((?P<methodArg>(.*?))\)(?P<methodRtn>(.*?))$',
             caller_method_statement)
