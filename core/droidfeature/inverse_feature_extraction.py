@@ -227,8 +227,7 @@ class InverseDroidFeature(object):
                         remove_api(api_name, cg, dst_file)
                     else:
                         # A large scale of insertion operations will trigger unexpected issues, such as method limitation in a class
-                        if root_call is not tuple:
-                            print(type(root_call))
+                        if not isinstance(root_call, tuple) and isinstance(root_call, str):
                             root_call = (root_call, )
                         insert_api(api_name, root_call, dst_file)
             dst_file_apk = os.path.join(save_dir, os.path.splitext(os.path.basename(app_path))[0] + '_adv')
