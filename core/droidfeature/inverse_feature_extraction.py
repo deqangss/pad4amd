@@ -4,7 +4,7 @@ import random
 import shutil
 import tempfile
 import subprocess
-
+import traceback
 import re
 import numpy as np
 import networkx as nx
@@ -195,6 +195,8 @@ class InverseDroidFeature(object):
         try:
             return InverseDroidFeature.modify(*args)
         except Exception as e:
+            traceback.print_stack()
+            traceback.print_exc()
             return e
 
     @staticmethod
@@ -280,9 +282,9 @@ def remove_api(api_name, call_graph, disassemble_dir, coarse=True):
         smali_dirs = dex_manip.retrieve_smali_dirs(disassemble_dir)
         smali_path_of_class = None
         for smali_dir in smali_dirs:
-            if os.path.join(smali_path_of_class):
-                smali_path_of_class = os.path.join(smali_dir,
-                                                   caller_class_name.lstrip('L').rstrip(';') + '.smali')
+            _path = os.path.join(smali_dir, caller_class_name.lstrip('L').rstrip(';') + '.smali')
+            if os.path.exists(_path):
+                smali_path_of_class = _path
                 break
         if smali_path_of_class is None:
             logger.warning('File {} has no root call {}.'.format(disassemble_dir,
