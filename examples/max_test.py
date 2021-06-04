@@ -290,7 +290,7 @@ def _main():
         y_pred2, indicator_flag2 = model.predict(ben_test_dataset_producer, indicator_masking=True)
         p2 = (~indicator_flag2) | ((y_pred2 == 1.) & indicator_flag2)
         p1 = (~indicator_flag) | ((y_pred == 1.) & indicator_flag)
-        for _p1, _p2, path in zip(p1.tolist(), p2.tolist, mal_test_x.tolist()):
+        for _p1, _p2, path in zip(p1.tolist(), p2.tolist(), mal_test_x.tolist()):
             print(path, _p1, _p2)
 
 
