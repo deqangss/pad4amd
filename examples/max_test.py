@@ -290,8 +290,10 @@ def _main():
         y_pred2, indicator_flag2 = model.predict(ben_test_dataset_producer, indicator_masking=True)
         p2 = (~indicator_flag2) | ((y_pred2 == 1.) & indicator_flag2)
         p1 = (~indicator_flag) | ((y_pred == 1.) & indicator_flag)
-        for _p1, _p2, path in zip(p1.tolist(), p2.tolist(), mal_test_x.tolist()):
-            print(path, _p1, _p2)
+        for adv_path in adv_feature_paths:
+            path = adv_path.split('_')[0]
+            idx = mal_test_x.tolist().index(path)
+            print(path, p1[idx], p2[idx])
 
 
 if __name__ == '__main__':
