@@ -266,20 +266,19 @@ def _main():
         logger.info(f'The mean accuracy on adversarial malware (w/ indicator) is {acc_w_indicator:.3f}%.')
 
     save_dir = os.path.join(config.get('experiments', 'max'), args.model)
-    # if not os.path.exists(save_dir):
-    #     utils.mkdir(save_dir)
-    # utils.dump_pickle_frd_space(x_mod_integrated,
-    #                             os.path.join(save_dir, 'x_mod.list'))
+    if not os.path.exists(save_dir):
+        utils.mkdir(save_dir)
+    utils.dump_pickle_frd_space(x_mod_integrated,
+                                os.path.join(save_dir, 'x_mod.list'))
 
     if args.real:
         adv_app_dir = os.path.join(save_dir, 'adv_apps')
 
-        # attack.produce_adv_mal(x_mod_integrated, mal_test_x.tolist(),
-        #                        config.get('dataset', 'malware_dir'),
-        #                        adj_mod=None,
-        #                        save_dir=adv_app_dir)
-        # return
-        adv_feature_paths = dataset.apk_preprocess(adv_app_dir, update_feature_extraction=False)
+        attack.produce_adv_mal(x_mod_integrated, mal_test_x.tolist(),
+                               config.get('dataset', 'malware_dir'),
+                               adj_mod=None,
+                               save_dir=adv_app_dir)
+        adv_feature_paths = dataset.apk_preprocess(adv_app_dir, update_feature_extraction=True)
         dataset.feature_preprocess(adv_feature_paths)
         adv_test_dataset_producer = dataset.get_input_producer(adv_feature_paths,
                                                                np.ones((len(adv_feature_paths, ))),
@@ -287,13 +286,6 @@ def _main():
                                                                name='test'
                                                                )
         model.predict(adv_test_dataset_producer, indicator_masking=True)
-        # y_pred2, indicator_flag2 = model.predict(adv_test_dataset_producer, indicator_masking=True)
-        # p2 = (~indicator_flag2) | ((y_pred2 == 1.) & indicator_flag2)
-        # p1 = (~indicator_flag) | ((y_pred == 1.) & indicator_flag)
-        # for i1, adv_path in enumerate(adv_feature_paths):
-        #     path = adv_path.split('_adv')[0] + '.gpickle'
-        #     idx = mal_test_x.tolist().index(path)
-        #     print(path, p1[idx], p2[i1])
 
 
 if __name__ == '__main__':
