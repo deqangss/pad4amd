@@ -169,6 +169,7 @@ def _main():
     logger.info("Load model parameters from {}.".format(model.model_save_path))
     # model.predict(mal_test_dataset_producer, indicator_masking=True)
 
+    model.eval()
     # ben_hidden = []
     # with torch.no_grad():
     #     c = args.n_benware if args.n_benware < ben_count else ben_count
@@ -235,9 +236,9 @@ def _main():
                  device=model.device
                  )
 
+    model.eval()
     y_cent_list, x_density_list = [], []
     x_mod_integrated = []
-    model.eval()
     for i in range(args.n_sample_times):
         y_cent, x_density = [], []
         x_mod = []
