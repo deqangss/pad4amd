@@ -291,6 +291,7 @@ def _main():
         p2 = (~indicator_flag2) | ((y_pred2 == 1.) & indicator_flag2)
         p1 = (~indicator_flag) | ((y_pred == 1.) & indicator_flag)
         for adv_path in adv_feature_paths:
+            print(mal_test_x.tolist())
             path = adv_path.split('_adv')[0]
             idx = mal_test_x.tolist().index(path)
             print(path, p1[idx], p2[idx])
