@@ -237,32 +237,32 @@ def _main():
     y_cent_list, x_density_list = [], []
     x_mod_integrated = []
     model.eval()
-    # for i in range(args.n_sample_times):
-    #     y_cent, x_density = [], []
-    #     x_mod = []
-    #     for x, a, y, g_ind in mal_test_dataset_producer:
-    #         x, a, y = utils.to_tensor(x, a, y, model.device)
-    #         adv_x_batch = attack.perturb(model, x, a, y,
-    #                                      steps_of_max=args.n_step_max,
-    #                                      min_lambda_=1e3,
-    #                                      max_lambda_=1e3,
-    #                                      verbose=True)
-    #         y_cent_batch, x_density_batch = model.inference_batch_wise(adv_x_batch, a, y, use_indicator=True)
-    #         y_cent.append(y_cent_batch)
-    #         x_density.append(x_density_batch)
-    #         x_mod.extend(dataset.get_modification(adv_x_batch, x, g_ind, True))
-    #     y_cent_list.append(np.vstack(y_cent))
-    #     x_density_list.append(np.concatenate(x_density))
-    #     x_mod_integrated = dataset.modification_integ(x_mod_integrated, x_mod)
-    # y_cent = np.mean(np.stack(y_cent_list, axis=1), axis=1)
-    # y_pred = np.argmax(y_cent, axis=-1)
-    # logger.info(f'The mean accuracy on perturbed malware is {sum(y_pred == 1.) / mal_count * 100:.3f}%')
-    #
-    # if 'indicator' in type(model).__dict__.keys():
-    #     indicator_flag = model.indicator(np.mean(np.stack(x_density_list, axis=1), axis=1), y_pred)
-    #     logger.info(f"The effectiveness of indicator is {sum(~indicator_flag) / mal_count * 100:.3f}%")
-    #     acc_w_indicator = (sum(~indicator_flag) + sum((y_pred == 1.) & indicator_flag)) / mal_count * 100
-    #     logger.info(f'The mean accuracy on adversarial malware (w/ indicator) is {acc_w_indicator:.3f}%.')
+    for i in range(args.n_sample_times):
+        y_cent, x_density = [], []
+        x_mod = []
+        for x, a, y, g_ind in mal_test_dataset_producer:
+            x, a, y = utils.to_tensor(x, a, y, model.device)
+            adv_x_batch = attack.perturb(model, x, a, y,
+                                         steps_of_max=args.n_step_max,
+                                         min_lambda_=1e3,
+                                         max_lambda_=1e3,
+                                         verbose=True)
+            y_cent_batch, x_density_batch = model.inference_batch_wise(adv_x_batch, a, y, use_indicator=True)
+            y_cent.append(y_cent_batch)
+            x_density.append(x_density_batch)
+            x_mod.extend(dataset.get_modification(adv_x_batch, x, g_ind, True))
+        y_cent_list.append(np.vstack(y_cent))
+        x_density_list.append(np.concatenate(x_density))
+        x_mod_integrated = dataset.modification_integ(x_mod_integrated, x_mod)
+    y_cent = np.mean(np.stack(y_cent_list, axis=1), axis=1)
+    y_pred = np.argmax(y_cent, axis=-1)
+    logger.info(f'The mean accuracy on perturbed malware is {sum(y_pred == 1.) / mal_count * 100:.3f}%')
+
+    if 'indicator' in type(model).__dict__.keys():
+        indicator_flag = model.indicator(np.mean(np.stack(x_density_list, axis=1), axis=1), y_pred)
+        logger.info(f"The effectiveness of indicator is {sum(~indicator_flag) / mal_count * 100:.3f}%")
+        acc_w_indicator = (sum(~indicator_flag) + sum((y_pred == 1.) & indicator_flag)) / mal_count * 100
+        logger.info(f'The mean accuracy on adversarial malware (w/ indicator) is {acc_w_indicator:.3f}%.')
 
     save_dir = os.path.join(config.get('experiments', 'max'), args.model)
     # if not os.path.exists(save_dir):
@@ -280,13 +280,18 @@ def _main():
         #                        save_dir=adv_app_dir)
 
         adv_feature_paths = dataset.apk_preprocess(adv_app_dir, update_feature_extraction=False)
-        dataset.feature_preprocess(adv_feature_paths)
+        # dataset.feature_preprocess(adv_feature_paths)
         ben_test_dataset_producer = dataset.get_input_producer(adv_feature_paths,
                                                                np.ones((len(adv_feature_paths, ))),
                                                                batch_size=hp_params['batch_size'],
                                                                name='test'
                                                                )
-        model.predict(ben_test_dataset_producer, indicator_masking=True)
+        # model.predict(ben_test_dataset_producer, indicator_masking=True)
+        y_pred2, indicator_flag2 = model.predict(ben_test_dataset_producer, indicator_masking=True)
+        p2 = (~indicator_flag2) | ((y_pred2 == 1.) & indicator_flag2)
+        p1 = (~indicator_flag) | ((y_pred == 1.) & indicator_flag)
+        for _p1, _p2, path in zip(p1.tolist(), p2.tolist, mal_test_x.tolist()):
+            print(path, _p1, _p2)
 
 
 if __name__ == '__main__':
