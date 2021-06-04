@@ -270,7 +270,6 @@ def _main():
         utils.mkdir(save_dir)
     utils.dump_pickle_frd_space(x_mod_integrated,
                                 os.path.join(save_dir, 'x_mod.list'))
-    x_mod_integrated = utils.read_pickle_frd_space(os.path.join(save_dir, 'x_mod.list'))
 
     if args.real:
         adv_app_dir = os.path.join(save_dir, 'adv_apps')
