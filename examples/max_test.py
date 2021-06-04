@@ -115,11 +115,6 @@ def _main():
         mal_test_x, mal_testy = utils.read_pickle_frd_space(mal_save_path)
         mal_count = len(mal_testy)
 
-    selected_id = mal_test_x.tolist().index(
-        '/mnt/74a99c3b-d122-43a5-a2f2-386921ccc892/database/android/naive_data/dda340feb7dd10384f3d11e4ef1b754f944bf2d2cb2ce1e31d4e374f671d9d20.gpickle')
-    mal_test_x = mal_test_x[selected_id:selected_id + 1]
-    mal_testy = mal_testy[selected_id: selected_id + 1]
-
     ben_test_x, ben_testy = test_x[testy == 0], testy[testy == 0]
     ben_count = len(ben_test_x)
     if mal_count <= 0 and ben_count <= 0:
@@ -271,19 +266,20 @@ def _main():
         logger.info(f'The mean accuracy on adversarial malware (w/ indicator) is {acc_w_indicator:.3f}%.')
 
     save_dir = os.path.join(config.get('experiments', 'max'), args.model)
-    # if not os.path.exists(save_dir):
-    #     utils.mkdir(save_dir)
-    # utils.dump_pickle_frd_space(x_mod_integrated,
-    #                            os.path.join(save_dir, 'x_mod.list'))
+    if not os.path.exists(save_dir):
+        utils.mkdir(save_dir)
+    utils.dump_pickle_frd_space(x_mod_integrated,
+                                os.path.join(save_dir, 'x_mod.list'))
     x_mod_integrated = utils.read_pickle_frd_space(os.path.join(save_dir, 'x_mod.list'))
 
     if args.real:
         adv_app_dir = os.path.join(save_dir, 'adv_apps')
 
-        # attack.produce_adv_mal(x_mod_integrated[selected_id: selected_id + 1], mal_test_x.tolist(),
-        #                        config.get('dataset', 'malware_dir'),
-        #                        adj_mod=None,
-        #                        save_dir=adv_app_dir)
+        attack.produce_adv_mal(x_mod_integrated, mal_test_x.tolist(),
+                               config.get('dataset', 'malware_dir'),
+                               adj_mod=None,
+                               save_dir=adv_app_dir)
+        return
         adv_feature_paths = dataset.apk_preprocess(adv_app_dir, update_feature_extraction=False)
         dataset.feature_preprocess(adv_feature_paths)
         ben_test_dataset_producer = dataset.get_input_producer(adv_feature_paths,
@@ -291,14 +287,14 @@ def _main():
                                                                batch_size=hp_params['batch_size'],
                                                                name='test'
                                                                )
-        # model.predict(ben_test_dataset_producer, indicator_masking=True)
-        y_pred2, indicator_flag2 = model.predict(ben_test_dataset_producer, indicator_masking=True)
-        p2 = (~indicator_flag2) | ((y_pred2 == 1.) & indicator_flag2)
-        p1 = (~indicator_flag) | ((y_pred == 1.) & indicator_flag)
-        for i1, adv_path in enumerate(adv_feature_paths):
-            path = adv_path.split('_adv')[0] + '.gpickle'
-            idx = mal_test_x.tolist().index(path)
-            print(path, p1[idx], p2[i1])
+        model.predict(ben_test_dataset_producer, indicator_masking=True)
+        # y_pred2, indicator_flag2 = model.predict(ben_test_dataset_producer, indicator_masking=True)
+        # p2 = (~indicator_flag2) | ((y_pred2 == 1.) & indicator_flag2)
+        # p1 = (~indicator_flag) | ((y_pred == 1.) & indicator_flag)
+        # for i1, adv_path in enumerate(adv_feature_paths):
+        #     path = adv_path.split('_adv')[0] + '.gpickle'
+        #     idx = mal_test_x.tolist().index(path)
+        #     print(path, p1[idx], p2[i1])
 
 
 if __name__ == '__main__':

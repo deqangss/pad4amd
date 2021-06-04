@@ -63,7 +63,6 @@ class MalwareDetectorIndicator(MalwareDetector, DensityEstimator):
         y_pred = y_cent.argmax(1).cpu().numpy()
         y_true = y_true.cpu().numpy()
         indicator_flag = self.indicator(x_prob).cpu().numpy()
-        return y_pred, indicator_flag
 
         def measurement(_y_true, _y_pred):
             from sklearn.metrics import f1_score, accuracy_score, confusion_matrix, balanced_accuracy_score
