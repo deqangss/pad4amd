@@ -167,7 +167,7 @@ def _main():
     else:
         model.load()
     logger.info("Load model parameters from {}.".format(model.model_save_path))
-    # model.predict(mal_test_dataset_producer, indicator_masking=True)
+    model.predict(mal_test_dataset_producer, indicator_masking=True)
 
     # ben_hidden = []
     # with torch.no_grad():
@@ -280,14 +280,14 @@ def _main():
         #                        save_dir=adv_app_dir)
         # return
         adv_feature_paths = dataset.apk_preprocess(adv_app_dir, update_feature_extraction=False)
-        # dataset.feature_preprocess(adv_feature_paths)
-        ben_test_dataset_producer = dataset.get_input_producer(adv_feature_paths,
+        dataset.feature_preprocess(adv_feature_paths)
+        adv_test_dataset_producer = dataset.get_input_producer(adv_feature_paths,
                                                                np.ones((len(adv_feature_paths, ))),
                                                                batch_size=hp_params['batch_size'],
                                                                name='test'
                                                                )
-        # model.predict(ben_test_dataset_producer, indicator_masking=True)
-        y_pred2, indicator_flag2 = model.predict(ben_test_dataset_producer, indicator_masking=True)
+        # model.predict(adv_test_dataset_producer, indicator_masking=True)
+        y_pred2, indicator_flag2 = model.predict(adv_test_dataset_producer, indicator_masking=True)
         p2 = (~indicator_flag2) | ((y_pred2 == 1.) & indicator_flag2)
         p1 = (~indicator_flag) | ((y_pred == 1.) & indicator_flag)
         for i1, adv_path in enumerate(adv_feature_paths):
