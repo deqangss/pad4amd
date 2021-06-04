@@ -116,7 +116,7 @@ def _main():
         mal_count = len(mal_testy)
 
     selected_id = mal_test_x.tolist().index(
-        '/mnt/74a99c3b-d122-43a5-a2f2-386921ccc892/database/android/naive_data/b2cb3d45a5c828c94397156ea37f21e6e88200969153b6b648356bd191dd1cd0.gpickle')
+        '/mnt/74a99c3b-d122-43a5-a2f2-386921ccc892/database/android/naive_data/dda340feb7dd10384f3d11e4ef1b754f944bf2d2cb2ce1e31d4e374f671d9d20.gpickle')
     mal_test_x = mal_test_x[selected_id:selected_id + 1]
     mal_testy = mal_testy[selected_id: selected_id + 1]
 
@@ -280,11 +280,11 @@ def _main():
     if args.real:
         adv_app_dir = os.path.join(save_dir, 'adv_apps')
 
-        # attack.produce_adv_mal(x_mod_integrated[selected_id: selected_id + 1], mal_test_x.tolist()[selected_id: selected_id + 1],
-        #                        config.get('dataset', 'malware_dir'),
-        #                        adj_mod=None,
-        #                        save_dir=adv_app_dir)
-        # return
+        attack.produce_adv_mal(x_mod_integrated[selected_id: selected_id + 1], mal_test_x.tolist(),
+                               config.get('dataset', 'malware_dir'),
+                               adj_mod=None,
+                               save_dir=adv_app_dir)
+        return
         adv_feature_paths = dataset.apk_preprocess(adv_app_dir, update_feature_extraction=False)
         dataset.feature_preprocess(adv_feature_paths)
         ben_test_dataset_producer = dataset.get_input_producer(adv_feature_paths,
