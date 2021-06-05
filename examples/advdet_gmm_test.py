@@ -65,15 +65,14 @@ def _main():
         model.get_threshold(val_dataset_producer)
         model.save_to_disk()
 
-    # human readable
-    save_args(path.join(path.dirname(model.model_save_path), "hparam"), vars(args))
-    # serialization for rebuilding neural nets
-    dump_pickle(vars(args), path.join(path.dirname(model.model_save_path), "hparam.pkl"))
+        # human readable
+        save_args(path.join(path.dirname(model.model_save_path), "hparam"), vars(args))
+        # serialization for rebuilding neural nets
+        dump_pickle(vars(args), path.join(path.dirname(model.model_save_path), "hparam.pkl"))
 
-    # model.load()
-    # print(model.tau)
-    # # test: accuracy
-    # model.predict(test_dataset_producer)
+    model.load()
+    # test: accuracy
+    model.predict(test_dataset_producer)
 
 
 if __name__ == '__main__':
