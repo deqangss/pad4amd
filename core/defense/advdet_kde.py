@@ -100,7 +100,7 @@ class KernelDensityEstimation(DensityEstimator):
             # y_pred = y_pred[indicator_flag]
             # y_true = y_true[indicator_flag]
         else:
-            # instead filtering out examples, here resets the prediction as 1
+            # instead filtering out examples, here resets the prediction as 1 (test model on perturbed examples)
             y_pred[~indicator_flag] = 1.
 
         logger.info('The indicator is turning on...')
