@@ -93,8 +93,8 @@ class KernelDensityEstimation(DensityEstimator):
         y_true = y_true.cpu().numpy()
         indicator_flag = self.indicator(x_prob, y_pred).cpu().numpy()
         if not indicator_masking:
-            # filter out examples with low likelihood & retaining y_pred==1
-            flag_of_retaining = indicator_flag | (y_pred == 1.)
+            # filter out examples with low likelihood & retaining y_true==1
+            flag_of_retaining = indicator_flag | (y_true == 1.)
             y_pred = y_pred[flag_of_retaining]
             y_true = y_true[flag_of_retaining]
             # y_pred = y_pred[indicator_flag]
