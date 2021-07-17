@@ -90,7 +90,8 @@ class MalwareDetectorIndicator(MalwareDetector, DensityEstimator):
             # filter out examples with low likelihood
             # y_pred = y_pred[indicator_flag]
             # y_true = y_true[indicator_flag]
-            flag_of_retaining = indicator_flag | (y_pred == 1.)
+            # flag_of_retaining = indicator_flag | (y_pred == 1.)
+            flag_of_retaining = indicator_flag | (y_true == 1.)
             y_pred = y_pred[flag_of_retaining]
             y_true = y_true[flag_of_retaining]
         else:
