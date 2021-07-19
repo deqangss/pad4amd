@@ -43,26 +43,65 @@ REFLECTION_TEMPLATE = '''.class public Landroid/content/res/MethodReflection;
 '''
 DEFAULT_SMALI_DIR = 'android/content/res/'  # the path corresponds to the reflection class set above
 
-INSERTION_TEMPLATE = '''.method public {newMethodName}()V  
+INSERTION_STATIC_TEMPLATE = '''.method public static {newMethodName}()V  
     .locals {numLocals:d}
-    
+
     .prologue
+    const/4 v0, 0x0
+    
+    .local v0, "a":I
+    const/4 v1, 0x1
+    if-ne v0, v1, :cond_0
+    
+    :try_start_0
+{argInitialization}
+    {invokeType} {{{paramRegisters}}}, {apiClassName}->{methodName}({argumentTypes}){returnType}
+    :try_end_0
+    .catch Ljava/lang/Exception; {{:try_start_0 .. :try_end_0}} :catch_0
+
+{varEndCont}
+
+    goto :goto_0
+
+    :catch_0
+    move-exception v0
+
+    :cond_0
+    :goto_0
+    return-void
+.end method
+'''
+
+INSERTION_TEMPLATE = '''.method public static {newMethodName}()V  
+    .locals {numLocals:d}
+
+    .prologue
+    const/4 v0, 0x0
+    
+    .local v0, "a":I
+    const/4 v1, 0x1
+    if-ne v0, v1, :cond_0
+    
     const/4 v0, 0x0
     
     .local v0, "{varRandName}":{apiClassName}
     :try_start_0
-    {argInitialization}
+{argInitialization}
     {invokeType} {{{paramRegisters}}}, {apiClassName}->{methodName}({argumentTypes}){returnType}
     :try_end_0
     .catch Ljava/lang/Exception; {{:try_start_0 .. :try_end_0}} :catch_0
-    
-    :goto_0
-    return-void
-    
-    :catch_0
-    move-exception v0
+
+    .end local v0    # "{varRandName}":{apiClassName}
+{varEndCont}
 
     goto :goto_0
+
+    :catch_0
+    move-exception v0
+    
+    :cond_0
+    :goto_0
+    return-void
 .end method
 '''
 
@@ -377,6 +416,10 @@ def insert_api(api_name, root_call, disassemble_dir):
     @param disassemble_dir, work directory
     """
     assert len(root_call) > 0, "Expect at least a root call."
+
+    if api_name != "Landroid/database/DatabaseUtils;->sqlEscapeString":
+        return
+
     api_info = InverseDroidFeature.vocab_info[InverseDroidFeature.vocab.index(api_name)]
     class_name, method_name = api_name.split('->')
     invoke_types, return_classes, arguments = list(), list(), list()
@@ -391,14 +434,7 @@ def insert_api(api_name, root_call, disassemble_dir):
     api_idx = 0
     is_simplified_vars_register = False
     invoke_type = 'invoke-virtual'
-    if 'invoke-static' in invoke_types:
-        invoke_type = 'invoke-static'
-        api_idx = invoke_types.index('invoke-static')
-    elif 'invoke-static/range' in invoke_types:
-        invoke_type = 'invoke-static/range'
-        api_idx = invoke_types.index('invoke-static/range')
-        is_simplified_vars_register = True
-    elif 'invoke-virtual' in invoke_types:
+    if 'invoke-virtual' in invoke_types:
         invoke_type = 'invoke-virtual'
         api_idx = invoke_types.index('invoke-virtual')
     elif 'invoke-virtual/range' in invoke_types:
@@ -412,22 +448,14 @@ def insert_api(api_name, root_call, disassemble_dir):
         invoke_type = 'invoke-interface/range'
         api_idx = invoke_types.index('invoke-interface/range')
         is_simplified_vars_register = True
-    elif 'invoke-direct' in invoke_types:
-        invoke_type = 'invoke-direct'
-        api_idx = invoke_types.index('invoke-direct')
-    elif 'invoke-direct/range' in invoke_types:
-        invoke_type = 'invoke-direct/range'
-        api_idx = invoke_types.index('invoke-direct/range')
-        is_simplified_vars_register = True
-    elif 'invoke-super' in invoke_types:
-        invoke_type = 'invoke-super'
-        api_idx = invoke_types.index('invoke-super')
-    elif 'invoke-super/range' in invoke_types:
-        invoke_type = 'invoke-super/range'
-        api_idx = invoke_types.index('invoke-super/range')
+    elif 'invoke-static' in invoke_types:
+        invoke_type = 'invoke-static'
+    elif 'invoke-static/range' in invoke_types:
+        invoke_type = 'invoke-static/range'
         is_simplified_vars_register = True
     else:
-        logger.warning('Unsuitable invocation types')
+        logger.warning('Unsuitable invocation type:{}'.format(invoke_type))
+        return
 
     assert len(invoke_types) > 0, 'No api details.'
     return_class = return_classes[api_idx]
@@ -436,8 +464,12 @@ def insert_api(api_name, root_call, disassemble_dir):
     # variable initialization
     arg_types = argument.split(' ')  # this is specific to androguard
     var_initial_content = ''
-    var_registers = 'v0'
+    if 'invoke-static' not in invoke_type:
+        var_registers = 'v0'
+    else:
+        var_registers = ''
     var_count = 0
+    var_end_content = ''
     for arg_type in arg_types:
         arg_type = arg_type.strip()
         if arg_type == '':
@@ -447,38 +479,89 @@ def insert_api(api_name, root_call, disassemble_dir):
         if arg_type[-1] == ';':
             var_count += 1
             var_value = dex_manip.smaliClassTInitialV.format(varNum=var_count)
+            var_statement = dex_manip.VAR_STATEMENT_TEMPLATE.format(varNum=var_count,
+                                                                    varName=string.ascii_letters[var_count - 1],
+                                                                    varType=arg_type)
+            var_end = dex_manip.VAR_END_TEMPLATE.format(varNum=var_count,
+                                                        varName=string.ascii_letters[var_count - 1],
+                                                        varType=arg_type
+                                                        )
+            var_registers += ', v{:d}'.format(var_count)
         elif arg_type in list(dex_manip.smaliBasicTInitialV.keys()):
             var_count += 1
             var_value = dex_manip.smaliBasicTInitialV[arg_type].format(varNum=var_count)
-        else:
-            continue
-        var_statement = dex_manip.VAR_STATEMENT_TEMPLATE.format(varNum=var_count,
-                                                                varName=string.ascii_letters[var_count - 1],
-                                                                varType=arg_type)
+            var_statement = dex_manip.VAR_STATEMENT_TEMPLATE.format(varNum=var_count,
+                                                                    varName=string.ascii_letters[var_count - 1],
+                                                                    varType=arg_type)
+            var_end = dex_manip.VAR_END_TEMPLATE.format(varNum=var_count,
+                                                        varName=string.ascii_letters[var_count - 1],
+                                                        varType=arg_type
+                                                        )
+            var_registers += ', v{:d}'.format(var_count)
+            if arg_type == 'J' or arg_type == 'D':  # 'const-wide'
+                var_count += 1
+                var_registers += ', v{:d}'.format(var_count)
+
+        elif arg_type in list(dex_manip.smaliArrayInitialV.keys()):
+            var_count += 1
+            var_value = dex_manip.smaliArrayInitialV[arg_type].format(varNum=var_count)
+            var_statement = dex_manip.VAR_STATEMENT_TEMPLATE.format(varNum=var_count,
+                                                                    varName=string.ascii_letters[var_count - 1],
+                                                                    varType=arg_type)
+            var_end = dex_manip.VAR_END_TEMPLATE.format(varNum=var_count,
+                                                        varName=string.ascii_letters[var_count - 1],
+                                                        varType=arg_type
+                                                        )
+            var_registers += ', v{:d}'.format(var_count)
+
         var_initial_content += '\n' + var_value + '\n' + var_statement + '\n'
-        var_registers += ', v{:d}'.format(var_count)
-    if var_count >= 5 and '/range' not in invoke_type:
-        invoke_type += '/range'
-        is_simplified_vars_register = True
-    if is_simplified_vars_register:
-        var_registers = 'v0 .. v{:d}'.format(var_count)
+        var_end_content += var_end + '\n'
+    var_registers = var_registers.lstrip(',').strip()
     arg_types_used = ''.join(arg_types[:var_count])
 
     random_str = dex_manip.random_name(seed=int(time.time()), code=api_name)
     # handle the initialization methods: <init>, <cinit>
     new_method_name = method_name.lstrip('<').rstrip('>') + random_str
-    new_method_body = INSERTION_TEMPLATE.format(
-        newMethodName=new_method_name,
-        numLocals=var_count,
-        argInitialization=var_initial_content,
-        methodName=method_name,
-        varRandName=random_str,
-        invokeType=invoke_type,
-        paramRegisters=var_registers,
-        apiClassName=class_name,
-        argumentTypes=arg_types_used,
-        returnType=return_class
-    )
+    if invoke_type != 'invoke-static' and invoke_type != 'invoke-static/range':
+        if var_count >= 5 and '/range' not in invoke_type:
+            invoke_type += '/range'
+            is_simplified_vars_register = True
+        if is_simplified_vars_register:
+            var_registers = 'v0 .. v{:d}'.format(var_count)
+        var_count = var_count + 1 if var_count >= 1 else 2
+        new_method_body = INSERTION_TEMPLATE.format(
+            newMethodName=new_method_name,
+            numLocals=var_count,
+            argInitialization=var_initial_content,
+            methodName=method_name,
+            varRandName=random_str,
+            invokeType=invoke_type,
+            paramRegisters=var_registers,
+            apiClassName=class_name,
+            argumentTypes=arg_types_used,
+            returnType=return_class,
+            varEndCont=var_end_content
+        )
+    else:
+        if var_count > 5 and '/range' not in invoke_type:
+            invoke_type += '/range'
+            is_simplified_vars_register = True
+        if is_simplified_vars_register:
+            var_registers = 'v1 .. v{:d}'.format(var_count)
+        var_count = var_count + 1 if var_count >= 1 else 2
+        new_method_body = INSERTION_STATIC_TEMPLATE.format(
+            newMethodName=new_method_name,
+            numLocals=var_count,
+            argInitialization=var_initial_content,
+            methodName=method_name,
+            varRandName=random_str,
+            invokeType=invoke_type,
+            paramRegisters=var_registers,
+            apiClassName=class_name,
+            argumentTypes=arg_types_used,
+            returnType=return_class,
+            varEndCont=var_end_content
+        )
 
     injection_done = False
     if isinstance(root_call, str):
@@ -518,16 +601,16 @@ def insert_api(api_name, root_call, disassemble_dir):
                 print(new_method_body)
                 continue
 
-            invoke_virtual = 'invoke-virtual'
+            invoke_static = 'invoke-static'
             if method_finder_flag and '.locals' in line:
                 reg_match = re.match(r'^[ ]*?(.locals)[ ]*?(?P<regNumber>\d+)', line)
                 if reg_match is not None and int(reg_match.group('regNumber')) > 15:
-                    invoke_virtual = 'invoke-virtual/range'
+                    invoke_static = 'invoke-static/range'
 
             if method_finder_flag:
                 if re.match(r'^[ ]*?(.locals)', line) is not None:
                     print(
-                        '    ' + invoke_virtual + ' {p0}, ' + root_class_name + ';->' + new_method_name + '()V' + '\n')
+                        '    ' + invoke_static + ' {}, ' + root_class_name + ';->' + new_method_name + '()V' + '\n')
                     injection_done = True
         fh.close()
         if injection_done:

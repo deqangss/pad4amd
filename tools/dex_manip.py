@@ -28,6 +28,7 @@ EMPTY_METHOD = '''.method private static final {methodName}()V
 '''
 
 VAR_STATEMENT_TEMPLATE = '    .local v{varNum:d}, "{varName}":{varType}'
+VAR_END_TEMPLATE = '    .end local v{varNum:d}    # "{varName}":{varType}'
 
 javaBasicT_to_SmaliBasicT = {
     'boolean': 'Z',
@@ -51,7 +52,19 @@ smaliBasicTInitialV = {
     'D': '    const-wide/16 v{varNum:d}, 0x0'
 }
 
+smaliArrayInitialV = {
+    '[Z': '    const/4 v{varNum:d}, 0x0',
+    '[B': '    const/4 v{varNum:d}, 0x0',
+    '[S': '    const/4 v{varNum:d}, 0x0',
+    '[C': '    const/4 v{varNum:d}, 0x0',
+    '[I': '    const/4 v{varNum:d}, 0x0',
+    '[F': '    const/4 v{varNum:d}, 0x0',
+    '[J': '    const/4 v{varNum:d}, 0x0',
+    '[D': '    const/4 v{varNum:d}, 0x0'
+}
+
 smaliClassTInitialV = '    const/4 v{varNum:d}, 0x0'  # null
+
 
 def read_full_file(file_path):
     try:
