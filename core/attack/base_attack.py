@@ -108,11 +108,8 @@ class BaseAttack(Module):
                  zip(x_mod_instructions, feature_path_list, app_path_list) if not os.path.exists(os.path.join(save_dir, os.path.splitext(os.path.basename(app_path))[0] + '_adv'))]
         cpu_count = multiprocessing.cpu_count() - 2 if multiprocessing.cpu_count() - 2 > 1 else 1
         pool = multiprocessing.Pool(cpu_count, initializer=utils.pool_initializer)
-        import traceback
         for res in pool.map(InverseDroidFeature.modify_wrapper, pargs):  # keep in order
             if isinstance(res, Exception):
-                traceback.print_stack()
-                traceback.print_stack()
                 logger.exception(res)
         pool.close()
         pool.join()
