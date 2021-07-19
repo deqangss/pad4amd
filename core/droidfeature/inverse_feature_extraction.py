@@ -417,9 +417,6 @@ def insert_api(api_name, root_call, disassemble_dir):
     """
     assert len(root_call) > 0, "Expect at least a root call."
 
-    if api_name != "Landroid/database/DatabaseUtils;->sqlEscapeString":
-        return
-
     api_info = InverseDroidFeature.vocab_info[InverseDroidFeature.vocab.index(api_name)]
     class_name, method_name = api_name.split('->')
     invoke_types, return_classes, arguments = list(), list(), list()
@@ -433,7 +430,6 @@ def insert_api(api_name, root_call, disassemble_dir):
 
     api_idx = 0
     is_simplified_vars_register = False
-    invoke_type = 'invoke-virtual'
     if 'invoke-virtual' in invoke_types:
         invoke_type = 'invoke-virtual'
         api_idx = invoke_types.index('invoke-virtual')
@@ -454,7 +450,7 @@ def insert_api(api_name, root_call, disassemble_dir):
         invoke_type = 'invoke-static/range'
         is_simplified_vars_register = True
     else:
-        logger.warning('Unsuitable invocation type:{}'.format(invoke_type))
+        logger.warning('Unsuitable invocation type(s):{}'.format(' '.join(invoke_types)))
         return
 
     assert len(invoke_types) > 0, 'No api details.'
