@@ -5,6 +5,7 @@ import shutil
 import tempfile
 import subprocess
 import traceback
+import string
 import re
 import numpy as np
 import networkx as nx
@@ -43,14 +44,15 @@ REFLECTION_TEMPLATE = '''.class public Landroid/content/res/MethodReflection;
 DEFAULT_SMALI_DIR = 'android/content/res/'  # the path corresponds to the reflection class set above
 
 INSERTION_TEMPLATE = '''.method public {newMethodName}()V  
-    .locals 1
+    .locals {numLocals:d}
     
     .prologue
     const/4 v0, 0x0
     
     .local v0, "{varRandName}":{apiClassName}
     :try_start_0
-    {invokeType}  {{v0}}, {apiClassName}->{methodName}(){returnType}
+    {argInitialization}
+    {invokeType} {{{paramRegisters}}}, {apiClassName}->{methodName}({argumentTypes}){returnType}
     :try_end_0
     .catch Ljava/lang/Exception; {{:try_start_0 .. :try_end_0}} :catch_0
     
@@ -375,36 +377,106 @@ def insert_api(api_name, root_call, disassemble_dir):
     @param disassemble_dir, work directory
     """
     assert len(root_call) > 0, "Expect at least a root call."
-
     api_info = InverseDroidFeature.vocab_info[InverseDroidFeature.vocab.index(api_name)]
     class_name, method_name = api_name.split('->')
-    invoke_types, return_classes = set(), set()
+    invoke_types, return_classes, arguments = list(), list(), list()
     for info in list(api_info):
         _match = re.search(
             r'^([ ]*?)(?P<invokeType>invoke\-([^ ]*?)) (?P<invokeObject>L(.*?);|\[L(.*?);)->(?P<invokeMethod>(.*?))\((?P<invokeArgument>(.*?))\)(?P<invokeReturn>(.*?))$',
             info)
-        invoke_types.add(_match.group('invokeType'))
-        return_classes.add(_match.group('invokeReturn'))
+        invoke_types.append(_match.group('invokeType'))
+        return_classes.append(_match.group('invokeReturn'))
+        arguments.append(_match.group('invokeArgument'))
 
+    api_idx = 0
+    is_simplified_vars_register = False
+    invoke_type = 'invoke-virtual'
     if 'invoke-static' in invoke_types:
         invoke_type = 'invoke-static'
+        api_idx = invoke_types.index('invoke-static')
     elif 'invoke-static/range' in invoke_types:
         invoke_type = 'invoke-static/range'
+        api_idx = invoke_types.index('invoke-static/range')
+        is_simplified_vars_register = True
+    elif 'invoke-virtual' in invoke_types:
+        invoke_type = 'invoke-virtual'
+        api_idx = invoke_types.index('invoke-virtual')
     elif 'invoke-virtual/range' in invoke_types:
         invoke_type = 'invoke-virtual/range'
+        api_idx = invoke_types.index('invoke-virtual/range')
+        is_simplified_vars_register = True
+    elif 'invoke-interface' in invoke_types:
+        invoke_type = 'invoke-interface'
+        api_idx = invoke_types.index('invoke-interface')
+    elif 'invoke-interface/range' in invoke_types:
+        invoke_type = 'invoke-interface/range'
+        api_idx = invoke_types.index('invoke-interface/range')
+        is_simplified_vars_register = True
+    elif 'invoke-direct' in invoke_types:
+        invoke_type = 'invoke-direct'
+        api_idx = invoke_types.index('invoke-direct')
+    elif 'invoke-direct/range' in invoke_types:
+        invoke_type = 'invoke-direct/range'
+        api_idx = invoke_types.index('invoke-direct/range')
+        is_simplified_vars_register = True
+    elif 'invoke-super' in invoke_types:
+        invoke_type = 'invoke-super'
+        api_idx = invoke_types.index('invoke-super')
+    elif 'invoke-super/range' in invoke_types:
+        invoke_type = 'invoke-super/range'
+        api_idx = invoke_types.index('invoke-super/range')
+        is_simplified_vars_register = True
     else:
-        invoke_type = 'invoke-virtual'
-    return_class = return_classes.pop()
+        logger.warning('Unsuitable invocation types')
+
+    assert len(invoke_types) > 0, 'No api details.'
+    return_class = return_classes[api_idx]
+    argument = arguments[api_idx]
+    # handle arguments
+    # variable initialization
+    arg_types = argument.split(' ')  # this is specific to androguard
+    var_initial_content = ''
+    var_registers = 'v0'
+    var_count = 0
+    for arg_type in arg_types:
+        arg_type = arg_type.strip()
+        if arg_type == '':
+            continue
+        if var_count >= 52:
+            raise ValueError("Too much arguments of API method {}.".format(api_name))
+        if arg_type[-1] == ';':
+            var_count += 1
+            var_value = dex_manip.smaliClassTInitialV.format(varNum=var_count)
+        elif arg_type in list(dex_manip.smaliBasicTInitialV.keys()):
+            var_count += 1
+            var_value = dex_manip.smaliBasicTInitialV[arg_type].format(varNum=var_count)
+        else:
+            continue
+        var_statement = dex_manip.VAR_STATEMENT_TEMPLATE.format(varNum=var_count,
+                                                                varName=string.ascii_letters[var_count - 1],
+                                                                varType=arg_type)
+        var_initial_content += '\n' + var_value + '\n' + var_statement + '\n'
+        var_registers += ', v{:d}'.format(var_count)
+    if var_count >= 5 and '/range' not in invoke_type:
+        invoke_type += '/range'
+        is_simplified_vars_register = True
+    if is_simplified_vars_register:
+        var_registers = 'v0 .. v{:d}'.format(var_count)
+    arg_types_used = ''.join(arg_types[:var_count])
 
     random_str = dex_manip.random_name(seed=int(time.time()), code=api_name)
     # handle the initialization methods: <init>, <cinit>
     new_method_name = method_name.lstrip('<').rstrip('>') + random_str
     new_method_body = INSERTION_TEMPLATE.format(
         newMethodName=new_method_name,
+        numLocals=var_count,
+        argInitialization=var_initial_content,
         methodName=method_name,
         varRandName=random_str,
         invokeType=invoke_type,
+        paramRegisters=var_registers,
         apiClassName=class_name,
+        argumentTypes=arg_types_used,
         returnType=return_class
     )
 
@@ -460,5 +532,3 @@ def insert_api(api_name, root_call, disassemble_dir):
         fh.close()
         if injection_done:
             break
-
-
