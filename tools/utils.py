@@ -1,3 +1,4 @@
+import json
 import os
 import signal
 import warnings
@@ -107,6 +108,23 @@ def read_joblib(path):
             return joblib.load(fr)
     else:
         raise IOError("The {0} is not a file.".format(path))
+
+
+def load_json(json_path):
+    try:
+        with open(json_path, 'r') as rh:
+            return json.load(rh)
+    except IOError as ex:
+        raise IOError(str(ex) + ": Unable to load json file.")
+
+
+def dump_json(obj_dict, file_path):
+    try:
+        import json
+        with open(file_path, 'w+') as fh:
+            json.dump(obj_dict, fh)
+    except IOError as ex:
+        raise IOError(str(ex) + ": Fail to dump dict using json toolbox")
 
 
 def dump_pickle(data, path):
@@ -427,3 +445,14 @@ def apply_encryption(base_string):
     key = ENC_KEY * int(len(base_string) / len(ENC_KEY) + 1)
     xor_string = ''.join(chr(ord(x) ^ ord(y)) for (x, y) in zip(base_string, key))
     return base64.b64encode(xor_string.encode('utf-8')).decode('utf-8')
+
+
+def get_sha256(file_path):
+    fh = open(file_path, 'rb')
+    sha256 = hashlib.sha256()
+    while True:
+        data = fh.read(8192)
+        if not data:
+            break
+        sha256.update(data)
+    return sha256.hexdigest()
