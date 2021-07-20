@@ -43,29 +43,29 @@ def _main():
     app_names = np.random.choice(inter_apps, n_samples, replace=False).tolist()
 
     # handle some specifications
-    for app_name in app_names:
-        app_name_ = app_name.split('_')[0]
-        apk_path = os.path.join(malicious_sample_dir, app_name_)
-        tmp_path = os.path.join(os.path.dirname(malicious_sample_dir), app_name_ + '.apk')
-        shutil.copy(apk_path, tmp_path)
-        for save_dir in sample_save_dirs:
-            apk_path = os.path.join(save_dir, app_name)
-            tmp_path = os.path.join(os.path.dirname(save_dir), app_name + '.apk')
-            shutil.copy(apk_path, tmp_path)
-    return
+    # for app_name in app_names:
+    #     app_name_ = app_name.split('_')[0]
+    #     apk_path = os.path.join(malicious_sample_dir, app_name_)
+    #     tmp_path = os.path.join(os.path.dirname(malicious_sample_dir), app_name_ + '.apk')
+    #     shutil.copy(apk_path, tmp_path)
+    #     for save_dir in sample_save_dirs:
+    #         apk_path = os.path.join(save_dir, app_name)
+    #         tmp_path = os.path.join(os.path.dirname(save_dir), app_name + '.apk')
+    #         shutil.copy(apk_path, tmp_path)
+    # return
 
     apk_test_adb = APKTestADB()
     with tempfile.TemporaryDirectory() as tmpdir:
         for app_name in app_names:
             app_name_ = app_name.split('_')[0]
-            apk_path = os.path.join(malicious_sample_dir, app_name_)
+            apk_path = os.path.join(malicious_sample_dir, app_name_  + '.apk')
             tmp_path = os.path.join(tmpdir, app_name_ + '.apk')
             shutil.copy(apk_path, tmp_path)
             apk_test_adb.submit(tmp_path)
             logger.info("Submit: " + apk_path)
             for save_dir in sample_save_dirs:
                 apk_path = os.path.join(save_dir, app_name)
-                tmp_path = os.path.join(tmpdir, app_name + '.apk')
+                tmp_path = os.path.join(tmpdir, app_name)
                 shutil.copy(apk_path, tmp_path)
                 apk_test_adb.submit(tmp_path)
                 logger.info("Submit: " + apk_path)
@@ -80,7 +80,7 @@ def _main():
                 states.append(apk_test_adb.get_state(tmp_path))
                 for save_dir in sample_save_dirs:
                     apk_path = os.path.join(save_dir, app_name)
-                    tmp_path = os.path.join(tmpdir, app_name + '.apk')
+                    tmp_path = os.path.join(tmpdir, app_name)
                     shutil.copy(apk_path, tmp_path)
                     states.append(apk_test_adb.get_state(tmp_path))
 
@@ -102,7 +102,7 @@ def _main():
             func_flag_list = []
             for save_dir in sample_save_dirs:
                 apk_path = os.path.join(save_dir, app_name)
-                tmp_path = os.path.join(tmpdir, app_name + '.apk')
+                tmp_path = os.path.join(tmpdir, app_name)
                 shutil.copy(apk_path, tmp_path)
                 adv_install_flag, adv_activities, adv_exceptions = apk_test_adb.get_report(tmp_path)
                 install_flag_list.append(adv_install_flag)
