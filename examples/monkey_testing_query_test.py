@@ -47,23 +47,24 @@ def _main():
         for app_name in app_names:
             app_name_ = app_name.split('_')[0]
             apk_path = os.path.join(malicious_sample_dir, app_name_)
-            tmp_path = os.path.join(apk_path, app_name_ + '.apk')
+            tmp_path = os.path.join(tmpdir, app_name_ + '.apk')
             shutil.copy(apk_path, tmp_path)
             apk_test_adb.submit(tmp_path)
-
+            logger.info("Submit: " + apk_path)
             for save_dir in sample_save_dirs:
                 apk_path = os.path.join(save_dir, app_name)
                 tmp_path = os.path.join(tmpdir, app_name + '.apk')
                 shutil.copy(apk_path, tmp_path)
                 apk_test_adb.submit(tmp_path)
+                logger.info("Submit: " + apk_path)
 
         while True:
-            time.sleep(300)
+            time.sleep(30)
 
             states = []
             for app_name in app_names:
                 app_name_ = app_name.split('_')[0]
-                tmp_path = os.path.join(apk_path, app_name_ + '.apk')
+                tmp_path = os.path.join(tmpdir, app_name_ + '.apk')
                 states.append(apk_test_adb.get_state(tmp_path))
                 for save_dir in sample_save_dirs:
                     apk_path = os.path.join(save_dir, app_name)
@@ -79,7 +80,7 @@ def _main():
         functionality_flag_2dlist = []
         for app_name in app_names:
             app_name_ = app_name.split('_')[0]
-            tmp_path = os.path.join(apk_path, app_name_ + '.apk')
+            tmp_path = os.path.join(tmpdir, app_name_ + '.apk')
             org_install_flag, org_activities, org_exceptions = apk_test_adb.get_report(tmp_path)
             if not org_install_flag:
                 logger.info("Unperturbed example {}: failed to install.".format(app_name_))
@@ -95,7 +96,7 @@ def _main():
                 install_flag_list.append(adv_install_flag)
                 func_flag = (org_activities == adv_activities) & (org_exceptions == adv_exceptions)
                 if not func_flag:
-                    logger.info("Ruin the functionality: ", apk_path)
+                    logger.info("Ruin the functionality: " + apk_path)
                     logger.info('\t Original activities: {}'.format(','.join(list(org_activities))))
                     logger.info('\t Perturbed activities: {}'.format(','.join(list(adv_activities))))
                     logger.info('\t Original exceptions: {}'.format(','.join(list(org_exceptions))))
@@ -105,13 +106,13 @@ def _main():
             install_flag_2dlist.append(install_flag_list)
             functionality_flag_2dlist.append(func_flag_list)
 
-        install_count = np.sum(np.array(install_flag_2dlist), dim=0).tolist()
-        func_count = np.sum(np.array(functionality_flag_2dlist), dim=0).tolist()
+        install_count = np.sum(np.array(install_flag_2dlist), axis=0).tolist()
+        func_count = np.sum(np.array(functionality_flag_2dlist), axis=0).tolist()
         logger.info("Installable apps: {}.".format(org_sample_installed))
         for i, attack in enumerate(attack_names):
-            print("Attack {}: number of installable apks {} and runnable apks {}.".format(attack,
-                                                                                          install_count[i],
-                                                                                          func_count[i]))
+            logger.info("Attack {}: number of installable apks {} and runnable apks {}.".format(attack,
+                                                                                                install_count[i],
+                                                                                                func_count[i]))
 
     return
 

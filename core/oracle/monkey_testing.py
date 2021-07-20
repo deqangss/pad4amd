@@ -5,6 +5,7 @@ import warnings
 import shutil
 import subprocess
 import time
+from collections import defaultdict
 from tools import utils
 
 from config import logging, ErrorHandler
@@ -139,7 +140,7 @@ class APKTestADB(object):
             logger.info("Fail to uninstall the app: {}".format(os.path.basename(apk_path)))
             return False
 
-    def run_monkey(self, apk_path, count=800, seed=123456543):
+    def run_monkey(self, apk_path, count=1000, seed=123456543):
         self._check_file_existence(apk_path)
         pkg_name = self._get_pkg_name(apk_path)
         sha256 = utils.get_sha256(apk_path)
@@ -195,8 +196,7 @@ class APKTestADB(object):
             activities.append(line.split('I ActivityManager: Displayed')[1].strip().split(":")[0])
 
         for line in proc_res_exps:
-            exceptions.append(':'.join(line.split('AndroidRuntime: ')[1].strip().split(':')[:2]))
-
+            exceptions.append(line.split('AndroidRuntime: ')[1].strip().split(':')[0])
         return activities, exceptions
 
     def submit(self, apk_path):
@@ -205,8 +205,8 @@ class APKTestADB(object):
         :param apk_path: apk path of local disk
         :return: state
         """
-        pkg_name = self._get_pkg_name(apk_path)
-        shutil.copy(apk_path, os.path.join(self.temp_apk_dir, pkg_name + '.apk'))
+        shutil.copy(apk_path, os.path.join(self.temp_apk_dir,
+                                           self._get_pkg_name(apk_path) + utils.get_sha256(apk_path) + '.apk'))
         time.sleep(5)
         return
 
@@ -220,6 +220,9 @@ class APKTestADB(object):
             for i, n in enumerate(apk_names):
                 apk_path = os.path.join(self.temp_apk_dir, n)
                 save_path = self._get_saving_path(apk_path)
+                if os.path.exists(save_path):
+                    os.remove(apk_path)
+                    continue
                 info = defaultdict()
                 info['install'] = ''
                 info['components'] = ''
@@ -230,7 +233,6 @@ class APKTestADB(object):
                     try:
                         cmps, exps = self.run_monkey(apk_path)
                         self.remove_apk(apk_path)
-                        from collections import defaultdict
                         info['components'] = ','.join(cmps)
                         info['exceptions'] = ','.join(exps)
                         utils.dump_json(info, save_path)
@@ -280,13 +282,13 @@ class APKTestADB(object):
 
 def _main():
     apk_test_adb = APKTestADB()
-    # apk_test_adb.install_apk("/local_disk/tools/cuckoo/apks/sel_adv4_adam/2ee5f9e383e4b0fa109eefe7256ac202ac22947f2db71f819c807bd9ec9a2a10_adv.apk")
-    # apk_test_adb.run_monkey("/local_disk/tools/cuckoo/apks/sel_adv4_adam/2ee5f9e383e4b0fa109eefe7256ac202ac22947f2db71f819c807bd9ec9a2a10_adv.apk")
-    # apk_test_adb.remove_apk("/local_disk/tools/cuckoo/apks/sel_adv4_adam/2ee5f9e383e4b0fa109eefe7256ac202ac22947f2db71f819c807bd9ec9a2a10_adv.apk")
+    apk_test_adb.install_apk("/local_disk/data/Android//drebin/attack/gdkde/madvtrain/adv_apps/000a067df9235aea987cd1e6b7768bcc1053e640b267c5b1f0deefc18be5dbe1_adv.apk")
+    apk_test_adb.run_monkey("/local_disk/data/Android//drebin/attack/gdkde/madvtrain/adv_apps/000a067df9235aea987cd1e6b7768bcc1053e640b267c5b1f0deefc18be5dbe1_adv.apk")
+    apk_test_adb.remove_apk("/local_disk/data/Android//drebin/attack/gdkde/madvtrain/adv_apps/000a067df9235aea987cd1e6b7768bcc1053e640b267c5b1f0deefc18be5dbe1_adv.apk")
     # apk_test_adb.run()
-    apk_test_adb.get_state("/local_disk/tools/cuckoo/apks/sel_adv4_adam/2ee5f9e383e4b0fa109eefe7256ac202ac22947f2db71f819c807bd9ec9a2a10_adv.apk")
-    cmps, exps = apk_test_adb.get_report("/local_disk/tools/cuckoo/apks/sel_adv4_adam/2ee5f9e383e4b0fa109eefe7256ac202ac22947f2db71f819c807bd9ec9a2a10_adv.apk")
-    print(cmps, exps)
+    # apk_test_adb.get_state("/local_disk/tools/cuckoo/apks/sel_adv4_adam/2ee5f9e383e4b0fa109eefe7256ac202ac22947f2db71f819c807bd9ec9a2a10_adv.apk")
+    # cmps, exps = apk_test_adb.get_report("/local_disk/tools/cuckoo/apks/sel_adv4_adam/2ee5f9e383e4b0fa109eefe7256ac202ac22947f2db71f819c807bd9ec9a2a10_adv.apk")
+    # print(cmps, exps)
 
 if __name__ == "__main__":
     _main()
