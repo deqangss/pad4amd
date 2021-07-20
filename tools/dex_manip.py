@@ -66,6 +66,10 @@ smaliArrayInitialV = {
 smaliClassTInitialV = '    const/4 v{varNum:d}, 0x0'  # null
 
 
+def is_wide_type(arg_type):
+    return arg_type == 'J' or arg_type == 'D'
+
+
 def read_full_file(file_path):
     try:
         with open(file_path, 'r') as rh:

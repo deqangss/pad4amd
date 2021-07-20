@@ -494,7 +494,7 @@ def insert_api(api_name, root_call, disassemble_dir):
                                                         varType=arg_type
                                                         )
             var_registers += ', v{:d}'.format(var_count)
-            if arg_type == 'J' or arg_type == 'D':  # 'const-wide'
+            if dex_manip.is_wide_type(arg_type):  # 'const-wide'
                 var_count += 1
                 var_registers += ', v{:d}'.format(var_count)
 
