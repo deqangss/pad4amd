@@ -140,11 +140,11 @@ def _main():
         #                             os.path.join(save_dir, 'x_mod.list'))
         x_mod_list = utils.read_pickle_frd_space(os.path.join(save_dir, 'x_mod.list'))
 
-        attack.produce_adv_mal(x_mod_list, mal_test_x.tolist(),
-                               config.get('dataset', 'malware_dir'),
-                               adj_mod=None,
-                               save_dir=adv_app_dir)
-        adv_feature_paths = dataset.apk_preprocess(adv_app_dir, update_feature_extraction=True)
+        # attack.produce_adv_mal(x_mod_list, mal_test_x.tolist(),
+        #                        config.get('dataset', 'malware_dir'),
+        #                        adj_mod=None,
+        #                        save_dir=adv_app_dir)
+        adv_feature_paths = dataset.apk_preprocess(adv_app_dir, update_feature_extraction=False)
         dataset.feature_preprocess(adv_feature_paths)
         ben_test_dataset_producer = dataset.get_input_producer(adv_feature_paths,
                                                                np.ones((len(adv_feature_paths,))),
