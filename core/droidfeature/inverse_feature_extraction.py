@@ -450,7 +450,7 @@ def insert_api(api_name, root_call, disassemble_dir):
         invoke_type = 'invoke-static/range'
         is_simplified_vars_register = True
     else:
-        logger.warning('Neglect invocation type(s):{}'.format(' '.join(invoke_types)))
+        # logger.warning('Neglect invocation type(s):{}'.format(' '.join(invoke_types)))
         return
 
     assert len(invoke_types) > 0, 'No api details.'
