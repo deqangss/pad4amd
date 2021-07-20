@@ -449,6 +449,22 @@ def insert_api(api_name, root_call, disassemble_dir):
     elif 'invoke-static/range' in invoke_types:
         invoke_type = 'invoke-static/range'
         is_simplified_vars_register = True
+    # elif 'invoke-super' in invoke_types:
+    #     invoke_type = 'invoke-super'
+    #     api_idx = invoke_types.index('invoke-super')
+    #     return
+    # elif 'invoke-super/range' in invoke_types:
+    #     invoke_type = 'invoke-super/range'
+    #     api_idx = invoke_types.index('invoke-super/range')
+    #     is_simplified_vars_register = True
+    #     return
+    # elif 'invoke-direct' in invoke_types:
+    #     invoke_type = 'invoke-direct'
+    #     api_idx = invoke_types.index('invoke-direct')
+    # elif 'invoke-direct/range' in invoke_types:
+    #     invoke_type = 'invoke-direct/range'
+    #     api_idx = invoke_types.index('invoke-direct/range')
+    #     is_simplified_vars_register = True
     else:
         # logger.warning('Neglect invocation type(s):{}'.format(' '.join(invoke_types)))
         return
