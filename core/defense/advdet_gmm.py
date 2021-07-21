@@ -122,7 +122,7 @@ class MalwareDetectorIndicator(MalwareDetector, DensityEstimator):
 
         gt_labels = torch.cat(gt_labels, dim=0)
         x_hidden_np = np.vstack(x_hidden_np)
-        utils.dump_pickle((x_hidden_np, gt_labels.cpu().numpy()), './pad.npz')
+        utils.dump_pickle((x_hidden_np, gt_labels.cpu().numpy()), './mad.npz')
 
         y_cent = torch.mean(torch.stack(y_cent).permute([1, 0, 2]), dim=1)
         x_prob = torch.mean(torch.stack(x_prob), dim=0)
