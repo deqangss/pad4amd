@@ -138,7 +138,11 @@ def _main():
         dump_pickle(vars(args), path.join(path.dirname(max_adv_training_model.model_save_path), "hparam.pkl"))
     # test: accuracy
     max_adv_training_model.load()
-    max_adv_training_model.model.predict(test_dataset_producer)
+    # max_adv_training_model.model.predict(test_dataset_producer)
+    attr_cls, attr_de = max_adv_training_model.model.get_important_attributes(test_dataset_producer)
+    import numpy as np
+    np.save("./attributions-mad-cls", attr_cls)
+    np.save("./attributions-mad-de", attr_de)
 
 
 if __name__ == '__main__':

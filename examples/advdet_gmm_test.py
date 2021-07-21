@@ -73,8 +73,10 @@ def _main():
     model.load()
     # test: accuracy
     # model.predict(test_dataset_producer)
-    model.get_important_attributes(test_dataset_producer)
-
+    attr_cls, attr_de = model.get_important_attributes(test_dataset_producer)
+    import numpy as np
+    np.save("./attributions-gmm-cls", attr_cls)
+    np.save("./attributions-gmm-de", attr_de)
 
 if __name__ == '__main__':
     _main()
