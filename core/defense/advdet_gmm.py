@@ -9,6 +9,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.checkpoint import checkpoint
+from captum.attr import IntegratedGradients
 
 import numpy as np
 
@@ -90,7 +91,7 @@ class MalwareDetectorIndicator(MalwareDetector, DensityEstimator):
             # filter out examples with low likelihood
             # y_pred = y_pred[indicator_flag]
             # y_true = y_true[indicator_flag]
-            flag_of_retaining = indicator_flag | (y_pred == 1.) # excluding the examples with ``not sure'' response
+            flag_of_retaining = indicator_flag | (y_pred == 1.)  # excluding the examples with ``not sure'' response
             y_pred = y_pred[flag_of_retaining]
             y_true = y_true[flag_of_retaining]
         else:
@@ -122,6 +123,43 @@ class MalwareDetectorIndicator(MalwareDetector, DensityEstimator):
         y_cent = torch.mean(torch.stack(y_cent).permute([1, 0, 2]), dim=1)
         x_prob = torch.mean(torch.stack(x_prob), dim=0)
         return y_cent, x_prob, gt_labels
+
+    def get_important_attributes(self, test_data_producer, indicator_masking=False):
+        """
+        get important attributes by using integrated gradients
+
+        adjacency matrix is neglected
+        """
+        attributions_cls = []
+        attributions_de = []
+
+        def _ig_wrapper_cls(_x):
+            _3, logits = self.forward(_x, adj=None)
+            return F.softmax(logits, dim=-1)
+
+        ig_cls = IntegratedGradients(_ig_wrapper_cls)
+
+        def _ig_wrapper_de(_x):
+            x_hidden, _4 = self.forward(_x, adj=None)
+            return self.forward_g(x_hidden)
+
+        ig_de = IntegratedGradients(_ig_wrapper_de)
+
+        for i, (x, _1, y, _2) in enumerate(test_data_producer):
+            x, _4, y = utils.to_tensor(x, None, y, self.device)
+            x.requires_grad = True
+            attribution_bs = ig_cls.attribute(x,
+                                              baselines=torch.zeros_like(x, dtype=torch.float32,
+                                                                         device=self.device),
+                                              target=1)
+            attributions_cls.append(attribution_bs.clone().detach().cpu().numpy())
+
+            attribution_bs = ig_de.attribute(x,
+                                             baselines=torch.zeros_like(x, dtype=torch.float32,
+                                                                        device=self.device),
+                                             method='gausslegendre')
+            attributions_de.append(attribution_bs.clone().detach().cpu().numpy())
+        return np.vstack(attributions_cls), np.vstack(attributions_de)
 
     def inference_batch_wise(self, x, a, y, use_indicator=True):
         assert isinstance(x, torch.Tensor) and isinstance(y, torch.Tensor)

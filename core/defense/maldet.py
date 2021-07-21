@@ -11,6 +11,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 from torch.utils.checkpoint import checkpoint
+from captum.attr import IntegratedGradients
 
 import numpy as np
 
@@ -129,12 +130,35 @@ class MalwareDetector(nn.Module):
 
         return confidences, gt_labels
 
+    def get_important_attributes(self, test_data_producer, indicator_masking=False):
+        """
+        get important attributes by using integrated gradients
+
+        adjacency matrix is neglected
+        """
+        attributions = []
+
+        def _ig_wrapper(_x):
+            _3, logits = self.forward(_x, adj=None)
+            return F.softmax(logits, dim=-1)
+        ig = IntegratedGradients(_ig_wrapper)
+
+        for i, (x, _1, y, _2) in enumerate(test_data_producer):
+            x, _4, y = utils.to_tensor(x, None, y, self.device)
+            x.requires_grad = True
+            attribution_bs = ig.attribute(x,
+                                          baselines=torch.zeros_like(x, dtype=torch.float32,
+                                                                     device=self.device),
+                                          target=1)
+            attributions.append(attribution_bs.clone().detach().cpu().numpy())
+        return np.vstack(attributions)
+
     def inference_batch_wise(self, x, a, y, use_indicator=None):
         assert isinstance(x, torch.Tensor) and isinstance(y, torch.Tensor)
         if a is not None:
             assert isinstance(a, torch.Tensor)
         _, logit = self.forward(x, a)
-        return torch.softmax(logit, dim=-1).detach().cpu().numpy(), np.ones((logit.size()[0], ))
+        return torch.softmax(logit, dim=-1).detach().cpu().numpy(), np.ones((logit.size()[0],))
 
     def predict(self, test_data_producer, indicator_masking=False):
         """

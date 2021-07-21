@@ -72,7 +72,8 @@ def _main():
 
     model.load()
     # test: accuracy
-    model.predict(test_dataset_producer)
+    # model.predict(test_dataset_producer)
+    model.get_important_attributes(test_dataset_producer)
 
 
 if __name__ == '__main__':

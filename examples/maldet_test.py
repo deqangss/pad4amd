@@ -130,7 +130,8 @@ def _main():
 
     # test: accuracy
     model.load()
-    model.predict(test_dataset_producer)
+    # model.predict(test_dataset_producer)
+    model.get_important_attributes(test_dataset_producer)
 
     dataset.clean_up()
 
