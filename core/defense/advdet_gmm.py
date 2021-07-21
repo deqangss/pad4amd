@@ -102,7 +102,6 @@ class MalwareDetectorIndicator(MalwareDetector, DensityEstimator):
     def inference(self, test_data_producer):
         y_cent, x_prob = [], []
         gt_labels = []
-        x_hidden_np = []
         self.eval()
         with torch.no_grad():
             for ith in tqdm(range(self.n_sample_times)):
@@ -115,15 +114,11 @@ class MalwareDetectorIndicator(MalwareDetector, DensityEstimator):
                     x_prob_batches.append(self.forward_g(x_hidden))
                     if ith == 0:
                         gt_labels.append(y)
-                        x_hidden_np.append(x_hidden.cpu().numpy())
                 y_cent_batches = torch.vstack(y_cent_batches)
                 y_cent.append(y_cent_batches)
                 x_prob.append(torch.hstack(x_prob_batches))
 
         gt_labels = torch.cat(gt_labels, dim=0)
-        x_hidden_np = np.vstack(x_hidden_np)
-        utils.dump_pickle((x_hidden_np, gt_labels.cpu().numpy()), './mad.npz')
-
         y_cent = torch.mean(torch.stack(y_cent).permute([1, 0, 2]), dim=1)
         x_prob = torch.mean(torch.stack(x_prob), dim=0)
         return y_cent, x_prob, gt_labels

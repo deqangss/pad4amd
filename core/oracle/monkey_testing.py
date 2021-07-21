@@ -53,18 +53,19 @@ class APKTestADB(object):
             raise IOError("'.apk' format needed")
 
     def _get_pkg_name(self, apk_path):
-        self._check_file_existence(apk_path)
+        try:
+            self._check_file_existence(apk_path)
+            full_pkg_name = subprocess.check_output("aapt dump badging " + apk_path + " | grep package:\ name",
+                                                    shell=True, stderr=subprocess.STDOUT).decode('utf-8')
+            if full_pkg_name.startswith('package'):
+                full_pkg_name = full_pkg_name.lstrip('package ')
+                pkg_name = \
+                    [info.lstrip('name=').strip("'") for info in full_pkg_name.split(' ') if info.startswith('name')][0]
+                return pkg_name
+        except subprocess.CalledProcessError as e:
+            logger.error(str(e) + ": " + apk_path)
+            return 'no-pkg-name-return'
 
-        full_pkg_name = subprocess.check_output("aapt dump badging " + apk_path + " | grep package:\ name",
-                                                shell=True, stderr=subprocess.STDOUT).decode('utf-8')
-
-        if full_pkg_name.startswith('package'):
-            full_pkg_name = full_pkg_name.lstrip('package ')
-            pkg_name = \
-                [info.lstrip('name=').strip("'") for info in full_pkg_name.split(' ') if info.startswith('name')][0]
-            return pkg_name
-        else:
-            raise IOError("Unable to find the file: {}".format(apk_path))
 
     def _get_saving_path(self, apk_path):
         return os.path.join(self.temp_res_dir, 
@@ -95,19 +96,20 @@ class APKTestADB(object):
         try:
             proc_res = subprocess.check_output(['adb', 'install', apk_path],
                                                stderr=subprocess.STDOUT).decode('utf-8')  # return "Success\n"
+            if proc_res.strip().lower() == 'success':
+                logger.info("Succeed to install the app: {}".format(os.path.basename(apk_path)))
+                return True
+            else:
+                log_fpath = os.path.join(i_log_dir, sha256 + ".install")
+                os.system('adb' + ' logcat -d >>' + log_fpath)
+                logger.info("Fail to install the app: {}".format(os.path.basename(apk_path)))
+                return False
         except subprocess.CalledProcessError as e:
             log_fpath = os.path.join(i_log_dir, sha256 + ".install")
             os.system('adb' + ' logcat -d >>' + log_fpath)
-            raise RuntimeError("Command '{}' return with error (code {}):{}".format(e.cmd, e.returncode, e.output))
-
-        if proc_res.strip().lower() == 'success':
-            logger.info("Succeed to install the app: {}".format(os.path.basename(apk_path)))
-            return True
-        else:
-            log_fpath = os.path.join(i_log_dir, sha256 + ".install")
-            os.system('adb' + ' logcat -d >>' + log_fpath)
-            logger.info("Fail to install the app: {}".format(os.path.basename(apk_path)))
+            logger.error("Command '{}' return with error (code {}):{}".format(e.cmd, e.returncode, e.output))
             return False
+
 
     def remove_apk(self, apk_path):
         self._check_file_existence(apk_path)
@@ -124,20 +126,21 @@ class APKTestADB(object):
             subprocess.check_output(['adb', 'shell', 'am', 'force-stop', pkg_name]).decode('utf-8')
             # uninstall the apk
             proc_res = subprocess.check_output(['adb', 'uninstall', pkg_name], stderr=subprocess.STDOUT).decode('utf-8')
+
+            if proc_res.strip().lower() == 'success':
+                logger.info("Succeed to uninstall the app: {}".format(os.path.basename(apk_path)))
+                return True
+            else:
+                log_fpath = os.path.join(r_log_dir, sha256 + ".uninstall")
+                os.system('adb' + ' logcat -d >>' + log_fpath)
+                os.system('adb' + ' logcat -c')
+                logger.info("Fail to uninstall the app: {}".format(os.path.basename(apk_path)))
+                return False
         except subprocess.CalledProcessError as e:
             log_fpath = os.path.join(r_log_dir, sha256 + ".uninstall")
             os.system('adb' + ' logcat -d >>' + log_fpath)
             os.system('adb' + ' logcat -c')
-            raise RuntimeError("Command '{}' return with error (code {}):{}".format(e.cmd, e.returncode, e.output))
-
-        if proc_res.strip().lower() == 'success':
-            logger.info("Succeed to uninstall the app: {}".format(os.path.basename(apk_path)))
-            return True
-        else:
-            log_fpath = os.path.join(r_log_dir, sha256 + ".uninstall")
-            os.system('adb' + ' logcat -d >>' + log_fpath)
-            os.system('adb' + ' logcat -c')
-            logger.info("Fail to uninstall the app: {}".format(os.path.basename(apk_path)))
+            logger.error("Command '{}' return with error (code {}):{}".format(e.cmd, e.returncode, e.output))
             return False
 
     def run_monkey(self, apk_path, count=1000, seed=123456543):
@@ -282,13 +285,14 @@ class APKTestADB(object):
 
 def _main():
     apk_test_adb = APKTestADB()
-    apk_test_adb.install_apk("/local_disk/data/Android//drebin/attack/gdkde/madvtrain/adv_apps/000a067df9235aea987cd1e6b7768bcc1053e640b267c5b1f0deefc18be5dbe1_adv.apk")
-    apk_test_adb.run_monkey("/local_disk/data/Android//drebin/attack/gdkde/madvtrain/adv_apps/000a067df9235aea987cd1e6b7768bcc1053e640b267c5b1f0deefc18be5dbe1_adv.apk")
-    apk_test_adb.remove_apk("/local_disk/data/Android//drebin/attack/gdkde/madvtrain/adv_apps/000a067df9235aea987cd1e6b7768bcc1053e640b267c5b1f0deefc18be5dbe1_adv.apk")
-    # apk_test_adb.run()
-    # apk_test_adb.get_state("/local_disk/tools/cuckoo/apks/sel_adv4_adam/2ee5f9e383e4b0fa109eefe7256ac202ac22947f2db71f819c807bd9ec9a2a10_adv.apk")
-    # cmps, exps = apk_test_adb.get_report("/local_disk/tools/cuckoo/apks/sel_adv4_adam/2ee5f9e383e4b0fa109eefe7256ac202ac22947f2db71f819c807bd9ec9a2a10_adv.apk")
-    # print(cmps, exps)
+    # apk_test_adb.install_apk("/local_disk/data/Android//drebin/malicious_samples/2dd94e49e75467cb055099319fc90d0f93d0868e531593f857cf91f6f3220c87.apk")
+    # apk_test_adb.run_monkey("/local_disk/data/Android//drebin/malicious_samples/2dd94e49e75467cb055099319fc90d0f93d0868e531593f857cf91f6f3220c87.apk")
+    # apk_test_adb.remove_apk("/local_disk/data/Android//drebin/malicious_samples/2dd94e49e75467cb055099319fc90d0f93d0868e531593f857cf91f6f3220c87.apk")
+    # apk_test_adb.submit('/local_disk/data/Android//drebin/malicious_samples/2dd94e49e75467cb055099319fc90d0f93d0868e531593f857cf91f6f3220c87.apk')
+    apk_test_adb.run()
+    apk_test_adb.get_state("/local_disk/data/Android//drebin/malicious_samples/2dd94e49e75467cb055099319fc90d0f93d0868e531593f857cf91f6f3220c87.apk")
+    cmps, exps = apk_test_adb.get_report("/local_disk/data/Android//drebin/malicious_samples/2dd94e49e75467cb055099319fc90d0f93d0868e531593f857cf91f6f3220c87.apk")
+    print(cmps, exps)
 
 if __name__ == "__main__":
     _main()

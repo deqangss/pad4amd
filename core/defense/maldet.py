@@ -112,7 +112,6 @@ class MalwareDetector(nn.Module):
     def inference(self, test_data_producer):
         confidences = []
         gt_labels = []
-        x_hidden_np = []
         self.eval()
         with torch.no_grad():
             for ith in tqdm(range(self.n_sample_times)):
@@ -123,12 +122,9 @@ class MalwareDetector(nn.Module):
                     conf_batches.append(F.softmax(logits, dim=-1))
                     if ith == 0:
                         gt_labels.append(y)
-                        x_hidden_np.append(x_hidden.cpu().numpy())
                 conf_batches = torch.vstack(conf_batches)
                 confidences.append(conf_batches)
         gt_labels = torch.cat(gt_labels, dim=0)
-        x_hidden_np = np.vstack(x_hidden_np)
-        utils.dump_pickle((x_hidden_np, gt_labels.cpu().numpy()), './dnn-gat.npz')
         confidences = torch.mean(torch.stack(confidences).permute([1, 0, 2]), dim=1)
 
         return confidences, gt_labels

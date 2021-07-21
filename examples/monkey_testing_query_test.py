@@ -42,23 +42,11 @@ def _main():
     n_samples = args.n_samples if len(inter_apps) >= args.n_samples else len(inter_apps)
     app_names = np.random.choice(inter_apps, n_samples, replace=False).tolist()
 
-    # handle some specifications
-    # for app_name in app_names:
-    #     app_name_ = app_name.split('_')[0]
-    #     apk_path = os.path.join(malicious_sample_dir, app_name_)
-    #     tmp_path = os.path.join(os.path.dirname(malicious_sample_dir), app_name_ + '.apk')
-    #     shutil.copy(apk_path, tmp_path)
-    #     for save_dir in sample_save_dirs:
-    #         apk_path = os.path.join(save_dir, app_name)
-    #         tmp_path = os.path.join(os.path.dirname(save_dir), app_name + '.apk')
-    #         shutil.copy(apk_path, tmp_path)
-    # return
-
     apk_test_adb = APKTestADB()
     with tempfile.TemporaryDirectory() as tmpdir:
         for app_name in app_names:
             app_name_ = app_name.split('_')[0]
-            apk_path = os.path.join(malicious_sample_dir, app_name_  + '.apk')
+            apk_path = os.path.join(malicious_sample_dir, app_name_ + '.apk')
             tmp_path = os.path.join(tmpdir, app_name_ + '.apk')
             shutil.copy(apk_path, tmp_path)
             apk_test_adb.submit(tmp_path)
