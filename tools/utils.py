@@ -6,14 +6,12 @@ import joblib
 import fileinput
 import pickle as pkl
 import _pickle as cPickle
-import lzma, gzip
-import shutil
+import gzip
 
 import hashlib
 import random
 import string
 import base64
-import re
 
 ENC_KEY = 'cab228a122d3486bac7fab148e8b5aba'
 
