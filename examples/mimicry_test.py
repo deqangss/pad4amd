@@ -68,6 +68,20 @@ def _main():
     else:
         mal_test_x, mal_testy = utils.read_pickle_frd_space(mal_save_path)
         mal_count = len(mal_testy)
+
+    app_dir = config.get('dataset', 'malware_dir')
+    attack_samples_dir = os.path.join(os.path.dirname(app_dir), 'attack_samples')
+    if not os.path.exists(attack_samples_dir):
+        utils.mkdir(attack_samples_dir)
+
+    import shutil
+    for mal_x in mal_test_x:
+        name = os.path.splitext(os.path.basename(mal_x))[0]
+        mal_path = os.path.join(app_dir, name)
+        assert os.path.exists(mal_path)
+        shutil.copy(mal_path, os.path.join(attack_samples_dir, name))
+    return
+
     ben_test_x = test_x[testy == 0]
     if mal_count <= 0:
         return
