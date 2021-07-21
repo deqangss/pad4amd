@@ -131,7 +131,9 @@ def _main():
     # test: accuracy
     model.load()
     # model.predict(test_dataset_producer)
-    model.get_important_attributes(test_dataset_producer)
+    attributions = model.get_important_attributes(test_dataset_producer)
+    import numpy as np
+    np.save(attributions, "./attributions-gat.npz")
 
     dataset.clean_up()
 
