@@ -133,7 +133,7 @@ def _main():
     # model.predict(test_dataset_producer)
     attributions = model.get_important_attributes(test_dataset_producer)
     import numpy as np
-    np.save(attributions, "./attributions-gat.npz")
+    np.save("./attributions-gat.npz", attributions)
 
     dataset.clean_up()
 
