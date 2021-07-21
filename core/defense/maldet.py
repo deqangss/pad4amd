@@ -137,6 +137,7 @@ class MalwareDetector(nn.Module):
         adjacency matrix is neglected
         """
         attributions = []
+        gt_labels = []
 
         def _ig_wrapper(_x):
             _3, logits = self.forward(_x, adj=None)
@@ -151,6 +152,8 @@ class MalwareDetector(nn.Module):
                                                                      device=self.device),
                                           target=1)
             attributions.append(attribution_bs.clone().detach().cpu().numpy())
+            gt_labels.append(y.clone().detach().cpu().numpy())
+            np.save('./labels', np.concatenate(gt_labels))
         return np.vstack(attributions)
 
     def inference_batch_wise(self, x, a, y, use_indicator=None):
