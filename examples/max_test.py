@@ -280,7 +280,7 @@ def _main():
         #                        adj_mod=None,
         #                        save_dir=adv_app_dir)
         adv_feature_paths = dataset.apk_preprocess(adv_app_dir, update_feature_extraction=False)
-        dataset.feature_preprocess(adv_feature_paths)
+        # dataset.feature_preprocess(adv_feature_paths)
         adv_test_dataset_producer = dataset.get_input_producer(adv_feature_paths,
                                                                np.ones((len(adv_feature_paths, ))),
                                                                batch_size=hp_params['batch_size'],
