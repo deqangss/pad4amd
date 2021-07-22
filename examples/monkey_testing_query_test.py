@@ -48,7 +48,7 @@ def _main():
 
     for app_name in inter_apps:
         app_name_ = app_name.split('_')[0]
-        apk_path = os.path.join(malicious_sample_dir, app_name_ + '.apk')
+        apk_path = os.path.join(malicious_sample_dir, app_name_)
         shutil.copy(apk_path, unperturbed_example_dir)
         for adv_save_dir in sample_save_dirs:
             dup_sample_dir = os.path.join(os.path.dirname(adv_save_dir), 'dup_adv_apps')
