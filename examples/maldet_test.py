@@ -130,11 +130,7 @@ def _main():
 
     # test: accuracy
     model.load()
-    # model.predict(test_dataset_producer)
-    attributions = model.get_important_attributes(test_dataset_producer)
-    import numpy as np
-    np.save("./attributions-dnn", attributions)
-
+    model.predict(test_dataset_producer)
     dataset.clean_up()
 
 
