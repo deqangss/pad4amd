@@ -249,7 +249,7 @@ class APKTestADB(object):
                     utils.dump_json(info, save_path)
                     logger.error("Cannot install application {}.".format(os.path.basename(apk_path)))
                     # sys.exit(1)
-            print("No queries.")
+            print("No queries. Press Ctrl+Z to Exit!")
             time.sleep(5)
 
     def get_state(self, apk_path):

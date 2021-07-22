@@ -39,6 +39,24 @@ def _main():
     for save_dir in sample_save_dirs:
         list_of_sets.append(set(os.listdir(save_dir)))
     inter_apps = list(set.intersection(*list_of_sets))
+
+    #
+    print("Samples: ", len(inter_apps))
+    unperturbed_example_dir = os.path.join(os.path.dirname(malicious_sample_dir), "unpert_examples")
+    if not os.path.exists(unperturbed_example_dir):
+        os.mkdir(unperturbed_example_dir)
+
+    for app_name in inter_apps:
+        app_name_ = app_name.split('_')[0]
+        apk_path = os.path.join(malicious_sample_dir, app_name_ + '.apk')
+        shutil.copy(apk_path, unperturbed_example_dir)
+        for adv_save_dir in sample_save_dirs:
+            dup_sample_dir = os.path.join(os.path.dirname(adv_save_dir), 'dup_adv_apps')
+            if not os.path.exists(dup_sample_dir):
+                os.mkdir(dup_sample_dir)
+            shutil.copy(os.path.join(adv_save_dir, app_name), dup_sample_dir)
+    return
+    #
     n_samples = args.n_samples if len(inter_apps) >= args.n_samples else len(inter_apps)
     app_names = np.random.choice(inter_apps, n_samples, replace=False).tolist()
 
