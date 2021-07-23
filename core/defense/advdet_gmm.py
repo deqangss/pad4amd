@@ -9,7 +9,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.checkpoint import checkpoint
-from captum.attr import IntegratedGradients, FeatureAblation, DeepLift
+from captum.attr import IntegratedGradients
 
 import numpy as np
 
@@ -137,13 +137,13 @@ class MalwareDetectorIndicator(MalwareDetector, DensityEstimator):
             _3, logits = self.forward(_x, adj=None)
             return F.softmax(logits, dim=-1)
 
-        ig_cls = DeepLift(_ig_wrapper_cls)
+        ig_cls = IntegratedGradients(_ig_wrapper_cls)
 
         def _ig_wrapper_de(_x):
             x_hidden, _4 = self.forward(_x, adj=None)
             return self.forward_g(x_hidden)
 
-        ig_de = DeepLift(_ig_wrapper_de)
+        ig_de = IntegratedGradients(_ig_wrapper_de)
 
         for i, (x, _1, y, _2) in enumerate(test_data_producer):
             x, _4, y = utils.to_tensor(x, None, y, self.device)
