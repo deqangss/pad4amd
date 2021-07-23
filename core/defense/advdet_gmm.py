@@ -149,6 +149,7 @@ class MalwareDetectorIndicator(MalwareDetector, DensityEstimator):
             x, _4, y = utils.to_tensor(x, None, y, self.device)
             x.requires_grad = True
             base_lines = torch.zeros_like(x, dtype=torch.float32, device=self.device)
+            base_lines[:, -1] = 1
             attribution_bs = ig_cls.attribute(x,
                                               baselines=base_lines,
                                               target=1)
