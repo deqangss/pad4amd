@@ -154,9 +154,7 @@ class MalwareDetectorIndicator(MalwareDetector, DensityEstimator):
                                               target=1)
             attributions_cls.append(attribution_bs.clone().detach().cpu().numpy())
 
-            attribution_bs = ig_de.attribute(x,
-                                             baselines=torch.ones_like(x, dtype=torch.float32,
-                                                                       device=self.device)
+            attribution_bs = ig_de.attribute(x
                                              )
             attributions_de.append(attribution_bs.clone().detach().cpu().numpy())
         return np.vstack(attributions_cls), np.vstack(attributions_de)
