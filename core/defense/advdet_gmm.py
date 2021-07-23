@@ -148,13 +148,15 @@ class MalwareDetectorIndicator(MalwareDetector, DensityEstimator):
         for i, (x, _1, y, _2) in enumerate(test_data_producer):
             x, _4, y = utils.to_tensor(x, None, y, self.device)
             x.requires_grad = True
+            base_lines = torch.zeros_like(x, dtype=torch.float32, device=self.device)
+            base_lines[:, -1] = 1.
             attribution_bs = ig_cls.attribute(x,
-                                              baselines=torch.zeros_like(x, dtype=torch.float32,
-                                                                         device=self.device),
+                                              baselines=base_lines,
                                               target=1)
             attributions_cls.append(attribution_bs.clone().detach().cpu().numpy())
 
-            attribution_bs = ig_de.attribute(x
+            attribution_bs = ig_de.attribute(x,
+                                             baselines=base_lines
                                              )
             attributions_de.append(attribution_bs.clone().detach().cpu().numpy())
         return np.vstack(attributions_cls), np.vstack(attributions_de)
