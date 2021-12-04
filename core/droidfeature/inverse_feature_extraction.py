@@ -11,7 +11,7 @@ import numpy as np
 import networkx as nx
 import torch
 from core.droidfeature import Apk2graphs, NULL_ID
-from core.droidfeature import sequence_generator as seq_gen
+from core.droidfeature import robust_feature_gen as seq_gen
 from tools import dex_manip, xml_manip, utils
 from config import config, logging, ErrorHandler
 

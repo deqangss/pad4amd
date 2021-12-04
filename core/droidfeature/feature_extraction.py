@@ -8,7 +8,7 @@ from scipy.sparse import csr_matrix
 import networkx as nx
 import itertools
 
-from core.droidfeature import sequence_generator as seq_gen
+from core.droidfeature import robust_feature_gen as seq_gen
 from tools import utils
 from config import logging, ErrorHandler
 

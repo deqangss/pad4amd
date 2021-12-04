@@ -6,7 +6,7 @@ import argparse
 from core.droidfeature import Apk2graphs
 from config import config
 
-cmd_md = argparse.ArgumentParser(description='arguments for feature extraction')
+cmd_md = argparse.ArgumentParser(description='Arguments for feature extraction')
 cmd_md.add_argument('--proc_number', type=int, default=2,
                     help='number of threads for features extraction.')
 cmd_md.add_argument('--number_of_sequences', type=int, default=200000,

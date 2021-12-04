@@ -1,16 +1,33 @@
 [DEFAULT]
-project_root = /home/deqiangli/projects/Research/fortdroid
-database_dir = /local_disk/data/Android/
-dataset_name = koodous
+project_root = /mnt/c/Users/lideq/projects/fortdroid
+database_dir = /mnt/c/Users/lideq/datasets
+dataset_name = drebin
 
-[drebin]
+[dataset]
+dataset_dir = %(database_dir)s/%(dataset_name)s/
 malware_dir = %(database_dir)s/%(dataset_name)s/malicious_samples
 benware_dir = %(database_dir)s/%(dataset_name)s/benign_samples
-malware_family = %(database_dir)s/%(dataset_name)s/sha256_family.csv
 intermediate = %(project_root)s/dataset/%(dataset_name)s
 
 [metadata]
 naive_data_pool = %(database_dir)s/naive_data/
 
 [experiments]
-malware_detector = %(project_root)s/save/malware_detector
+malware_detector = %(project_root)s/save/%(dataset_name)s/malware_detector
+gmm = %(project_root)s/save/%(dataset_name)s/gmm
+kde = %(project_root)s/save/%(dataset_name)s/kde
+p_adv_training = %(project_root)s/save/%(dataset_name)s/principled_adv_training
+m_adv_training = %(project_root)s/save/%(dataset_name)s/max_adv_training
+malgan =  %(database_dir)s/%(dataset_name)s/attack/malgan
+ompap = %(database_dir)s/%(dataset_name)s/attack/ompap
+ompa = %(database_dir)s/%(dataset_name)s/attack/ompa
+bca = %(database_dir)s/%(dataset_name)s/attack/bca
+gdkde = %(database_dir)s/%(dataset_name)s/attack/gdkde
+gdkdel1 = %(database_dir)s/%(dataset_name)s/attack/gdkdel1
+grosse = %(database_dir)s/%(dataset_name)s/attack/grosse
+max = %(database_dir)s/%(dataset_name)s/attack/max
+pgdadam = %(database_dir)s/%(dataset_name)s/attack/pgdadam
+pgdl2 = %(database_dir)s/%(dataset_name)s/attack/pgdl2
+pgdlinf = %(database_dir)s/%(dataset_name)s/attack/pgdlinf
+pgdl1 = %(database_dir)s/%(dataset_name)s/attack/pgdl1
+mimicry = %(database_dir)s/%(dataset_name)s/attack/mimicry
