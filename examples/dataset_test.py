@@ -12,13 +12,13 @@ from tools.utils import ivs_to_tensor_coo_sp
 cmd_md = argparse.ArgumentParser(description='arguments for feature extraction')
 cmd_md.add_argument('--proc_number', type=int, default=6,
                     help='The number of threads for features extraction.')
-cmd_md.add_argument('--number_of_sequences', type=int, default=200000,
+cmd_md.add_argument('--number_of_smali_files', type=int, default=200000,
                     help='The maximum number of produced sequences for each app')
 cmd_md.add_argument('--depth_of_recursion', type=int, default=50,
                     help='The maximum depth restricted on the depth-first traverse')
 cmd_md.add_argument('--timeout', type=int, default=20,
                     help='The maximum elapsed time for analyzing an app')
-cmd_md.add_argument('--use_feature_selection', action='store_true', default=True,
+cmd_md.add_argument('--use_top_disc_features', action='store_true', default=True,
                     help='Whether use feature selection or not.')
 cmd_md.add_argument('--N', type=int, default=1,
                     help='the maximum number of graphs for an app.')

@@ -8,7 +8,7 @@ from scipy.sparse import csr_matrix
 import networkx as nx
 import itertools
 
-from core.droidfeature import robust_feature_gen as seq_gen
+from core.droidfeature import feature_gen as feat_gen
 from tools import utils
 from config import logging, ErrorHandler
 
@@ -17,19 +17,16 @@ logger.addHandler(ErrorHandler)
 NULL_ID = 'null'
 
 
-class Apk2graphs(object):
-    """Construct api graphs using api sequences that are based on the function call graphs"""
+class Apk2features(object):
+    """Get features from an APK"""
 
     def __init__(self,
                  naive_data_save_dir,
                  intermediate_save_dir,
-                 number_of_sequences=200000,
-                 depth_of_recursion=50,
-                 timeout=6,
-                 max_vocab_size=5000,
-                 use_feature_selection=True,
-                 N=1,
-                 file_ext='.gpickle',
+                 number_of_smali_files=200000,
+                 max_vocab_size=2000,
+                 use_top_disc_features=True,
+                 file_ext='.feat',
                  update=False,
                  proc_number=2,
                  **kwargs
@@ -37,25 +34,19 @@ class Apk2graphs(object):
         """
         initialization
         :param naive_data_save_dir: a directory for saving intermediates
-        :param intermediate_save_dir: a directory for saving meta information
+        :param intermediate_save_dir: a directory for saving feature pickle files
+        :param number_of_smali_files: the maximum number of smali files processed
         :param max_vocab_size: the maximum number of words
-        :param number_of_sequences: the maximum number on the returned api sequences
-        :param depth_of_recursion: the maximum depth when conducting depth-first traverse
-        :param timeout: the elapsed time on analysis an app
-        :param use_feature_selection: use feature selection to filtering out entities with high frequencies
-        :param N: integer, the maximum number of graphs for an app
+        :param use_top_disc_features: use feature selection to filtering out entities with low discriminant
         :param file_ext: file extension
         :param update: boolean indicator for recomputing the naive features
         :param proc_number: process number
         """
         self.naive_data_save_dir = naive_data_save_dir
         self.intermediate_save_dir = intermediate_save_dir
-        self.use_feature_selection = use_feature_selection
+        self.use_feature_selection = use_top_disc_features
         self.maximum_vocab_size = max_vocab_size
-        self.number_of_sequences = number_of_sequences
-        self.depth_of_recursion = depth_of_recursion
-        self.N = N
-        self.time_out = timeout
+        self.number_of_smali_files = number_of_smali_files
 
         self.file_ext = file_ext
         self.update = update
@@ -78,10 +69,9 @@ class Apk2graphs(object):
             else:
                 return save_path
 
-        params = [(apk_path, self.number_of_sequences, self.depth_of_recursion, self.time_out, self.N,
-                   get_save_path(apk_path)) for \
+        params = [(apk_path, self.number_of_smali_files, get_save_path(apk_path)) for \
                   apk_path in sample_path_list if get_save_path(apk_path) is not None]
-        for res in tqdm(pool.imap_unordered(seq_gen.apk2graphs_wrapper, params), total=len(params)):
+        for res in tqdm(pool.imap_unordered(feat_gen.apk2feat_wrapper, params), total=len(params)):
             if isinstance(res, Exception):
                 logger.error("Failed processing: {}".format(str(res)))
         pool.close()
@@ -93,15 +83,14 @@ class Apk2graphs(object):
             save_path = os.path.join(self.naive_data_save_dir, sha256_code + self.file_ext)
             if os.path.exists(save_path):
                 feature_paths.append(save_path)
-            else:
-                logger.warning("Fail to perform feature extraction for '{}'".format(apk_path))
 
         return feature_paths
 
     def get_vocab(self, feature_path_list=None, gt_labels=None):
         """
         get vocabularies incorporating feature selection
-        :param feature_path_list:  feature_path_list, list, a list of paths, each of which directs to a feature file (we suggests using the feature files for the training purpose)
+        :param feature_path_list: feature_path_list, list, a list of paths, each of which directs to a feature file (we \
+        suggest using the feature files for the training purpose)
         :param gt_labels: gt_labels, list or numpy.ndarray, ground truth labels
         :return: list, a list of words
         """
@@ -116,46 +105,48 @@ class Apk2graphs(object):
         assert len(feature_path_list) == len(gt_labels)
 
         counter_mal, counter_ben = collections.Counter(), collections.Counter()
-        api_info_dict = collections.defaultdict(set)
+        feat_info_dict = collections.defaultdict(set)
+        feat_type_dict = collections.defaultdict(str)
         for feature_path, label in zip(feature_path_list, gt_labels):
             if not os.path.exists(feature_path):
                 continue
-            cg_dict = seq_gen.read_from_disk(
+            features = feat_gen.read_from_disk(
                 feature_path)  # each file contains a dict of {root call method: networkx objects}
-            api_occurence = set()
-            for root_call, sub_cg in cg_dict.items():
-                node_names = sub_cg.nodes(data=True)
-                api_names = [api_name for api_name, _ in node_names]
-                api_info = [[seq_gen.get_api_info(tag) for tag in api_tag['tag']] for _, api_tag in node_names]
-                api_occurence.update(api_names)
-
-                for an, apii_list in zip(api_names, api_info):
-                    for apii in apii_list:
-                        api_info_dict[an].add(apii)
+            feature_occurrence = set()
+            for feature in features:
+                feature_list, feature_info_list, feature_type_list = feat_gen.get_feature_list(feature)
+                feature_occurrence.update(feature_list)
+                for _feat, _feat_info, _feat_type in zip(feature_list, feature_info_list, feature_type_list):
+                    feat_info_dict[_feat].add(_feat_info)
+                    feat_type_dict[_feat] = _feat_type
             if label:
-                counter_mal.update(list(api_occurence))
+                counter_mal.update(list(feature_occurrence))
             else:
-                counter_ben.update(list(api_occurence))
+                counter_ben.update(list(feature_occurrence))
         all_words = list(set(list(counter_ben.keys()) + list(counter_mal.keys())))
         if not self.use_feature_selection:  # no feature selection applied
             self.maximum_vocab_size = len(all_words) + 1
         mal_feature_frequency = np.array(list(map(counter_mal.get, all_words)))
-        mal_feature_frequency[mal_feature_frequency == None] = 0
+        mal_feature_frequency[mal_feature_frequency is None] = 0
         mal_feature_frequency /= float(np.sum(gt_labels))
         ben_feature_frequency = np.array(list(map(counter_ben.get, all_words)))
-        ben_feature_frequency[ben_feature_frequency == None] = 0
+        ben_feature_frequency[ben_feature_frequency is None] = 0
         ben_feature_frequency /= float(len(gt_labels) - np.sum(gt_labels))
         feature_freq_diff = abs(mal_feature_frequency - ben_feature_frequency)
         pos_selected = np.argsort(feature_freq_diff)[::-1][:self.maximum_vocab_size - 1]
         selected_words = [all_words[p] for p in pos_selected]
-        corresponding_word_info = list(map(api_info_dict.get, selected_words))
-        selected_words.append(NULL_ID)
+        selected_word_type = list(map(feat_type_dict.get, selected_words))
+        selected_words_typized = selected_words[selected_word_type == feat_gen.PERMISSION]
+        selected_words_typized += selected_words[selected_word_type == feat_gen.INTENT]
+        selected_words_typized += selected_words[selected_word_type == feat_gen.SYS_API]
+        corresponding_word_info = list(map(feat_info_dict.get, selected_words_typized))
+        selected_words_typized.append(NULL_ID)
         corresponding_word_info.append({NULL_ID})
         # saving
         if len(selected_words) > 0:
-            utils.dump_pickle(selected_words, vocab_saving_path)
+            utils.dump_pickle(selected_words_typized, vocab_saving_path)
             utils.dump_pickle(corresponding_word_info, vocab_extra_info_saving_path)
-        return selected_words, corresponding_word_info, True
+        return selected_words_typized, corresponding_word_info, True
 
     def merge_cg(self, feature_path_list):
         pool = multiprocessing.Pool(self.proc_number)
@@ -177,7 +168,7 @@ class Apk2graphs(object):
         for idx, feature_path in enumerate(feature_path_list):
             if not os.path.exists(feature_path):
                 continue
-            cg_dict = seq_gen.read_from_disk(
+            cg_dict = feat_gen.read_from_disk(
                 feature_path)  # each file contains a dict of {root call method: networkx objects}
             for root_call, sub_cg in cg_dict.items():
                 node_names = sub_cg.nodes(data=True)
@@ -186,7 +177,7 @@ class Apk2graphs(object):
                         api_info['vocab_ind'] = vocab.index(api)
                     else:
                         api_info['vocab_ind'] = len(vocab) - 1
-            seq_gen.save_to_disk(cg_dict, feature_path)
+            feat_gen.save_to_disk(cg_dict, feature_path)
             del cg_dict
         return
 
@@ -201,22 +192,17 @@ class Apk2graphs(object):
         raise NotImplementedError
 
     @staticmethod
-    def feature2ipt(feature_path, label, is_adj=False, vocabulary=None, n_cg=1000, cache_dir=None):
+    def feature2ipt(feature_path, label, vocabulary=None, cache_dir=None):
         """
-        map graphs to numerical representations :param feature_path_list, list, a list of paths, each of which
-        directs to a feature file :param gt_labels, list or numpy.ndarray, ground truth labels :param vocabulary:
-        list, a list of words :return: a list of numerical representations corresponds to apps. Each representation
-        contains a tuple ({'root call 1': (feature, adjacent matrix), 'root call 2': (feature, adjacent matrix),
-        ...}, label)
+        Map features to numerical representations
 
         Parameters
         --------
         :param feature_path, string, a path directs to a feature file
-        :param label, scalar, ground truth label
-        :param is_adj, boolean, whether extract structural information or not
-        :param vocabulary, list, vocabulary
-        :param n_cg, integer, the limited number of call graphs
-        :param cache_dir, string, saving the preprocessing data for using
+        :param label, ground truth labels
+        :param vocabulary:list, a list of words
+        :return: numerical representations corresponds to an app. Each representation contains a tuple
+        ([feature 1D array, api adjacent 2D array], label)
         """
         assert vocabulary is not None and len(vocabulary) > 0
 
@@ -233,7 +219,7 @@ class Apk2graphs(object):
         if cache_feature_path is not None and os.path.exists(cache_feature_path):
             return utils.read_pickle_frd_space(cache_feature_path)
 
-        cg_dict = seq_gen.read_from_disk(feature_path)
+        cg_dict = feat_gen.read_from_disk(feature_path)
         sub_features = []
         sub_adjs = []
         for i, (root_call, cg) in enumerate(cg_dict.items()):
@@ -307,10 +293,10 @@ def graph2rpst(g, vocab, is_adj):
 
 def _merge_cg(args):
     feature_path, N = args[0], args[1]
-    cg_dict = seq_gen.read_from_disk(
+    cg_dict = feat_gen.read_from_disk(
         feature_path)  # each file contains a dict of {root call method: networkx objects}
-    new_cg_dict = seq_gen.merge_graphs(cg_dict, N)
-    seq_gen.save_to_disk(new_cg_dict, feature_path)
+    new_cg_dict = feat_gen.merge_graphs(cg_dict, N)
+    feat_gen.save_to_disk(new_cg_dict, feature_path)
     return True
 
 
@@ -319,10 +305,10 @@ def _main():
     malware_dir_name = config.get('drebin', 'malware_dir')
     meta_data_saving_dir = config.get('drebin', 'intermediate_directory')
     naive_data_saving_dir = config.get('metadata', 'naive_data_pool')
-    feature_extractor = Apk2graphs(naive_data_saving_dir,
-                                   meta_data_saving_dir,
-                                   update=False,
-                                   proc_number=2)
+    feature_extractor = Apk2features(naive_data_saving_dir,
+                                     meta_data_saving_dir,
+                                     update=False,
+                                     proc_number=2)
     feature_extractor.feature_extraction(malware_dir_name)
 
 

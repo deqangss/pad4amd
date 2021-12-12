@@ -8,7 +8,7 @@ from scipy.sparse import csr_matrix
 from sklearn.model_selection import train_test_split
 
 from config import config
-from core.droidfeature.feature_extraction import Apk2graphs
+from core.droidfeature.feature_extraction import Apk2features
 from tools import utils
 
 
@@ -41,15 +41,15 @@ class Dataset(torch.utils.data.Dataset):
             self.temp_dir_handle = utils.SimplifyClass()
 
         if feature_ext_args is None:
-            self.feature_extractor = Apk2graphs(config.get('metadata', 'naive_data_pool'),
-                                                config.get('dataset', 'intermediate'),
-                                                N=self.n_sgs_max
-                                                )
+            self.feature_extractor = Apk2features(config.get('metadata', 'naive_data_pool'),
+                                                  config.get('dataset', 'intermediate'),
+                                                  N=self.n_sgs_max
+                                                  )
         else:
             assert isinstance(feature_ext_args, dict)
-            self.feature_extractor = Apk2graphs(config.get('metadata', 'naive_data_pool'),
-                                                config.get('dataset', 'intermediate'),
-                                                **feature_ext_args)
+            self.feature_extractor = Apk2features(config.get('metadata', 'naive_data_pool'),
+                                                  config.get('dataset', 'intermediate'),
+                                                  **feature_ext_args)
 
         data_saving_path = os.path.join(config.get('dataset', 'intermediate'), 'dataset.idx')
         if os.path.exists(data_saving_path):

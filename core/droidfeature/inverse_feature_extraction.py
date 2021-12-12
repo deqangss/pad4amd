@@ -10,8 +10,8 @@ import re
 import numpy as np
 import networkx as nx
 import torch
-from core.droidfeature import Apk2graphs, NULL_ID
-from core.droidfeature import robust_feature_gen as seq_gen
+from core.droidfeature import Apk2features, NULL_ID
+from core.droidfeature import feature_gen as seq_gen
 from tools import dex_manip, xml_manip, utils
 from config import config, logging, ErrorHandler
 
@@ -147,7 +147,7 @@ class InverseDroidFeature(object):
         random.seed(seed)
         meta_data_saving_dir = config.get('dataset', 'intermediate')
         naive_data_saving_dir = config.get('metadata', 'naive_data_pool')
-        self.feature_extractor = Apk2graphs(naive_data_saving_dir, meta_data_saving_dir)
+        self.feature_extractor = Apk2features(naive_data_saving_dir, meta_data_saving_dir)
         InverseDroidFeature.vocab, InverseDroidFeature.vocab_info, _1 = self.feature_extractor.get_vocab()
         self.vocab = InverseDroidFeature.vocab
         self.vocab_info = InverseDroidFeature.vocab_info

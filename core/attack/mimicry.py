@@ -69,10 +69,10 @@ class Mimicry(BaseAttack):
                     _paths = []
                     _idc_modif = []
                     # for ben_f in ben_samples:
-                    #     ben_cg = inverse_feature_extraction.seq_gen.read_from_disk(ben_f)
+                    #     ben_cg = inverse_feature_extraction.feat_gen.read_from_disk(ben_f)
                     #     new_cg, idx_modif = self.inversedorid.merge_features(mal_cg, ben_cg)
                     #     tmp_fname = os.path.join(tmpdirname, mal_f_name + '_' + os.path.basename(ben_f))
-                    #     inverse_feature_extraction.seq_gen.save_to_disk(new_cg, tmp_fname)
+                    #     inverse_feature_extraction.feat_gen.save_to_disk(new_cg, tmp_fname)
                     #     _paths.append(tmp_fname)
                     #     _idc_modif.append(idx_modif)
 

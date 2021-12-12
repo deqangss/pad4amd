@@ -18,13 +18,13 @@ cmd_md = argparse.ArgumentParser(description='arguments for learning malware det
 feature_argparse = cmd_md.add_argument_group(title='feature')
 feature_argparse.add_argument('--proc_number', type=int, default=2,
                               help='The number of threads for features extraction.')
-feature_argparse.add_argument('--number_of_sequences', type=int, default=200000,
+feature_argparse.add_argument('--number_of_smali_files', type=int, default=200000,
                               help='The maximum number of produced sequences for each app')
 feature_argparse.add_argument('--depth_of_recursion', type=int, default=50,
                               help='The maximum depth restricted on the depth-first traverse')
 feature_argparse.add_argument('--timeout', type=int, default=20,
                               help='The maximum elapsed time for analyzing an app')
-feature_argparse.add_argument('--use_feature_selection', action='store_true',
+feature_argparse.add_argument('--use_top_disc_features', action='store_true',
                               help='Whether use feature selection or not.')
 feature_argparse.add_argument('--N', type=int, default=1,
                               help='the maximum number of graphs for an app.')
