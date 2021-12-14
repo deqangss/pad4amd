@@ -1,5 +1,5 @@
 [DEFAULT]
-project_root = /mnt/c/Users/lideq/projects/fortdroid
+project_root = /mnt/c/Users/lideq/projects/pad4mal
 database_dir = /mnt/c/Users/lideq/datasets
 dataset_name = drebin
 

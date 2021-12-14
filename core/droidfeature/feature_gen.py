@@ -154,24 +154,32 @@ def apk2features(apk_path, max_number_of_smali_files=10000, saving_path=None):
 
     # get permissions
     # 1. components as entry point
-    permission_list = get_permissions(a)
+    try:
+        permission_list = get_permissions(a)
+    except Exception as e:
+        raise ValueError("Fail to extract permissions {}:{} ".format(apk_path, str(e)))
 
     # 2. get intent actions
-    intent_actions = get_intent_actions(a)
+    try:
+        intent_actions = get_intent_actions(a)
+    except Exception as e:
+        raise ValueError("Fail to extract intents {}:{} ".format(apk_path, str(e)))
 
     # 3. get apis
-    api_sequences = get_apis(d, max_number_of_smali_files)
+    try:
+        api_sequences = get_apis(d, max_number_of_smali_files)
+    except Exception as e:
+        raise ValueError("Fail to extract apis {}:{} ".format(apk_path, str(e)))
 
     features = []
     features.extend(permission_list + intent_actions)
     features.extend(api_sequences)
 
     # 4. saving the results
-    if len(features) > 0:
-        save_to_disk(features, saving_path)
-        return saving_path
-    else:
-        raise ValueError("No features found: " + apk_path)
+    save_to_disk(features, saving_path)
+    if len(features) <= 0:
+        warnings.warn("No features found: " + apk_path)
+    return saving_path
 
 
 def get_permissions(app):
@@ -222,9 +230,10 @@ def get_intent_actions(app):
                         if _action_check(action):
                             action_parent = copy.deepcopy(intent_element)
                             if len(action_elements) > 1:
-                                for _i in range(len(action_elements)):
+                                action_elements_copy = action_parent.getElementsByTagName('action')
+                                for _i in range(len(action_elements_copy)):
                                     if _i != i:
-                                        action_parent.removeChild(action_elements[_i])
+                                        action_parent.removeChild(action_elements_copy[_i])
                             writer = io.StringIO()
                             action_parent.writexml(writer)
                             action_extra_info = writer.getvalue()
@@ -354,6 +363,30 @@ def get_api_info(node_tag):
     return api_info
 
 
+def format_feature(feature):
+    if not isinstance(feature, list):
+        raise TypeError("Expect a list or nested list, but got {}.".format(type(feature)))
+    non_api_feature_list = []
+    api_feature_list = []
+    for feat in feature:
+        if isinstance(feat, str):  # manifest features
+            if TAG_SPLITTER in feat:
+                _feat, _1 = feat.split(TAG_SPLITTER, 1)
+            else:
+                _feat = feat
+            non_api_feature_list.append(_feat)
+        elif isinstance(feat, list):  # apis
+            api_feature_class = []
+            for api in feat:
+                api_info, _1 = api.split(TAG_SPLITTER, 1)
+                _api_name = get_api_name(api_info)
+                api_feature_class.append(_api_name)
+            api_feature_list.append(api_feature_class)
+        else:
+            raise ValueError("Expect String or List, but got {}.".format(type(feat)))
+    return non_api_feature_list, api_feature_list
+
+
 def get_api_class(node_tag):
     if not isinstance(node_tag, str):
         raise TypeError
@@ -397,7 +430,7 @@ def get_same_class_prefix(entry_node_list):
 
 def _main():
     rtn_str = apk2features(
-        '/mnt/c/Users/lideq/datasets/drebin/dissection/0a1b1d84347fe960a790ce4ee450d6f86627d41f77bb8445dd4df35ac3064f24',
+        '/mnt/c/Users/lideq/datasets/drebin/dissection/0a01c7ad078ee2f7df0b13919b860d99961861a7940fb0c355eed3510937d8f0',
         200000,
         "./abc.feat")
     print(rtn_str)

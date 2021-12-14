@@ -148,7 +148,7 @@ class InverseDroidFeature(object):
         meta_data_saving_dir = config.get('dataset', 'intermediate')
         naive_data_saving_dir = config.get('metadata', 'naive_data_pool')
         self.feature_extractor = Apk2features(naive_data_saving_dir, meta_data_saving_dir)
-        InverseDroidFeature.vocab, InverseDroidFeature.vocab_info, _1 = self.feature_extractor.get_vocab()
+        InverseDroidFeature.vocab, InverseDroidFeature.vocab_info = self.feature_extractor.get_vocab()
         self.vocab = InverseDroidFeature.vocab
         self.vocab_info = InverseDroidFeature.vocab_info
 

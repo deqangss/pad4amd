@@ -4,7 +4,7 @@ import tempfile
 
 import numpy as np
 import torch
-from scipy.sparse import csr_matrix
+from scipy.sparse.csr import csr_matrix
 from sklearn.model_selection import train_test_split
 
 from config import config
@@ -13,25 +13,18 @@ from tools import utils
 
 
 class Dataset(torch.utils.data.Dataset):
-    def __init__(self, k=1, is_adj=False, seed=0, n_sgs_max=10, use_cache=False, feature_ext_args=None):
+    def __init__(self, seed=0, use_cache=False, feature_ext_args=None):
         """
         build dataset for ml model learning
-        :param k: Integer, the number of subgraphs is sampled for passing through the neural networks
-        :param is_adj: Boolean, whether use the actual adjacent matrix or not
         :param seed: Integer, the random seed
-        :param n_sgs_max: Integer, the maximum number of subgraphs
         :param use_cache: Boolean, whether to use the cached data or not
         :param feature_ext_args: Dict, arguments for feature extraction
         """
-        self.k = k
-        self.is_adj = is_adj
         self.seed = seed
         random.seed(self.seed)
         np.random.seed(self.seed)
         torch.manual_seed(self.seed)
         torch.set_default_dtype(torch.float32)
-        assert self.k <= n_sgs_max
-        self.n_sgs_max = n_sgs_max
         self.feature_ext_args = feature_ext_args
         self.use_cache = use_cache
         if self.use_cache:
@@ -42,8 +35,7 @@ class Dataset(torch.utils.data.Dataset):
 
         if feature_ext_args is None:
             self.feature_extractor = Apk2features(config.get('metadata', 'naive_data_pool'),
-                                                  config.get('dataset', 'intermediate'),
-                                                  N=self.n_sgs_max
+                                                  config.get('dataset', 'intermediate')
                                                   )
         else:
             assert isinstance(feature_ext_args, dict)
@@ -51,6 +43,7 @@ class Dataset(torch.utils.data.Dataset):
                                                   config.get('dataset', 'intermediate'),
                                                   **feature_ext_args)
 
+        # split the dataset for training, validation, testing
         data_saving_path = os.path.join(config.get('dataset', 'intermediate'), 'dataset.idx')
         if os.path.exists(data_saving_path):
             (self.train_dataset, self.validation_dataset, self.test_dataset) = utils.read_pickle(data_saving_path)
@@ -70,22 +63,17 @@ class Dataset(torch.utils.data.Dataset):
             self.train_dataset, self.validation_dataset, self.test_dataset = self.data_split(feature_paths, gt_labels)
             utils.dump_pickle((self.train_dataset, self.validation_dataset, self.test_dataset), data_saving_path)
 
+        # calculate the ratio between benign samples and malware samples
         _labels, counts = np.unique(self.train_dataset[1], return_counts=True)
         self.sample_weights = np.ones_like(_labels).astype(np.float32)
         _weights = float(np.max(counts)) / counts
         for i in range(_labels.shape[0]):
             self.sample_weights[_labels[i]] = _weights[i]
 
-        self.vocab, _1, flag = self.feature_extractor.get_vocab(*self.train_dataset)
+        self.vocab, _1 = self.feature_extractor.get_vocab(*self.train_dataset)
         self.vocab_size = len(self.vocab)
+        self.non_api_size = self.feature_extractor.get_non_api_size(self.vocab)
         self.n_classes = np.unique(self.train_dataset[1]).size
-        if flag:
-            print('updating training data')
-            self.feature_extractor.update_cg(self.train_dataset[0])
-            print('updating validation data')
-            self.feature_extractor.update_cg(self.validation_dataset[0])
-            print('updating test data')
-            self.feature_extractor.update_cg(self.test_dataset[0])
 
     def data_split(self, feature_paths, labels):
         assert len(feature_paths) == len(labels)
@@ -101,11 +89,11 @@ class Dataset(torch.utils.data.Dataset):
             utils.dump_pickle((train_dn, validation_dn, test_dn),
                               path=data_split_path)
 
-        def query_path(data_names):
-            return np.array([path for path in feature_paths if os.path.splitext(os.path.basename(path))[0] in data_names])
+        def query_path(_data_names):
+            return np.array([path for path in feature_paths if os.path.splitext(os.path.basename(path))[0] in _data_names])
 
-        def query_indicator(data_names):
-            return [True if os.path.splitext(os.path.basename(path))[0] in data_names else False for path in feature_paths]
+        def query_indicator(_data_names):
+            return [True if os.path.splitext(os.path.basename(path))[0] in _data_names else False for path in feature_paths]
 
         train_data = query_path(train_dn)
         random.seed(self.seed)
@@ -120,11 +108,11 @@ class Dataset(torch.utils.data.Dataset):
         return (train_data, train_y), (val_data, val_y), (test_data, test_y)
 
     def apk_preprocess(self, apk_paths, labels=None, update_feature_extraction=False):
-        ori_status = self.feature_extractor.update
+        old_status = self.feature_extractor.update
         self.feature_extractor.update = update_feature_extraction
         if labels is None:
             feature_paths = self.feature_extractor.feature_extraction(apk_paths)
-            self.feature_extractor.update = ori_status
+            self.feature_extractor.update = old_status
             return feature_paths
         else:
             assert len(apk_paths) == len(labels), \
@@ -135,93 +123,52 @@ class Dataset(torch.utils.data.Dataset):
                 fname = os.path.splitext(os.path.basename(feature_path))[0]
                 if fname in apk_paths[i]:
                     labels_.append(labels[i])
-            self.feature_extractor.update = ori_status
+            self.feature_extractor.update = old_status
             return feature_paths, np.array(labels_)
 
     def feature_preprocess(self, feature_paths):
-        self.feature_extractor.update_cg(feature_paths)
+        raise NotImplementedError
+        # self.feature_extractor.update_cg(feature_paths)
+
+    def feature_api_rpst_sum(self, api_feat_representation_list):
+        """
+        Summation of api representations
+        :param api_feat_representation_list: a list of sparse matrix
+        """
+        assert isinstance(api_feat_representation_list, list), "Expect a list."
+        if len(api_feat_representation_list) > 0:
+            assert isinstance(api_feat_representation_list[0], csr_matrix)
+        else:
+            return np.zeros(shape=(self.vocab_size - self.non_api_size, self.vocab_size - self.non_api_size), dtype=np.float)
+        adj_array = np.asarray(api_feat_representation_list[0].todense())
+        for sparse_mat in api_feat_representation_list[1:]:
+            adj_array += np.asarray(sparse_mat.todense())
+        return np.clip(adj_array, a_min=0, a_max=1)
 
     def get_numerical_input(self, feature_path, label):
         """
         loading features for given a feature path
         # results:
         # --->> mapping feature path to numerical representations
-        # --->> features: 2d list [number of files, number of subgraphs], in which each element
-        # has a vector with size [vocab_size]
-        # --->> _labels: 1d list [number of files]
-        # --->> adjs: 2d list [number of files, number of subgraphs], in which each element has
-        # a scipy sparse matrix with size [vocab_size, vocab_size]
+        # --->> features: 1d array, and a list of sparse matrices
+        # --->> label: scalar
         """
-        return self.feature_extractor.feature2ipt(feature_path, label, self.is_adj, self.vocab, self.n_sgs_max,
-                                                  self.temp_dir_handle.name)
+        non_api_rpst, api_rpst, label = self.feature_extractor.feature2ipt(feature_path, label, self.vocab)
+        return non_api_rpst, self.feature_api_rpst_sum(api_rpst), label
 
-    def collate_fn(self, batch):
-        # 1. Because the number of sub graphs is different between apks, we here align a batch of data
-        # pad the subgraphs if an app has subgraph smaller than self.k
-        # 2. We change the sparse adjacent matrix to its tuple of (indices, values, shape), accommodating the
-        # unsupported issue of dataloader
-        features = [item[0] for item in batch]
-        adjs = [item[1] for item in batch]
-        labels_ = [item[2] for item in batch]
+    def get_numerical_input_batch(self, feature_paths, labels):
+        X1, X2 = [], []
+        for feature_path, label in zip(feature_paths, labels):
+            non_api_rpst, api_rpst, label = self.get_numerical_input(feature_path, label)
+            X1.append(non_api_rpst)
+            X2.append(api_rpst)
+        return np.stack(X1, axis=0), np.stack(X2, axis=0), labels
 
-        batch_size = len(features)
-        features_padded = []
-        adjs_padded = []
-        g_ind = []
-
-        batch_n_sg_max = np.max([len(feature) for feature in features])
-        assert batch_n_sg_max <= self.n_sgs_max, \
-            'number of graphs must be smaller than the specified number, but got {} vs. {}.'.format(batch_n_sg_max, self.n_sgs_max)
-        n_sg_used = batch_n_sg_max if batch_n_sg_max < self.n_sgs_max else self.n_sgs_max
-        n_sg_used = n_sg_used if n_sg_used > self.k else self.k
-        for i, feature in enumerate(features):
-            n_feature = len(feature)
-            is_padding = True if n_feature < n_sg_used else False
-            indices = np.arange(n_feature)
-            np.random.shuffle(indices)
-            indices = indices[:n_sg_used]
-            feature = np.array(feature)[indices]
-            if self.is_adj:
-                adjs[i] = [adjs[i][_i] for _i in indices]
-            if is_padding:
-                n_padded = n_sg_used - n_feature
-                if n_feature == 0:
-                    feature = np.zeros((n_padded, self.vocab_size), dtype=np.float32)
-                else:
-                    indices = np.concatenate([indices, np.arange(n_feature, n_sg_used)])
-                    feature = np.vstack([feature, np.zeros((n_padded, self.vocab_size), dtype=np.float32)])
-                if self.is_adj:
-                    adjs[i].extend([csr_matrix((self.vocab_size, self.vocab_size), dtype=np.float32)] * n_padded)
-            indices_slicing = np.array(list(map(dict(zip(indices, range(n_sg_used))).get, range(n_sg_used))))
-            g_ind.append(indices_slicing)
-            features_padded.append(feature)
-            if self.is_adj:
-                adjs_padded.append(adjs[i])
-
-        # shape [batch_size, self.n_sg_used, vocab_size]
-        features_padded = np.array(features_padded)
-
-        if self.is_adj:
-            # A list (with size self.k) of sparse adjacent matrix in the mini-batch level, in which each element
-            # has the shape [batch_size, vocab_size, vocab_size]
-            for i in range(batch_size):
-                for j in range(self.k):
-                    adjs_padded[i][j] = utils.sparse_mx_to_torch_sparse_tensor(
-                        utils.sp_to_symmetric_sp(adjs_padded[i][j])
-                    )
-            adjs_padded_t = torch.stack([torch.stack(list(adj)) for adj in list(zip(*adjs_padded))[:self.k]])
-            # dataloader does not support sparse matrix
-            adjs_padded_tuple = utils.tensor_coo_sp_to_ivs(adjs_padded_t)
-        else:
-            adjs_padded_tuple = None
-        return features_padded, adjs_padded_tuple, labels_, np.array(g_ind)
-
-    def get_input_producer(self, data, y, batch_size, name='train'):
+    def get_input_producer(self, x1, x2, y, batch_size, name='train'):
         params = {'batch_size': batch_size,
                   'num_workers': self.feature_ext_args['proc_number'],
-                  'collate_fn': self.collate_fn,
                   'shuffle': False}
-        return torch.utils.data.DataLoader(DatasetTorch(data, y, self, name=name),
+        return torch.utils.data.DataLoader(DatasetTorch(x1, x2, y, self, name=name),
                                            worker_init_fn=lambda x: np.random.seed(torch.randint(0, 2^31, [1,])[0] + x),
                                            **params)
 
@@ -265,27 +212,27 @@ class Dataset(torch.utils.data.Dataset):
 
 class DatasetTorch(torch.utils.data.Dataset):
     'Characterizes a dataset for PyTorch'
-    def __init__(self, dataX, datay, dataset_obj, name='train'):
+    def __init__(self, X1, X2, datay, dataset_obj, name='train'):
         'Initialization'
         try:
             assert (name == 'train' or name == 'test' or name == 'val')
         except Exception as e:
             raise AssertionError("Only support selections: 'train', 'val' or 'test'.\n")
-        self.dataX = dataX
+        self.X1 = X1
+        self.X2 = X2
         self.datay = datay
         self.dataset_obj = dataset_obj
         self.name = name
 
     def __len__(self):
         'Denotes the total number of samples'
-        return len(self.dataX)
+        return len(self.X1)
 
     def __getitem__(self, index):
         'Generates one sample of data'
         # Select sample
-        feature_path = self.dataX[index]
+        x1 = self.X1[index]
+        x2 = self.X2[index]
         y = self.datay[index]
-        # Load data and get label
-        x, adj, y = self.dataset_obj.get_numerical_input(feature_path, y)
-        return x, adj, y
+        return x1, x2, y
 

@@ -23,7 +23,7 @@ class Apk2features(object):
     def __init__(self,
                  naive_data_save_dir,
                  intermediate_save_dir,
-                 number_of_smali_files=200000,
+                 number_of_smali_files=1000000,
                  max_vocab_size=2000,
                  use_top_disc_features=True,
                  file_ext='.feat',
@@ -97,11 +97,12 @@ class Apk2features(object):
         vocab_saving_path = os.path.join(self.intermediate_save_dir, 'data.vocab')
         vocab_extra_info_saving_path = os.path.join(self.intermediate_save_dir, 'data.vocab_info')
         if os.path.exists(vocab_saving_path) and os.path.exists(vocab_saving_path) and (not self.update):
-            return utils.read_pickle(vocab_saving_path), utils.read_pickle(vocab_extra_info_saving_path), False
+            return utils.read_pickle(vocab_saving_path), utils.read_pickle(vocab_extra_info_saving_path)
         elif feature_path_list is None and gt_labels is None:
             raise FileNotFoundError("No vocabulary found and no features for producing vocabulary!")
         else:
             pass
+        assert not (np.all(gt_labels == 1) or np.all(gt_labels == 0)), 'Expect both malware and benign samples.'
         assert len(feature_path_list) == len(gt_labels)
 
         counter_mal, counter_ben = collections.Counter(), collections.Counter()
@@ -113,12 +114,11 @@ class Apk2features(object):
             features = feat_gen.read_from_disk(
                 feature_path)  # each file contains a dict of {root call method: networkx objects}
             feature_occurrence = set()
-            for feature in features:
-                feature_list, feature_info_list, feature_type_list = feat_gen.get_feature_list(feature)
-                feature_occurrence.update(feature_list)
-                for _feat, _feat_info, _feat_type in zip(feature_list, feature_info_list, feature_type_list):
-                    feat_info_dict[_feat].add(_feat_info)
-                    feat_type_dict[_feat] = _feat_type
+            feature_list, feature_info_list, feature_type_list = feat_gen.get_feature_list(features)
+            feature_occurrence.update(feature_list)
+            for _feat, _feat_info, _feat_type in zip(feature_list, feature_info_list, feature_type_list):
+                feat_info_dict[_feat].add(_feat_info)
+                feat_type_dict[_feat] = _feat_type
             if label:
                 counter_mal.update(list(feature_occurrence))
             else:
@@ -127,18 +127,18 @@ class Apk2features(object):
         if not self.use_feature_selection:  # no feature selection applied
             self.maximum_vocab_size = len(all_words) + 1
         mal_feature_frequency = np.array(list(map(counter_mal.get, all_words)))
-        mal_feature_frequency[mal_feature_frequency is None] = 0
+        mal_feature_frequency[mal_feature_frequency == None] = 0
         mal_feature_frequency /= float(np.sum(gt_labels))
         ben_feature_frequency = np.array(list(map(counter_ben.get, all_words)))
-        ben_feature_frequency[ben_feature_frequency is None] = 0
+        ben_feature_frequency[ben_feature_frequency == None] = 0
         ben_feature_frequency /= float(len(gt_labels) - np.sum(gt_labels))
         feature_freq_diff = abs(mal_feature_frequency - ben_feature_frequency)
         pos_selected = np.argsort(feature_freq_diff)[::-1][:self.maximum_vocab_size - 1]
-        selected_words = [all_words[p] for p in pos_selected]
+        selected_words = np.array([all_words[p] for p in pos_selected])
         selected_word_type = list(map(feat_type_dict.get, selected_words))
-        selected_words_typized = selected_words[selected_word_type == feat_gen.PERMISSION]
-        selected_words_typized += selected_words[selected_word_type == feat_gen.INTENT]
-        selected_words_typized += selected_words[selected_word_type == feat_gen.SYS_API]
+        selected_words_typized = (selected_words[np.array(selected_word_type) == feat_gen.PERMISSION]).tolist()
+        selected_words_typized += (selected_words[np.array(selected_word_type) == feat_gen.INTENT]).tolist()
+        selected_words_typized += (selected_words[np.array(selected_word_type) == feat_gen.SYS_API]).tolist()
         corresponding_word_info = list(map(feat_info_dict.get, selected_words_typized))
         selected_words_typized.append(NULL_ID)
         corresponding_word_info.append({NULL_ID})
@@ -146,40 +146,7 @@ class Apk2features(object):
         if len(selected_words) > 0:
             utils.dump_pickle(selected_words_typized, vocab_saving_path)
             utils.dump_pickle(corresponding_word_info, vocab_extra_info_saving_path)
-        return selected_words_typized, corresponding_word_info, True
-
-    def merge_cg(self, feature_path_list):
-        pool = multiprocessing.Pool(self.proc_number)
-        params = [(feature_path, self.N) for feature_path in feature_path_list if os.path.exists(feature_path)]
-        for res in tqdm(pool.imap_unordered(_merge_cg, params), total=len(params)):
-            if res:
-                pass
-
-    def update_cg(self, feature_path_list):
-        """
-        append api index into each node according to the vocabulary
-        """
-        vocab_saving_path = os.path.join(self.intermediate_save_dir, 'data.vocab')
-        if os.path.exists(vocab_saving_path) and os.path.exists(vocab_saving_path) and (not self.update):
-            vocab = utils.read_pickle(vocab_saving_path)
-        else:
-            raise FileNotFoundError("No vocabulary found!")
-        # updating graph
-        for idx, feature_path in enumerate(feature_path_list):
-            if not os.path.exists(feature_path):
-                continue
-            cg_dict = feat_gen.read_from_disk(
-                feature_path)  # each file contains a dict of {root call method: networkx objects}
-            for root_call, sub_cg in cg_dict.items():
-                node_names = sub_cg.nodes(data=True)
-                for api, api_info in node_names:
-                    if api in vocab:
-                        api_info['vocab_ind'] = vocab.index(api)
-                    else:
-                        api_info['vocab_ind'] = len(vocab) - 1
-            feat_gen.save_to_disk(cg_dict, feature_path)
-            del cg_dict
-        return
+        return selected_words_typized, corresponding_word_info
 
     def feature_mapping(self, feature_path_list, dictionary):
         """
@@ -192,14 +159,24 @@ class Apk2features(object):
         raise NotImplementedError
 
     @staticmethod
-    def feature2ipt(feature_path, label, vocabulary=None, cache_dir=None):
+    def get_non_api_size(vocabulary=None):
+        cursor = 0
+        for word in vocabulary:
+            if '->' not in word:  # exclude the api features
+                cursor += 1
+            else:
+                break
+        return cursor
+
+    @staticmethod
+    def feature2ipt(feature_path, label, vocabulary=None):
         """
         Map features to numerical representations
 
         Parameters
         --------
         :param feature_path, string, a path directs to a feature file
-        :param label, ground truth labels
+        :param label, int, ground truth labels
         :param vocabulary:list, a list of words
         :return: numerical representations corresponds to an app. Each representation contains a tuple
         ([feature 1D array, api adjacent 2D array], label)
@@ -213,103 +190,52 @@ class Apk2features(object):
             logger.warning("Cannot find the feature path: {}".format(feature_path))
             return [], [], []
 
-        cache_feature_path = None
-        if cache_dir is not None:
-            cache_feature_path = os.path.join(cache_dir, os.path.basename(feature_path))
-        if cache_feature_path is not None and os.path.exists(cache_feature_path):
-            return utils.read_pickle_frd_space(cache_feature_path)
+        # handle the multiple modalities in vocabulary
+        cursor = Apk2features.get_non_api_size(vocabulary)
 
-        cg_dict = feat_gen.read_from_disk(feature_path)
-        sub_features = []
-        sub_adjs = []
-        for i, (root_call, cg) in enumerate(cg_dict.items()):
-            res = _graph2rpst_wrapper((cg, vocabulary, is_adj))
-            if isinstance(res, Exception):
-                continue
-            sub_feature, sub_adj = res
-            sub_features.append(sub_feature)
-            sub_adjs.append(sub_adj)
-            if i >= n_cg:
-                break
+        features = feat_gen.read_from_disk(feature_path)
+        non_api_features, api_features = feat_gen.format_feature(features)
 
-        if cache_feature_path is not None:
-            utils.dump_pickle_frd_space((sub_features, sub_adjs, label), cache_feature_path)
-        return sub_features, sub_adjs, label
+        # cope with the non-api features
+        non_api_represenstation = np.zeros((cursor, ), dtype=np.float32)
+        dictionary = dict(zip(vocabulary, range(len(vocabulary))))
+        filled_pos = [idx for idx in list(map(dictionary.get, non_api_features)) if idx is not None]
+        if len(filled_pos) > 0:
+            non_api_represenstation[filled_pos] = 1.
 
-        # numerical_representation_dict = collections.defaultdict(tuple)
-        # cpu_count = multiprocessing.cpu_count() // 2 if multiprocessing.cpu_count() // 2 > 1 else 1
-        # pool = multiprocessing.Pool(cpu_count, initializer=utils.pool_initializer)
-        # pargs = [(cg, vocabulary, is_adj) for cg in cg_dict.values()]
-        # for root_call, res in zip(list(cg_dict.keys()), pool.map(_graph2rpst_wrapper, pargs)):
-        #     if not isinstance(res, Exception):
-        #         (feature, adj) = res
-        #         numerical_representation_dict[root_call] = (feature, adj)
-        #     else:
-        #         logger.error("Fail to process " + feature_path + ":" + str(res))
-        # pool.close()
-        # pool.join()
-        # if len(numerical_representation_dict) > 0:
-        #     numerical_representation_container.append([numerical_representation_dict, label, feature_path])
+        # cope with api features
+        api_graph_tempate = nx.Graph()
+        api_graph_tempate.add_nodes_from(vocabulary[cursor:])
 
-
-def _graph2rpst_wrapper(args):
-    try:
-        return graph2rpst(*args)
-    except Exception as e:
-        logger.error(str(e))
-        return e
-
-
-def graph2rpst(g, vocab, is_adj):
-    new_g = g.copy()
-    indices = []
-    nodes = g.nodes(data=True)
-    for api, api_info in nodes:
-        if api not in vocab:
-            if is_adj:
-                # make connection between the predecessors and successors
-                if new_g.out_degree(api) > 0 and new_g.in_degree(api) > 0:
-                    new_g.add_edges_from([(e1, e1) for e1, e2 in itertools.product(new_g.predecessors(api),
-                                                                                   new_g.successors(api))])
-                    # print([node for node in new_cg.predecessors(node)])
-                    # print([node for node in cg.successors(node)])
-                new_g.remove_node(api)
-        else:
-            # indices.append(vocab.index(api))
-            indices.append(api_info['vocab_ind'])
-    # indices.append(vocab.index(NULL_ID))
-    indices.append(-1)  # the last word is NULL
-    feature = np.zeros((len(vocab),), dtype=np.float32)
-    feature[indices] = 1.
-    adj = None
-    if is_adj:
-        rear = csr_matrix(([1], ([len(vocab) - 1], [len(vocab) - 1])), shape=(len(vocab), len(vocab)))
-        adj = nx.convert_matrix.to_scipy_sparse_matrix(g, nodelist=vocab, format='csr', dtype=np.float32)
-        adj += rear
-    del new_g
-    del g
-    return feature, adj
-
-
-def _merge_cg(args):
-    feature_path, N = args[0], args[1]
-    cg_dict = feat_gen.read_from_disk(
-        feature_path)  # each file contains a dict of {root call method: networkx objects}
-    new_cg_dict = feat_gen.merge_graphs(cg_dict, N)
-    feat_gen.save_to_disk(new_cg_dict, feature_path)
-    return True
+        # api_representation = np.zeros(shape=(len(api_features), len(vocabulary) - cursor,
+        #                                      len(vocabulary) - cursor), dtype=np.int)
+        api_representations = []
+        for i, api_feat in enumerate(api_features): # class wise
+            api_graph_class_wise = api_graph_tempate.copy()
+            for a, b in itertools.product(api_feat, api_feat):
+                api_graph_class_wise.add_edge(a, b)
+            api_representations.append(nx.convert_matrix.to_scipy_sparse_matrix(api_graph_class_wise))
+        return non_api_represenstation, api_representations, label
 
 
 def _main():
     from config import config
-    malware_dir_name = config.get('drebin', 'malware_dir')
-    meta_data_saving_dir = config.get('drebin', 'intermediate_directory')
+    malware_dir_name = config.get('dataset', 'malware_dir')
+    benign_dir_name = config.get('dataset', 'benware_dir')
+    meta_data_saving_dir = config.get('dataset', 'intermediate')
     naive_data_saving_dir = config.get('metadata', 'naive_data_pool')
     feature_extractor = Apk2features(naive_data_saving_dir,
                                      meta_data_saving_dir,
                                      update=False,
                                      proc_number=2)
-    feature_extractor.feature_extraction(malware_dir_name)
+    mal_paths = feature_extractor.feature_extraction(malware_dir_name)
+    ben_paths = feature_extractor.feature_extraction(benign_dir_name)
+    labels = np.zeros((len(mal_paths) + len(ben_paths), ))
+    labels[:len(mal_paths)] = 1
+    vocab, _1 = feature_extractor.get_vocab(mal_paths + ben_paths, labels)
+    n_rpst, api_rpst, _1 = feature_extractor.feature2ipt(mal_paths[0], label=1, vocabulary=vocab)
+    print(n_rpst.shape)
+    print(api_rpst)
 
 
 if __name__ == "__main__":
