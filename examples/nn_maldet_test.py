@@ -43,10 +43,8 @@ detector_argparse.add_argument('--epochs', type=int, default=50,
                                help='number of epochs to train.')
 detector_argparse.add_argument('--lr', type=float, default=0.005,
                                help='initial learning rate.')
-detector_argparse.add_argument('--weight_decay', type=float, default=5e-4,
+detector_argparse.add_argument('--weight_decay', type=float, default=0e-4,
                                help='coefficient of weight decay')
-detector_argparse.add_argument('--enable_gd_ckpt', action='store_true',
-                               help='gradients checkpoint for saving GPU RAM')  # enable it with a caution in the training phase
 
 mode_argparse = cmd_md.add_argument_group(title='mode')
 mode_argparse.add_argument('--mode', type=str, default='train', choices=['train', 'test'], required=False,
