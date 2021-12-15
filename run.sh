@@ -1,1 +1,2 @@
-python -m examples.maldetector_test --cuda --seed 0 --proc_number 30 --k 30
+python -m examples.feature_extraction_test --update --proc_number 10 --number_of_smali_files 1000000 --max_vocab_size 5000
+python -m examples.nn_maldet_test --cuda --use_top_disc_features --smooth --seed 0 --batch_size 64 --proc_number 10 --epochs 50 --max_vocab_size 5000 --hidden_units "200,200" --weight_decay 0.0
