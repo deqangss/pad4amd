@@ -25,7 +25,7 @@ args_dict = vars(args)
 
 
 def main_():
-    dataset = Dataset(feature_ext_args=args_dict, use_cache=True)
+    dataset = Dataset(feature_ext_args=args_dict)
     validation_data, valy = dataset.validation_dataset
     validation_x1, validation_x2, valy = dataset.get_numerical_input_batch(validation_data, valy)
     val_dataset_producer = dataset.get_input_producer(validation_x1, validation_x2, valy, batch_size=16, name='val')
@@ -36,7 +36,6 @@ def main_():
             print(x1.shape)
             print(x2.shape)
         print('cost time:', time.time() - start_time)
-    dataset.clean_up()
 
 
 if __name__ == '__main__':

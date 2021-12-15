@@ -50,6 +50,9 @@ class DNNMalwareDetector(nn.Module):
             self.dense_layers.append(nn.Linear(self.dense_hidden_units[i + 1],  # start from idx=1
                                                self.dense_hidden_units[i + 2]))
         self.dense_layers.append(nn.Linear(self.dense_hidden_units[-1], self.n_classes))
+        # registration
+        for idx_i, dense_layer in enumerate(self.dense_layers):
+            self.add_module('nn_model_layer_{}'.format(idx_i), dense_layer)
 
         if self.smooth:
             self.activation_func = partial(F.elu, alpha=self.alpha_)
@@ -104,6 +107,7 @@ class DNNMalwareDetector(nn.Module):
         self.eval()
         with torch.no_grad():
             for x1, x2, y in test_data_producer:
+                x1, x2, y = utils.to_device(x1.float(), x2.float(), y.long(), self.device)
                 x = self.binariz_feature(x1, x2)
                 x_hidden, logits = self.forward(x)
                 confidences.append(F.softmax(logits, dim=-1))
@@ -125,6 +129,7 @@ class DNNMalwareDetector(nn.Module):
         ig = IntegratedGradients(_ig_wrapper)
 
         for i, (x1, x2, y) in enumerate(test_data_producer):
+            x1, x2, y = utils.to_tensor(x1, x2, y)
             x = self.binariz_feature(x1, x2)
             x.requires_grad = True
             attribution_bs = ig.attribute(x,
@@ -191,7 +196,7 @@ class DNNMalwareDetector(nn.Module):
         @param weight_decay, Float, penalty factor, default value 5e-4 in graph attention layer
         @param verbose: Boolean, whether to show verbose logs
         """
-        optimizer = optim.Adam(lr=lr, weight_decay=weight_decay)
+        optimizer = optim.Adam(self.parameters(), lr=lr, weight_decay=weight_decay)
         best_avg_acc = 0.
         best_epoch = 0
         total_time = 0.
@@ -200,6 +205,7 @@ class DNNMalwareDetector(nn.Module):
             self.train()
             losses, accuracies = [], []
             for idx_batch, (x1_train, x2_train, y_train) in enumerate(train_data_producer):
+                x1_train, x2_train, y_train = utils.to_device(x1_train.float(), x2_train.float(), y_train.long(), self.device)
                 x_train = self.binariz_feature(x1_train, x2_train)
                 start_time = time.time()
                 optimizer.zero_grad()
@@ -223,6 +229,7 @@ class DNNMalwareDetector(nn.Module):
             avg_acc_val = []
             with torch.no_grad():
                 for x1_val, x2_val, y_val in validation_data_producer:
+                    x1_val, x2_val, y_val = utils.to_device(x1_val.float(), x2_val.float(), y_val.long(), self.device)
                     x_val = self.binariz_feature(x1_val, x2_val)
                     _, logits = self.forward(x_val)
                     acc_val = (logits.argmax(1) == y_val).sum().item()

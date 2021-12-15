@@ -284,8 +284,8 @@ def sparse_mx_to_torch_sparse_tensor(sparse_mx):
     return torch.sparse.FloatTensor(sparseconcat.t(), sparsedata, torch.Size(sparse_mx.shape))
 
 
-def to_tensor(features=None, adj=None, labels=None, device='cpu'):
-    """Convert adj, features, labels from array or sparse matrix to
+def to_tensor(feature_x1=None, feature_x2=None, labels=None, device='cpu'):
+    """Convert features, labels from array or sparse matrix to
     torch Tensor.
     code is adapted from: https://github.com/deeprobust/DeepRobust/graph/utils.py
     Parameters
@@ -301,8 +301,6 @@ def to_tensor(features=None, adj=None, labels=None, device='cpu'):
     """
 
     def _to_torch_tensor(mat):
-        if isinstance(mat, tuple):
-            mat = ivs_to_tensor_coo_sp(mat, device=device)
         if sp.issparse(mat):
             mat = sparse_mx_to_torch_sparse_tensor(mat)
         elif isinstance(mat, torch.Tensor):
@@ -311,27 +309,26 @@ def to_tensor(features=None, adj=None, labels=None, device='cpu'):
             mat = torch.FloatTensor(mat)
         return mat
 
-    features = _to_torch_tensor(features).to(device)
-    if adj is not None:
-        adj = _to_torch_tensor(adj)
+    feature_x1 = _to_torch_tensor(feature_x1).to(device)
+    feature_x2 = _to_torch_tensor(feature_x2).to(device)
     if labels is None:
-        return features, adj
+        return feature_x1, feature_x2
     else:
         labels = torch.LongTensor(labels).to(device)
-        return features, adj, labels
+        return feature_x1, feature_x2, labels
 
 
-def to_device(x=None, adj=None, labels=None, device='cpu'):
-    if x is not None:
-        assert isinstance(x, torch.Tensor)
-        x = x.to(device)
-    if adj is not None:
-        assert isinstance(adj, torch.Tensor)
-        adj = adj.to(device)
+def to_device(feature_x1=None, feature_x2=None, labels=None, device='cpu'):
+    if feature_x1 is not None:
+        assert isinstance(feature_x1, torch.Tensor)
+        feature_x1 = feature_x1.to(device)
+    if feature_x2 is not None:
+        assert isinstance(feature_x2, torch.Tensor)
+        feature_x2 = feature_x2.to(device)
     if labels is not None:
         assert isinstance(labels, torch.Tensor)
         labels = labels.to(device)
-    return x, adj, labels
+    return feature_x1, feature_x2, labels
 
 
 def round_x(x, alpha=0.5):

@@ -223,8 +223,8 @@ class DatasetTorch(torch.utils.data.Dataset):
     def __getitem__(self, index):
         'Generates one sample of data'
         # Select sample
-        x1 = torch.FloatTensor(self.X1[index]).to(self.dataset_obj.device)
-        x2 = torch.FloatTensor(self.X2[index]).to(self.dataset_obj.device)
-        y = torch.FloatTensor(self.datay[index]).to(self.dataset_obj.device)
+        x1 = self.X1[index]
+        x2 = self.X2[index]
+        y = self.datay[index]
         return x1, x2, y
 
