@@ -46,9 +46,9 @@ class DNNMalwareDetector(nn.Module):
 
         self.dense_layers = []
         self.dense_layers.append(nn.Linear(self.input_size, self.dense_hidden_units[0]))
-        for i in range(len(self.dense_hidden_units[1:-1])):
-            self.dense_layers.append(nn.Linear(self.dense_hidden_units[i + 1],  # start from idx=1
-                                               self.dense_hidden_units[i + 2]))
+        for i in range(len(self.dense_hidden_units[0:-1])):
+            self.dense_layers.append(nn.Linear(self.dense_hidden_units[i],  # start from idx=1
+                                               self.dense_hidden_units[i + 1]))
         self.dense_layers.append(nn.Linear(self.dense_hidden_units[-1], self.n_classes))
         # registration
         for idx_i, dense_layer in enumerate(self.dense_layers):
