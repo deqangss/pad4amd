@@ -5,29 +5,19 @@ import os.path as path
 import argparse
 import time
 
-import torch
-import torch.nn.functional as F
-
 from core.defense import Dataset
-from core.defense import MalwareDetector
+from core.defense import DNNMalwareDetector
 from tools.utils import save_args, get_group_args, to_tensor, dump_pickle, read_pickle
-
 
 cmd_md = argparse.ArgumentParser(description='arguments for learning malware detector')
 
 feature_argparse = cmd_md.add_argument_group(title='feature')
 feature_argparse.add_argument('--proc_number', type=int, default=2,
                               help='The number of threads for features extraction.')
-feature_argparse.add_argument('--number_of_smali_files', type=int, default=200000,
+feature_argparse.add_argument('--number_of_smali_files', type=int, default=1000000,
                               help='The maximum number of produced sequences for each app')
-feature_argparse.add_argument('--depth_of_recursion', type=int, default=50,
-                              help='The maximum depth restricted on the depth-first traverse')
-feature_argparse.add_argument('--timeout', type=int, default=20,
-                              help='The maximum elapsed time for analyzing an app')
 feature_argparse.add_argument('--use_top_disc_features', action='store_true',
                               help='Whether use feature selection or not.')
-feature_argparse.add_argument('--N', type=int, default=1,
-                              help='the maximum number of graphs for an app.')
 feature_argparse.add_argument('--max_vocab_size', type=int, default=5000,
                               help='The maximum number of vocabulary size')
 feature_argparse.add_argument('--update', action='store_true',
@@ -41,21 +31,13 @@ detector_argparse.add_argument('--seed', type=int, default=0,
 detector_argparse.add_argument('--embedding_dim', type=int, default=8,
                                help='embedding dimension')
 detector_argparse.add_argument('--hidden_units', type=lambda s: [int(u) for u in s.split(',')], default='16',
-                               help='delimited list input, e.g., "32,32"',)
+                               help='delimited list input, e.g., "32,32"', )
 detector_argparse.add_argument('--penultimate_hidden_unit', type=int, default=64,
                                help='dimension of penultimate layer')
 detector_argparse.add_argument('--n_heads', type=int, default=2,
                                help='number of headers')
 detector_argparse.add_argument('--dropout', type=float, default=0.6,
                                help='dropout rate')
-detector_argparse.add_argument('--k', type=int, default=0,
-                               help='sampling size (<=N)')
-detector_argparse.add_argument('--width', type=int, default=2000,
-                               help='window size for filtering un-attended apis')
-detector_argparse.add_argument('--use_fusion', action='store_true', default=False,
-                               help='whether use feature fusion or not')
-detector_argparse.add_argument('--n_sample_times', type=int, default=5,
-                               help='times of sampling')
 detector_argparse.add_argument('--alpha_', type=float, default=0.2,
                                help='slope coefficient of leaky-relu or elu')
 detector_argparse.add_argument('--sparse', action='store_true', default=False,
@@ -63,9 +45,9 @@ detector_argparse.add_argument('--sparse', action='store_true', default=False,
 detector_argparse.add_argument('--smooth', action='store_true', default=False,
                                help='use smooth activation elu (rather than leaky-relu) in the GAT layer.')
 
-detector_argparse.add_argument('--batch_size', type=int, default=16,
+detector_argparse.add_argument('--batch_size', type=int, default=64,
                                help='mini-batch size')
-detector_argparse.add_argument('--epochs', type=int, default=10,
+detector_argparse.add_argument('--epochs', type=int, default=50,
                                help='number of epochs to train.')
 detector_argparse.add_argument('--lr', type=float, default=0.005,
                                help='initial learning rate.')
@@ -75,29 +57,28 @@ detector_argparse.add_argument('--enable_gd_ckpt', action='store_true',
                                help='gradients checkpoint for saving GPU RAM')  # enable it with a caution in the training phase
 
 dataset_argparse = cmd_md.add_argument_group(title='data_producer')
-detector_argparse.add_argument('--is_adj', action='store_true', default=False,
-                               help='incorporate branches instruction information.')
 detector_argparse.add_argument('--cache', action='store_true', default=False,
                                help='use cache data or not.')
 
 mode_argparse = cmd_md.add_argument_group(title='mode')
 mode_argparse.add_argument('--mode', type=str, default='train', choices=['train', 'test'], required=False,
                            help='learn a model or test it.')
-mode_argparse.add_argument('--model_name', type=str, default='xxxxxxxx-xxxxxx', required=False, help='suffix date of a tested model name.')
+mode_argparse.add_argument('--model_name', type=str, default='xxxxxxxx-xxxxxx', required=False,
+                           help='suffix date of a tested model name.')
 
 
 def _main():
     args = cmd_md.parse_args()
-    dataset = Dataset(k=args.k,
-                      is_adj=args.is_adj,
-                      n_sgs_max=args.N,
-                      use_cache=args.cache,
-                      feature_ext_args=get_group_args(args, cmd_md, 'feature')
-                      )
-    (train_data, trainy), (val_data, valy), (test_data, testy) = dataset.train_dataset, dataset.validation_dataset, dataset.test_dataset
-    train_dataset_producer = dataset.get_input_producer(train_data, trainy, batch_size=args.batch_size, name='train')
-    val_dataset_producer = dataset.get_input_producer(val_data, valy, batch_size=args.batch_size, name='val')
-    test_dataset_producer = dataset.get_input_producer(test_data, testy, batch_size=args.batch_size, name='test')
+    dataset = Dataset(feature_ext_args=get_group_args(args, cmd_md, 'feature'))
+    train_x1, train_x2, trainy = dataset.get_numerical_input_batch(*dataset.train_dataset)
+    validation_x1, validation_x2, valy = dataset.get_numerical_input_batch(*dataset.validation_dataset)
+    test_x1, test_x2, testy = dataset.get_numerical_input_batch(*dataset.test_dataset)
+
+    train_dataset_producer = dataset.get_input_producer(train_x1, train_x2, trainy, batch_size=args.batch_size,
+                                                        name='train')
+    val_dataset_producer = dataset.get_input_producer(validation_x1, validation_x2, valy, batch_size=args.batch_size,
+                                                      name='val')
+    test_dataset_producer = dataset.get_input_producer(test_x1, test_x2, testy, batch_size=args.batch_size, name='test')
     assert dataset.n_classes == 2
 
     # test: model training
@@ -107,12 +88,12 @@ def _main():
         dv = 'cuda'
 
     model_name = args.model_name if args.mode == 'test' else time.strftime("%Y%m%d-%H%M%S")
-    model = MalwareDetector(dataset.vocab_size,
-                            dataset.n_classes,
-                            device=dv,
-                            name=model_name,
-                            **vars(args)
-                            )
+    model = DNNMalwareDetector(dataset.vocab_size,
+                               dataset.n_classes,
+                               device=dv,
+                               name=model_name,
+                               **vars(args)
+                               )
 
     model = model.to(dv)
 
@@ -131,7 +112,6 @@ def _main():
     # test: accuracy
     model.load()
     model.predict(test_dataset_producer)
-    dataset.clean_up()
 
 
 if __name__ == '__main__':

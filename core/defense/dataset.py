@@ -13,11 +13,11 @@ from tools import utils
 
 
 class Dataset(torch.utils.data.Dataset):
-    def __init__(self, seed=0, use_cache=False, feature_ext_args=None):
+    def __init__(self, seed=0, device='cuda', feature_ext_args=None):
         """
         build dataset for ml model learning
         :param seed: Integer, the random seed
-        :param use_cache: Boolean, whether to use the cached data or not
+        :param device: String, 'cuda' or 'cpu'
         :param feature_ext_args: Dict, arguments for feature extraction
         """
         self.seed = seed
@@ -25,13 +25,8 @@ class Dataset(torch.utils.data.Dataset):
         np.random.seed(self.seed)
         torch.manual_seed(self.seed)
         torch.set_default_dtype(torch.float32)
+        self.device = device
         self.feature_ext_args = feature_ext_args
-        self.use_cache = use_cache
-        if self.use_cache:
-            self.temp_dir_handle = tempfile.TemporaryDirectory()
-            utils.mkdir(self.temp_dir_handle.name)
-        else:
-            self.temp_dir_handle = utils.SimplifyClass()
 
         if feature_ext_args is None:
             self.feature_extractor = Apk2features(config.get('metadata', 'naive_data_pool'),
@@ -206,9 +201,6 @@ class Dataset(torch.utils.data.Dataset):
             x_mod_integrated[i] += x_mod[i]
         return x_mod_integrated
 
-    def clean_up(self):
-        self.temp_dir_handle.cleanup()
-
 
 class DatasetTorch(torch.utils.data.Dataset):
     'Characterizes a dataset for PyTorch'
@@ -231,8 +223,8 @@ class DatasetTorch(torch.utils.data.Dataset):
     def __getitem__(self, index):
         'Generates one sample of data'
         # Select sample
-        x1 = self.X1[index]
-        x2 = self.X2[index]
-        y = self.datay[index]
+        x1 = torch.FloatTensor(self.X1[index]).to(self.dataset_obj.device)
+        x2 = torch.FloatTensor(self.X2[index]).to(self.dataset_obj.device)
+        y = torch.FloatTensor(self.datay[index]).to(self.dataset_obj.device)
         return x1, x2, y
 
