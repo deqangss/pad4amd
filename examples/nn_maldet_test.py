@@ -28,20 +28,12 @@ detector_argparse.add_argument('--cuda', action='store_true', default=False,
                                help='whether use cuda enable gpu or cpu.')
 detector_argparse.add_argument('--seed', type=int, default=0,
                                help='random seed.')
-detector_argparse.add_argument('--embedding_dim', type=int, default=8,
-                               help='embedding dimension')
-detector_argparse.add_argument('--hidden_units', type=lambda s: [int(u) for u in s.split(',')], default='16',
+detector_argparse.add_argument('--dense_hidden_units', type=lambda s: [int(u) for u in s.split(',')], default='200,200',
                                help='delimited list input, e.g., "32,32"', )
-detector_argparse.add_argument('--penultimate_hidden_unit', type=int, default=64,
-                               help='dimension of penultimate layer')
-detector_argparse.add_argument('--n_heads', type=int, default=2,
-                               help='number of headers')
 detector_argparse.add_argument('--dropout', type=float, default=0.6,
                                help='dropout rate')
 detector_argparse.add_argument('--alpha_', type=float, default=0.2,
                                help='slope coefficient of leaky-relu or elu')
-detector_argparse.add_argument('--sparse', action='store_true', default=False,
-                               help='GAT with sparse version or not.')
 detector_argparse.add_argument('--smooth', action='store_true', default=False,
                                help='use smooth activation elu (rather than leaky-relu) in the GAT layer.')
 
@@ -56,10 +48,6 @@ detector_argparse.add_argument('--weight_decay', type=float, default=5e-4,
 detector_argparse.add_argument('--enable_gd_ckpt', action='store_true',
                                help='gradients checkpoint for saving GPU RAM')  # enable it with a caution in the training phase
 
-dataset_argparse = cmd_md.add_argument_group(title='data_producer')
-detector_argparse.add_argument('--cache', action='store_true', default=False,
-                               help='use cache data or not.')
-
 mode_argparse = cmd_md.add_argument_group(title='mode')
 mode_argparse.add_argument('--mode', type=str, default='train', choices=['train', 'test'], required=False,
                            help='learn a model or test it.')
@@ -73,11 +61,8 @@ def _main():
     train_x1, train_x2, trainy = dataset.get_numerical_input_batch(*dataset.train_dataset)
     validation_x1, validation_x2, valy = dataset.get_numerical_input_batch(*dataset.validation_dataset)
     test_x1, test_x2, testy = dataset.get_numerical_input_batch(*dataset.test_dataset)
-
-    train_dataset_producer = dataset.get_input_producer(train_x1, train_x2, trainy, batch_size=args.batch_size,
-                                                        name='train')
-    val_dataset_producer = dataset.get_input_producer(validation_x1, validation_x2, valy, batch_size=args.batch_size,
-                                                      name='val')
+    train_dataset_producer = dataset.get_input_producer(train_x1, train_x2, trainy, batch_size=args.batch_size, name='train')
+    val_dataset_producer = dataset.get_input_producer(validation_x1, validation_x2, valy, batch_size=args.batch_size, name='val')
     test_dataset_producer = dataset.get_input_producer(test_x1, test_x2, testy, batch_size=args.batch_size, name='test')
     assert dataset.n_classes == 2
 
