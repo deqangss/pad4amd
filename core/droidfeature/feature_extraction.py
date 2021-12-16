@@ -105,6 +105,8 @@ class Apk2features(object):
         assert not (np.all(gt_labels == 1) or np.all(gt_labels == 0)), 'Expect both malware and benign samples.'
         assert len(feature_path_list) == len(gt_labels)
 
+        print(feature_path_list)
+
         counter_mal, counter_ben = collections.Counter(), collections.Counter()
         feat_info_dict = collections.defaultdict(set)
         feat_type_dict = collections.defaultdict(str)
