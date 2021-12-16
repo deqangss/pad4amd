@@ -109,7 +109,6 @@ class Apk2features(object):
         feat_info_dict = collections.defaultdict(set)
         feat_type_dict = collections.defaultdict(str)
         for feature_path, label in zip(feature_path_list, gt_labels):
-            print(feature_path)
             if not os.path.exists(feature_path):
                 continue
             features = feat_gen.read_from_disk(
