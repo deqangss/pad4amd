@@ -136,6 +136,7 @@ class Apk2features(object):
         pos_selected = np.argsort(feature_freq_diff)[::-1][:self.maximum_vocab_size]
         selected_words = np.array([all_words[p] for p in pos_selected])
         selected_word_type = list(map(feat_type_dict.get, selected_words))
+        print(all_words)
         print(np.array(selected_word_type))
         import sys
         sys.exit(1)
