@@ -183,16 +183,16 @@ class Apk2features(object):
         ([feature 1D array, api adjacent 2D array], label)
         """
         assert vocabulary is not None and len(vocabulary) > 0
-
-        if not isinstance(feature_path, str):
-            return [], [], []
-
-        if not os.path.exists(feature_path):
-            logger.warning("Cannot find the feature path: {}".format(feature_path))
-            return [], [], []
-
         # handle the multiple modalities in vocabulary
         cursor = Apk2features.get_non_api_size(vocabulary)
+
+        if not isinstance(feature_path, str):
+            logger.warning("Cannot find the feature path: {}, zero vector used".format(feature_path))
+            return np.zeros((cursor, ), dtype=np.float32), [], []
+
+        if not os.path.exists(feature_path):
+            logger.warning("Cannot find the feature path: {}, zero vector used".format(feature_path))
+            return np.zeros((cursor, ), dtype=np.float32), [], []
 
         features = feat_gen.read_from_disk(feature_path)
         non_api_features, api_features = feat_gen.format_feature(features)
