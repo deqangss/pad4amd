@@ -124,6 +124,8 @@ class Apk2features(object):
             else:
                 counter_ben.update(list(feature_occurrence))
         all_words = list(set(list(counter_ben.keys()) + list(counter_mal.keys())))
+        if len(all_words) <= 0:
+            raise ValueError("No features exist on this dataset.")
 
         if not self.use_feature_selection:  # no feature selection applied
             self.maximum_vocab_size = len(all_words) + 1
