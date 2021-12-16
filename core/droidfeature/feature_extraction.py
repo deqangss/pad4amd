@@ -136,12 +136,9 @@ class Apk2features(object):
         pos_selected = np.argsort(feature_freq_diff)[::-1][:self.maximum_vocab_size]
         selected_words = np.array([all_words[p] for p in pos_selected])
         selected_word_type = list(map(feat_type_dict.get, selected_words))
-        print(np.array(selected_word_type).astype(str) == feat_gen.PERMISSION)
-        import sys
-        sys.exit(1)
-        selected_words_typized = (selected_words[np.array(selected_word_type) == feat_gen.PERMISSION]).tolist()
-        selected_words_typized += (selected_words[np.array(selected_word_type) == feat_gen.INTENT]).tolist()
-        selected_words_typized += (selected_words[np.array(selected_word_type) == feat_gen.SYS_API]).tolist()
+        selected_words_typized = (selected_words[np.array(selected_word_type)[...] == feat_gen.PERMISSION]).tolist()
+        selected_words_typized += (selected_words[np.array(selected_word_type)[...] == feat_gen.INTENT]).tolist()
+        selected_words_typized += (selected_words[np.array(selected_word_type)[...] == feat_gen.SYS_API]).tolist()
         corresponding_word_info = list(map(feat_info_dict.get, selected_words_typized))
         # saving
         if len(selected_words) > 0:
@@ -235,8 +232,8 @@ def _main():
     labels[:len(mal_paths)] = 1
     vocab, _1 = feature_extractor.get_vocab(mal_paths + ben_paths, labels)
     n_rpst, api_rpst, _1 = feature_extractor.feature2ipt(mal_paths[0], label=1, vocabulary=vocab)
-    print(n_rpst.shape)
-    print(api_rpst)
+    #print(n_rpst.shape)
+    #print(api_rpst)
 
 
 if __name__ == "__main__":
