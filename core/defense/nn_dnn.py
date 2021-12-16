@@ -46,7 +46,7 @@ class DNNMalwareDetector(nn.Module):
 
         self.dense_layers = []
         if len(self.dense_hidden_units) >= 1:
-            self.dense_layers.append(nn.Linear(self.input_dim_dnn, self.dense_hidden_units[0]))
+            self.dense_layers.append(nn.Linear(self.input_size, self.dense_hidden_units[0]))
         else:
             raise ValueError("Expect at least one hidden layer.")
         for i in range(len(self.dense_hidden_units[0:-1])):
