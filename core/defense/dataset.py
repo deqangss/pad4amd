@@ -161,7 +161,11 @@ class Dataset(torch.utils.data.Dataset):
             X1.append(non_api_rpst)
             X2.append(api_rpst)
         for x in X2:
-            print(x.shape)
+            if x.shape != X2[0].shape:
+                print(x.shape)
+        for x in X1:
+            if x.shape != X1[0].shape:
+                print(x.shape)
         return np.stack(X1, axis=0), np.stack(X2, axis=0), labels
 
     def get_input_producer(self, x1, x2, y, batch_size, name='train'):

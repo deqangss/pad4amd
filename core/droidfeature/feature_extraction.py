@@ -205,13 +205,13 @@ class Apk2features(object):
             non_api_represenstation[filled_pos] = 1.
 
         # cope with api features
-        api_graph_tempate = nx.Graph()
-        api_graph_tempate.add_nodes_from(vocabulary[cursor:])
+        api_graph_template = nx.Graph()
+        api_graph_template.add_nodes_from(vocabulary[cursor:])
         # api_representation = np.zeros(shape=(len(api_features), len(vocabulary) - cursor,
         #                                      len(vocabulary) - cursor), dtype=np.int)
         api_representations = []
         for i, api_feat in enumerate(api_features):  # class wise
-            api_graph_class_wise = api_graph_tempate.copy()
+            api_graph_class_wise = api_graph_template.copy()
             for a, b in itertools.product(api_feat, api_feat):
                 if a not in vocabulary or b not in vocabulary:
                     continue
