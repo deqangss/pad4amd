@@ -136,7 +136,7 @@ class Apk2features(object):
         pos_selected = np.argsort(feature_freq_diff)[::-1][:self.maximum_vocab_size]
         selected_words = np.array([all_words[p] for p in pos_selected])
         selected_word_type = list(map(feat_type_dict.get, selected_words))
-        print(selected_words[np.array(selected_word_type).astype(str)[...] == feat_gen.PERMISSION])
+        print(np.array(selected_word_type))
         import sys
         sys.exit(1)
         selected_words_typized = (selected_words[np.array(selected_word_type)[...] == feat_gen.PERMISSION]).tolist()
