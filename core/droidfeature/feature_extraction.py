@@ -108,6 +108,7 @@ class Apk2features(object):
         counter_mal, counter_ben = collections.Counter(), collections.Counter()
         feat_info_dict = collections.defaultdict(set)
         feat_type_dict = collections.defaultdict(str)
+        print(gt_labels)
         for feature_path, label in zip(feature_path_list, gt_labels):
             if not os.path.exists(feature_path):
                 continue
