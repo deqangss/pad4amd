@@ -133,15 +133,13 @@ class Apk2features(object):
         ben_feature_frequency[ben_feature_frequency == None] = 0
         ben_feature_frequency /= float(len(gt_labels) - np.sum(gt_labels))
         feature_freq_diff = abs(mal_feature_frequency - ben_feature_frequency)
-        pos_selected = np.argsort(feature_freq_diff)[::-1][:self.maximum_vocab_size - 1]
+        pos_selected = np.argsort(feature_freq_diff)[::-1][:self.maximum_vocab_size]
         selected_words = np.array([all_words[p] for p in pos_selected])
         selected_word_type = list(map(feat_type_dict.get, selected_words))
         selected_words_typized = (selected_words[np.array(selected_word_type) == feat_gen.PERMISSION]).tolist()
         selected_words_typized += (selected_words[np.array(selected_word_type) == feat_gen.INTENT]).tolist()
         selected_words_typized += (selected_words[np.array(selected_word_type) == feat_gen.SYS_API]).tolist()
         corresponding_word_info = list(map(feat_info_dict.get, selected_words_typized))
-        selected_words_typized.append(NULL_ID)
-        corresponding_word_info.append({NULL_ID})
         # saving
         if len(selected_words) > 0:
             utils.dump_pickle(selected_words_typized, vocab_saving_path)
