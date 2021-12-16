@@ -323,7 +323,7 @@ def get_feature_list(feature):
     feature_info_list = []
     feature_type_list = []
     for feat in feature:
-        if isinstance(feat, str): # manifest features
+        if isinstance(feat, str):  # manifest features
             if TAG_SPLITTER in feat:
                 _feat, _feat_i = feat.split(TAG_SPLITTER, 1)
                 feature_type_list.append(INTENT)

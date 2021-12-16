@@ -207,13 +207,14 @@ class Apk2features(object):
         # cope with api features
         api_graph_tempate = nx.Graph()
         api_graph_tempate.add_nodes_from(vocabulary[cursor:])
-
         # api_representation = np.zeros(shape=(len(api_features), len(vocabulary) - cursor,
         #                                      len(vocabulary) - cursor), dtype=np.int)
         api_representations = []
-        for i, api_feat in enumerate(api_features): # class wise
+        for i, api_feat in enumerate(api_features):  # class wise
             api_graph_class_wise = api_graph_tempate.copy()
             for a, b in itertools.product(api_feat, api_feat):
+                if a not in vocabulary or b not in vocabulary:
+                    continue
                 api_graph_class_wise.add_edge(a, b)
             api_representations.append(nx.convert_matrix.to_scipy_sparse_matrix(api_graph_class_wise))
         return non_api_represenstation, api_representations, label

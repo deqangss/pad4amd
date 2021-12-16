@@ -138,9 +138,9 @@ class Dataset(torch.utils.data.Dataset):
             assert isinstance(api_feat_representation_list[0], csr_matrix)
         else:
             return np.zeros(shape=(self.vocab_size - self.non_api_size, self.vocab_size - self.non_api_size), dtype=np.float)
-        adj_array = np.asarray(api_feat_representation_list[0].todense())
+        adj_array = np.asarray(api_feat_representation_list[0].todense()).astype(np.float32)
         for sparse_mat in api_feat_representation_list[1:]:
-            adj_array += np.asarray(sparse_mat.todense())
+            adj_array += np.asarray(sparse_mat.todense()).astype(np.float32)
         return np.clip(adj_array, a_min=0, a_max=1)
 
     def get_numerical_input(self, feature_path, label):
@@ -160,8 +160,6 @@ class Dataset(torch.utils.data.Dataset):
             non_api_rpst, api_rpst, label = self.get_numerical_input(feature_path, label)
             X1.append(non_api_rpst)
             X2.append(api_rpst)
-        for x in X2:
-            print(x.shape)
         return np.stack(X1, axis=0), np.stack(X2, axis=0), labels
 
     def get_input_producer(self, x1, x2, y, batch_size, name='train'):
