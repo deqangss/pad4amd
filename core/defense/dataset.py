@@ -160,10 +160,8 @@ class Dataset(torch.utils.data.Dataset):
             non_api_rpst, api_rpst, label = self.get_numerical_input(feature_path, label)
             X1.append(non_api_rpst)
             X2.append(api_rpst)
-        for x in X2:
-            if x.shape != X2[0].shape:
-                print(x.shape)
         for x in X1:
+            print(x)
             if x.shape != X1[0].shape:
                 print(x.shape)
         return np.stack(X1, axis=0), np.stack(X2, axis=0), labels

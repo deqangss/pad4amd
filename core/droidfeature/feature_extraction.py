@@ -198,6 +198,9 @@ class Apk2features(object):
         non_api_features, api_features = feat_gen.format_feature(features)
 
         # cope with the non-api features
+        if cursor <= 0:
+            raise ValueError("Non-API features are needed.")
+
         non_api_represenstation = np.zeros((cursor, ), dtype=np.float32)
         dictionary = dict(zip(vocabulary, range(len(vocabulary))))
         filled_pos = [idx for idx in list(map(dictionary.get, non_api_features)) if idx is not None]
