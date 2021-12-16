@@ -105,8 +105,6 @@ class Apk2features(object):
         assert not (np.all(gt_labels == 1) or np.all(gt_labels == 0)), 'Expect both malware and benign samples.'
         assert len(feature_path_list) == len(gt_labels)
 
-        print(feature_path_list)
-
         counter_mal, counter_ben = collections.Counter(), collections.Counter()
         feat_info_dict = collections.defaultdict(set)
         feat_type_dict = collections.defaultdict(str)
@@ -117,6 +115,7 @@ class Apk2features(object):
                 feature_path)  # each file contains a dict of {root call method: networkx objects}
             feature_occurrence = set()
             feature_list, feature_info_list, feature_type_list = feat_gen.get_feature_list(features)
+            print(feature_list)
             feature_occurrence.update(feature_list)
             for _feat, _feat_info, _feat_type in zip(feature_list, feature_info_list, feature_type_list):
                 feat_info_dict[_feat].add(_feat_info)
@@ -126,6 +125,7 @@ class Apk2features(object):
             else:
                 counter_ben.update(list(feature_occurrence))
         all_words = list(set(list(counter_ben.keys()) + list(counter_mal.keys())))
+
         if not self.use_feature_selection:  # no feature selection applied
             self.maximum_vocab_size = len(all_words) + 1
         mal_feature_frequency = np.array(list(map(counter_mal.get, all_words)))
