@@ -154,13 +154,19 @@ class Dataset(torch.utils.data.Dataset):
         non_api_rpst, api_rpst, label = self.feature_extractor.feature2ipt(feature_path, label, self.vocab)
         return non_api_rpst, self.feature_api_rpst_sum(api_rpst), label
 
-    def get_numerical_input_batch(self, feature_paths, labels):
-        X1, X2 = [], []
-        for feature_path, label in zip(feature_paths, labels):
-            non_api_rpst, api_rpst, label = self.get_numerical_input(feature_path, label)
-            X1.append(non_api_rpst)
-            X2.append(api_rpst)
-        return np.stack(X1, axis=0), np.stack(X2, axis=0), labels
+    def get_numerical_input_batch(self, feature_paths, labels, name='train'):
+        rpst_saving_path = os.path.join(config.get('dataset', 'intermediate'), '{}.npy'.format(name))
+        if not os.path.exists(rpst_saving_path):
+            X1, X2 = [], []
+            for feature_path, label in zip(feature_paths, labels):
+                non_api_rpst, api_rpst, label = self.get_numerical_input(feature_path, label)
+                X1.append(non_api_rpst)
+                X2.append(api_rpst)
+            X1, X2 = np.stack(X1, axis=0), np.stack(X2, axis=0)
+            utils.dump_pickle((X1, X2, labels), rpst_saving_path)
+            return X1, X2, labels
+        else:
+            return utils.read_pickle(rpst_saving_path)
 
     def get_input_producer(self, x1, x2, y, batch_size, name='train'):
         params = {'batch_size': batch_size,

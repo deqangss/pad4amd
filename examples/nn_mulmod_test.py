@@ -63,9 +63,9 @@ mode_argparse.add_argument('--model_name', type=str, default='xxxxxxxx-xxxxxx', 
 def _main():
     args = cmd_md.parse_args()
     dataset = Dataset(feature_ext_args=get_group_args(args, cmd_md, 'feature'))
-    train_x1, train_x2, trainy = dataset.get_numerical_input_batch(*dataset.train_dataset)
-    validation_x1, validation_x2, valy = dataset.get_numerical_input_batch(*dataset.validation_dataset)
-    test_x1, test_x2, testy = dataset.get_numerical_input_batch(*dataset.test_dataset)
+    train_x1, train_x2, trainy = dataset.get_numerical_input_batch(*dataset.train_dataset, 'train')
+    validation_x1, validation_x2, valy = dataset.get_numerical_input_batch(*dataset.validation_dataset, 'validation')
+    test_x1, test_x2, testy = dataset.get_numerical_input_batch(*dataset.test_dataset, 'test')
     train_dataset_producer = dataset.get_input_producer(train_x1, train_x2, trainy, batch_size=args.batch_size,
                                                         name='train')
     val_dataset_producer = dataset.get_input_producer(validation_x1, validation_x2, valy, batch_size=args.batch_size,
