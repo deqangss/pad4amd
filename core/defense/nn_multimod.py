@@ -46,6 +46,7 @@ class MulModMalwareDetector(nn.Module):
         self.name = name
         self.parse_args(**kwargs)
 
+        # the name ``embedding_weight'' is not changable
         self.embedding_weight = nn.Parameter(torch.empty(size=(self.input_dim_gcn, self.embedding_dim)))
         nn.init.normal_(self.embedding_weight.data)  # default initialization method in torch
 
@@ -85,7 +86,6 @@ class MulModMalwareDetector(nn.Module):
         else:
             self.activation_func = F.relu
 
-        self.dense = nn.Linear(self.penultimate_hidden_unit, self.n_classes)
         self.model_save_path = path.join(config.get('experiments', 'malware_detector') + '_' + self.name,
                                          'model.pth')
 
@@ -148,7 +148,7 @@ class MulModMalwareDetector(nn.Module):
         self.eval()
         with torch.no_grad():
             for x1, x2, y in test_data_producer:
-                x1, x2, y = utils.to_tensor(x1, x2, y)
+                x1, x2, y = utils.to_device(x1.float(), x2.float(), y.long(), self.device)
                 bin_x2, x2 = self.binariz_feature(x2)
                 x_hidden, logits = self.forward(x1, bin_x2, x2)
                 confidences.append(F.softmax(logits, dim=-1))
@@ -285,9 +285,7 @@ class MulModMalwareDetector(nn.Module):
         customized_params_decay = []
 
         for name, param in self.named_parameters():
-            if 'embedding_weight' in name:
-                customized_params_no_decay.append(param)
-            if 'nn_model_layer_' in name:
+            if 'nn_model_layer_' in name or 'embedding_weight' in name:
                 customized_params_no_decay.append(param)
             else:
                 customized_params_decay.append(param)

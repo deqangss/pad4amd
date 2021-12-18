@@ -30,11 +30,12 @@ class GraphConvolution(Module):
     def forward(self, input, adj):
         """ Graph Convolutional Layer forward function
         """
+        print(input.shape, self.weight.shape)
         if input.data.is_sparse:
             support = torch.spmm(input, self.weight)
         else:
-            support = torch.mm(input, self.weight)
-        output = torch.spmm(adj, support)
+            support = torch.matmul(input, self.weight)
+        output = torch.matmul(adj, support)
         if self.bias is not None:
             return output + self.bias
         else:
