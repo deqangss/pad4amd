@@ -41,8 +41,12 @@ detector_argparse.add_argument('--dropout', type=float, default=0.6,
                                help='dropout rate')
 detector_argparse.add_argument('--alpha_', type=float, default=0.2,
                                help='slope coefficient of leaky-relu or elu')
+detector_argparse.add_argument('--with_relu', action='store_true', default=False,
+                               help='use relu activation elu in the gcn layers.')
+detector_argparse.add_argument('--with_bias', action='store_true', default=True,
+                               help='append bias in the gcn layers.')
 detector_argparse.add_argument('--smooth', action='store_true', default=False,
-                               help='use smooth activation elu (rather than leaky-relu) in the GAT layer.')
+                               help='use smooth activation elu (rather than leaky-relu) in the nn layers.')
 
 detector_argparse.add_argument('--batch_size', type=int, default=64,
                                help='mini-batch size')
