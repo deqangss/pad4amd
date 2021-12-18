@@ -85,7 +85,7 @@ class DNNMalwareDetector(nn.Module):
         if len(kwargs) > 0:
             logger.warning("Unknown hyper-parameters {}".format(str(kwargs)))
 
-    def forward(self, x):
+    def forward(self, x1, binariz_x2, x2=None):
         """
         Go through the neural network
 
@@ -93,6 +93,7 @@ class DNNMalwareDetector(nn.Module):
         ----------
         @param x1: 2D tensor, feature representation
         """
+        x = torch.hstack([x1, binariz_x2])
         for dense_layer in self.dense_layers[:-1]:
             x = self.activation_func(dense_layer(x))
 
@@ -100,9 +101,9 @@ class DNNMalwareDetector(nn.Module):
         logits = self.dense_layers[-1](latent_representation)
         return latent_representation, logits
 
-    def binariz_feature(self, x1, x2):
+    def binariz_feature(self, x2):
         binary_x2 = torch.clip(torch.sum(x2, dim=-1), max=1., min=0.)
-        return torch.hstack([x1, binary_x2])
+        return binary_x2, x2
 
     def inference(self, test_data_producer):
         confidences = []
@@ -111,8 +112,8 @@ class DNNMalwareDetector(nn.Module):
         with torch.no_grad():
             for x1, x2, y in test_data_producer:
                 x1, x2, y = utils.to_device(x1.float(), x2.float(), y.long(), self.device)
-                x = self.binariz_feature(x1, x2)
-                x_hidden, logits = self.forward(x)
+                binariz_x2, x2 = self.binariz_feature(x2)
+                x_hidden, logits = self.forward(x1, binariz_x2, x2)
                 confidences.append(F.softmax(logits, dim=-1))
                 gt_labels.append(y)
         confidences = torch.vstack(confidences)
@@ -126,28 +127,35 @@ class DNNMalwareDetector(nn.Module):
         attributions = []
         gt_labels = []
 
-        def _ig_wrapper(_x):
-            _3, logits = self.forward(_x)
+        def _ig_wrapper(_x1, _x2):
+            _3, logits = self.forward(_x1, _x2)
             return F.softmax(logits, dim=-1)
         ig = IntegratedGradients(_ig_wrapper)
 
         for i, (x1, x2, y) in enumerate(test_data_producer):
-            x1, x2, y = utils.to_tensor(x1, x2, y)
-            x = self.binariz_feature(x1, x2)
-            x.requires_grad = True
-            attribution_bs = ig.attribute(x,
-                                          baselines=torch.zeros_like(x, dtype=torch.float32, device=self.device),
+            x1, x2, y = utils.to_device(x1.float(), x2.float(), y.long(), self.device)
+            binariz_x2, x2 = self.binariz_feature(x2)
+            x1.requires_grad = True
+            baseline1 = torch.zeros_like(x1, dtype=torch.float32, device=self.device)
+            binariz_x2.requires_grad = True
+            baseline2 = torch.zeros_like(binariz_x2, dtype=torch.float32, device=self.device)
+            attribution_bs = ig.attribute((x1, binariz_x2),
+                                          baselines=(baseline1, baseline2),
                                           target=target_label)
-            attributions.append(attribution_bs.clone().detach().cpu().numpy())
+            attribution = torch.hstack(attribution_bs)
+            attributions.append(attribution.clone().detach().cpu().numpy())
             gt_labels.append(y.clone().detach().cpu().numpy())
             np.save('./labels', np.concatenate(gt_labels))
         return np.vstack(attributions)
 
     def inference_batch_wise(self, x1, x2, y):
+        """
+        support for malware samples solely
+        """
         assert isinstance(x1, torch.Tensor) and isinstance(y, torch.Tensor)
         assert isinstance(x2, torch.Tensor)
-        x = self.binariz_feature(x1, x2)
-        _, logit = self.forward(x)
+        binariz_x2, x2 = self.binariz_feature(x2)
+        _, logit = self.forward(x1, binariz_x2)
         return torch.softmax(logit, dim=-1).detach().cpu().numpy(), np.ones((logit.size()[0],))
 
     def predict(self, test_data_producer):
@@ -209,16 +217,16 @@ class DNNMalwareDetector(nn.Module):
             losses, accuracies = [], []
             for idx_batch, (x1_train, x2_train, y_train) in enumerate(train_data_producer):
                 x1_train, x2_train, y_train = utils.to_device(x1_train.float(), x2_train.float(), y_train.long(), self.device)
-                x_train = self.binariz_feature(x1_train, x2_train)
+                x2_train, _1 = self.binariz_feature(x2_train)
                 start_time = time.time()
                 optimizer.zero_grad()
-                latent_rpst, logits = self.forward(x_train)
+                latent_rpst, logits = self.forward(x1_train, x2_train)
                 loss_train = self.customize_loss(logits, y_train, latent_rpst, idx_batch)
                 loss_train.backward()
                 optimizer.step()
                 total_time = total_time + time.time() - start_time
                 acc_train = (logits.argmax(1) == y_train).sum().item()
-                acc_train /= x_train.size()[0]
+                acc_train /= x1_train.size()[0]
                 mins, secs = int(total_time / 60), int(total_time % 60)
                 losses.append(loss_train.item())
                 accuracies.append(acc_train)
@@ -233,10 +241,10 @@ class DNNMalwareDetector(nn.Module):
             with torch.no_grad():
                 for x1_val, x2_val, y_val in validation_data_producer:
                     x1_val, x2_val, y_val = utils.to_device(x1_val.float(), x2_val.float(), y_val.long(), self.device)
-                    x_val = self.binariz_feature(x1_val, x2_val)
-                    _, logits = self.forward(x_val)
+                    x2_val, _2 = self.binariz_feature(x2_val)
+                    _, logits = self.forward(x1_val, x2_val)
                     acc_val = (logits.argmax(1) == y_val).sum().item()
-                    acc_val /= x_val.size()[0]
+                    acc_val /= x1_val.size()[0]
                     avg_acc_val.append(acc_val)
                 avg_acc_val = np.mean(avg_acc_val)
 
