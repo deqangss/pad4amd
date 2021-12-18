@@ -30,7 +30,6 @@ class GraphConvolution(Module):
     def forward(self, input, adj):
         """ Graph Convolutional Layer forward function
         """
-        print(input.shape, self.weight.shape)
         if input.data.is_sparse:
             support = torch.spmm(input, self.weight)
         else:
@@ -132,7 +131,7 @@ class GCN(nn.Module):
         else:
             x = self.gc2(x, adj)
 
-        return torch.amax(x, dim=1)
+        return torch.mean(x, dim=1)
 
     def initialize(self):
         """Initialize parameters of GCN.
