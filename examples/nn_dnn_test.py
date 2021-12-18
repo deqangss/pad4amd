@@ -15,7 +15,7 @@ feature_argparse = cmd_md.add_argument_group(title='feature')
 feature_argparse.add_argument('--proc_number', type=int, default=2,
                               help='The number of threads for features extraction.')
 feature_argparse.add_argument('--number_of_smali_files', type=int, default=1000000,
-                              help='The maximum number of produced sequences for each app')
+                              help='The maximum number of smali files to represent each app')
 feature_argparse.add_argument('--use_top_disc_features', action='store_true',
                               help='Whether use feature selection or not.')
 feature_argparse.add_argument('--max_vocab_size', type=int, default=5000,
@@ -39,7 +39,7 @@ detector_argparse.add_argument('--smooth', action='store_true', default=False,
 
 detector_argparse.add_argument('--batch_size', type=int, default=64,
                                help='mini-batch size')
-detector_argparse.add_argument('--epochs', type=int, default=50,
+detector_argparse.add_argument('--epochs', type=int, default=100,
                                help='number of epochs to train.')
 detector_argparse.add_argument('--lr', type=float, default=0.005,
                                help='initial learning rate.')

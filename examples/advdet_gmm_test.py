@@ -7,7 +7,7 @@ import time
 from core.defense import Dataset
 from core.defense import MalwareDetectorIndicator
 from tools.utils import save_args, get_group_args, dump_pickle
-from examples.nn_maldet_test import cmd_md
+from examples.nn_dnn_test import cmd_md
 
 indicator_argparse = cmd_md.add_argument_group(title='adv indicator')
 indicator_argparse.add_argument('--beta', type=float, default=1., help='balance factor.')

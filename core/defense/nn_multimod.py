@@ -16,42 +16,65 @@ from captum.attr import IntegratedGradients
 
 import numpy as np
 
-from core.defense.malgat import MalGAT
+from core.defense.gcn import GCN
 from config import config, logging, ErrorHandler
 from tools import utils
 
-logger = logging.getLogger('core.defense.dnn')
+logger = logging.getLogger('core.defense.multimod')
 logger.addHandler(ErrorHandler)
 
 
-class DNNMalwareDetector(nn.Module):
-    def __init__(self, input_size, n_classes, device='cpu', name='DNN', **kwargs):
+class MulModMalwareDetector(nn.Module):
+    def __init__(self, input_dim_dnn, input_dim_gcn, n_classes, device='cpu', name='MULTIMOD', **kwargs):
         """
         Construct malware detector
 
         Parameters
         ----------
-        @param input_size: Integer, the dimentionality number of input vector
+        @param vocab_size: Integer, the number of words in the vocabulary
         @param n_classes: Integer, the number of classes, n=2
+        @param n_sample_times: Integer, the number of sampling times for predicting
         @param device: String, 'cpu' or 'cuda'
         @param name: String, model name
         """
-        super(DNNMalwareDetector, self).__init__()
-        self.input_size = input_size
+        super(MulModMalwareDetector, self).__init__()
+
+        self.input_dim_dnn = input_dim_dnn
+        self.input_dim_gcn = input_dim_gcn
         self.n_classes = n_classes
         self.device = device
         self.name = name
-
         self.parse_args(**kwargs)
 
+        self.embedding_weight = nn.Parameter(torch.empty(size=(self.input_dim_gcn, self.embedding_dim)))
+        nn.init.normal_(self.embedding_weight.data)  # default initialization method in torch
+
+        self.gcn = GCN(self.embedding_dim,
+                       self.hidden_units[0],
+                       self.hidden_units[1],
+                       dropout=self.dropout,
+                       with_relu=self.with_relu,
+                       with_bias=self.with_bias,
+                       smooth=self.smooth,
+                       alpha_=self.alpha_,
+                       device=self.device
+                       )
+
         self.dense_layers = []
-        if len(self.dense_hidden_units) >= 1:
-            self.dense_layers.append(nn.Linear(self.input_size, self.dense_hidden_units[0]))
+        if 0 < len(self.dense_hidden_units) <= 1:
+            self.dense_layers.append(nn.Linear(self.input_dim_dnn + self.hidden_units[1], self.dense_hidden_units[0]))
+        elif len(self.dense_hidden_units) > 1:
+            self.dense_layers.append(nn.Linear(self.input_dim_dnn, self.dense_hidden_units[0]))
         else:
             raise ValueError("Expect at least one hidden layer.")
+
         for i in range(len(self.dense_hidden_units[0:-1])):
-            self.dense_layers.append(nn.Linear(self.dense_hidden_units[i],  # start from idx=1
-                                               self.dense_hidden_units[i + 1]))
+            if i == len(self.dense_hidden_units) - 2:
+                self.dense_layers.append(nn.Linear(self.dense_hidden_units[i] + self.hidden_units[1],
+                                                   self.dense_hidden_units[i + 1]))
+            else:
+                self.dense_layers.append(nn.Linear(self.dense_hidden_units[i],
+                                                   self.dense_hidden_units[i + 1]))
         self.dense_layers.append(nn.Linear(self.dense_hidden_units[-1], self.n_classes))
         # registration
         for idx_i, dense_layer in enumerate(self.dense_layers):
@@ -62,16 +85,29 @@ class DNNMalwareDetector(nn.Module):
         else:
             self.activation_func = F.relu
 
+        self.dense = nn.Linear(self.penultimate_hidden_unit, self.n_classes)
         self.model_save_path = path.join(config.get('experiments', 'malware_detector') + '_' + self.name,
                                          'model.pth')
 
     def parse_args(self,
+                   embedding_dim=64,
+                   hidden_units=None,
                    dense_hidden_units=None,
                    dropout=0.6,
+                   with_relu=False,
+                   with_bias=True,
+                   smooth=True,
                    alpha_=0.2,
-                   smooth=False,
                    **kwargs
                    ):
+        self.embedding_dim = embedding_dim
+        if hidden_units is None:
+            self.hidden_units = [200, 200]
+        elif isinstance(hidden_units, list):
+            self.hidden_units = hidden_units
+        else:
+            raise TypeError("Expect a list of hidden units.")
+
         if dense_hidden_units is None:
             self.dense_hidden_units = [200, 200]
         elif isinstance(dense_hidden_units, list):
@@ -81,22 +117,23 @@ class DNNMalwareDetector(nn.Module):
 
         self.dropout = dropout
         self.alpha_ = alpha_
+        self.with_relu = with_relu
+        self.with_bias = with_bias
         self.smooth = smooth
         if len(kwargs) > 0:
             logger.warning("Unknown hyper-parameters {}".format(str(kwargs)))
 
-    def forward(self, x1, binariz_x2, x2=None):
-        """
-        Go through the neural network
+    def forward(self, x1, binariz_x2, x2):
+        # dnn
+        for dense_layer in self.dense_layers[:-2]:
+            x1 = self.activation_func(dense_layer(x1))
+        # gcn
+        binariz_x2 = binariz_x2.unsqueeze(-1) * self.embedding_weight
+        binariz_x2 = self.gcn.forward(binariz_x2, x2)
 
-        Parameters
-        ----------
-        @param x1: 2D tensor, feature representation
-        """
+        # merge
         x = torch.hstack([x1, binariz_x2])
-        for dense_layer in self.dense_layers[:-1]:
-            x = self.activation_func(dense_layer(x))
-
+        x = self.activation_func(self.dense_layers[-2](x))
         latent_representation = F.dropout(x, self.dropout, training=self.training)
         logits = self.dense_layers[-1](latent_representation)
         return latent_representation, logits
@@ -111,60 +148,39 @@ class DNNMalwareDetector(nn.Module):
         self.eval()
         with torch.no_grad():
             for x1, x2, y in test_data_producer:
-                x1, x2, y = utils.to_device(x1.float(), x2.float(), y.long(), self.device)
-                binariz_x2, x2 = self.binariz_feature(x2)
-                x_hidden, logits = self.forward(x1, binariz_x2, x2)
+                x1, x2, y = utils.to_tensor(x1, x2, y)
+                bin_x2, x2 = self.binariz_feature(x2)
+                x_hidden, logits = self.forward(x1, bin_x2, x2)
                 confidences.append(F.softmax(logits, dim=-1))
                 gt_labels.append(y)
-        confidences = torch.vstack(confidences)
-        gt_labels = torch.cat(gt_labels, dim=0)
+            confidences = torch.vstack(confidences)
+            gt_labels = torch.cat(gt_labels, dim=0)
         return confidences, gt_labels
 
-    def get_important_attributes(self, test_data_producer, target_label=1):
+    def get_important_attributes(self, test_data_producer, indicator_masking=False):
         """
         get important attributes by using integrated gradients
         """
-        attributions = []
-        gt_labels = []
+        raise NotImplementedError
 
-        def _ig_wrapper(_x1, _x2):
-            _3, logits = self.forward(_x1, _x2)
-            return F.softmax(logits, dim=-1)
-        ig = IntegratedGradients(_ig_wrapper)
-
-        for i, (x1, x2, y) in enumerate(test_data_producer):
-            x1, x2, y = utils.to_device(x1.float(), x2.float(), y.long(), self.device)
-            binariz_x2, x2 = self.binariz_feature(x2)
-            x1.requires_grad = True
-            baseline1 = torch.zeros_like(x1, dtype=torch.float32, device=self.device)
-            binariz_x2.requires_grad = True
-            baseline2 = torch.zeros_like(binariz_x2, dtype=torch.float32, device=self.device)
-            attribution_bs = ig.attribute((x1, binariz_x2),
-                                          baselines=(baseline1, baseline2),
-                                          target=target_label)
-            attribution = torch.hstack(attribution_bs)
-            attributions.append(attribution.clone().detach().cpu().numpy())
-            gt_labels.append(y.clone().detach().cpu().numpy())
-            np.save('./labels', np.concatenate(gt_labels))
-        return np.vstack(attributions)
-
-    def inference_batch_wise(self, x1, x2, y):
+    def inference_batch_wise(self, x1, x2, y, use_indicator=None):
         """
         support malware samples solely
         """
-        assert isinstance(x1, torch.Tensor) and isinstance(y, torch.Tensor)
+        assert isinstance(x, torch.Tensor) and isinstance(y, torch.Tensor)
         assert isinstance(x2, torch.Tensor)
         binariz_x2, x2 = self.binariz_feature(x2)
-        _, logit = self.forward(x1, binariz_x2)
+        _, logit = self.forward(x1, binariz_x2, x2)
         return torch.softmax(logit, dim=-1).detach().cpu().numpy(), np.ones((logit.size()[0],))
 
-    def predict(self, test_data_producer):
+    def predict(self, test_data_producer, indicator_masking=False):
         """
         predict labels and conduct evaluation
 
         Parameters
         --------
         @param test_data_producer, torch.DataLoader
+        @param indicator_masking, here is used for the purpose of compilation.
         """
         # evaluation
         confidence, y_true = self.inference(test_data_producer)
@@ -194,7 +210,7 @@ class DNNMalwareDetector(nn.Module):
     def customize_loss(self, logits, gt_labels, representation, mini_batch_idx):
         return F.cross_entropy(logits, gt_labels)
 
-    def fit(self, train_data_producer, validation_data_producer, epochs=100, lr=0.005, weight_decay=0., verbose=True):
+    def fit(self, train_data_producer, validation_data_producer, epochs=100, lr=0.005, weight_decay=5e-4, verbose=True):
         """
         Train the malware detector, pick the best model according to the cross-entropy loss on validation set
 
@@ -207,7 +223,7 @@ class DNNMalwareDetector(nn.Module):
         @param weight_decay, Float, penalty factor, default value 5e-4 in graph attention layer
         @param verbose: Boolean, whether to show verbose logs
         """
-        optimizer = optim.Adam(self.parameters(), lr=lr, weight_decay=weight_decay)
+        optimizer = optim.Adam(self.customize_param(weight_decay), lr=lr)
         best_avg_acc = 0.
         best_epoch = 0
         total_time = 0.
@@ -216,17 +232,18 @@ class DNNMalwareDetector(nn.Module):
             self.train()
             losses, accuracies = [], []
             for idx_batch, (x1_train, x2_train, y_train) in enumerate(train_data_producer):
-                x1_train, x2_train, y_train = utils.to_device(x1_train.float(), x2_train.float(), y_train.long(), self.device)
-                x2_train, _1 = self.binariz_feature(x2_train)
+                x1_train, x2_train, y_train = utils.to_device(x1_train.float(), x2_train.float(), y_train.long(),
+                                                              self.device)
+                binariz_x2_train, x2_train = self.binariz_feature(x2_train)
                 start_time = time.time()
                 optimizer.zero_grad()
-                latent_rpst, logits = self.forward(x1_train, x2_train)
+                latent_rpst, logits = self.forward(x1_train, binariz_x2_train, x2_train)
                 loss_train = self.customize_loss(logits, y_train, latent_rpst, idx_batch)
                 loss_train.backward()
                 optimizer.step()
                 total_time = total_time + time.time() - start_time
                 acc_train = (logits.argmax(1) == y_train).sum().item()
-                acc_train /= x1_train.size()[0]
+                acc_train /= y_train.size()[0]
                 mins, secs = int(total_time / 60), int(total_time % 60)
                 losses.append(loss_train.item())
                 accuracies.append(acc_train)
@@ -241,8 +258,8 @@ class DNNMalwareDetector(nn.Module):
             with torch.no_grad():
                 for x1_val, x2_val, y_val in validation_data_producer:
                     x1_val, x2_val, y_val = utils.to_device(x1_val.float(), x2_val.float(), y_val.long(), self.device)
-                    x2_val, _2 = self.binariz_feature(x2_val)
-                    _, logits = self.forward(x1_val, x2_val)
+                    binariz_x2_val, x2_val = self.binariz_feature(x2_val)
+                    _, logits = self.forward(x1_val, binariz_x2_val, x2_val)
                     acc_val = (logits.argmax(1) == y_val).sum().item()
                     acc_val /= x1_val.size()[0]
                     avg_acc_val.append(acc_val)
@@ -262,6 +279,20 @@ class DNNMalwareDetector(nn.Module):
                     f'Training loss (epoch level): {np.mean(losses):.4f} | Train accuracy: {np.mean(accuracies) * 100:.2f}')
                 logger.info(
                     f'Validation accuracy: {avg_acc_val * 100:.2f} | The best validation accuracy: {best_avg_acc * 100:.2f} at epoch: {best_epoch}')
+
+    def customize_param(self, weight_decay):
+        customized_params_no_decay = []
+        customized_params_decay = []
+
+        for name, param in self.named_parameters():
+            if 'embedding_weight' in name:
+                customized_params_no_decay.append(param)
+            if 'nn_model_layer_' in name:
+                customized_params_no_decay.append(param)
+            else:
+                customized_params_decay.append(param)
+        return [{'params': customized_params_no_decay, 'weight_decay': 0.},
+                {'params': customized_params_decay, 'weight_decay': weight_decay}]
 
     def load(self):
         """
