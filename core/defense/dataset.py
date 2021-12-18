@@ -163,7 +163,7 @@ class Dataset(torch.utils.data.Dataset):
                 X1.append(non_api_rpst)
                 X2.append(api_rpst)
             X1, X2 = np.stack(X1, axis=0), np.stack(X2, axis=0)
-            np.savez(rpst_saving_path, x1=X1, x2=X2, label=labels)
+            np.savez_compressed(rpst_saving_path, x1=X1, x2=X2, label=labels)
             return X1, X2, labels
         else:
             res = np.load(rpst_saving_path)
