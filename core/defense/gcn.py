@@ -54,15 +54,6 @@ class GCN(nn.Module):
         size of input feature dimension
     nhid : int
         number of hidden units
-    nclass : int
-        size of output dimension
-    dropout : float
-        dropout rate for GCN
-    lr : float
-        learning rate for GCN
-    weight_decay : float
-        weight decay coefficient (l2 normalization) for GCN.
-        When `with_relu` is True, `weight_decay` will be set to 0.
     with_relu : bool
         whether to use relu activation function. If False, GCN will be linearized.
     with_bias: bool
@@ -101,10 +92,6 @@ class GCN(nn.Module):
         self.gc1 = GraphConvolution(nfeat, nhid, with_bias=with_bias)
         self.gc2 = GraphConvolution(nhid, nclass, with_bias=with_bias)
         self.dropout = dropout
-        if not with_relu:
-            self.weight_decay = 0
-        else:
-            self.weight_decay = weight_decay
         self.with_relu = with_relu
         self.with_bias = with_bias
         self.smooth = smooth
