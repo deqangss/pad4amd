@@ -116,7 +116,7 @@ class Apk2features(object):
                 feature_path)  # each file contains a dict of {root call method: networkx objects}
             feature_occurrence = set()
             feature_list, feature_info_list, feature_type_list = feat_gen.get_feature_list(features)
-            print(feature_list[:20])
+            print(len(features), len(feature_list), feature_list[:20])
             feature_occurrence.update(feature_list)
             for _feat, _feat_info, _feat_type in zip(feature_list, feature_info_list, feature_type_list):
                 feat_info_dict[_feat].add(_feat_info)
