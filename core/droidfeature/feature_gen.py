@@ -107,8 +107,6 @@ for txt_file_path in txt_file_paths:
             api_name_smali = java_class_name2smali_name(class_name) + '->' + method_name
             sensitive_apis.append(api_name_smali)
 
-print(sensitive_apis)
-
 path_to_lib_type_1 = path.join(dir_path + '/res/liblist_threshold_10.txt')
 Third_part_libraries = ['L' + lib_cnt.split(';')[0].strip('"').lstrip('/') for lib_cnt in read_txt(
     path_to_lib_type_1, mode='r')]
@@ -268,10 +266,8 @@ def get_apis(dexes, max_number_of_smali_files):
             return False
 
     def _check_sensitive_api(api_query):
-        for specific_api in sensitive_apis:
-            if specific_api == api_query:
-                print('okokooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo')
-                return True
+        if api_query in sensitive_apis:
+            return True
         else:
             return False
 
