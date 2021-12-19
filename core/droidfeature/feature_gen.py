@@ -107,6 +107,8 @@ for txt_file_path in txt_file_paths:
             api_name_smali = java_class_name2smali_name(class_name) + '->' + method_name
             sensitive_apis.append(api_name_smali)
 
+print(sensitive_apis)
+
 path_to_lib_type_1 = path.join(dir_path + '/res/liblist_threshold_10.txt')
 Third_part_libraries = ['L' + lib_cnt.split(';')[0].strip('"').lstrip('/') for lib_cnt in read_txt(
     path_to_lib_type_1, mode='r')]
@@ -267,6 +269,7 @@ def get_apis(dexes, max_number_of_smali_files):
 
     def _check_sensitive_api(api_query):
         if api_query in sensitive_apis:
+            print('okok')
             return True
         else:
             return False
@@ -296,10 +299,11 @@ def get_apis(dexes, max_number_of_smali_files):
                     # todo: justify the method is not the type of overload
                     # note: androidguard provides the EncodedMethod type, which is indeed not helpful, sometimes it is problematic
                     # e.g., from now on (version 3.3.5), the encodedmethod is actually implemented in the parent class yet neglected by androidguard
-                    if _check_sensitive_api(class_name + "->" + method_name) or \
+                    if _check_sensitive_api(class_name + '->' + method_name) or \
                             _check_dangerous_api(class_name + '->' + method_name):
                         api_info = invoke_type + ' ' + class_name + '->' + method_name + proto + \
                                    TAG_SPLITTER + method_header
+                        print('ok:', api_info)
                         apis.append(api_info)
             if len(apis) <= 0:
                 continue
@@ -430,7 +434,7 @@ def get_same_class_prefix(entry_node_list):
 
 def _main():
     rtn_str = apk2features(
-        '/mnt/c/Users/lideq/datasets/drebin/dissection/0a01c7ad078ee2f7df0b13919b860d99961861a7940fb0c355eed3510937d8f0',
+        '/mnt/c/Users/lideq/datasets/drebin/malicious_samples/0a073153ba87aebad2f47bc8a0eb3a40f4f24599c7f3926502c070133a09c1c0',
         200000,
         "./abc.feat")
     print(rtn_str)

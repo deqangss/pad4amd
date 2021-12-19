@@ -108,7 +108,6 @@ class Apk2features(object):
         counter_mal, counter_ben = collections.Counter(), collections.Counter()
         feat_info_dict = collections.defaultdict(set)
         feat_type_dict = collections.defaultdict(str)
-        print('dataset number:', len(feature_path_list))
         for feature_path, label in zip(feature_path_list, gt_labels):
             if not os.path.exists(feature_path):
                 continue
@@ -116,7 +115,6 @@ class Apk2features(object):
                 feature_path)  # each file contains a dict of {root call method: networkx objects}
             feature_occurrence = set()
             feature_list, feature_info_list, feature_type_list = feat_gen.get_feature_list(features)
-            print(len(features), len(feature_list), feature_list)
             feature_occurrence.update(feature_list)
             for _feat, _feat_info, _feat_type in zip(feature_list, feature_info_list, feature_type_list):
                 feat_info_dict[_feat].add(_feat_info)
@@ -126,7 +124,6 @@ class Apk2features(object):
             else:
                 counter_ben.update(list(feature_occurrence))
         all_words = list(set(list(counter_ben.keys()) + list(counter_mal.keys())))
-        print('word number:', len(all_words))
         if len(all_words) <= 0:
             raise ValueError("No features exist on this dataset.")
 
