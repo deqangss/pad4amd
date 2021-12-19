@@ -268,9 +268,10 @@ def get_apis(dexes, max_number_of_smali_files):
             return False
 
     def _check_sensitive_api(api_query):
-        if api_query in sensitive_apis:
-            print('okokooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo')
-            return True
+        for specific_api in sensitive_apis:
+            if specific_api == api_query:
+                print('okokooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo')
+                return True
         else:
             return False
 
