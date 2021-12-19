@@ -47,23 +47,27 @@ class MulModMalwareDetector(nn.Module):
         self.parse_args(**kwargs)
 
         # the name ``embedding_weight'' is not changable
-        self.embedding_weight = nn.Parameter(torch.empty(size=(self.input_dim_gcn, self.embedding_dim)))
-        nn.init.normal_(self.embedding_weight.data)  # default initialization method in torch
+        # self.embedding_weight = nn.Parameter(torch.empty(size=(self.input_dim_gcn, self.embedding_dim)))
+        # nn.init.normal_(self.embedding_weight.data)  # default initialization method in torch
 
-        self.gcn = GCN(self.embedding_dim,
-                       self.hidden_units[0],
-                       self.hidden_units[1],
-                       dropout=self.dropout,
-                       with_relu=self.with_relu,
-                       with_bias=self.with_bias,
-                       smooth=self.smooth,
-                       alpha_=self.alpha_,
-                       device=self.device
-                       )
+        # self.gcn = GCN(self.embedding_dim,
+        #                self.hidden_units[0],
+        #                self.hidden_units[1],
+        #                dropout=self.dropout,
+        #                with_relu=self.with_relu,
+        #                with_bias=self.with_bias,
+        #                smooth=self.smooth,
+        #                alpha_=self.alpha_,
+        #                device=self.device
+        #                )
+        self.conv1 = nn.Conv2d(1, 6, 5)
+        self.conv2 = nn.Conv2d(6, 16, 5)
+
+        self.output_size_x2 = (((self.input_dim_gcn - 4 - 4 * 2) // 4) ** 2) * 16
 
         self.dense_layers = []
         if 0 < len(self.dense_hidden_units) <= 1:
-            self.dense_layers.append(nn.Linear(self.input_dim_dnn + self.hidden_units[1], self.dense_hidden_units[0]))
+            self.dense_layers.append(nn.Linear(self.input_dim_dnn + self.output_size_x2, self.dense_hidden_units[0]))
         elif len(self.dense_hidden_units) > 1:
             self.dense_layers.append(nn.Linear(self.input_dim_dnn, self.dense_hidden_units[0]))
         else:
@@ -71,7 +75,7 @@ class MulModMalwareDetector(nn.Module):
 
         for i in range(len(self.dense_hidden_units[0:-1])):
             if i == len(self.dense_hidden_units) - 2:
-                self.dense_layers.append(nn.Linear(self.dense_hidden_units[i] + self.hidden_units[1],
+                self.dense_layers.append(nn.Linear(self.dense_hidden_units[i] + self.output_size_x2,
                                                    self.dense_hidden_units[i + 1]))
             else:
                 self.dense_layers.append(nn.Linear(self.dense_hidden_units[i],
@@ -127,12 +131,18 @@ class MulModMalwareDetector(nn.Module):
         # dnn
         for dense_layer in self.dense_layers[:-2]:
             x1 = self.activation_func(dense_layer(x1))
-        # gcn
-        binariz_x2 = binariz_x2.unsqueeze(-1) * self.embedding_weight
-        binariz_x2 = self.gcn.forward(binariz_x2, x2)
+        # # gcn
+        # binariz_x2 = binariz_x2.unsqueeze(-1) * self.embedding_weight
+        # binariz_x2 = self.gcn.forward(binariz_x2, x2)
+        # cnn
+        x2 = x2.unsqueeze(1)
+        x3 = self.activation_func(self.conv1(x2))
+        x2 = F.max_pool2d(self.activation_func(self.conv1(x2)), (2, 2))
+        x2 = F.max_pool2d(self.activation_func(self.conv2(x2)), (2, 2))
+        x2 = torch.flatten(x2, 1)
 
         # merge
-        x = torch.hstack([x1, binariz_x2])
+        x = torch.hstack([x1, x2])
         x = self.activation_func(self.dense_layers[-2](x))
         latent_representation = F.dropout(x, self.dropout, training=self.training)
         logits = self.dense_layers[-1](latent_representation)
