@@ -83,6 +83,10 @@ def _main():
     else:
         dv = 'cuda'
 
+    print(dataset.vocab_size)
+    import sys
+    sys.exit(1)
+
     model_name = args.model_name if args.mode == 'test' else time.strftime("%Y%m%d-%H%M%S")
     model = MulModMalwareDetector(dataset.non_api_size,
                                   dataset.vocab_size - dataset.non_api_size,
