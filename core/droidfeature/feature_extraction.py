@@ -108,6 +108,7 @@ class Apk2features(object):
         counter_mal, counter_ben = collections.Counter(), collections.Counter()
         feat_info_dict = collections.defaultdict(set)
         feat_type_dict = collections.defaultdict(str)
+        print('dataset number:', len(feature_path_list))
         for feature_path, label in zip(feature_path_list, gt_labels):
             if not os.path.exists(feature_path):
                 continue
@@ -124,6 +125,7 @@ class Apk2features(object):
             else:
                 counter_ben.update(list(feature_occurrence))
         all_words = list(set(list(counter_ben.keys()) + list(counter_mal.keys())))
+        print('word number:', len(all_words))
         if len(all_words) <= 0:
             raise ValueError("No features exist on this dataset.")
 
