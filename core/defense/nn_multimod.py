@@ -140,6 +140,7 @@ class MulModMalwareDetector(nn.Module):
         x2 = F.max_pool2d(self.activation_func(self.conv1(x2)), (2, 2))
         x2 = F.max_pool2d(self.activation_func(self.conv2(x2)), (2, 2))
         x2 = torch.flatten(x2, 1)
+        x2 = F.dropout(x2, self.dropout, training=self.training)
 
         # merge
         x = torch.hstack([x1, x2])
