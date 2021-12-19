@@ -269,7 +269,7 @@ def get_apis(dexes, max_number_of_smali_files):
 
     def _check_sensitive_api(api_query):
         if api_query in sensitive_apis:
-            print('okok')
+            print('okokooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo')
             return True
         else:
             return False
@@ -303,7 +303,6 @@ def get_apis(dexes, max_number_of_smali_files):
                             _check_dangerous_api(class_name + '->' + method_name):
                         api_info = invoke_type + ' ' + class_name + '->' + method_name + proto + \
                                    TAG_SPLITTER + method_header
-                        print('ok:', api_info)
                         apis.append(api_info)
             if len(apis) <= 0:
                 continue
