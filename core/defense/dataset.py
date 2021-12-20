@@ -162,7 +162,9 @@ class Dataset(torch.utils.data.Dataset):
                 non_api_rpst, api_rpst, label = self.get_numerical_input(feature_path, label)
                 X1.append(non_api_rpst)
                 X2.append(api_rpst)
+            print('okok')
             X1, X2 = np.stack(X1, axis=0), np.stack(X2, axis=0)
+            print('okokok')
             np.savez_compressed(rpst_saving_path, x1=X1, x2=X2, label=labels)
             return X1, X2, labels
         else:
