@@ -124,6 +124,7 @@ class MulModMalwareDetector(nn.Module):
         self.with_relu = with_relu
         self.with_bias = with_bias
         self.smooth = smooth
+        self.proc_number = kwargs['proc_number']
         if len(kwargs) > 0:
             logger.warning("Unknown hyper-parameters {}".format(str(kwargs)))
 
@@ -136,11 +137,9 @@ class MulModMalwareDetector(nn.Module):
         # binariz_x2 = self.gcn.forward(binariz_x2, x2)
         # cnn
         x2 = x2.unsqueeze(1)
-        print(x2.shape)
         x2 = F.avg_pool2d(self.activation_func(self.conv1(x2)), (2, 2))
         x2 = F.avg_pool2d(self.activation_func(self.conv2(x2)), (2, 2))
         x2 = torch.flatten(x2, 1)
-        print(x2.shape)
         x2 = F.dropout(x2, self.dropout, training=self.training)
 
         # merge
@@ -243,6 +242,11 @@ class MulModMalwareDetector(nn.Module):
         for i in range(epochs):
             self.train()
             losses, accuracies = [], []
+            if i >= 1:
+                train_data_producer.dataset.set_use_cache(use_cache=True)
+                train_data_producer.num_worker = self.proc_number
+                validation_data_producer.dataset.set_use_cache(use_cache=True)
+                validation_data_producer.num_worker = self.proc_number
             for idx_batch, (x1_train, x2_train, y_train) in enumerate(train_data_producer):
                 x1_train, x2_train, y_train = utils.to_device(x1_train.float(), x2_train.float(), y_train.long(),
                                                               self.device)

@@ -174,11 +174,11 @@ class Dataset(torch.utils.data.Dataset):
             # X1, X2, labels = utils.read_pickle(rpst_saving_path, use_gzip=True)
             return utils.read_pickle(rpst_saving_path, use_gzip=True)
 
-    def get_input_producer(self, x1, x2, y, batch_size, name='train'):
+    def get_input_producer(self, feature_paths, y, batch_size, use_cache=False, name='train'):
         params = {'batch_size': batch_size,
-                  'num_workers': self.feature_ext_args['proc_number'],
+                  'num_workers': 0,
                   'shuffle': False}
-        return torch.utils.data.DataLoader(DatasetTorch(x1, x2, y, self, name=name),
+        return torch.utils.data.DataLoader(DatasetTorch(feature_paths, y, self, use_cache=use_cache, name=name),
                                            worker_init_fn=lambda x: np.random.seed(torch.randint(0, 2^31, [1,])[0] + x),
                                            **params)
 
@@ -219,27 +219,40 @@ class Dataset(torch.utils.data.Dataset):
 
 class DatasetTorch(torch.utils.data.Dataset):
     'Characterizes a dataset for PyTorch'
-    def __init__(self, X1, X2, datay, dataset_obj, name='train'):
+    def __init__(self, feature_paths, datay, dataset_obj, use_cache=False, name='train'):
         'Initialization'
         try:
             assert (name == 'train' or name == 'test' or name == 'val')
         except Exception as e:
             raise AssertionError("Only support selections: 'train', 'val' or 'test'.\n")
-        self.X1 = X1
-        self.X2 = X2
+
+        self.feature_paths = feature_paths
         self.datay = datay
         self.dataset_obj = dataset_obj
         self.name = name
 
+        self.cached_data = []
+        self.use_cache = use_cache
+
     def __len__(self):
         'Denotes the total number of samples'
-        return len(self.X1)
+        return len(self.feature_paths)
+
+    def set_use_cache(self, use_cache):
+        if use_cache:
+            x_list = list(self.cached_data)
+            self.cached_data = x_list
+        else:
+            self.cached_data = []
+        self.use_cache = use_cache
 
     def __getitem__(self, index):
         'Generates one sample of data'
         # Select sample
-        x1 = self.X1[index]
-        x2 = self.X2[index]
-        y = self.datay[index]
-        return x1, x2, y
+        if not self.use_cache:
+            x1, x2, label = self.dataset_obj.get_numerical_input(self.feature_paths[index], self.datay[index])
+            self.cached_data.append((x1, x2, label))
+        else:
+            x1, x2, label = self.cached_data[index]
+        return x1, x2, label
 
