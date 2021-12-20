@@ -125,18 +125,26 @@ def dump_json(obj_dict, file_path):
         raise IOError(str(ex) + ": Fail to dump dict using json toolbox")
 
 
-def dump_pickle(data, path):
+def dump_pickle(data, path, use_gzip=False):
     if not os.path.exists(os.path.dirname(path)):
         mkdir(os.path.dirname(path))
-    with open(path, 'wb') as wr:
-        pkl.dump(data, wr)
+    if not use_gzip:
+        with open(path, 'wb') as wr:
+            pkl.dump(data, wr)
+    else:
+        with gzip.open(path, 'wb') as wr:
+            pkl.dump(data, wr)
     return True
 
 
-def read_pickle(path):
+def read_pickle(path, use_gzip=False):
     if os.path.isfile(path):
-        with open(path, 'rb') as fr:
-            return pkl.load(fr)
+        if not use_gzip:
+            with open(path, 'rb') as fr:
+                return pkl.load(fr)
+        else:
+            with gzip.open(path, 'rb') as fr:
+                return pkl.load(fr)
     else:
         raise IOError("The {0} is not been found.".format(path))
 

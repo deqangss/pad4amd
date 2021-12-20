@@ -165,11 +165,13 @@ class Dataset(torch.utils.data.Dataset):
             print('okok')
             X1, X2 = np.stack(X1, axis=0), np.stack(X2, axis=0)
             print('okokok')
-            np.savez_compressed(rpst_saving_path, x1=X1, x2=X2, label=labels)
+            # np.savez_compressed(rpst_saving_path, x1=X1, x2=X2, label=labels)
+            utils.dump_pickle((X1, X2, labels), rpst_saving_path, use_gzip=True)
             return X1, X2, labels
         else:
-            res = np.load(rpst_saving_path)
-            return res['x1'], res['x2'], res['label']
+            # res = np.load(rpst_saving_path)
+            # return res['x1'], res['x2'], res['label']
+            return utils.read_pickle(rpst_saving_path, use_gzip=True)
 
     def get_input_producer(self, x1, x2, y, batch_size, name='train'):
         params = {'batch_size': batch_size,
