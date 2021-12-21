@@ -198,8 +198,7 @@ class Apk2features(object):
             rpst_cached_path = os.path.join(cache_dir, rpst_cached_name)
             use_cache = True
             if os.path.exists(rpst_cached_path):
-                res = utils.read_pickle(rpst_cached_path, use_gzip=True)
-                return *res, label
+                return utils.read_pickle(rpst_cached_path, use_gzip=True)
 
         if not isinstance(feature_path, str):
             logger.warning("Cannot find the feature path: {}, zero vector used".format(feature_path))
@@ -236,7 +235,8 @@ class Apk2features(object):
                 api_graph_class_wise.add_edge(a, b)
             api_representations.append(nx.convert_matrix.to_scipy_sparse_matrix(api_graph_class_wise))
         if use_cache:
-            utils.dump_pickle((non_api_represenstation, api_representations), rpst_cached_path, use_gzip=True)
+            utils.dump_pickle((non_api_represenstation, api_representations, label),
+                              rpst_cached_path, use_gzip=True)
         return non_api_represenstation, api_representations, label
 
 
