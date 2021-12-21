@@ -180,7 +180,7 @@ class Dataset(torch.utils.data.Dataset):
     def get_input_producer(self, feature_paths, y, batch_size, name='train'):
         params = {'batch_size': batch_size,
                   'num_workers': self.feature_ext_args['proc_number'],
-                  'prefetch': 10 * self.feature_ext_args['proc_number'],
+                  'prefetch_factor': 10,
                   'shuffle': False}
         return torch.utils.data.DataLoader(DatasetTorch(feature_paths, y, self, name=name),
                                            worker_init_fn=lambda x: np.random.seed(torch.randint(0, 2^31, [1,])[0] + x),
