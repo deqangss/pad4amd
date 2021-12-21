@@ -13,10 +13,11 @@ from tools import utils
 
 
 class Dataset(torch.utils.data.Dataset):
-    def __init__(self, seed=0, device='cuda', feature_ext_args=None):
+    def __init__(self, seed=0, use_cache=True, device='cuda', feature_ext_args=None):
         """
         build dataset for ml model learning
         :param seed: Integer, the random seed
+        :param use_cache: Boolean, cache the representations
         :param device: String, 'cuda' or 'cpu'
         :param feature_ext_args: Dict, arguments for feature extraction
         """
@@ -25,9 +26,16 @@ class Dataset(torch.utils.data.Dataset):
         np.random.seed(self.seed)
         torch.manual_seed(self.seed)
         torch.set_default_dtype(torch.float32)
-        self.device = device
-        self.feature_ext_args = feature_ext_args
+        self.use_cache = use_cache
+        if self.use_cache:
+            self.temp_dir_handle = tempfile.TemporaryDirectory()
+            utils.mkdir(self.temp_dir_handle.name)
+        else:
+            self.temp_dir_handle = utils.SimplifyClass()
 
+        self.device = device
+
+        self.feature_ext_args = feature_ext_args
         if feature_ext_args is None:
             self.feature_extractor = Apk2features(config.get('metadata', 'naive_data_pool'),
                                                   config.get('dataset', 'intermediate')
@@ -151,7 +159,9 @@ class Dataset(torch.utils.data.Dataset):
         # --->> features: 1d array, and a list of sparse matrices
         # --->> label: scalar
         """
-        non_api_rpst, api_rpst, label = self.feature_extractor.feature2ipt(feature_path, label, self.vocab)
+        non_api_rpst, api_rpst, label = self.feature_extractor.feature2ipt(feature_path, label,
+                                                                           self.vocab,
+                                                                           self.temp_dir_handle.name)
         return non_api_rpst, self.feature_api_rpst_sum(api_rpst), label
 
     def get_numerical_input_batch(self, feature_paths, labels, name='train'):
@@ -162,25 +172,21 @@ class Dataset(torch.utils.data.Dataset):
                 non_api_rpst, api_rpst, label = self.get_numerical_input(feature_path, label)
                 X1.append(non_api_rpst)
                 X2.append(api_rpst)
-            # print('okok')
-            # X1, X2 = np.stack(X1, axis=0), np.stack(X2, axis=0)
-            print('okokok')
-            # np.savez_compressed(rpst_saving_path, x1=X1, x2=X2, label=labels)
             utils.dump_pickle((X1, X2, labels), rpst_saving_path, use_gzip=True)
             return X1, X2, labels
         else:
-            # res = np.load(rpst_saving_path)
-            # return res['x1'], res['x2'], res['label']
-            # X1, X2, labels = utils.read_pickle(rpst_saving_path, use_gzip=True)
             return utils.read_pickle(rpst_saving_path, use_gzip=True)
 
-    def get_input_producer(self, feature_paths, y, batch_size, use_cache=False, name='train'):
+    def get_input_producer(self, feature_paths, y, batch_size, name='train'):
         params = {'batch_size': batch_size,
-                  'num_workers': 0,
+                  'num_workers': self.feature_ext_args['proc_number'],
                   'shuffle': False}
-        return torch.utils.data.DataLoader(DatasetTorch(feature_paths, y, self, use_cache=use_cache, name=name),
+        return torch.utils.data.DataLoader(DatasetTorch(feature_paths, y, self, name=name),
                                            worker_init_fn=lambda x: np.random.seed(torch.randint(0, 2^31, [1,])[0] + x),
                                            **params)
+
+    def clear_up(self):
+        self.temp_dir_handle.cleanup()
 
     @staticmethod
     def get_modification(adv_x, x, idx, sp=True):
@@ -219,7 +225,7 @@ class Dataset(torch.utils.data.Dataset):
 
 class DatasetTorch(torch.utils.data.Dataset):
     'Characterizes a dataset for PyTorch'
-    def __init__(self, feature_paths, datay, dataset_obj, use_cache=False, name='train'):
+    def __init__(self, feature_paths, datay, dataset_obj, name='train'):
         'Initialization'
         try:
             assert (name == 'train' or name == 'test' or name == 'val')
@@ -231,28 +237,18 @@ class DatasetTorch(torch.utils.data.Dataset):
         self.dataset_obj = dataset_obj
         self.name = name
 
-        self.cached_data = []
-        self.use_cache = use_cache
-
     def __len__(self):
         'Denotes the total number of samples'
         return len(self.feature_paths)
 
-    def set_use_cache(self, use_cache):
-        if use_cache:
-            x_list = list(self.cached_data)
-            self.cached_data = x_list
-        else:
-            self.cached_data = []
-        self.use_cache = use_cache
-
     def __getitem__(self, index):
         'Generates one sample of data'
         # Select sample
-        if not self.use_cache:
-            x1, x2, label = self.dataset_obj.get_numerical_input(self.feature_paths[index], self.datay[index])
-            self.cached_data.append((x1, x2, label))
-        else:
-            x1, x2, label = self.cached_data[index]
+        return self.get_item(index)
+
+    def get_item(self, index):
+        x1, x2, label = self.dataset_obj.get_numerical_input(self.feature_paths[index], self.datay[index])
         return x1, x2, label
+
+
 

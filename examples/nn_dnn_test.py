@@ -36,7 +36,6 @@ detector_argparse.add_argument('--alpha_', type=float, default=0.2,
                                help='slope coefficient of leaky-relu or elu')
 detector_argparse.add_argument('--smooth', action='store_true', default=False,
                                help='use smooth activation elu (rather than leaky-relu) in the GAT layer.')
-
 detector_argparse.add_argument('--batch_size', type=int, default=64,
                                help='mini-batch size')
 detector_argparse.add_argument('--epochs', type=int, default=100,
@@ -45,6 +44,10 @@ detector_argparse.add_argument('--lr', type=float, default=0.005,
                                help='initial learning rate.')
 detector_argparse.add_argument('--weight_decay', type=float, default=0e-4,
                                help='coefficient of weight decay')
+
+dataset_argparse = cmd_md.add_argument_group(title='data_producer')
+detector_argparse.add_argument('--cache', action='store_true', default=False,
+                               help='use cache data or not.')
 
 mode_argparse = cmd_md.add_argument_group(title='mode')
 mode_argparse.add_argument('--mode', type=str, default='train', choices=['train', 'test'], required=False,
@@ -55,10 +58,10 @@ mode_argparse.add_argument('--model_name', type=str, default='xxxxxxxx-xxxxxx', 
 
 def _main():
     args = cmd_md.parse_args()
-    dataset = Dataset(feature_ext_args=get_group_args(args, cmd_md, 'feature'))
-    train_dataset_producer = dataset.get_input_producer(*dataset.train_dataset, batch_size=args.batch_size, use_cache=False, name='train')
-    val_dataset_producer = dataset.get_input_producer(*dataset.validation_dataset, batch_size=args.batch_size, use_cache=False, name='val')
-    test_dataset_producer = dataset.get_input_producer(*dataset.test_dataset, batch_size=args.batch_size, use_cache=False, name='test')
+    dataset = Dataset(use_cache=args.cache, feature_ext_args=get_group_args(args, cmd_md, 'feature'))
+    train_dataset_producer = dataset.get_input_producer(*dataset.train_dataset, batch_size=args.batch_size, name='train')
+    val_dataset_producer = dataset.get_input_producer(*dataset.validation_dataset, batch_size=args.batch_size, name='val')
+    test_dataset_producer = dataset.get_input_producer(*dataset.test_dataset, batch_size=args.batch_size, name='test')
     assert dataset.n_classes == 2
 
     # test: model training

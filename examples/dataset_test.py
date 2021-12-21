@@ -25,22 +25,21 @@ args_dict = vars(args)
 
 
 def main_():
-    dataset = Dataset(feature_ext_args=args_dict)
+    dataset = Dataset(use_cache=True, feature_ext_args=args_dict)
     validation_data, valy = dataset.validation_dataset
     # validation_x1, validation_x2, valy = dataset.get_numerical_input_batch(validation_data, valy)
-    val_dataset_producer = dataset.get_input_producer(validation_data, valy, batch_size=2, use_cache=False,
-                                                      name='val')
+    val_dataset_producer = dataset.get_input_producer(validation_data, valy, batch_size=2, name='val')
     import time
     for epoch in range(2):
         start_time = time.time()
-        if epoch >= 1:
-            val_dataset_producer.dataset.set_use_cache(use_cache=True)
-            val_dataset_producer.num_workder = 2
+        # if epoch >= 1:
+        #     val_dataset_producer.dataset.set_use_cache(use_cache=True)
+        #     val_dataset_producer.num_workder = 2
         for idx, (x1, x2, l) in enumerate(val_dataset_producer):
             print(x1.shape)
             print(x2.shape)
         print('cost time:', time.time() - start_time)
-
+    dataset.clear_up()
 
 if __name__ == '__main__':
     main_()
