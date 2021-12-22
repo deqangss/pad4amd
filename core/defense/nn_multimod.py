@@ -60,8 +60,8 @@ class MulModMalwareDetector(nn.Module):
         #                alpha_=self.alpha_,
         #                device=self.device
         #                )
-        self.conv1 = nn.Conv2d(1, 6, 5)
-        self.conv2 = nn.Conv2d(6, 16, 5)
+        self.conv1 = nn.Conv2d(1, 1, 5)
+        self.conv2 = nn.Conv2d(1, 1, 5)
 
         self.output_size_x2 = (((self.input_dim_gcn - 4 - 4 * 2) // 4) ** 2) * 16
 
