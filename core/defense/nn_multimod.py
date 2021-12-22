@@ -63,7 +63,7 @@ class MulModMalwareDetector(nn.Module):
         self.conv1 = nn.Conv2d(1, 1, 5)
         self.conv2 = nn.Conv2d(1, 1, 5)
 
-        self.output_size_x2 = (((self.input_dim_gcn - 4 - 4 * 2) // 4) ** 2) * 16
+        self.output_size_x2 = (((self.input_dim_gcn - 4 - 4 * 2) // 4) ** 2) * 1
 
         self.dense_layers = []
         if 0 < len(self.dense_hidden_units) <= 1:
