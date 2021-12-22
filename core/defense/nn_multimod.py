@@ -60,8 +60,8 @@ class MulModMalwareDetector(nn.Module):
         #                alpha_=self.alpha_,
         #                device=self.device
         #                )
-        self.conv1 = nn.Conv2d(1, 1, 5)
-        self.conv2 = nn.Conv2d(1, 1, 5)
+        self.conv1 = nn.Conv2d(1, self.n_filter, 5)
+        self.conv2 = nn.Conv2d(self.n_filter, 1, 5)
 
         self.output_size_x2 = (((self.input_dim_gcn - 4 - 4 * 2) // 4) ** 2) * 1
 
@@ -95,6 +95,7 @@ class MulModMalwareDetector(nn.Module):
 
     def parse_args(self,
                    embedding_dim=64,
+                   n_filter=2,
                    hidden_units=None,
                    dense_hidden_units=None,
                    dropout=0.6,
@@ -105,6 +106,7 @@ class MulModMalwareDetector(nn.Module):
                    **kwargs
                    ):
         self.embedding_dim = embedding_dim
+        self.n_filter = n_filter
         if hidden_units is None:
             self.hidden_units = [200, 200]
         elif isinstance(hidden_units, list):
