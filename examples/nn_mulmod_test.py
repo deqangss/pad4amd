@@ -35,6 +35,8 @@ detector_argparse.add_argument('--embedding_dim', type=int, default=64,
                                help='embedding dimension')
 detector_argparse.add_argument('--n_filter', type=int, default=2,
                                help='filters')
+detector_argparse.add_argument('--n_filter2', type=int, default=1,
+                               help='filters')
 detector_argparse.add_argument('--hidden_units', type=lambda s: [int(u) for u in s.split(',')], default='128,128',
                                help='delimited between two integers, e.g., "128,128"', )
 detector_argparse.add_argument('--dense_hidden_units', type=lambda s: [int(u) for u in s.split(',')], default='200,200',

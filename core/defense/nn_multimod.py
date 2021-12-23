@@ -61,21 +61,24 @@ class MulModMalwareDetector(nn.Module):
         #                device=self.device
         #                )
         self.conv1 = nn.Conv2d(1, self.n_filter, 5)
-        self.conv2 = nn.Conv2d(self.n_filter, 1, 5)
+        self.conv2 = nn.Conv2d(self.n_filter, self.n_filter2, 5)
 
-        self.output_size_x2 = (((self.input_dim_gcn - 4 - 4 * 2) // 4) ** 2) * 1
+        self.cnn_fsize_x2 = (((self.input_dim_gcn - 4 - 4 * 2) // 4) ** 2) * self.n_filter2
+        assert len(self.dense_hidden_units) >= 1, "At least one hidden layer"
 
         self.dense_layers = []
         if 0 < len(self.dense_hidden_units) <= 1:
-            self.dense_layers.append(nn.Linear(self.input_dim_dnn + self.output_size_x2, self.dense_hidden_units[0]))
+            self.dense_layers.append(nn.Linear(self.input_dim_dnn * 2, self.dense_hidden_units[0]))
+            self.cnn_flatten_layer = nn.Linear(self.cnn_fsize_x2, self.input_dim_dnn)
         elif len(self.dense_hidden_units) > 1:
             self.dense_layers.append(nn.Linear(self.input_dim_dnn, self.dense_hidden_units[0]))
+            self.cnn_flatten_layer = nn.Linear(self.cnn_fsize_x2, self.dense_hidden_units[-2])
         else:
             raise ValueError("Expect at least one hidden layer.")
 
         for i in range(len(self.dense_hidden_units[0:-1])):
             if i == len(self.dense_hidden_units) - 2:
-                self.dense_layers.append(nn.Linear(self.dense_hidden_units[i] + self.output_size_x2,
+                self.dense_layers.append(nn.Linear(self.dense_hidden_units[i] * 2,
                                                    self.dense_hidden_units[i + 1]))
             else:
                 self.dense_layers.append(nn.Linear(self.dense_hidden_units[i],
@@ -96,6 +99,7 @@ class MulModMalwareDetector(nn.Module):
     def parse_args(self,
                    embedding_dim=64,
                    n_filter=2,
+                   n_filter2=2,
                    hidden_units=None,
                    dense_hidden_units=None,
                    dropout=0.6,
@@ -107,6 +111,7 @@ class MulModMalwareDetector(nn.Module):
                    ):
         self.embedding_dim = embedding_dim
         self.n_filter = n_filter
+        self.n_filter2 = n_filter2
         if hidden_units is None:
             self.hidden_units = [200, 200]
         elif isinstance(hidden_units, list):
@@ -143,6 +148,7 @@ class MulModMalwareDetector(nn.Module):
         x2 = F.avg_pool2d(self.activation_func(self.conv2(x2)), (2, 2))
         x2 = torch.flatten(x2, 1)
         x2 = F.dropout(x2, self.dropout, training=self.training)
+        x2 = self.activation_func(self.cnn_flatten_layer(x2))
 
         # merge
         x = torch.hstack([x1, x2])
