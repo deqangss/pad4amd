@@ -60,33 +60,42 @@ class MulModMalwareDetector(nn.Module):
         #                alpha_=self.alpha_,
         #                device=self.device
         #                )
-        self.conv1 = nn.Conv2d(1, self.n_filter, 5)
-        self.conv2 = nn.Conv2d(self.n_filter, self.n_filter2, 5)
-
-        self.cnn_fsize_x2 = (((self.input_dim_gcn - 4 - 4 * 2) // 4) ** 2) * self.n_filter2
+        # self.conv1 = nn.Conv2d(1, self.n_filter, 5)
+        # self.conv2 = nn.Conv2d(self.n_filter, self.n_filter2, 5)
+        #
+        # self.cnn_fsize_x2 = (((self.input_dim_gcn - 4 - 4 * 2) // 4) ** 2) * self.n_filter2
+        # self.dense_layer2 = nn.Linear(self.input_dim_gcn, self.hidden_units[0])
         assert len(self.dense_hidden_units) >= 1, "At least one hidden layer"
 
-        self.dense_layers = []
+        self.dense_layers_header1 = []
+        self.dense_layers_header2 = []
         if 0 < len(self.dense_hidden_units) <= 1:
-            self.dense_layers.append(nn.Linear(self.input_dim_dnn * 2, self.dense_hidden_units[0]))
-            self.cnn_flatten_layer = nn.Linear(self.cnn_fsize_x2, self.input_dim_dnn)
+            self.dense_layers_header1.append(nn.Linear(self.input_dim_dnn, self.dense_hidden_units[0]))
+            self.dense_layers_header2.append(nn.Linear(self.input_dim_gcn, self.dense_hidden_units[0]))
+            # self.cnn_flatten_layer = nn.Linear(self.cnn_fsize_x2, self.input_dim_dnn)
         elif len(self.dense_hidden_units) > 1:
-            self.dense_layers.append(nn.Linear(self.input_dim_dnn, self.dense_hidden_units[0]))
-            self.cnn_flatten_layer = nn.Linear(self.cnn_fsize_x2, self.dense_hidden_units[-2])
+            self.dense_layers_header1.append(nn.Linear(self.input_dim_dnn, self.dense_hidden_units[0]))
+            self.dense_layers_header2.append(nn.Linear(self.input_dim_gcn, self.dense_hidden_units[0]))
+            # self.cnn_flatten_layer = nn.Linear(self.cnn_fsize_x2, self.dense_hidden_units[-2])
         else:
             raise ValueError("Expect at least one hidden layer.")
 
+        self.dense_layer_rear = []
         for i in range(len(self.dense_hidden_units[0:-1])):
             if i == len(self.dense_hidden_units) - 2:
-                self.dense_layers.append(nn.Linear(self.dense_hidden_units[i] * 2,
-                                                   self.dense_hidden_units[i + 1]))
+                self.dense_layer_rear = nn.Linear(self.dense_hidden_units[i] * 2, self.dense_hidden_units[i + 1])
             else:
-                self.dense_layers.append(nn.Linear(self.dense_hidden_units[i],
-                                                   self.dense_hidden_units[i + 1]))
-        self.dense_layers.append(nn.Linear(self.dense_hidden_units[-1], self.n_classes))
+                self.dense_layers_header1.append(nn.Linear(self.dense_hidden_units[i],
+                                                           self.dense_hidden_units[i + 1]))
+                self.dense_layers_header2.append(nn.Linear(self.dense_hidden_units[i],
+                                                           self.dense_hidden_units[i + 1]))
+
+        self.output_layer = nn.Linear(self.dense_hidden_units[-1], self.n_classes)
         # registration
-        for idx_i, dense_layer in enumerate(self.dense_layers):
-            self.add_module('nn_model_layer_{}'.format(idx_i), dense_layer)
+        for idx_i, dense_layer in enumerate(self.dense_layers_header1):
+            self.add_module('nn_layer_header1_{}'.format(idx_i), dense_layer)
+        for idx_i, dense_layer in enumerate(self.dense_layers_header2):
+            self.add_module('nn_layer_header2_{}'.format(idx_i), dense_layer)
 
         if self.smooth:
             self.activation_func = partial(F.elu, alpha=self.alpha_)
@@ -137,24 +146,26 @@ class MulModMalwareDetector(nn.Module):
 
     def forward(self, x1, binariz_x2, x2):
         # dnn
-        for dense_layer in self.dense_layers[:-2]:
+        for dense_layer in self.dense_layers_header1:
             x1 = self.activation_func(dense_layer(x1))
         # # gcn
         # binariz_x2 = binariz_x2.unsqueeze(-1) * self.embedding_weight
         # binariz_x2 = self.gcn.forward(binariz_x2, x2)
         # cnn
-        x2 = x2.unsqueeze(1)
-        x2 = F.avg_pool2d(self.activation_func(self.conv1(x2)), (2, 2))
-        x2 = F.avg_pool2d(self.activation_func(self.conv2(x2)), (2, 2))
-        x2 = torch.flatten(x2, 1)
-        x2 = F.dropout(x2, self.dropout, training=self.training)
-        x2 = self.activation_func(self.cnn_flatten_layer(x2))
-
+        # x2 = x2.unsqueeze(1)
+        # x2 = F.avg_pool2d(self.activation_func(self.conv1(x2)), (2, 2))
+        # x2 = F.avg_pool2d(self.activation_func(self.conv2(x2)), (2, 2))
+        # x2 = torch.flatten(x2, 1)
+        # x2 = F.dropout(x2, self.dropout, training=self.training)
+        # x2 = self.activation_func(self.cnn_flatten_layer(x2))
+        x2 = self.activation_func(self.dense_layers_header2[0](binariz_x2))
+        for dense_layer in self.dense_layers_header2[1:]:
+            x2 = self.activation_func(dense_layer(x2))
         # merge
         x = torch.hstack([x1, x2])
-        x = self.activation_func(self.dense_layers[-2](x))
+        x = self.activation_func(self.dense_layer_rear(x))
         latent_representation = F.dropout(x, self.dropout, training=self.training)
-        logits = self.dense_layers[-1](latent_representation)
+        logits = self.output_layer(latent_representation)
         return latent_representation, logits
 
     def binariz_feature(self, x2):
