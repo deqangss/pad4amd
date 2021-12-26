@@ -163,6 +163,7 @@ class MulModMalwareDetector(nn.Module):
             x2 = self.activation_func(dense_layer(x2))
         # merge
         x = torch.hstack([x1, x2])
+        x = F.dropout(x, self.dropout, training=self.training)
         x = self.activation_func(self.dense_layer_rear(x))
         latent_representation = F.dropout(x, self.dropout, training=self.training)
         logits = self.output_layer(latent_representation)
