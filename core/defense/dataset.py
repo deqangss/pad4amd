@@ -13,7 +13,7 @@ from tools import utils
 
 
 class Dataset(torch.utils.data.Dataset):
-    def __init__(self, seed=0, use_cache=True, device='cuda', feature_ext_args=None):
+    def __init__(self, seed=0, use_cache=False, device='cuda', feature_ext_args=None):
         """
         build dataset for ml model learning
         :param seed: Integer, the random seed
@@ -26,12 +26,12 @@ class Dataset(torch.utils.data.Dataset):
         np.random.seed(self.seed)
         torch.manual_seed(self.seed)
         torch.set_default_dtype(torch.float32)
-        self.use_cache = use_cache
-        if self.use_cache:
+        self.temp_data = utils.SimplifyClass()
+        if use_cache:
             self.temp_dir_handle = tempfile.TemporaryDirectory()
             utils.mkdir(self.temp_dir_handle.name)
         else:
-            self.temp_dir_handle = utils.SimplifyClass()
+            self.temp_dir_handle = None
 
         self.device = device
 
@@ -48,7 +48,7 @@ class Dataset(torch.utils.data.Dataset):
 
         # split the dataset for training, validation, testing
         data_saving_path = os.path.join(config.get('dataset', 'intermediate'), 'dataset.idx')
-        if os.path.exists(data_saving_path):
+        if os.path.exists(data_saving_path) and (not self.feature_extractor.update):
             (self.train_dataset, self.validation_dataset, self.test_dataset) = utils.read_pickle(data_saving_path)
 
             def path_tran(data_paths):
@@ -57,6 +57,7 @@ class Dataset(torch.utils.data.Dataset):
                     [os.path.join(config.get('metadata', 'naive_data_pool'),
                                   os.path.splitext(os.path.basename(name))[0] + self.feature_extractor.file_ext) for \
                      name in data_paths])
+
             self.train_dataset = (path_tran(self.train_dataset[0]), self.train_dataset[1])
             self.validation_dataset = (path_tran(self.validation_dataset[0]), self.validation_dataset[1])
             self.test_dataset = (path_tran(self.test_dataset[0]), self.test_dataset[1])
@@ -96,10 +97,12 @@ class Dataset(torch.utils.data.Dataset):
                               path=data_split_path)
 
         def query_path(_data_names):
-            return np.array([path for path in feature_paths if os.path.splitext(os.path.basename(path))[0] in _data_names])
+            return np.array(
+                [path for path in feature_paths if os.path.splitext(os.path.basename(path))[0] in _data_names])
 
         def query_indicator(_data_names):
-            return [True if os.path.splitext(os.path.basename(path))[0] in _data_names else False for path in feature_paths]
+            return [True if os.path.splitext(os.path.basename(path))[0] in _data_names else False for path in
+                    feature_paths]
 
         train_data = query_path(train_dn)
         random.seed(self.seed)
@@ -145,7 +148,8 @@ class Dataset(torch.utils.data.Dataset):
         if len(api_feat_representation_list) > 0:
             assert isinstance(api_feat_representation_list[0], csr_matrix)
         else:
-            return np.zeros(shape=(self.vocab_size - self.non_api_size, self.vocab_size - self.non_api_size), dtype=np.float)
+            return np.zeros(shape=(self.vocab_size - self.non_api_size, self.vocab_size - self.non_api_size),
+                            dtype=np.float)
         adj_array = np.asarray(api_feat_representation_list[0].todense()).astype(np.float32)
         for sparse_mat in api_feat_representation_list[1:]:
             adj_array += np.asarray(sparse_mat.todense()).astype(np.float32)
@@ -159,10 +163,10 @@ class Dataset(torch.utils.data.Dataset):
         # --->> features: 1d array, and a list of sparse matrices
         # --->> label: scalar
         """
-        non_api_rpst, api_rpst, label = self.feature_extractor.feature2ipt(feature_path, label,
-                                                                           self.vocab,
-                                                                           self.temp_dir_handle.name)
-        return non_api_rpst, self.feature_api_rpst_sum(api_rpst), label
+        feature_vector, label = self.feature_extractor.feature2ipt(feature_path, label,
+                                                                   self.vocab,
+                                                                   self.temp_dir_handle)
+        return feature_vector, label
 
     def get_numerical_input_batch(self, feature_paths, labels, name='train'):
         rpst_saving_path = os.path.join(config.get('dataset', 'intermediate'), '{}.npz'.format(name))
@@ -182,11 +186,12 @@ class Dataset(torch.utils.data.Dataset):
                   'num_workers': self.feature_ext_args['proc_number'],
                   'shuffle': False}
         return torch.utils.data.DataLoader(DatasetTorch(feature_paths, y, self, name=name),
-                                           worker_init_fn=lambda x: np.random.seed(torch.randint(0, 2^31, [1,])[0] + x),
+                                           worker_init_fn=lambda x: np.random.seed(
+                                               torch.randint(0, 2 ^ 31, [1, ])[0] + x),
                                            **params)
 
     def clear_up(self):
-        self.temp_dir_handle.cleanup()
+        self.temp_data.cleanup()
 
     @staticmethod
     def get_modification(adv_x, x, idx, sp=True):
@@ -196,7 +201,7 @@ class Dataset(torch.utils.data.Dataset):
         if isinstance(x_mod, np.ndarray):
             x_mod = np.array([x_mod[i, idx[i]] for i in range(x.shape[0])])
         else:
-            x_mod = torch.stack([x_mod[i, idx[i]]for i in range(x.shape[0])])
+            x_mod = torch.stack([x_mod[i, idx[i]] for i in range(x.shape[0])])
 
         if sp:
             if isinstance(x_mod, torch.Tensor):
@@ -225,6 +230,7 @@ class Dataset(torch.utils.data.Dataset):
 
 class DatasetTorch(torch.utils.data.Dataset):
     'Characterizes a dataset for PyTorch'
+
     def __init__(self, feature_paths, datay, dataset_obj, name='train'):
         'Initialization'
         try:
@@ -247,8 +253,7 @@ class DatasetTorch(torch.utils.data.Dataset):
         return self.get_item(index)
 
     def get_item(self, index):
-        x1, x2, label = self.dataset_obj.get_numerical_input(self.feature_paths[index], self.datay[index])
-        return x1, x2, label
-
-
-
+        if len(self.dataset_obj.temp_data.cache_arr) > index:
+            return self.dataset_obj.temp_data.cache_arr[index], self.datay[index]
+        else:
+            return self.dataset_obj.get_numerical_input(self.feature_paths[index], self.datay[index])

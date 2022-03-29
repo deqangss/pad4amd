@@ -79,10 +79,10 @@ DANGEROUS_API_SIMLI_TAGS = [
     'Ljava/lang/Class;->getDeclaredMethod',
     'Ljava/lang/Class;->getDeclaredMethods',
     'Ljavax/crypto',
+    'Ljava/security/spec',
     'Ldalvik/system/DexClassLoader',
-    'Ljava/lang/Runtime;->getRuntime',
-    'Ljava/lang/Runtime;->exec',
-    'Ljava/lang/Runtime;->loadLibrary',
+    'Ljava/lang/System;->loadLibrary',
+    'Ljava/lang/Runtime'
 ]
 
 # handle the restricted APIs
@@ -376,12 +376,10 @@ def format_feature(feature):
                 _feat = feat
             non_api_feature_list.append(_feat)
         elif isinstance(feat, list):  # apis
-            api_feature_class = []
             for api in feat:
                 api_info, _1 = api.split(TAG_SPLITTER, 1)
                 _api_name = get_api_name(api_info)
-                api_feature_class.append(_api_name)
-            api_feature_list.append(api_feature_class)
+                api_feature_list.append(_api_name)
         else:
             raise ValueError("Expect String or List, but got {}.".format(type(feat)))
     return non_api_feature_list, api_feature_list

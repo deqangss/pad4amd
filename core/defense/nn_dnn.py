@@ -86,15 +86,14 @@ class DNNMalwareDetector(nn.Module):
         if len(kwargs) > 0:
             logger.warning("Unknown hyper-parameters {}".format(str(kwargs)))
 
-    def forward(self, x1, binariz_x2, x2=None):
+    def forward(self, x):
         """
         Go through the neural network
 
         Parameters
         ----------
-        @param x1: 2D tensor, feature representation
+        @param x: 2D tensor, feature representation
         """
-        x = torch.hstack([x1, binariz_x2])
         for dense_layer in self.dense_layers[:-1]:
             x = self.activation_func(dense_layer(x))
 
@@ -102,19 +101,14 @@ class DNNMalwareDetector(nn.Module):
         logits = self.dense_layers[-1](latent_representation)
         return latent_representation, logits
 
-    def binariz_feature(self, x2):
-        binary_x2 = torch.clip(torch.sum(x2, dim=-1), max=1., min=0.)
-        return binary_x2, x2
-
     def inference(self, test_data_producer):
         confidences = []
         gt_labels = []
         self.eval()
         with torch.no_grad():
-            for x1, x2, y in test_data_producer:
-                x1, x2, y = utils.to_device(x1.float(), x2.float(), y.long(), self.device)
-                binariz_x2, x2 = self.binariz_feature(x2)
-                x_hidden, logits = self.forward(x1, binariz_x2, x2)
+            for x, y in test_data_producer:
+                x, y = utils.to_device(x.float(), y.long(), self.device)
+                x_hidden, logits = self.forward(x)
                 confidences.append(F.softmax(logits, dim=-1))
                 gt_labels.append(y)
         confidences = torch.vstack(confidences)
@@ -128,20 +122,17 @@ class DNNMalwareDetector(nn.Module):
         attributions = []
         gt_labels = []
 
-        def _ig_wrapper(_x1, _x2):
-            _3, logits = self.forward(_x1, _x2)
+        def _ig_wrapper(_x):
+            _3, logits = self.forward(_x)
             return F.softmax(logits, dim=-1)
         ig = IntegratedGradients(_ig_wrapper)
 
-        for i, (x1, x2, y) in enumerate(test_data_producer):
-            x1, x2, y = utils.to_device(x1.float(), x2.float(), y.long(), self.device)
-            binariz_x2, x2 = self.binariz_feature(x2)
-            x1.requires_grad = True
-            baseline1 = torch.zeros_like(x1, dtype=torch.float32, device=self.device)
-            binariz_x2.requires_grad = True
-            baseline2 = torch.zeros_like(binariz_x2, dtype=torch.float32, device=self.device)
-            attribution_bs = ig.attribute((x1, binariz_x2),
-                                          baselines=(baseline1, baseline2),
+        for i, (x, y) in enumerate(test_data_producer):
+            x, y = utils.to_device(x.float(), y.long(), self.device)
+            x.requires_grad = True
+            baseline = torch.zeros_like(x, dtype=torch.float32, device=self.device)
+            attribution_bs = ig.attribute(x,
+                                          baselines=baseline,
                                           target=target_label)
             attribution = torch.hstack(attribution_bs)
             attributions.append(attribution.clone().detach().cpu().numpy())
@@ -149,14 +140,12 @@ class DNNMalwareDetector(nn.Module):
             np.save('./labels', np.concatenate(gt_labels))
         return np.vstack(attributions)
 
-    def inference_batch_wise(self, x1, x2, y):
+    def inference_batch_wise(self, x, y):
         """
         support malware samples solely
         """
-        assert isinstance(x1, torch.Tensor) and isinstance(y, torch.Tensor)
-        assert isinstance(x2, torch.Tensor)
-        binariz_x2, x2 = self.binariz_feature(x2)
-        _, logit = self.forward(x1, binariz_x2)
+        assert isinstance(x, torch.Tensor) and isinstance(y, torch.Tensor)
+        _, logit = self.forward(x)
         return torch.softmax(logit, dim=-1).detach().cpu().numpy(), np.ones((logit.size()[0],))
 
     def predict(self, test_data_producer):
@@ -216,18 +205,17 @@ class DNNMalwareDetector(nn.Module):
         for i in range(epochs):
             self.train()
             losses, accuracies = [], []
-            for idx_batch, (x1_train, x2_train, y_train) in enumerate(train_data_producer):
-                x1_train, x2_train, y_train = utils.to_device(x1_train.float(), x2_train.float(), y_train.long(), self.device)
-                x2_train, _1 = self.binariz_feature(x2_train)
+            for idx_batch, (x_train, y_train) in enumerate(train_data_producer):
+                x_train, y_train = utils.to_device(x_train.float(), y_train.long(), self.device)
                 start_time = time.time()
                 optimizer.zero_grad()
-                latent_rpst, logits = self.forward(x1_train, x2_train)
+                latent_rpst, logits = self.forward(x_train)
                 loss_train = self.customize_loss(logits, y_train, latent_rpst, idx_batch)
                 loss_train.backward()
                 optimizer.step()
                 total_time = total_time + time.time() - start_time
                 acc_train = (logits.argmax(1) == y_train).sum().item()
-                acc_train /= x1_train.size()[0]
+                acc_train /= x_train.size()[0]
                 mins, secs = int(total_time / 60), int(total_time % 60)
                 losses.append(loss_train.item())
                 accuracies.append(acc_train)
@@ -240,12 +228,11 @@ class DNNMalwareDetector(nn.Module):
             self.eval()
             avg_acc_val = []
             with torch.no_grad():
-                for x1_val, x2_val, y_val in validation_data_producer:
-                    x1_val, x2_val, y_val = utils.to_device(x1_val.float(), x2_val.float(), y_val.long(), self.device)
-                    x2_val, _2 = self.binariz_feature(x2_val)
-                    _, logits = self.forward(x1_val, x2_val)
+                for x_val, y_val in validation_data_producer:
+                    x_val, y_val = utils.to_device(x_val.float(), y_val.long(), self.device)
+                    _, logits = self.forward(x_val)
                     acc_val = (logits.argmax(1) == y_val).sum().item()
-                    acc_val /= x1_val.size()[0]
+                    acc_val /= x_val.size()[0]
                     avg_acc_val.append(acc_val)
                 avg_acc_val = np.mean(avg_acc_val)
 

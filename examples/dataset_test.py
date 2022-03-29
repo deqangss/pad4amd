@@ -35,9 +35,8 @@ def main_():
         # if epoch >= 1:
         #     val_dataset_producer.dataset.set_use_cache(use_cache=True)
         #     val_dataset_producer.num_workder = 2
-        for idx, (x1, x2, l) in enumerate(val_dataset_producer):
-            print(x1.shape)
-            print(x2.shape)
+        for idx, (x, l) in enumerate(val_dataset_producer):
+            print(x.shape)
         print('cost time:', time.time() - start_time)
     dataset.clear_up()
 
