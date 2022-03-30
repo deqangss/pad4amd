@@ -12,16 +12,15 @@ import torch
 import torch.optim as optim
 import numpy as np
 
-from grabage.advdet_gmm import EXP_OVER_FLOW
 from config import config, logging, ErrorHandler
 from tools import utils
 
-logger = logging.getLogger('core.defense.principled_adv_training')
+logger = logging.getLogger('core.defense.pad')
 logger.addHandler(ErrorHandler)
 
 
-class PrincipledAdvTraining(object):
-    """a framework of towards principled adversarial training
+class PrincipledAdvDetection(object):
+    """a framework of towards principled adversarial detection
 
     Parameters
     ------------------
@@ -45,11 +44,9 @@ class PrincipledAdvTraining(object):
             lambda_upper_bound=1e3,
             granularity=1,
             lr=0.005,
-            weight_decay=5e-4, verbose=True):
+            weight_decay=0., verbose=True):
         """
-        Applying adversarial train to enhance the malware detector. Actually, we do not ensure this will
-        produce a malware detector with principled adversarial training because we adjust the hyper-parameter
-        lambda empirically.
+        Applying adversarial train to enhance the anomaly detector.
 
         Parameters
         -------
@@ -62,7 +59,7 @@ class PrincipledAdvTraining(object):
         @param lambda_upper_bound: Float, upper boundary of penalty factor
         @param granularity: Integer, 10^base exp-space between penalty factors
         @param lr: Float, learning rate of Adam optimizer
-        @param weight_decay: Float, penalty factor, default value 5e-4 in Graph ATtention layer (GAT)
+        @param weight_decay: Float, penalty factor
         @param verbose: Boolean, whether to show verbose info
         """
         # normal training is used for obtaining the initial indicator g

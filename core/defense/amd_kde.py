@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from core.defense.dense_est import DensityEstimator
+from core.defense.de_template import DensityEstimatorTemplate
 from config import config, logging, ErrorHandler
 from tools import utils
 
@@ -14,7 +14,7 @@ logger = logging.getLogger('core.defense.advdet_kde')
 logger.addHandler(ErrorHandler)
 
 
-class KernelDensityEstimation(DensityEstimator):
+class KernelDensityEstimation(DensityEstimatorTemplate):
     """
     kernel density estimation upon the penultimate layer
 

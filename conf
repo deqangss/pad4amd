@@ -13,8 +13,8 @@ intermediate = %(project_root)s/dataset/%(dataset_name)s
 naive_data_pool = %(database_dir)s/naive_data/
 
 [experiments]
-malware_detector = %(project_root)s/save/%(dataset_name)s/malware_detector
-gmm = %(project_root)s/save/%(dataset_name)s/gmm
+md_dnn = %(project_root)s/save/%(dataset_name)s/md_dnn
+amd_icnn = %(project_root)s/save/%(dataset_name)s/amd_icnn
 kde = %(project_root)s/save/%(dataset_name)s/kde
 p_adv_training = %(project_root)s/save/%(dataset_name)s/principled_adv_training
 m_adv_training = %(project_root)s/save/%(dataset_name)s/max_adv_training

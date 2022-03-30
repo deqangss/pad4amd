@@ -19,10 +19,7 @@ indicator_argparse.add_argument('--step_length', type=float, default=1., help='s
 def _main():
     args = cmd_md.parse_args()
 
-    dataset = Dataset(k=args.k,
-                      is_adj=args.is_adj,
-                      n_sgs_max=args.N,
-                      use_cache=args.cache,
+    dataset = Dataset(use_cache=args.cache,
                       feature_ext_args=get_group_args(args, cmd_md, 'feature')
                       )
     (train_data, trainy), (val_data, valy), (test_data, testy) = dataset.train_dataset, dataset.validation_dataset, dataset.test_dataset

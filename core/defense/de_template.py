@@ -3,11 +3,11 @@ abstract class of dense estimator
 """
 
 
-class DensityEstimator(object):
+class DensityEstimatorTemplate(object):
     def __init__(self):
         self.tau = None
 
-    def forward_g(self):
+    def forward_g(self, x):
         """density estimation"""
         raise NotImplementedError
 

@@ -3,7 +3,6 @@ from __future__ import division
 from __future__ import print_function
 
 import time
-from tqdm import tqdm
 import os.path as path
 from functools import partial
 
@@ -11,12 +10,10 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
-from torch.utils.checkpoint import checkpoint
 from captum.attr import IntegratedGradients
 
 import numpy as np
 
-from core.defense.malgat import MalGAT
 from config import config, logging, ErrorHandler
 from tools import utils
 
@@ -62,7 +59,7 @@ class DNNMalwareDetector(nn.Module):
         else:
             self.activation_func = F.relu
 
-        self.model_save_path = path.join(config.get('experiments', 'malware_detector') + '_' + self.name,
+        self.model_save_path = path.join(config.get('experiments', 'md_dnn') + '_' + self.name,
                                          'model.pth')
 
     def parse_args(self,
@@ -99,7 +96,7 @@ class DNNMalwareDetector(nn.Module):
 
         latent_representation = F.dropout(x, self.dropout, training=self.training)
         logits = self.dense_layers[-1](latent_representation)
-        return latent_representation, logits
+        return logits
 
     def inference(self, test_data_producer):
         confidences = []
@@ -108,7 +105,7 @@ class DNNMalwareDetector(nn.Module):
         with torch.no_grad():
             for x, y in test_data_producer:
                 x, y = utils.to_device(x.float(), y.long(), self.device)
-                x_hidden, logits = self.forward(x)
+                logits = self.forward(x)
                 confidences.append(F.softmax(logits, dim=-1))
                 gt_labels.append(y)
         confidences = torch.vstack(confidences)
@@ -123,7 +120,7 @@ class DNNMalwareDetector(nn.Module):
         gt_labels = []
 
         def _ig_wrapper(_x):
-            _3, logits = self.forward(_x)
+            logits = self.forward(_x)
             return F.softmax(logits, dim=-1)
         ig = IntegratedGradients(_ig_wrapper)
 
@@ -145,7 +142,7 @@ class DNNMalwareDetector(nn.Module):
         support malware samples solely
         """
         assert isinstance(x, torch.Tensor) and isinstance(y, torch.Tensor)
-        _, logit = self.forward(x)
+        logit = self.forward(x)
         return torch.softmax(logit, dim=-1).detach().cpu().numpy(), np.ones((logit.size()[0],))
 
     def predict(self, test_data_producer):
@@ -181,7 +178,7 @@ class DNNMalwareDetector(nn.Module):
         MSG = "False Negative Rate (FNR) is {:.5f}%, False Positive Rate (FPR) is {:.5f}%, F1 score is {:.5f}%"
         logger.info(MSG.format(fnr * 100, fpr * 100, f1 * 100))
 
-    def customize_loss(self, logits, gt_labels, representation, mini_batch_idx):
+    def customize_loss(self, logits, gt_labels, representation = None, mini_batch_idx=None):
         return F.cross_entropy(logits, gt_labels)
 
     def fit(self, train_data_producer, validation_data_producer, epochs=100, lr=0.005, weight_decay=0., verbose=True):
@@ -194,7 +191,7 @@ class DNNMalwareDetector(nn.Module):
         @param validation_data_producer: Object, an iterator for producing validation dataset
         @param epochs, Integer, epochs
         @param lr, Float, learning rate for Adam optimizer
-        @param weight_decay, Float, penalty factor, default value 5e-4 in graph attention layer
+        @param weight_decay, Float, penalty factor
         @param verbose: Boolean, whether to show verbose logs
         """
         optimizer = optim.Adam(self.parameters(), lr=lr, weight_decay=weight_decay)
@@ -209,8 +206,8 @@ class DNNMalwareDetector(nn.Module):
                 x_train, y_train = utils.to_device(x_train.float(), y_train.long(), self.device)
                 start_time = time.time()
                 optimizer.zero_grad()
-                latent_rpst, logits = self.forward(x_train)
-                loss_train = self.customize_loss(logits, y_train, latent_rpst, idx_batch)
+                logits = self.forward(x_train)
+                loss_train = self.customize_loss(logits, y_train)
                 loss_train.backward()
                 optimizer.step()
                 total_time = total_time + time.time() - start_time
@@ -230,7 +227,7 @@ class DNNMalwareDetector(nn.Module):
             with torch.no_grad():
                 for x_val, y_val in validation_data_producer:
                     x_val, y_val = utils.to_device(x_val.float(), y_val.long(), self.device)
-                    _, logits = self.forward(x_val)
+                    logits = self.forward(x_val)
                     acc_val = (logits.argmax(1) == y_val).sum().item()
                     acc_val /= x_val.size()[0]
                     avg_acc_val.append(acc_val)
