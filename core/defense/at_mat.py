@@ -13,7 +13,7 @@ import torch.optim as optim
 import numpy as np
 
 from core.attack.max import Max
-from core.defense.advdet_gmm import EXP_OVER_FLOW
+from grabage.advdet_gmm import EXP_OVER_FLOW
 from core.defense.principled_adv_training import PrincipledAdvTraining
 from config import config, logging, ErrorHandler
 from tools import utils
