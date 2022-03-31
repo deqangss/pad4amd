@@ -61,6 +61,9 @@ class DNNMalwareDetector(nn.Module):
 
         self.model_save_path = path.join(config.get('experiments', 'md_dnn') + '_' + self.name,
                                          'model.pth')
+        logger.info('==========================================model architecture================================')
+        logger.info(self)
+        logger.info('===============================================end==========================================')
 
     def parse_args(self,
                    dense_hidden_units=None,
