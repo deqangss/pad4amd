@@ -115,6 +115,9 @@ class AdvMalwareDetectorICNN(DNNMalwareDetector, DensityEstimatorTemplate):
                prev_x = F.selu(prev_x)
         return prev_x
 
+    def forward(self, x):
+        return self.forward_f(x), self.forward_g(x)
+
     def predict(self, test_data_producer, indicator_masking=False):
         """
         predict labels and conduct evaluation on detector & indicator

@@ -55,7 +55,7 @@ class DNNMalwareDetector(nn.Module):
             self.add_module('nn_model_layer_{}'.format(idx_i), dense_layer)
 
         if self.smooth:
-            self.activation_func = partial(F.elu, alpha=self.alpha_)
+            self.activation_func = F.selu # partial(F.elu, alpha=self.alpha_)
         else:
             self.activation_func = F.relu
 
