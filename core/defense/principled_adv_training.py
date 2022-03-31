@@ -12,12 +12,12 @@ import torch
 import torch.optim as optim
 import numpy as np
 
-from grabage.advdet_gmm import EXP_OVER_FLOW
 from config import config, logging, ErrorHandler
 from tools import utils
 
 logger = logging.getLogger('core.defense.principled_adv_training')
 logger.addHandler(ErrorHandler)
+EXP_OVER_FLOW = 1e-30
 
 
 class PrincipledAdvTraining(object):
