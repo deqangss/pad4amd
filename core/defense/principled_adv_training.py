@@ -162,14 +162,11 @@ class PrincipledAdvTraining(object):
         self.model.load_state_dict(ckpt['model_state_dict'])
 
     @staticmethod
-    def get_mal_data(x_batch, adj_batch, y_batch):
+    def get_mal_data(x_batch, y_batch):
         """
         filter out malware feature vectors and adjacency matrix (if it is necessary)
         """
         mal_x_batch = x_batch[y_batch == 1]
         mal_y_batch = y_batch[y_batch == 1]
-        mal_adj_batch = None
-        if adj_batch is not None:
-            mal_adj_batch = torch.stack([adj for i, adj in enumerate(adj_batch) if y_batch[i] == 1], dim=0)
         null_flag = len(mal_x_batch) <= 0
-        return mal_x_batch, mal_adj_batch, mal_y_batch, null_flag
+        return mal_x_batch, mal_y_batch, null_flag

@@ -41,8 +41,7 @@ class OMPAP(OMPA):
         self.lambda_ = min_lambda_
         while self.lambda_ <= max_lambda_:
             with torch.no_grad():
-                hidden, logit = model.forward(adv_x, adj)
-                _, done = self.get_loss(model, logit, label, hidden)
+                _, done = self.get_loss(model, adv_x, label)
             if torch.all(done):
                 break
             adv_x[~done] = x[~done]  # recompute the perturbation under larger penalty factors

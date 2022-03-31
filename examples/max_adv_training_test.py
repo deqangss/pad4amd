@@ -6,7 +6,7 @@ import time
 from functools import partial
 
 from core.defense import Dataset
-from core.defense import MalwareDetectorIndicator, MaxAdvTraining
+from core.defense import DNNMalwareDetector, AdvMalwareDetectorICNN, MaxAdvTraining
 from core.attack import Max, PGD, OMPAP, PGDAdam
 from tools.utils import save_args, get_group_args, dump_pickle
 from examples.amd_icnn_test import cmd_md
@@ -46,17 +46,14 @@ max_adv_argparse.add_argument('--round_threshold', type=float, default=0.98,
 def _main():
     args = cmd_md.parse_args()
 
-    dataset = Dataset(k=args.k,
-                      is_adj=args.is_adj,
-                      n_sgs_max=args.N,
-                      use_cache=args.cache,
+    dataset = Dataset(use_cache=args.cache,
                       feature_ext_args=get_group_args(args, cmd_md, 'feature')
                       )
-    (train_data, trainy), (val_data, valy), (
-        test_data, testy) = dataset.train_dataset, dataset.validation_dataset, dataset.test_dataset
-    train_dataset_producer = dataset.get_input_producer(train_data, trainy, batch_size=args.batch_size, name='train')
-    val_dataset_producer = dataset.get_input_producer(val_data, valy, batch_size=args.batch_size, name='val')
-    test_dataset_producer = dataset.get_input_producer(test_data, testy, batch_size=args.batch_size, name='test')
+    train_dataset_producer = dataset.get_input_producer(*dataset.train_dataset, batch_size=args.batch_size,
+                                                        name='train')
+    val_dataset_producer = dataset.get_input_producer(*dataset.validation_dataset, batch_size=args.batch_size,
+                                                      name='val')
+    test_dataset_producer = dataset.get_input_producer(*dataset.test_dataset, batch_size=args.batch_size, name='test')
     assert dataset.n_classes == 2
 
     # test: model training
@@ -66,13 +63,19 @@ def _main():
         dv = 'cuda'
 
     model_name = args.model_name if args.mode == 'test' else time.strftime("%Y%m%d-%H%M%S")
-    model = MalwareDetectorIndicator(vocab_size=dataset.vocab_size,
-                                     n_classes=dataset.n_classes,
-                                     device=dv,
-                                     sample_weights=dataset.sample_weights,
-                                     name=model_name,
-                                     **vars(args)
-                                     )
+    md_model = DNNMalwareDetector(dataset.vocab_size,
+                                  dataset.n_classes,
+                                  device=dv,
+                                  name=model_name,
+                                  **vars(args)
+                                  )
+    model = AdvMalwareDetectorICNN(md_model,
+                                   input_size=dataset.vocab_size,
+                                   n_classes=dataset.n_classes,
+                                   device=dv,
+                                   name=model_name,
+                                   **vars(args)
+                                   )
     model = model.to(dv)
 
     # initialize the base attack model of max attack
@@ -101,17 +104,7 @@ def _main():
                               verbose=False
                               )
 
-    pgdadma = PGDAdam(use_random=False,
-                      is_attacker=False,
-                      device=model.device)
-    pgdadma.perturb = partial(pgdadma.perturb,
-                              steps=args.n_step_adam,
-                              lr=args.atta_lr,
-                              step_check=args.step_check_adam,
-                              verbose=False
-                              )
-
-    attack = Max(attack_list=[pgdlinf, pgdl2, ompap, pgdadma],
+    attack = Max(attack_list=[pgdlinf, pgdl2, ompap],
                  varepsilon=1e-9,
                  is_attacker=False,
                  device=model.device
@@ -126,8 +119,8 @@ def _main():
     if args.mode == 'train':
         max_adv_training_model.fit(train_dataset_producer,
                                    val_dataset_producer,
-                                   epochs=args.epochs,
-                                   adv_epochs=args.adv_epochs,
+                                   epochs=5,
+                                   adv_epochs=args.epochs - 5,
                                    beta_a=args.beta_a,
                                    lr=args.lr,
                                    weight_decay=args.weight_decay
@@ -138,12 +131,13 @@ def _main():
         dump_pickle(vars(args), path.join(path.dirname(max_adv_training_model.model_save_path), "hparam.pkl"))
     # test: accuracy
     max_adv_training_model.load()
-    # max_adv_training_model.model.predict(test_dataset_producer)
+    max_adv_training_model.model.predict(test_dataset_producer)
 
-    attr_cls, attr_de = max_adv_training_model.model.get_important_attributes(test_dataset_producer)
-    import numpy as np
-    np.save("./attributions-mad-cls", attr_cls)
-    np.save("./attributions-mad-de", attr_de)
+    # attr_cls, attr_de = max_adv_training_model.model.get_important_attributes(test_dataset_producer)
+    # import numpy as np
+    # np.save("./attributions-mad-cls", attr_cls)
+    # np.save("./attributions-mad-de", attr_de)
+
 
 if __name__ == '__main__':
     _main()

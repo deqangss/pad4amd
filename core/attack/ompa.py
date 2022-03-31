@@ -125,19 +125,19 @@ class OMPA(BaseAttack):
             directions += perturbations * self.omega
         return perturbations, directions
 
-    def get_loss(self, model, logit, label, hidden=None):
-        ce = F.cross_entropy(logit, label, reduction='none')
-        y_pred = logit.argmax(1)
+    def get_loss(self, model, adv_x, label, hidden=None):
+        logits_f = model.forward_f(adv_x)
+        ce = F.cross_entropy(logits_f, label, reduction='none')
+        y_pred = logits_f.argmax(1)
         if 'forward_g' in type(model).__dict__.keys() and (not self.oblivion):
-            de = model.forward_g(hidden, y_pred)
-            tau = model.get_tau_sample_wise(y_pred)
+            logits_g = model.forward_g(adv_x)
             if self.is_attacker:
                 loss_no_reduction = ce + self.lambda_ * (torch.clamp(
-                    torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW), max=self.kappa))
+                    logits_g - model.tau, max=self.kappa))
             else:
-                loss_no_reduction = ce + self.lambda_ * (torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW))
-            # loss_no_reduction = ce + self.lambda_ * (de - model.tau)
-            done = (y_pred == 0.) & (de >= tau)
+                loss_no_reduction = ce + self.lambda_ * (logits_g - model.tau)
+            # loss_no_reduction = ce + self.lambda_ * (logits_g - model.tau)
+            done = (y_pred == 0.) & (logits_g >= model.tau)
         else:
             loss_no_reduction = ce
             done = y_pred == 0.

@@ -213,7 +213,7 @@ class AdvMalwareDetectorICNN(nn.Module, DensityEstimatorTemplate):
 
         ig_de = IntegratedGradients(_ig_wrapper_de)
 
-        for i, (x, _1, y, _2) in enumerate(test_data_producer):
+        for i, (x, y) in enumerate(test_data_producer):
             x, y = utils.to_tensor(x, y, self.device)
             x.requires_grad = True
             base_lines = torch.zeros_like(x, dtype=torch.float32, device=self.device)
