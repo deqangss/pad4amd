@@ -13,13 +13,14 @@ import torch.optim as optim
 import numpy as np
 
 from core.attack.max import Max
-from grabage.advdet_gmm import EXP_OVER_FLOW
 from core.defense.principled_adv_training import PrincipledAdvTraining
 from config import config, logging, ErrorHandler
 from tools import utils
 
 logger = logging.getLogger('core.defense.principled_adv_training')
 logger.addHandler(ErrorHandler)
+
+EXP_OVER_FLOW = 1e-30
 
 
 class MaxAdvTraining(object):
