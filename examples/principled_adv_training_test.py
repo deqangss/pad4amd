@@ -8,7 +8,7 @@ from core.defense import Dataset
 from core.defense import MalwareDetectorIndicator, PrincipledAdvTraining
 from core.attack import OMPA
 from tools.utils import save_args, get_group_args, dump_pickle
-from examples.advdet_gmm_test import cmd_md
+from examples.amd_icnn_test import cmd_md
 
 indicator_argparse = cmd_md.add_argument_group(title='towards principled adv training')
 indicator_argparse.add_argument('--beta_a', type=float, default=0.005, help='penalty factor on adversarial loss.')

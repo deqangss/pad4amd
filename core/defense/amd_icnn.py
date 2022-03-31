@@ -2,14 +2,15 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import time
+import warnings
 import os.path as path
 from tqdm import tqdm
-import warnings
 
 import torch
 import torch.nn as nn
+import torch.optim as optim
 import torch.nn.functional as F
-from torch.utils.checkpoint import checkpoint
 from captum.attr import IntegratedGradients
 
 import numpy as np
@@ -23,23 +24,27 @@ logger = logging.getLogger('core.defense.amd_input_convex_nn')
 logger.addHandler(ErrorHandler)
 
 
-class AdvMalwareDetectorICNN(DNNMalwareDetector, DensityEstimatorTemplate):
-    def __init__(self, md_nn_model, vocab_size, n_classes, beta=1., ratio=0.95, sample_weights=None,
+class AdvMalwareDetectorICNN(nn.Module, DensityEstimatorTemplate):
+    def __init__(self, md_nn_model, input_size, n_classes, beta=1., ratio=0.95,
                  device='cpu', name='', **kwargs):
+        nn.Module.__init__(self)
+        DensityEstimatorTemplate.__init__(self)
+        self.input_size = input_size
+        self.n_classes = n_classes
         self.beta = beta
         self.ratio = ratio
-        self.sample_weights = sample_weights
         self.device = device
+        self.name = name
         self.parse_args(**kwargs)
         if isinstance(md_nn_model, nn.Module):
             self.md_nn_model = md_nn_model
         else:
-            self.md_nn_model = DNNMalwareDetector.__init__(self, vocab_size,
-                                                           n_classes,
-                                                           self.device,
-                                                           name,
-                                                           smooth=True,
-                                                           **kwargs)
+            self.md_nn_model = DNNMalwareDetector(self.input_size,
+                                                  n_classes,
+                                                  self.device,
+                                                  name,
+                                                  smooth=True,
+                                                  **kwargs)
             warnings.warn("Use a self-defined NN-based malware detector")
         if hasattr(self.md_nn_model, 'smooth'):
             if not self.md_nn_model.smooth:  # non-smooth, exchange it
@@ -52,8 +57,6 @@ class AdvMalwareDetectorICNN(DNNMalwareDetector, DensityEstimatorTemplate):
                     self.md_nn_model._modules['relu'] = nn.SELU()
         self.md_nn_model = md_nn_model.to(self.device)
 
-        DensityEstimatorTemplate.__init__(self)
-
         # input convex neural network
         self.non_neg_dense_layers = []
         if len(self.dense_hidden_units) < 1:
@@ -62,7 +65,7 @@ class AdvMalwareDetectorICNN(DNNMalwareDetector, DensityEstimatorTemplate):
             self.non_neg_dense_layers.append(nn.Linear(self.dense_hidden_units[i],  # start from idx=1
                                                        self.dense_hidden_units[i + 1],
                                                        bias=False))
-        self.non_neg_dense_layers.append(nn.Linear(self.dense_hidden_units[-1], 1), bias=False)
+        self.non_neg_dense_layers.append(nn.Linear(self.dense_hidden_units[-1], 1, bias=False))
         # registration
         for idx_i, dense_layer in enumerate(self.non_neg_dense_layers):
             self.add_module('non_neg_layer_{}'.format(idx_i), dense_layer)
@@ -76,8 +79,13 @@ class AdvMalwareDetectorICNN(DNNMalwareDetector, DensityEstimatorTemplate):
         for idx_i, dense_layer in enumerate(self.dense_layers):
             self.add_module('layer_{}'.format(idx_i), dense_layer)
 
+        self.tau = nn.Parameter(torch.zeros([1, ], device=self.device), requires_grad=False)
+
         self.model_save_path = path.join(config.get('experiments', 'amd_icnn') + '_' + self.name,
                                          'model.pth')
+        logger.info('==========================================model architecture================================')
+        logger.info(self)
+        logger.info('===============================================end==========================================')
 
     def parse_args(self,
                    dense_hidden_units=None,
@@ -108,15 +116,15 @@ class AdvMalwareDetectorICNN(DNNMalwareDetector, DensityEstimatorTemplate):
             x1 = dense_layer(x)
             x_add.append(x1)
             if prev_x is not None:
-                x2 = self.non_neg_dense_layers[i](prev_x)
+                x2 = self.non_neg_dense_layers[i - 1](prev_x)
                 x_add.append(x2)
-            prev_x = torch.sum(torch.stack(x_add), dim=0)
+            prev_x = torch.sum(torch.stack(x_add, dim=0), dim=0)
             if i < len(self.dense_layers):
-               prev_x = F.selu(prev_x)
-        return prev_x
+                prev_x = F.selu(prev_x)
+        return prev_x.reshape(-1)
 
     def forward(self, x):
-        return self.forward_f(x), self.forward_g(x)
+        raise NotImplementedError("Use forward_f and forward_g instead.")
 
     def predict(self, test_data_producer, indicator_masking=False):
         """
@@ -165,6 +173,7 @@ class AdvMalwareDetectorICNN(DNNMalwareDetector, DensityEstimatorTemplate):
             # instead filtering out examples, here resets the prediction as 1
             y_pred[~indicator_flag] = 1.
         logger.info('The indicator is turning on...')
+        logger.info('The threshold is {:.2}'.format(self.tau.item()))
         measurement(y_true, y_pred)
 
     def inference(self, test_data_producer):
@@ -172,23 +181,16 @@ class AdvMalwareDetectorICNN(DNNMalwareDetector, DensityEstimatorTemplate):
         gt_labels = []
         self.eval()
         with torch.no_grad():
-            for ith in tqdm(range(self.n_sample_times)):
-                y_cent_batches = []
-                x_prob_batches = []
-                for x, adj, y, _1 in test_data_producer:
-                    x, adj, y = utils.to_tensor(x, adj, y, self.device)
-                    x_hidden, logits = self.forward(x, adj)
-                    y_cent_batches.append(F.softmax(logits, dim=-1))
-                    x_prob_batches.append(self.forward_g(x_hidden))
-                    if ith == 0:
-                        gt_labels.append(y)
-                y_cent_batches = torch.vstack(y_cent_batches)
-                y_cent.append(y_cent_batches)
-                x_prob.append(torch.hstack(x_prob_batches))
+            for x, y in test_data_producer:
+                x, y = utils.to_tensor(x, y.long(), self.device)
+                logits_f = self.forward_f(x)
+                y_cent.append(F.softmax(logits_f, dim=-1))
+                x_prob.append(self.forward_g(x))
+                gt_labels.append(y)
 
         gt_labels = torch.cat(gt_labels, dim=0)
-        y_cent = torch.mean(torch.stack(y_cent).permute([1, 0, 2]), dim=1)
-        x_prob = torch.mean(torch.stack(x_prob), dim=0)
+        y_cent = torch.cat(y_cent, dim=0)
+        x_prob = torch.cat(x_prob, dim=0)
         return y_cent, x_prob, gt_labels
 
     def get_important_attributes(self, test_data_producer, indicator_masking=False):
@@ -201,19 +203,18 @@ class AdvMalwareDetectorICNN(DNNMalwareDetector, DensityEstimatorTemplate):
         attributions_de = []
 
         def _ig_wrapper_cls(_x):
-            _3, logits = self.forward(_x, adj=None)
+            logits = self.forward_f(_x)
             return F.softmax(logits, dim=-1)
 
         ig_cls = IntegratedGradients(_ig_wrapper_cls)
 
         def _ig_wrapper_de(_x):
-            x_hidden, _4 = self.forward(_x, adj=None)
-            return self.forward_g(x_hidden)
+            return self.forward_g(_x)
 
         ig_de = IntegratedGradients(_ig_wrapper_de)
 
         for i, (x, _1, y, _2) in enumerate(test_data_producer):
-            x, _4, y = utils.to_tensor(x, None, y, self.device)
+            x, y = utils.to_tensor(x, y, self.device)
             x.requires_grad = True
             base_lines = torch.zeros_like(x, dtype=torch.float32, device=self.device)
             base_lines[:, -1] = 1
@@ -228,17 +229,14 @@ class AdvMalwareDetectorICNN(DNNMalwareDetector, DensityEstimatorTemplate):
             attributions_de.append(attribution_bs.clone().detach().cpu().numpy())
         return np.vstack(attributions_cls), np.vstack(attributions_de)
 
-    def inference_batch_wise(self, x, a, y, use_indicator=True):
+    def inference_batch_wise(self, x, y):
         assert isinstance(x, torch.Tensor) and isinstance(y, torch.Tensor)
         if a is not None:
             assert isinstance(a, torch.Tensor)
         self.eval()
-        x_hidden, logit = self.forward(x, a)
-        x_prob = self.forward_g(x_hidden)
-        if use_indicator:
-            return torch.softmax(logit, dim=-1).detach().cpu().numpy(), x_prob.detach().cpu().numpy()
-        else:
-            return torch.softmax(logit, dim=-1).detach().cpu().numpy(), np.ones((logit.shape[0],))
+        logits_f = self.forward_f(x)
+        logits_g = self.forward_g(x)
+        return torch.softmax(logits_f, dim=-1).detach().cpu().numpy(), logits_g.detach().cpu().numpy()
 
     def get_tau_sample_wise(self, y_pred=None):
         return self.tau
@@ -254,64 +252,137 @@ class AdvMalwareDetectorICNN(DNNMalwareDetector, DensityEstimatorTemplate):
 
     def get_threshold(self, validation_data_producer):
         """
-        get the threshold for density estimation
+        get the threshold for adversary detection
         :@param validation_data_producer: Object, an iterator for producing validation dataset
         """
         self.eval()
         probabilities = []
         with torch.no_grad():
-            for _ in tqdm(range(self.n_sample_times)):
-                prob_ = []
-                for x_val, adj_val, y_val, _ in validation_data_producer:
-                    x_val, adj_val, y_val = utils.to_tensor(x_val, adj_val, y_val, self.device)
-                    x_hidden, logits = self.forward(x_val, adj_val)
-                    x_prob = self.forward_g(x_hidden)
-                    prob_.append(x_prob)
-                prob_ = torch.cat(prob_)
-                probabilities.append(prob_)
-            s, _ = torch.sort(torch.mean(torch.stack(probabilities), dim=0), descending=True)
+            for x_val, y_val in validation_data_producer:
+                x_val, y_val = utils.to_tensor(x_val, y_val.long(), self.device)
+                x_logits = self.forward_g(x_val)
+                probabilities.append(x_logits)
+            s, _ = torch.sort(torch.cat(probabilities, dim=0), descending=True)
             i = int((s.shape[0] - 1) * self.ratio)
             assert i >= 0
-            self.tau = nn.Parameter(s[i], requires_grad=False)
+            self.tau[0] = s[i]
 
-    def update_phi(self, logits, mini_batch_idx):
-        cent = torch.mean(torch.softmax(logits, dim=1), dim=0)
+    def customize_loss(self, logits_x, labels_x, logits_adv_x, labels_adv_x):
+        G = F.binary_cross_entropy_with_logits(logits_adv_x, labels_adv_x)
+        F_ = F.cross_entropy(logits_x, labels_x)
+        return F_ + self.beta * G
 
-        if mini_batch_idx > 0:
-            # a little bit non-accurate if batch size is altered during training
-            self.phi += nn.Parameter(cent, requires_grad=False)
-            self.phi /= 2.
-        else:
-            self.phi = nn.Parameter(cent, requires_grad=False)
+    def fit(self, train_data_producer, validation_data_producer, epochs=100, lr=0.005, weight_decay=0., verbose=True):
+        """
+        Train the malware & adversary detector, pick the best model according to the validation results
 
-    def gaussian_prob(self, x):
-        assert 0 <= self.sigma
-        d = self.penultimate_hidden_unit + 1
-        reverse_sigma = 1. / (self.sigma + EXP_OVER_FLOW)
-        det_sigma = np.power(self.sigma, d)
-        prob = 1. / ((2 * np.pi) ** (d / 2.) * det_sigma ** 0.5) * torch.exp(-0.5 * torch.sum(
-            (x.unsqueeze(1) - self.dense.weight) * reverse_sigma * (x.unsqueeze(1) - self.dense.weight), dim=-1))
-        return prob
+        Parameters
+        ----------
+        @param train_data_producer: Object, an iterator for producing a batch of training data
+        @param validation_data_producer: Object, an iterator for producing validation dataset
+        @param epochs, Integer, epochs
+        @param lr, Float, learning rate for Adam optimizer
+        @param weight_decay, Float, penalty factor
+        @param verbose: Boolean, whether to show verbose logs
+        """
+        optimizer = optim.Adam(self.parameters(), lr=lr, weight_decay=weight_decay)
+        best_avg_acc = 0.
+        best_epoch = 0
+        total_time = 0.
+        nbatches = len(train_data_producer)
+        for i in range(epochs):
+            self.train()
+            losses, accuracies = [], []
+            for idx_batch, (x_train, y_train) in enumerate(train_data_producer):
+                x_train, y_train = utils.to_device(x_train.float(), y_train.long(), self.device)
+                # make data for training g
+                # 1. add pepper and salt noises
+                x_train_noises = torch.clamp(x_train + utils.psn(x_train, np.minimum(np.random.uniform(0, 1), 0.05)),
+                                             min=0., max=1.)
+                x_train_ = torch.cat([x_train, x_train_noises], dim=0)
+                y_train_ = torch.cat([torch.ones(x_train.shape[:1]), torch.zeros(x_train.shape[:1])]).float().to(
+                    self.device)
+                idx = torch.randperm(y_train_.shape[0])
+                x_train_ = x_train_[idx]
+                y_train_ = y_train_[idx]
 
-    def energy(self, hidden, logits):
-        gamma_z = torch.softmax(logits, dim=1)
-        prob_n = self.gaussian_prob(hidden)
+                start_time = time.time()
+                optimizer.zero_grad()
+                logits_f = self.forward_f(x_train)
+                logits_g = self.forward_g(x_train_)
+                loss_train = self.customize_loss(logits_f, y_train, logits_g, y_train_)
+                loss_train.backward()
+                optimizer.step()
+                # clamp
+                constraint = utils.NonnegWeightConstraint()
+                for name, module in self.named_modules():
+                    if 'non_neg_layer' in name:
+                        module.apply(constraint)
+                total_time = total_time + time.time() - start_time
+                acc_f_train = (logits_f.argmax(1) == y_train).sum().item()
+                acc_f_train /= x_train.size()[0]
+                acc_g_train = ((F.sigmoid(logits_g) >= 0.5) == y_train_).sum().item()
+                acc_g_train /= x_train_.size()[0]
 
-        E_z = torch.sum(gamma_z * torch.log(prob_n * self.phi / (gamma_z + EXP_OVER_FLOW) + \
-                                            EXP_OVER_FLOW) * self.sample_weights, dim=1)  # ELBO
-        return torch.mean(-E_z, dim=0)
+                mins, secs = int(total_time / 60), int(total_time % 60)
+                losses.append(loss_train.item())
+                accuracies.append(acc_f_train)
+                accuracies.append(acc_g_train)
+                if verbose:
+                    print(
+                        f'Mini batch: {i * nbatches + idx_batch + 1}/{epochs * nbatches} | training time in {mins:.0f} minutes, {secs} seconds.')
+                    logger.info(
+                        f'Training loss (batch level): {losses[-1]:.4f} | Train accuracy: {acc_f_train * 100:.2f}% & {acc_g_train * 100:.2f}%.')
 
-    def customize_loss(self, logits, gt_labels, hidden, mini_batch_idx):
-        self.update_phi(logits, mini_batch_idx)
+            self.eval()
+            avg_acc_val = []
+            with torch.no_grad():
+                for x_val, y_val in validation_data_producer:
+                    x_val, y_val = utils.to_device(x_val.float(), y_val.long(), self.device)
+                    x_val_noises = torch.clamp(x_val + utils.psn(x_val, np.minimum(np.random.uniform(0, 1), 0.05)),
+                                               min=0., max=1.)
+                    x_val_ = torch.cat([x_val, x_val_noises], dim=0)
+                    y_val_ = torch.cat([torch.ones(x_val.shape[:1]), torch.zeros(x_val.shape[:1])]).long().to(
+                        self.device)
+                    logits_f = self.forward_f(x_val)
+                    logits_g = self.forward_g(x_val_)
+                    acc_val = (logits_f.argmax(1) == y_val).sum().item()
+                    acc_val /= x_val.size()[0]
+                    avg_acc_val.append(acc_val)
 
-        de = self.energy(hidden, logits) * self.beta
-        ce = F.cross_entropy(logits, gt_labels)
-        return de + ce
+                    acc_val_g = ((F.sigmoid(logits_g) >= 0.5) == y_val_).sum().item()
+                    acc_val_g /= x_val_.size()[0]
+                    avg_acc_val.append(acc_val_g)
+                avg_acc_val = np.mean(avg_acc_val)
+
+            if avg_acc_val >= best_avg_acc:
+                best_avg_acc = avg_acc_val
+                best_epoch = i
+                self.get_threshold(validation_data_producer)
+                self.save_to_disk()
+                if verbose:
+                    print(f'Model saved at path: {self.model_save_path}')
+
+            if verbose:
+                logger.info(
+                    f'Training loss (epoch level): {np.mean(losses):.4f} | Train accuracy: {np.mean(accuracies) * 100:.2f}')
+                logger.info(
+                    f'Validation accuracy: {avg_acc_val * 100:.2f} | The best validation accuracy: {best_avg_acc * 100:.2f} at epoch: {best_epoch}')
 
     def load(self):
         # load model
-        self.load_state_dict(torch.load(self.model_save_path))
+        assert path.exists(self.model_save_path), 'train model first'
+        ckpt = torch.load(self.model_save_path)
+        self.tau = ckpt['tau']
+        self.md_nn_model.load_state_dict(ckpt['md_model'])
+        self.load_state_dict(ckpt['amd_model'])
 
     def save_to_disk(self):
-        assert path.exists(self.model_save_path), 'train model first'
-        torch.save(self.state_dict(), self.model_save_path)
+        if not path.exists(self.model_save_path):
+            utils.mkdir(path.dirname(self.model_save_path))
+        torch.save({
+            'tau': self.tau,
+            'md_model': self.md_nn_model.state_dict(),
+            'amd_model': self.state_dict()
+        }, self.model_save_path
+        )

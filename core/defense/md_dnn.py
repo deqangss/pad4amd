@@ -4,7 +4,6 @@ from __future__ import print_function
 
 import time
 import os.path as path
-from functools import partial
 
 import torch
 import torch.nn as nn

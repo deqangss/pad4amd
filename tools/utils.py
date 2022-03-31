@@ -337,6 +337,26 @@ def to_device(feature_x=None, labels=None, device='cpu'):
     return feature_x, labels
 
 
+def psn(x_tensor, prob, lower_value=0., upper_value=1.):
+    assert 1. >= prob >= 0.
+    uni_noises = torch.FloatTensor(x_tensor.shape).uniform_()
+    salt_pos = uni_noises >= prob
+    uni_noises[salt_pos] = upper_value
+    uni_noises[~salt_pos] = lower_value
+    return uni_noises
+
+
+class NonnegWeightConstraint(object):
+    def __init__(self):
+        pass
+
+    def __call__(self, module):
+        if hasattr(module, 'weight'):
+            w = module.weight.data
+            w = torch.clamp(w, min=0.)
+            module.weight.data = w
+
+
 def round_x(x, alpha=0.5):
     """
     rounds x by thresholding it according to alpha which can be a scalar or vector
