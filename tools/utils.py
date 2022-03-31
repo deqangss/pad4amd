@@ -343,7 +343,7 @@ def psn(x_tensor, prob, lower_value=0., upper_value=1.):
     salt_pos = uni_noises >= prob
     uni_noises[salt_pos] = upper_value
     uni_noises[~salt_pos] = lower_value
-    return uni_noises
+    return uni_noises.to(x_tensor.get_device())
 
 
 class NonnegWeightConstraint(object):
