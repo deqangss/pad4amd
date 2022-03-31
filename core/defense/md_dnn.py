@@ -60,7 +60,7 @@ class DNNMalwareDetector(nn.Module):
 
         self.model_save_path = path.join(config.get('experiments', 'md_dnn') + '_' + self.name,
                                          'model.pth')
-        logger.info('==========================================model architecture================================')
+        logger.info('========================================dnn model architecture===============================')
         logger.info(self)
         logger.info('===============================================end==========================================')
 
