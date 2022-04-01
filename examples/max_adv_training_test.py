@@ -13,7 +13,6 @@ from examples.amd_icnn_test import cmd_md
 
 max_adv_argparse = cmd_md.add_argument_group(title='max adv training')
 max_adv_argparse.add_argument('--beta_a', type=float, default=0.005, help='penalty factor on adversarial loss.')
-max_adv_argparse.add_argument('--adv_epochs', type=int, default=20, help='epochs for adversarial training.')
 
 max_adv_argparse.add_argument('--m', type=int, default=20,
                               help='maximum number of perturbations.')
@@ -63,13 +62,7 @@ def _main():
         dv = 'cuda'
 
     model_name = args.model_name if args.mode == 'test' else time.strftime("%Y%m%d-%H%M%S")
-    md_model = DNNMalwareDetector(dataset.vocab_size,
-                                  dataset.n_classes,
-                                  device=dv,
-                                  name=model_name,
-                                  **vars(args)
-                                  )
-    model = AdvMalwareDetectorICNN(md_model,
+    model = AdvMalwareDetectorICNN(None,
                                    input_size=dataset.vocab_size,
                                    n_classes=dataset.n_classes,
                                    device=dv,

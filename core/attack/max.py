@@ -26,15 +26,14 @@ class Max(BaseAttack):
         self.varepsilon = varepsilon
         self.device = device
 
-    def perturb(self, model, x, adj=None, label=None, steps_of_max=5, min_lambda_=1e-5, max_lambda_=1e5, verbose=False):
+    def perturb(self, model, x, label=None, steps_of_max=5, min_lambda_=1e-5, max_lambda_=1e5, verbose=False):
         """
         perturb node features
 
         Parameters
         -----------
         @param model, a victim model
-        @param x: torch.FloatTensor, node feature vectors (each represents the occurrences of apis in a graph) with shape [batch_size, number_of_graphs, vocab_dim]
-        @param adj: torch.FloatTensor or None, adjacency matrix (if not None, the shape is [number_of_graphs, batch_size, vocab_dim, vocab_dim])
+        @param x: torch.FloatTensor, node feature vectors (each represents the occurrences of apis in a graph) with shape [batch_size, vocab_dim]
         @param label: torch.LongTensor, ground truth labels
         @param steps_of_max: Integer, maximum number of iterations
         @param min_lambda_, float, minimum value of penalty factor
@@ -45,8 +44,7 @@ class Max(BaseAttack):
             return []
         model.eval()
         with torch.no_grad():
-            hidden, logit = model.forward(x, adj)
-            loss, done = self.get_loss_without_lambda(model, logit, label, hidden)
+            loss, done = self.get_loss_without_lambda(model, x, label)
         pre_loss = loss
         n, red_n = x.size()[0], x.size()[1:]
         red_ind = list(range(2, len(x.size()) + 1))
@@ -57,24 +55,20 @@ class Max(BaseAttack):
             if num_sample_red <= 0:
                 break
 
-            red_adj = None if adj is None else adj[~stop_flag]
             red_label = label[~stop_flag]
             pertbx = []
             for attack in self.attack_list:
                 assert 'perturb' in type(attack).__dict__.keys()
                 if t > 0 and 'use_random' in attack.__dict__.keys():
                     attack.use_random = False
-                adj = None if adj is None else adj[~stop_flag]
-                pertbx.append(attack.perturb(model=model, x=adv_x[~stop_flag], adj=red_adj, label=red_label,
+                pertbx.append(attack.perturb(model=model, x=adv_x[~stop_flag], label=red_label,
                                              min_lambda_=min_lambda_,
                                              max_lambda_=max_lambda_))
             pertbx = torch.vstack(pertbx)
 
             with torch.no_grad():
-                red_adj_ext = None if adj is None else torch.vstack([red_adj] * len(self.attack_list))
                 red_label_ext = torch.cat([red_label] * len(self.attack_list))
-                hidden, logit = model.forward(pertbx, red_adj_ext)
-                loss, done = self.get_loss_without_lambda(model, logit, red_label_ext, hidden)
+                loss, done = self.get_loss_without_lambda(model, pertbx, red_label_ext)
                 loss = loss.reshape(len(self.attack_list), num_sample_red).permute(1, 0)
                 done = done.reshape(len(self.attack_list), num_sample_red).permute(1, 0)
                 success_flag = torch.any(done, dim=-1)
@@ -91,19 +85,19 @@ class Max(BaseAttack):
                 pre_loss[~pre_stop_flag] = a_loss
         if verbose:
             with torch.no_grad():
-                hidden, logit = model.forward(adv_x, adj)
-                _, done = self.get_loss_without_lambda(model, logit, label, hidden)
+                _, done = self.get_loss_without_lambda(model, adv_x, label)
                 logger.info(f"max: attack effectiveness {done.sum().item() / x.size()[0] * 100}%.")
         return adv_x
 
-    def get_loss_without_lambda(self, model, logit, label, hidden=None):
-        ce = F.cross_entropy(logit, label, reduction='none')
-        y_pred = logit.argmax(1)
+    def get_loss_without_lambda(self, model, pertb_x, label):
+        logits_f = model.forward_f(pertb_x)
+        ce = F.cross_entropy(logits_f, label, reduction='none')
+        y_pred = logits_f.argmax(1)
         if 'forward_g' in type(model).__dict__.keys() and (not self.oblivion):
-            de = model.forward_g(hidden, y_pred)
-            tau = model.get_tau_sample_wise(y_pred)
-            loss_no_reduction = torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW)
-            done = (y_pred == 0.) & (de >= tau)
+            logits_g = model.forward_g(pertb_x)
+            tau = model.get_tau_sample_wise()
+            loss_no_reduction = logits_g - tau
+            done = (y_pred == 0.) & (logits_g >= tau)
         else:
             loss_no_reduction = ce
             done = y_pred == 0.

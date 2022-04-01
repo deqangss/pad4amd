@@ -45,7 +45,7 @@ class PGD(BaseAttack):
         self.round_threshold = rounding_threshold
         self.lambda_ = 1.
 
-    def _perturb(self, model, x, adj=None, label=None,
+    def _perturb(self, model, x, label=None,
                  steps=10,
                  step_length=1.,
                  lambda_=1.,
@@ -56,8 +56,7 @@ class PGD(BaseAttack):
         Parameters
         -----------
         @param model, a victim model
-        @param x: torch.FloatTensor, node feature vectors (each represents the occurrences of apis in a graph) with shape [batch_size, number_of_graphs, vocab_dim]
-        @param adj: torch.FloatTensor or None, adjacency matrix (if not None, the shape is [number_of_graphs, batch_size, vocab_dim, vocab_dim])
+        @param x: torch.FloatTensor, node feature vectors (each represents the occurrences of apis in a graph) with shape [batch_size, vocab_dim]
         @param label: torch.LongTensor, ground truth labels
         @param steps: Integer, maximum number of iterations
         @param step_length: float, the step length in each iteration
@@ -67,20 +66,18 @@ class PGD(BaseAttack):
             return []
         adv_x = x
         self.lambda_ = lambda_
-        self.padding_mask = torch.sum(adv_x, dim=-1, keepdim=True) > 1  # we set a graph contains two apis at least
         model.eval()
         for t in range(steps):
             if t == 0 and self.use_random:
                 adv_x = get_x0(adv_x, rounding_threshold=self.round_threshold, is_sample=True)
             var_adv_x = torch.autograd.Variable(adv_x, requires_grad=True)
-            hidden, logit = model.forward(var_adv_x, adj)
-            loss, done = self.get_loss(model, logit, label, hidden, self.lambda_)
+            loss, done = self.get_loss(model, var_adv_x, label, self.lambda_)
             grad = torch.autograd.grad(torch.mean(loss), var_adv_x)[0]
             perturbation = self.get_perturbation(grad, x, adv_x)
             adv_x = torch.clamp(adv_x + perturbation * step_length, min=0., max=1.)
         return adv_x
 
-    def perturb(self, model, x, adj=None, label=None,
+    def perturb(self, model, x, label=None,
                 steps=10,
                 step_length=1.,
                 step_check=10,
@@ -97,7 +94,6 @@ class PGD(BaseAttack):
             logger.warning("The attack leads to dense graph and trigger the issue of out of memory.")
         assert steps >= 0 and step_check > 0 and step_length >= 0
         model.eval()
-
         mini_steps = [step_check] * (steps // step_check)
         mini_steps = mini_steps + [steps % step_check] if steps % step_check != 0 else mini_steps
 
@@ -107,19 +103,16 @@ class PGD(BaseAttack):
             prev_done = None
             for i, mini_step in enumerate(mini_steps):
                 with torch.no_grad():
-                    hidden, logit = model.forward(adv_x, adj)
-                    _, done = self.get_loss(model, logit, label, hidden, self.lambda_)
+                    _, done = self.get_loss(model, adv_x, label, self.lambda_)
                 if torch.all(done):
                     break
                 if i == 0:
                     adv_x[~done] = x[~done]  # recompute the perturbation under other penalty factors
-                    adv_adj = None if adj is None else adj[~done]
                     prev_done = done
                 else:
                     adv_x[~done] = pert_x_cont[~done[~prev_done]]
-                    adv_adj = None if adj is None else adj[~done]
                     prev_done = done
-                pert_x_cont = self._perturb(model, adv_x[~done], adv_adj, label[~done],
+                pert_x_cont = self._perturb(model, adv_x[~done], label[~done],
                                             mini_step,
                                             step_length,
                                             lambda_=self.lambda_
@@ -135,8 +128,7 @@ class PGD(BaseAttack):
             if not self.check_lambda(model):
                 break
         with torch.no_grad():
-            hidden, logit = model.forward(adv_x, adj)
-            _, done = self.get_loss(model, logit, label, hidden, self.lambda_)
+            _, done = self.get_loss(model, adv_x, label, self.lambda_)
             if verbose:
                 logger.info(f"pgd {self.norm}: attack effectiveness {done.sum().item() / done.size()[0] * 100:.3f}%.")
         return adv_x
@@ -144,18 +136,16 @@ class PGD(BaseAttack):
     def get_perturbation(self, gradients, features, adv_features):
         div_zero_overflow = torch.tensor(1e-30, dtype=gradients.dtype, device=gradients.device)
         red_ind = list(range(1, len(features.size())))
-        # 1. mask paddings
-        gradients = gradients * self.padding_mask
 
-        # 2. look for allowable position, because only '1--> -' and '0 --> +' are permitted
-        #    2.1 api insertion
+        # 1. look for allowable position, because only '1--> -' and '0 --> +' are permitted
+        #    1.1 api insertion
         pos_insertion = (adv_features <= 0.5) * 1 * (adv_features >= 0.)
         grad4insertion = (gradients > 0) * pos_insertion * gradients
         # grad4insertion = (gradients > 0) * gradients
-        #    2.2 api removal
+        #    2 api removal
         pos_removal = (adv_features > 0.5) * 1
         # if self.is_attacker:
-        #     #     2.2.1 cope with the interdependent apis
+        #     #     2.1 cope with the interdependent apis
         #     checking_nonexist_api = (pos_removal ^ self.omega) & self.omega
         #     grad4removal = torch.sum(gradients * checking_nonexist_api, dim=-1, keepdim=True) + gradients
         #     grad4removal *= (grad4removal < 0) * (pos_removal & self.manipulation_x)

@@ -77,7 +77,7 @@ class MaxAdvTraining(object):
                        weight_decay=weight_decay)
         # get threshold tau
         self.model.get_threshold(validation_data_producer)
-        logger.info(f"The threshold is {self.model.tau:.3f}.")
+        logger.info(f"The threshold is {self.model.tau.item():.3f}.")
 
         optimizer = optim.Adam(self.model.parameters(), lr=lr, weight_decay=weight_decay)
         total_time = 0.
@@ -90,8 +90,8 @@ class MaxAdvTraining(object):
         best_epoch = 0
         for i in range(adv_epochs):
             losses, accuracies = [], []
-            for ith_batch, (x_batch, y_batch) in enumerate(train_data_producer):
-                x_batch, y_batch = utils.to_tensor(x_batch, y_batch, self.model.device)
+            for idx_batch, (x_batch, y_batch) in enumerate(train_data_producer):
+                x_batch, y_batch = utils.to_tensor(x_batch, y_batch.long(), self.model.device)
                 batch_size = x_batch.shape[0]
                 # make data
                 # 1. add pepper and salt noises
@@ -143,20 +143,19 @@ class MaxAdvTraining(object):
                 acc_g_train = ((torch.sigmoid(logits_g) >= 0.5) == y_batch_).sum().item()
                 acc_g_train /= x_batch_.size()[0]
                 mins, secs = int(total_time / 60), int(total_time % 60)
+                losses.append(loss_train.item())
                 accuracies.append(acc_f_train)
                 accuracies.append(acc_g_train)
                 if verbose:
                     print(
-                        f'Mini batch: {i * nbatches + idx_batch + 1}/{epochs * nbatches} | training time in {mins:.0f} minutes, {secs} seconds.')
+                        f'Mini batch: {i * nbatches + idx_batch + 1}/{adv_epochs * nbatches} | training time in {mins:.0f} minutes, {secs} seconds.')
                     logger.info(
                         f'Training loss (batch level): {losses[-1]:.4f} | Train accuracy: {acc_f_train * 100:.2f}% & {acc_g_train * 100:.2f}%.')
 
             if verbose:
                 logger.info(
                     f'Training loss (epoch level): {np.mean(losses):.4f} | Train accuracy: {np.mean(accuracies) * 100:.2f}')
-            # get threshold tau
-            self.model.get_threshold(validation_data_producer)
-            logger.info(f"The threshold is {self.model.tau:.3f}.")
+            # long-time to train (save the model in case of interruption)
             if not path.exists(self.model_save_path):
                 utils.mkdir(path.dirname(self.model_save_path))
             torch.save({'model_state_dict': self.model.state_dict(),
@@ -168,7 +167,7 @@ class MaxAdvTraining(object):
             res_val = []
             avg_acc_val = []
             for x_val, y_val in validation_data_producer:
-                x_val, y_val = utils.to_tensor(x_val, y_val, self.model.device)
+                x_val, y_val = utils.to_tensor(x_val, y_val.long(), self.model.device)
                 x_val_noises = torch.clamp(x_val + utils.psn(x_val, np.minimum(np.random.uniform(0, 1), 0.05)),
                                            min=0., max=1.)
                 x_val_ = torch.cat([x_val, x_val_noises], dim=0)
@@ -184,7 +183,7 @@ class MaxAdvTraining(object):
                 acc_val_g /= x_val_.size()[0]
                 avg_acc_val.append(acc_val_g)
 
-                mal_x_batch, mal_y_batch, null_flag = PrincipledAdvTraining.get_mal_data(x_val_batch, y_val_batch)
+                mal_x_batch, mal_y_batch, null_flag = PrincipledAdvTraining.get_mal_data(x_val, y_val)
                 if null_flag:
                     continue
                 self.model.eval()
@@ -195,17 +194,17 @@ class MaxAdvTraining(object):
                                                   verbose=self.attack_param['verbose']
                                                   )
                 y_cent_batch, x_density_batch = self.model.inference_batch_wise(pertb_mal_x,
-                                                                                mal_y_batch,
-                                                                                use_indicator=True)
+                                                                                mal_y_batch
+                                                                                )
                 y_pred = np.argmax(y_cent_batch, axis=-1)
-                indicator_flag = self.model.indicator(x_density_batch, y_pred)
+                indicator_flag = self.model.indicator(x_density_batch)
                 res_val.append((~indicator_flag) | ((y_pred == 1.) & indicator_flag))
             assert len(res_val) > 0
             res_val = np.concatenate(res_val)
             acc_val = (np.sum(res_val).astype(np.float) / res_val.shape[0] + np.mean(avg_acc_val)) / 2.
             # Owing to we look for a new threshold after each epoch, this hinders the convergence of training.
             # We save the model's parameters at last several epochs as a well-trained model may be obtained.
-            if ((i + 1) >= adv_epochs - 10) and (acc_val >= best_acc_val):
+            if ((i + 1) >= adv_epochs - 10) or (acc_val >= best_acc_val):
                 best_acc_val = acc_val
                 best_epoch = i + 1
                 torch.save({'model_state_dict': self.model.state_dict(),

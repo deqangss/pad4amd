@@ -236,7 +236,7 @@ class AdvMalwareDetectorICNN(nn.Module, DensityEstimatorTemplate):
         logits_g = self.forward_g(x)
         return torch.softmax(logits_f, dim=-1).detach().cpu().numpy(), logits_g.detach().cpu().numpy()
 
-    def get_tau_sample_wise(self, y_pred=None):
+    def get_tau_sample_wise(self):
         return self.tau
 
     def indicator(self, x_prob):

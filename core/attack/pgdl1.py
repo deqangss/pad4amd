@@ -38,7 +38,7 @@ class PGDl1(BaseAttack):
         super(PGDl1, self).__init__(is_attacker, oblivion, kappa, manipulation_x, omega, device)
         self.lambda_ = 1.
 
-    def _perturb(self, model, x, adj=None, label=None,
+    def _perturb(self, model, x,  label=None,
                  m_perturbations=10,
                  lambda_=1.):
         """
@@ -48,7 +48,6 @@ class PGDl1(BaseAttack):
         -----------
         @param model, a victim model
         @param x: torch.FloatTensor, node feature vectors (each represents the occurrences of apis in a graph) with shape [batch_size, number_of_graphs, vocab_dim]
-        @param adj: torch.FloatTensor or None, adjacency matrix (if not None, the shape is [number_of_graphs, batch_size, vocab_dim, vocab_dim])
         @param label: torch.LongTensor, ground truth labels
         @param m_perturbations: Integer, maximum number of perturbations
         @param lambda_, float, penalty factor
@@ -61,8 +60,7 @@ class PGDl1(BaseAttack):
         model.eval()
         for t in range(m_perturbations):
             var_adv_x = torch.autograd.Variable(adv_x, requires_grad=True)
-            hidden, logit = model.forward(var_adv_x, adj)
-            loss, done = self.get_loss(model, logit, label, hidden, self.lambda_)
+            loss, done = self.get_loss(model, var_adv_x, label, self.lambda_)
             if torch.all(done):
                 break
             grad = torch.autograd.grad(torch.mean(loss), var_adv_x)[0]
@@ -72,7 +70,7 @@ class PGDl1(BaseAttack):
             adv_x = torch.clamp(adv_x + perturbation * direction, min=0., max=1.)
         return adv_x
 
-    def perturb(self, model, x, adj=None, label=None,
+    def perturb(self, model, x, label=None,
                 m=10,
                 min_lambda_=1e-5,
                 max_lambda_=1e5,
@@ -87,13 +85,10 @@ class PGDl1(BaseAttack):
         self.lambda_ = min_lambda_
         adv_x = x.detach().clone().to(torch.float)
         while self.lambda_ <= max_lambda_:
-            hidden, logit = model.forward(adv_x, adj)
-            _, done = self.get_loss(model, logit, label, hidden, self.lambda_)
+            _, done = self.get_loss(model, adv_x, label, self.lambda_)
             if torch.all(done):
                 break
-            adv_x[~done] = x[~done]  # recompute the perturbation under other penalty factors
-            adv_adj = None if adj is None else adj[~done]
-            pert_x = self._perturb(model, adv_x[~done], adv_adj, label[~done],
+            pert_x = self._perturb(model, adv_x[~done], label[~done],
                                    m,
                                    lambda_=self.lambda_
                                    )
@@ -102,8 +97,7 @@ class PGDl1(BaseAttack):
             if not self.check_lambda(model):
                 break
         with torch.no_grad():
-            hidden, logit = model.forward(adv_x, adj)
-            _, done = self.get_loss(model, logit, label, hidden, self.lambda_)
+            _, done = self.get_loss(model, adv_x, label, self.lambda_)
             if verbose:
                 logger.info(f"pgd l1: attack effectiveness {done.sum().item() / x.size()[0]}.")
         return adv_x
