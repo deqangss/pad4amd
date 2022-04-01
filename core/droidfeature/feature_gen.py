@@ -66,6 +66,7 @@ DANGEROUS_API_SIMLI_TAGS = [
     'Landroid/content/Intent;->putExtra',
     'Landroid/content/Intent;->init',
     'Ljava/lang/reflect',
+    'Ljava/lang/Object;->getClass',
     'Ljava/lang/Class;->getConstructor',
     'Ljava/lang/Class;->getConstructors',
     'Ljava/lang/Class;->getDeclaredConstructor',

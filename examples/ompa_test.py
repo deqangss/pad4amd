@@ -54,10 +54,7 @@ def _main():
         raise TypeError("Expected 'maldet', 'kde', 'gmm', 'madvtrain', or 'padvtrain'.")
 
     hp_params = utils.read_pickle(os.path.join(save_dir, 'hparam.pkl'))
-    dataset = Dataset(k=hp_params['k'],
-                      is_adj=hp_params['is_adj'],
-                      n_sgs_max=hp_params['N'],
-                      use_cache=hp_params['cache'],
+    dataset = Dataset(use_cache=hp_params['cache'],
                       feature_ext_args={'proc_number': hp_params['proc_number'],
                                         'timeout': hp_params['timeout'],
                                         'N': hp_params['N']
