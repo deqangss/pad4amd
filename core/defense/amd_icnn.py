@@ -39,11 +39,11 @@ class AdvMalwareDetectorICNN(nn.Module, DensityEstimatorTemplate):
         if isinstance(md_nn_model, nn.Module):
             self.md_nn_model = md_nn_model
         else:
+            kwargs['smooth'] = True
             self.md_nn_model = DNNMalwareDetector(self.input_size,
                                                   n_classes,
                                                   self.device,
                                                   name,
-                                                  smooth=True,
                                                   **kwargs)
             warnings.warn("Use a self-defined NN-based malware detector")
         if hasattr(self.md_nn_model, 'smooth'):
@@ -55,7 +55,7 @@ class AdvMalwareDetectorICNN(nn.Module, DensityEstimatorTemplate):
             for name, child in self.md_nn_model.named_children():
                 if isinstance(child, nn.ReLU):
                     self.md_nn_model._modules['relu'] = nn.SELU()
-        self.md_nn_model = md_nn_model.to(self.device)
+        self.md_nn_model = self.md_nn_model.to(self.device)
 
         # input convex neural network
         self.non_neg_dense_layers = []
@@ -231,8 +231,6 @@ class AdvMalwareDetectorICNN(nn.Module, DensityEstimatorTemplate):
 
     def inference_batch_wise(self, x, y):
         assert isinstance(x, torch.Tensor) and isinstance(y, torch.Tensor)
-        if a is not None:
-            assert isinstance(a, torch.Tensor)
         self.eval()
         logits_f = self.forward_f(x)
         logits_g = self.forward_g(x)
@@ -241,7 +239,7 @@ class AdvMalwareDetectorICNN(nn.Module, DensityEstimatorTemplate):
     def get_tau_sample_wise(self, y_pred=None):
         return self.tau
 
-    def indicator(self, x_prob, y_pred=None):
+    def indicator(self, x_prob):
         if isinstance(x_prob, np.ndarray):
             x_prob = torch.tensor(x_prob, device=self.device)
             return (x_prob >= self.tau).cpu().numpy()

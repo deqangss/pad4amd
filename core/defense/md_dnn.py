@@ -54,7 +54,7 @@ class DNNMalwareDetector(nn.Module):
             self.add_module('nn_model_layer_{}'.format(idx_i), dense_layer)
 
         if self.smooth:
-            self.activation_func = F.selu # partial(F.elu, alpha=self.alpha_)
+            self.activation_func = F.selu  # partial(F.elu, alpha=self.alpha_)
         else:
             self.activation_func = F.relu
 
@@ -99,6 +99,9 @@ class DNNMalwareDetector(nn.Module):
         latent_representation = F.dropout(x, self.dropout, training=self.training)
         logits = self.dense_layers[-1](latent_representation)
         return logits
+
+    def forward_f(self, x):
+        return self.forward(x)
 
     def inference(self, test_data_producer):
         confidences = []
@@ -147,7 +150,7 @@ class DNNMalwareDetector(nn.Module):
         logit = self.forward(x)
         return torch.softmax(logit, dim=-1).detach().cpu().numpy(), np.ones((logit.size()[0],))
 
-    def predict(self, test_data_producer):
+    def predict(self, test_data_producer, indicator_masking=None):
         """
         predict labels and conduct evaluation
 

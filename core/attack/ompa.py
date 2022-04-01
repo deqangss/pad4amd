@@ -25,7 +25,7 @@ class OMPA(BaseAttack):
         self.is_attacker = is_attacker
         self.lambda_ = 1.
 
-    def perturb(self, model, x, adj=None, label=None,
+    def perturb(self, model, x, label=None,
                 m=10,
                 lambda_=1.,
                 step_length=1.,
@@ -38,7 +38,6 @@ class OMPA(BaseAttack):
         -----------
         @param model, a victim model
         @param x: torch.FloatTensor, node feature vectors (each represents the occurrences of apis in a graph) with shape [batch_size, number_of_graphs, vocab_dim]
-        @param adj: torch.FloatTensor or None, adjacency matrix (if not None, the shape is [number_of_graphs, batch_size, vocab_dim, vocab_dim])
         @param label: torch.LongTensor, ground truth labels
         @param m: Integer, maximum number of perturbations
         @param lambda_, float, penalty factor
@@ -55,12 +54,10 @@ class OMPA(BaseAttack):
         else:
             adv_x = x
         self.lambda_ = lambda_
-        self.padding_mask = torch.sum(x, dim=-1, keepdim=True) > 1  # we set a graph contains at least two apis
         model.eval()
         for t in range(m):
             var_adv_x = torch.autograd.Variable(adv_x, requires_grad=True)
-            hidden, logit = model.forward(var_adv_x, adj)
-            adv_loss, done = self.get_loss(model, logit, label, hidden)
+            adv_loss, done = self.get_loss(model, var_adv_x, label)
             if torch.all(done):
                 break
             grad = torch.autograd.grad(torch.mean(adv_loss), var_adv_x)[0]
@@ -72,36 +69,31 @@ class OMPA(BaseAttack):
             if 0 < step_length <= .5 and (not self.is_attacker):
                 with torch.no_grad():
                     steps = int(1 / step_length)
-                    b, k, v = x.size()
+                    b, dim = x.size()
                     perturbations = torch.stack(
                         [perturbation * direction * gamma for gamma in torch.linspace(step_length, 1., steps)], dim=0)
                     adv_x_expanded = torch.clip(
-                        (adv_x.unsqueeze(dim=0) + perturbations).permute(1, 0, 2, 3).reshape(b * steps, k, v),
+                        (adv_x.unsqueeze(dim=0) + perturbations).permute(1, 0, 2).reshape(b * steps, dim),
                         min=0,
                         max=1)
-                    if adj is not None:
-                        adj = torch.repeat_interleave(adj, repeats=steps, dim=0)
-                    hidden_, logit_ = model.forward(adv_x_expanded, adj)
-                    adv_loss_ = self.get_loss(model, logit_, torch.repeat_interleave(label, steps), hidden_)
+                    logits_ = model.forward(adv_x_expanded)
+                    adv_loss_ = self.get_loss(model, logits_, torch.cat([label] * steps, dim=0))
                     _, worst_pos = torch.max(adv_loss_.reshape(b, steps), dim=1)
-                    adv_x = adv_x_expanded.reshape(b, steps, k, v)[torch.arange(b), worst_pos]
+                    adv_x = adv_x_expanded.reshape(b, steps, dim)[torch.arange(b), worst_pos]
             else:
                 adv_x = torch.clip(adv_x + perturbation * direction, min=0., max=1.)
         return adv_x
 
     def get_perturbation(self, gradients, features, adv_features):
-        # 1. mask paddings
-        gradients = gradients * self.padding_mask
-
-        # 2. look for allowable position, because only '1--> -' and '0 --> +' are permitted
-        #    2.1 api insertion
+        # 1. look for allowable position, because only '1--> -' and '0 --> +' are permitted
+        #    1.1 api insertion
         pos_insertion = (adv_features <= 0.5) * 1
         grad4insertion = (gradients > 0) * pos_insertion * gradients  # owing to gradient ascent
-        #    2.2 api removal
+        # 2. api removal
         pos_removal = (adv_features > 0.5) * 1
         if self.is_attacker:
-            #     2.2.1 cope with the interdependent apis (note: the following is application-specific)
-            checking_nonexist_api = (pos_removal ^ self.omega) & self.omega
+            #     2.1 cope with the interdependent apis (note: the following is application-specific)
+            checking_nonexist_api = (pos_removal ^ self.omega) & self.omega  # broadcasting
             grad4removal = torch.sum(gradients * checking_nonexist_api, dim=-1, keepdim=True) + gradients
             grad4removal *= (grad4removal < 0) * (pos_removal & self.manipulation_x)
         else:
@@ -125,7 +117,7 @@ class OMPA(BaseAttack):
             directions += perturbations * self.omega
         return perturbations, directions
 
-    def get_loss(self, model, adv_x, label, hidden=None):
+    def get_loss(self, model, adv_x, label):
         logits_f = model.forward_f(adv_x)
         ce = F.cross_entropy(logits_f, label, reduction='none')
         y_pred = logits_f.argmax(1)
@@ -136,7 +128,6 @@ class OMPA(BaseAttack):
                     logits_g - model.tau, max=self.kappa))
             else:
                 loss_no_reduction = ce + self.lambda_ * (logits_g - model.tau)
-            # loss_no_reduction = ce + self.lambda_ * (logits_g - model.tau)
             done = (y_pred == 0.) & (logits_g >= model.tau)
         else:
             loss_no_reduction = ce
