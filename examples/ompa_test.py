@@ -148,7 +148,7 @@ def _main():
     save_dir = os.path.join(config.get('experiments', 'ompa'), args.model)
     if not os.path.exists(save_dir):
         utils.mkdir(save_dir)
-    x_mod_integrated = np.vstack(x_mod_integrated)
+    x_mod_integrated = np.concatenate(x_mod_integrated, axis=0)
     utils.dump_pickle_frd_space(x_mod_integrated,
                                 os.path.join(save_dir, 'x_mod.list'))
     if args.real:
