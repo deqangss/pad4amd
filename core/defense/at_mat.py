@@ -210,6 +210,9 @@ class MaxAdvTraining(object):
             if verbose:
                 logger.info(
                     f"\tVal accuracy {acc_val * 100:.4}%: model select at epoch {best_epoch} with validation accuracy {best_acc_val * 100:.4}% under attack.")
+                logger.info(
+                    f'The threshold is {self.model.tau}.'
+                )
 
     def load(self):
         assert path.exists(self.model_save_path), 'train model first'
