@@ -370,17 +370,24 @@ class AdvMalwareDetectorICNN(nn.Module, DensityEstimatorTemplate):
     def load(self):
         # load model
         assert path.exists(self.model_save_path), 'train model first'
+        # ckpt = torch.load(self.model_save_path)
+        # self.tau = ckpt['tau']
+        # self.md_nn_model.load_state_dict(ckpt['md_model'])
+        # self.load_state_dict(ckpt['amd_model'])
         ckpt = torch.load(self.model_save_path)
-        self.tau = ckpt['tau']
-        self.md_nn_model.load_state_dict(ckpt['md_model'])
-        self.load_state_dict(ckpt['amd_model'])
+        self.model.load_state_dict(ckpt['model_state_dict'])
 
     def save_to_disk(self):
         if not path.exists(self.model_save_path):
             utils.mkdir(path.dirname(self.model_save_path))
-        torch.save({
-            'tau': self.tau,
-            'md_model': self.md_nn_model.state_dict(),
-            'amd_model': self.state_dict()
-        }, self.model_save_path
-        )
+        # torch.save({
+        #     'tau': self.tau,
+        #     'md_model': self.md_nn_model.state_dict(),
+        #     'amd_model': self.state_dict()
+        # }, self.model_save_path
+        # )
+        torch.save({'model_state_dict': self.model.state_dict(),
+                    'epoch': best_epoch,
+                    'optimizer_state_dict': optimizer.state_dict()
+                    },
+                   self.model_save_path)
