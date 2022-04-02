@@ -78,6 +78,7 @@ class MaxAdvTraining(object):
         # get threshold tau
         self.model.get_threshold(validation_data_producer)
         logger.info(f"The threshold is {self.model.tau.item():.3f}.")
+        constraint = utils.NonnegWeightConstraint()
 
         optimizer = optim.Adam(self.model.parameters(), lr=lr, weight_decay=weight_decay)
         total_time = 0.
@@ -136,6 +137,10 @@ class MaxAdvTraining(object):
                 loss_train += beta_a * torch.mean(logits_g[2 * batch_size:])
                 loss_train.backward()
                 optimizer.step()
+                # clamp
+                for name, module in self.model.named_modules():
+                    if 'non_neg_layer' in name:
+                        module.apply(constraint)
                 total_time += time.time() - start_time
 
                 acc_f_train = (logits_f.argmax(1) == y_batch).sum().item()
