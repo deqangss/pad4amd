@@ -242,9 +242,9 @@ class AdvMalwareDetectorICNN(nn.Module, DensityEstimatorTemplate):
     def indicator(self, x_prob):
         if isinstance(x_prob, np.ndarray):
             x_prob = torch.tensor(x_prob, device=self.device)
-            return (x_prob >= self.tau).cpu().numpy()
+            return (x_prob <= self.tau).cpu().numpy()
         elif isinstance(x_prob, torch.Tensor):
-            return x_prob >= self.tau
+            return x_prob <= self.tau
         else:
             raise TypeError("Tensor or numpy.ndarray are expected.")
 
@@ -260,7 +260,7 @@ class AdvMalwareDetectorICNN(nn.Module, DensityEstimatorTemplate):
                 x_val, y_val = utils.to_tensor(x_val, y_val.long(), self.device)
                 x_logits = self.forward_g(x_val)
                 probabilities.append(x_logits)
-            s, _ = torch.sort(torch.cat(probabilities, dim=0), descending=True)
+            s, _ = torch.sort(torch.cat(probabilities, dim=0))
             i = int((s.shape[0] - 1) * self.ratio)
             assert i >= 0
             self.tau[0] = s[i]
@@ -298,7 +298,7 @@ class AdvMalwareDetectorICNN(nn.Module, DensityEstimatorTemplate):
                 x_train_noises = torch.clamp(x_train + utils.psn(x_train, np.minimum(np.random.uniform(0, 1), 0.05)),
                                              min=0., max=1.)
                 x_train_ = torch.cat([x_train, x_train_noises], dim=0)
-                y_train_ = torch.cat([torch.ones(x_train.shape[:1]), torch.zeros(x_train.shape[:1])]).float().to(
+                y_train_ = torch.cat([torch.zeros(x_train.shape[:1]), torch.ones(x_train.shape[:1])]).float().to(
                     self.device)
                 idx = torch.randperm(y_train_.shape[0])
                 x_train_ = x_train_[idx]
