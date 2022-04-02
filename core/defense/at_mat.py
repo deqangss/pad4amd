@@ -134,7 +134,7 @@ class MaxAdvTraining(object):
                                                        logits_g[:2 * batch_size],
                                                        y_batch_[:2 * batch_size])
                 # appending adversarial training loss
-                loss_train += beta_a * torch.mean(logits_g[2 * batch_size:])
+                loss_train -= beta_a * torch.mean(logits_g[2 * batch_size:])
                 loss_train.backward()
                 optimizer.step()
                 # clamp
@@ -204,7 +204,7 @@ class MaxAdvTraining(object):
                 res_val.append((~indicator_flag) | ((y_pred == 1.) & indicator_flag))
             assert len(res_val) > 0
             res_val = np.concatenate(res_val)
-            acc_val = (np.sum(res_val).astype(np.float) / res_val.shape[0] + np.mean(avg_acc_val)) / 2.
+            acc_val = np.sum(res_val).astype(np.float) / res_val.shape[0]  #  + np.mean(avg_acc_val)) / 2.
             # Owing to we look for a new threshold after each epoch, this hinders the convergence of training.
             # We save the model's parameters at last several epochs as a well-trained model may be obtained.
             if ((i + 1) >= adv_epochs - 10) or (acc_val >= best_acc_val):

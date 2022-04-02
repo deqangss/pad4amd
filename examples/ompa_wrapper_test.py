@@ -73,15 +73,14 @@ def _main():
     else:
         dv = 'cuda'
     # initial model
-    if args.model == 'md_dnn' or args.model == 'kde':
-        model = DNNMalwareDetector(dataset.vocab_size,
-                                   dataset.n_classes,
-                                   device=dv,
-                                   name=args.model_name,
-                                   **hp_params
-                                   )
-    else:
-        model = AdvMalwareDetectorICNN(None,
+    model = DNNMalwareDetector(dataset.vocab_size,
+                               dataset.n_classes,
+                               device=dv,
+                               name=args.model_name,
+                               **hp_params
+                               )
+    if not (args.model == 'md_dnn' or args.model == 'kde'):
+        model = AdvMalwareDetectorICNN(model,
                                        input_size=dataset.vocab_size,
                                        n_classes=dataset.n_classes,
                                        device=dv,
@@ -98,7 +97,7 @@ def _main():
                                         ratio=hp_params['ratio']
                                         )
         model.load()
-    elif args.model == 'madvtrain':
+    elif args.model == 'at_amd_pad':
         adv_model = MaxAdvTraining(model)
         adv_model.load()
         model = adv_model.model
@@ -131,7 +130,7 @@ def _main():
         y_cent_batch, x_density_batch = model.inference_batch_wise(adv_x_batch, y)
         y_cent_list.append(y_cent_batch)
         x_density_list.append(x_density_batch)
-        x_mod_integrated.append(adv_x_batch - x)
+        x_mod_integrated.append((adv_x_batch - x).detach().cpu().numpy())
     y_pred = np.argmax(np.concatenate(y_cent_list), axis=-1)
     logger.info(f'The mean accuracy on perturbed malware is {sum(y_pred == 1.) / mal_count * 100:.3f}%')
 
