@@ -173,7 +173,7 @@ class AdvMalwareDetectorICNN(nn.Module, DensityEstimatorTemplate):
             # instead filtering out examples, here resets the prediction as 1
             y_pred[~indicator_flag] = 1.
         logger.info('The indicator is turning on...')
-        logger.info('The threshold is {:.2}'.format(self.tau.item()))
+        logger.info('The threshold is {:.5}'.format(self.tau.item()))
         measurement(y_true, y_pred)
 
     def inference(self, test_data_producer):

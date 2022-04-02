@@ -125,10 +125,10 @@ class OMPA(BaseAttack):
             logits_g = model.forward_g(adv_x)
             if self.is_attacker:
                 loss_no_reduction = ce + self.lambda_ * (torch.clamp(
-                    logits_g - model.tau, max=self.kappa))
+                        model.tau - logits_g, max=self.kappa))
             else:
-                loss_no_reduction = ce + self.lambda_ * (logits_g - model.tau)
-            done = (y_pred == 0.) & (logits_g >= model.tau)
+                loss_no_reduction = ce + self.lambda_ * (model.tau - logits_g)
+            done = (y_pred == 0.) & (logits_g <= model.tau)
         else:
             loss_no_reduction = ce
             done = y_pred == 0.

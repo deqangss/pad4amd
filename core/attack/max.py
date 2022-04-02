@@ -96,8 +96,8 @@ class Max(BaseAttack):
         if 'forward_g' in type(model).__dict__.keys() and (not self.oblivion):
             logits_g = model.forward_g(pertb_x)
             tau = model.get_tau_sample_wise()
-            loss_no_reduction = logits_g - tau
-            done = (y_pred == 0.) & (logits_g >= tau)
+            loss_no_reduction = tau - logits_g
+            done = (y_pred == 0.) & (logits_g <= tau)
         else:
             loss_no_reduction = ce
             done = y_pred == 0.

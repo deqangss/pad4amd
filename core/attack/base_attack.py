@@ -130,10 +130,10 @@ class BaseAttack(Module):
             tau = model.get_tau_sample_wise()
             if self.is_attacker:
                 loss_no_reduction = ce + lambda_ * (torch.clamp(
-                        logits_g - tau, max=self.kappa))
+                        tau - logits_g, max=self.kappa))
             else:
-                loss_no_reduction = ce + lambda_ * (logits_g - tau)
-            done = (y_pred == 0.) & (logits_g >= tau)
+                loss_no_reduction = ce + lambda_ * (tau - logits_g)
+            done = (y_pred == 0.) & (logits_g <= tau)
         else:
             loss_no_reduction = ce
             done = y_pred == 0.

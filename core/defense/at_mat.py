@@ -99,7 +99,7 @@ class MaxAdvTraining(object):
                 x_batch_noises = torch.clamp(x_batch + utils.psn(x_batch, np.minimum(np.random.uniform(0, 1), 0.05)),
                                              min=0., max=1.)
                 x_batch_ = torch.cat([x_batch, x_batch_noises], dim=0)
-                y_batch_ = torch.cat([torch.ones(batch_size,), torch.zeros(batch_size,)]).float().to(
+                y_batch_ = torch.cat([torch.zeros(batch_size,), torch.ones(batch_size,)]).float().to(
                     self.model.device)
                 idx = torch.randperm(y_batch_.shape[0])
                 x_batch_ = x_batch_[idx]
@@ -122,7 +122,7 @@ class MaxAdvTraining(object):
                                                   )
                 total_time += time.time() - start_time
                 x_batch_ = torch.cat([x_batch_, pertb_mal_x], dim=0)
-                y_batch_ = torch.cat([y_batch_, torch.zeros(pertb_mal_x.shape[:1]).to(
+                y_batch_ = torch.cat([y_batch_, torch.ones(pertb_mal_x.shape[:1]).to(
                     self.model.device)]).float()
                 start_time = time.time()
                 self.model.train()
@@ -161,6 +161,8 @@ class MaxAdvTraining(object):
                 logger.info(
                     f'Training loss (epoch level): {np.mean(losses):.4f} | Train accuracy: {np.mean(accuracies) * 100:.2f}')
 
+            # get threshold tau
+            self.model.get_threshold(validation_data_producer)
             # select model
             self.model.eval()
             # long-time to train (save the model temporally in case of interruption)
@@ -209,8 +211,6 @@ class MaxAdvTraining(object):
                 best_acc_val = acc_val
                 best_epoch = i + 1
                 self.save_to_disk(best_epoch, optimizer, self.model_save_path)
-            # get threshold tau
-            self.model.get_threshold(validation_data_producer)
 
             if verbose:
                 logger.info(
