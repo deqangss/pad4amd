@@ -357,7 +357,16 @@ class AdvMalwareDetectorICNN(nn.Module, DensityEstimatorTemplate):
                 best_avg_acc = avg_acc_val
                 best_epoch = i
                 self.get_threshold(validation_data_producer)
-                self.save_to_disk()
+
+                if not path.exists(self.model_save_path):
+                    utils.mkdir(path.dirname(self.model_save_path))
+                torch.save({'model_state_dict': self.state_dict(),
+                            'epoch': best_epoch,
+                            'optimizer_state_dict': optimizer.state_dict()
+                            },
+                           self.model_save_path)
+
+                # self.save_to_disk()
                 if verbose:
                     print(f'Model saved at path: {self.model_save_path}')
 
@@ -386,8 +395,4 @@ class AdvMalwareDetectorICNN(nn.Module, DensityEstimatorTemplate):
         #     'amd_model': self.state_dict()
         # }, self.model_save_path
         # )
-        torch.save({'model_state_dict': self.model.state_dict(),
-                    'epoch': best_epoch,
-                    'optimizer_state_dict': optimizer.state_dict()
-                    },
-                   self.model_save_path)
+        #
