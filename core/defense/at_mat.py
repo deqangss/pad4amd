@@ -10,6 +10,7 @@ import time
 
 import torch
 import torch.optim as optim
+import torch.nn.functional as F
 import numpy as np
 
 from core.attack.max import Max
@@ -115,7 +116,7 @@ class MaxAdvTraining(object):
                 self.model.eval()
                 pertb_mal_x = self.attack.perturb(self.model, mal_x_batch, mal_y_batch,
                                                   steps_of_max=self.attack_param['steps'],
-                                                  min_lambda_=lambda_,
+                                                  min_lambda_=lambda_lower_bound,
                                                   # when lambda is small, we cannot get effective attacks
                                                   max_lambda_=lambda_upper_bound,
                                                   verbose=self.attack_param['verbose']
@@ -124,6 +125,8 @@ class MaxAdvTraining(object):
                 x_batch_ = torch.cat([x_batch_, pertb_mal_x], dim=0)
                 y_batch_ = torch.cat([y_batch_, torch.ones(pertb_mal_x.shape[:1]).to(
                     self.model.device)]).float()
+                x_batch = torch.cat([x_batch, pertb_mal_x], dim=0)
+                y_batch = torch.cat([y_batch, torch.ones(pertb_mal_x.shape[:1]).to(self.model.device).long()])
                 start_time = time.time()
                 self.model.train()
                 optimizer.zero_grad()
@@ -135,6 +138,8 @@ class MaxAdvTraining(object):
                                                        y_batch_[:2 * batch_size])
                 # appending adversarial training loss
                 loss_train -= beta_a * torch.mean(logits_g[2 * batch_size:])
+                # loss_train += beta_a * F.binary_cross_entropy_with_logits(logits_g[2 * batch_size:],
+                #                                                           y_batch_[2 * batch_size:])
                 loss_train.backward()
                 optimizer.step()
                 # clamp
