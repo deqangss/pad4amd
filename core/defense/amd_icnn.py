@@ -358,7 +358,7 @@ class AdvMalwareDetectorICNN(nn.Module, DensityEstimatorTemplate):
                 best_epoch = i
                 self.get_threshold(validation_data_producer)
 
-                # self.save_to_disk()
+                self.save_to_disk()
                 if verbose:
                     print(f'Model saved at path: {self.model_save_path}')
 

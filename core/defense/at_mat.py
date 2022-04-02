@@ -50,7 +50,7 @@ class MaxAdvTraining(object):
             lambda_upper_bound=1e3,
             granularity=1,
             lr=0.005,
-            weight_decay=5e-4, verbose=True):
+            weight_decay=5e-0, verbose=True):
         """
         Applying adversarial train to enhance the malware detector.
 
@@ -98,7 +98,7 @@ class MaxAdvTraining(object):
                 x_batch_noises = torch.clamp(x_batch + utils.psn(x_batch, np.minimum(np.random.uniform(0, 1), 0.05)),
                                              min=0., max=1.)
                 x_batch_ = torch.cat([x_batch, x_batch_noises], dim=0)
-                y_batch_ = torch.cat([torch.ones(x_batch.shape[:1]), torch.zeros(x_batch.shape[:1])]).float().to(
+                y_batch_ = torch.cat([torch.ones(batch_size,), torch.zeros(batch_size,)]).float().to(
                     self.model.device)
                 idx = torch.randperm(y_batch_.shape[0])
                 x_batch_ = x_batch_[idx]
@@ -155,15 +155,12 @@ class MaxAdvTraining(object):
             if verbose:
                 logger.info(
                     f'Training loss (epoch level): {np.mean(losses):.4f} | Train accuracy: {np.mean(accuracies) * 100:.2f}')
-            # long-time to train (save the model in case of interruption)
-            if not path.exists(self.model_save_path):
-                utils.mkdir(path.dirname(self.model_save_path))
-            torch.save({'model_state_dict': self.model.state_dict(),
-                        'epoch': i + 1,
-                        'optimizer_state_dict': optimizer.state_dict()
-                        },
-                       self.model_save_path + '.tmp')
+
             # select model
+            self.model.eval()
+            # long-time to train (save the model temporally in case of interruption)
+            self.save_to_disk(i + 1, optimizer, self.model_save_path + '.tmp')
+
             res_val = []
             avg_acc_val = []
             for x_val, y_val in validation_data_producer:
@@ -179,14 +176,13 @@ class MaxAdvTraining(object):
                 acc_val /= x_val.size()[0]
                 avg_acc_val.append(acc_val)
 
-                acc_val_g = ((logits_g >= self.model.tau) == y_val_).sum().item()
+                acc_val_g = ((torch.sigmoid(logits_g) >= 0.5) == y_val_).sum().item()
                 acc_val_g /= x_val_.size()[0]
                 avg_acc_val.append(acc_val_g)
 
                 mal_x_batch, mal_y_batch, null_flag = PrincipledAdvTraining.get_mal_data(x_val, y_val)
                 if null_flag:
                     continue
-                self.model.eval()
                 pertb_mal_x = self.attack.perturb(self.model, mal_x_batch, mal_y_batch,
                                                   steps_of_max=self.attack_param['steps'],
                                                   min_lambda_=lambda_lower_bound,
@@ -207,16 +203,28 @@ class MaxAdvTraining(object):
             if ((i + 1) >= adv_epochs - 10) or (acc_val >= best_acc_val):
                 best_acc_val = acc_val
                 best_epoch = i + 1
-                torch.save({'model_state_dict': self.model.state_dict(),
-                            'epoch': best_epoch,
-                            'optimizer_state_dict': optimizer.state_dict()
-                            },
-                           self.model_save_path)
+                self.save_to_disk(best_epoch, optimizer, self.model_save_path)
+            # get threshold tau
+            self.model.get_threshold(validation_data_producer)
 
             if verbose:
                 logger.info(
                     f"\tVal accuracy {acc_val * 100:.4}%: model select at epoch {best_epoch} with validation accuracy {best_acc_val * 100:.4}% under attack.")
 
     def load(self):
+        assert path.exists(self.model_save_path), 'train model first'
         ckpt = torch.load(self.model_save_path)
-        self.model.load_state_dict(ckpt['model_state_dict'])
+        self.model.tau = ckpt['tau']
+        self.model.md_nn_model.load_state_dict(ckpt['md_model'])
+        self.model.load_state_dict(ckpt['amd_model'])
+
+    def save_to_disk(self, epoch, optimizer, save_path=None):
+        if not path.exists(save_path):
+            utils.mkdir(path.dirname(save_path))
+        torch.save({'tau': self.model.tau,
+                    'md_model': self.model.md_nn_model.state_dict(),
+                    'amd_model': self.model.state_dict(),
+                    'epoch': epoch,
+                    'optimizer_state_dict': optimizer.state_dict()
+                    },
+                   save_path)

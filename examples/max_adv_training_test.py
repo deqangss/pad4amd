@@ -26,13 +26,9 @@ max_adv_argparse.add_argument('--n_step_linf', type=int, default=100,
                               help='maximum number of steps for base attacks.')
 max_adv_argparse.add_argument('--step_length_linf', type=float, default=0.01,
                               help='step length in each step.')
-max_adv_argparse.add_argument('--n_step_adam', type=int, default=50,
-                              help='maximum number of steps for base attacks.')
 max_adv_argparse.add_argument('--step_check_l2', type=int, default=10,
                               help='number of steps when checking the effectiveness of continuous perturbations.')
 max_adv_argparse.add_argument('--step_check_linf', type=int, default=1,
-                              help='number of steps when checking the effectiveness of continuous perturbations.')
-max_adv_argparse.add_argument('--step_check_adam', type=int, default=10,
                               help='number of steps when checking the effectiveness of continuous perturbations.')
 max_adv_argparse.add_argument('--atta_lr', type=float, default=0.05,
                               help='learning rate for pgd adam attack.')
@@ -46,8 +42,7 @@ def _main():
     args = cmd_md.parse_args()
 
     dataset = Dataset(use_cache=args.cache,
-                      feature_ext_args=get_group_args(args, cmd_md, 'feature')
-                      )
+                      feature_ext_args=get_group_args(args, cmd_md, 'feature'))
     train_dataset_producer = dataset.get_input_producer(*dataset.train_dataset, batch_size=args.batch_size,
                                                         name='train')
     val_dataset_producer = dataset.get_input_producer(*dataset.validation_dataset, batch_size=args.batch_size,
