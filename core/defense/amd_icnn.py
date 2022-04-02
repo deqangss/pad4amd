@@ -378,6 +378,7 @@ class AdvMalwareDetectorICNN(nn.Module, DensityEstimatorTemplate):
 
     def load(self):
         # load model
+        print(self.model_save_path)
         assert path.exists(self.model_save_path), 'train model first'
         # ckpt = torch.load(self.model_save_path)
         # self.tau = ckpt['tau']
