@@ -32,13 +32,13 @@ def _main():
         dv = 'cuda'
 
     model_name = args.model_name if args.mode == 'test' else time.strftime("%Y%m%d-%H%M%S")
-    md_model = DNNMalwareDetector(dataset.vocab_size,
-                                  dataset.n_classes,
-                                  device=dv,
-                                  name=model_name,
-                                  **vars(args)
-                                  )
-    model = AdvMalwareDetectorICNN(md_model,
+    # md_model = DNNMalwareDetector(dataset.vocab_size,
+    #                               dataset.n_classes,
+    #                               device=dv,
+    #                               name=model_name,
+    #                               **vars(args)
+    #                               )
+    model = AdvMalwareDetectorICNN(None,
                                    input_size=dataset.vocab_size,
                                    n_classes=dataset.n_classes,
                                    device=dv,
