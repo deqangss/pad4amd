@@ -35,8 +35,8 @@ class MaxAdvTraining(object):
         self.model = model
         if attack is not None:
             assert isinstance(attack, Max)
-            if 'is_attacker' in attack.__dict__.keys():
-                assert not attack.is_attacker
+            # if 'is_attacker' in attack.__dict__.keys():
+            #     assert not attack.is_attacker
         self.attack = attack
         self.attack_param = attack_param
 
