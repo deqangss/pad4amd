@@ -113,7 +113,7 @@ def _main():
     max_adv_training_model.name = '20220403-230015'
     max_adv_training_model.model_save_path = path.join(config.get('experiments', 'm_adv_training') + '_' + max_adv_training_model.name,
                                      'model.pth')
-    self.model.model_save_path = max_adv_training_model.model_save_path
+    max_adv_training_model.model.model_save_path = max_adv_training_model.model_save_path
     max_adv_training_model.load()
     if args.mode == 'train':
         max_adv_training_model.fit(train_dataset_producer,
