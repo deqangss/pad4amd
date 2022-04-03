@@ -89,6 +89,7 @@ class MaxAdvTraining(object):
                                    num=int(np.log10(lambda_upper_bound / lambda_lower_bound) // granularity) + 1)
         logger.info("Max adversarial training is starting ...")
         best_acc_val = 0.
+        acc_val_adv_be = 0.
         best_epoch = 0
         for i in range(adv_epochs):
             losses, accuracies = [], []
@@ -134,10 +135,10 @@ class MaxAdvTraining(object):
                 logits_g = self.model.forward_g(x_batch_)
                 loss_train = self.model.customize_loss(logits_f,
                                                        y_batch,
-                                                       logits_g[:2 * batch_size],
-                                                       y_batch_[:2 * batch_size])
+                                                       logits_g,
+                                                       y_batch_)
                 # appending adversarial training loss
-                loss_train -= beta_a * torch.mean(logits_g[2 * batch_size:])
+                # loss_train -= beta_a * torch.mean(logits_g[2 * batch_size:])
                 # loss_train += beta_a * F.binary_cross_entropy_with_logits(logits_g[2 * batch_size:],
                 #                                                           y_batch_[2 * batch_size:])
                 loss_train.backward()
@@ -209,17 +210,21 @@ class MaxAdvTraining(object):
                 res_val.append((~indicator_flag) | ((y_pred == 1.) & indicator_flag))
             assert len(res_val) > 0
             res_val = np.concatenate(res_val)
-            acc_val = np.sum(res_val).astype(np.float) / res_val.shape[0]  #  + np.mean(avg_acc_val)) / 2.
+            acc_val_adv = np.sum(res_val).astype(np.float) / res_val.shape[0]
+            acc_val = (acc_val_adv + np.mean(avg_acc_val)) / 2.
             # Owing to we look for a new threshold after each epoch, this hinders the convergence of training.
             # We save the model's parameters at last several epochs as a well-trained model may be obtained.
-            if ((i + 1) >= adv_epochs - 10) or (acc_val >= best_acc_val):
+            if ((i + 1) >= adv_epochs - 10) and (acc_val >= best_acc_val):
                 best_acc_val = acc_val
+                acc_val_adv_be = acc_val_adv
                 best_epoch = i + 1
                 self.save_to_disk(best_epoch, optimizer, self.model_save_path)
 
             if verbose:
                 logger.info(
-                    f"\tVal accuracy {acc_val * 100:.4}%: model select at epoch {best_epoch} with validation accuracy {best_acc_val * 100:.4}% under attack.")
+                    f"\tVal accuracy {acc_val * 100:.4}% with accuracy {acc_val_adv * 100:.4}% under attack.")
+                logger.info(
+                    f"\tModel select at epoch {best_epoch} with validation accuracy {best_acc_val * 100:.4}% and accuracy {acc_val_adv_be * 100:.4}% under attack.")
                 logger.info(
                     f'The threshold is {self.model.tau}.'
                 )
