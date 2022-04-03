@@ -98,7 +98,7 @@ def _main():
                               verbose=False
                               )
 
-    attack = Max(attack_list=[pgdlinf, pgdl2, ompap],
+    attack = Max(attack_list=[pgdlinf],
                  varepsilon=1e-9,
                  is_attacker=False,
                  device=model.device
@@ -115,7 +115,6 @@ def _main():
                                      'model.pth')
     max_adv_training_model.model.model_save_path = max_adv_training_model.model_save_path
     max_adv_training_model.load()
-    max_adv_training_model.model.predict(test_dataset_producer)
     if args.mode == 'train':
         max_adv_training_model.fit(train_dataset_producer,
                                    test_dataset_producer,

@@ -158,9 +158,6 @@ def _main():
     logger.info("Load model parameters from {}.".format(model.model_save_path))
     model.predict(mal_test_dataset_producer, indicator_masking=True)
 
-    test_dataset_producer = dataset.get_input_producer(*dataset.test_dataset, batch_size=64, name='test')
-    model.predict(test_dataset_producer, indicator_masking=True)
-
     # ben_hidden = []
     # with torch.no_grad():
     #     c = args.n_benware if args.n_benware < ben_count else ben_count
@@ -221,7 +218,7 @@ def _main():
                               base=args.base,
                               verbose=False)
 
-    attack = Max(attack_list=[pgdl1, pgdl2, pgdlinf],
+    attack = Max(attack_list=[pgdlinf],
                  varepsilon=1e-9,
                  oblivion=args.oblivion,
                  device=model.device
