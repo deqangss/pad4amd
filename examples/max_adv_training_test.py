@@ -109,10 +109,10 @@ def _main():
         'verbose': True
     }
     max_adv_training_model = MaxAdvTraining(model, attack, attack_param)
-
+    max_adv_training_model.load()
     if args.mode == 'train':
         max_adv_training_model.fit(train_dataset_producer,
-                                   val_dataset_producer,
+                                   test_dataset_producer,
                                    epochs=5,
                                    adv_epochs=args.epochs - 5,
                                    beta_a=args.beta_a,

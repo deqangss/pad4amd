@@ -93,79 +93,79 @@ class MaxAdvTraining(object):
         best_epoch = 0
         for i in range(adv_epochs):
             losses, accuracies = [], []
-            for idx_batch, (x_batch, y_batch) in enumerate(train_data_producer):
-                x_batch, y_batch = utils.to_tensor(x_batch, y_batch.long(), self.model.device)
-                batch_size = x_batch.shape[0]
-                # make data
-                # 1. add pepper and salt noises
-                x_batch_noises = torch.clamp(x_batch + utils.psn(x_batch, np.minimum(np.random.uniform(0, 1), 0.05)),
-                                             min=0., max=1.)
-                x_batch_ = torch.cat([x_batch, x_batch_noises], dim=0)
-                y_batch_ = torch.cat([torch.zeros(batch_size,), torch.ones(batch_size,)]).float().to(
-                    self.model.device)
-                idx = torch.randperm(y_batch_.shape[0])
-                x_batch_ = x_batch_[idx]
-                y_batch_ = y_batch_[idx]
-                # 2. perturb malware feature vectors
-                mal_x_batch, mal_y_batch, null_flag = PrincipledAdvTraining.get_mal_data(x_batch, y_batch)
-                if null_flag:
-                    continue
-                start_time = time.time()
-                # the attack perturbs feature vectors using various hyper-parameter lambda, aiming to obtain
-                # adversarial examples as much as possible
-                lambda_ = np.random.choice(lambda_space)
-                self.model.eval()
-                pertb_mal_x = self.attack.perturb(self.model, mal_x_batch, mal_y_batch,
-                                                  steps_of_max=self.attack_param['steps'],
-                                                  min_lambda_=lambda_lower_bound,
-                                                  # when lambda is small, we cannot get effective attacks
-                                                  max_lambda_=lambda_upper_bound,
-                                                  verbose=self.attack_param['verbose']
-                                                  )
-                total_time += time.time() - start_time
-                x_batch_ = torch.cat([x_batch_, pertb_mal_x], dim=0)
-                y_batch_ = torch.cat([y_batch_, torch.ones(pertb_mal_x.shape[:1]).to(
-                    self.model.device)]).float()
-                x_batch = torch.cat([x_batch, pertb_mal_x], dim=0)
-                y_batch = torch.cat([y_batch, torch.ones(pertb_mal_x.shape[:1]).to(self.model.device).long()])
-                start_time = time.time()
-                self.model.train()
-                optimizer.zero_grad()
-                logits_f = self.model.forward_f(x_batch)
-                logits_g = self.model.forward_g(x_batch_)
-                loss_train = self.model.customize_loss(logits_f,
-                                                       y_batch,
-                                                       logits_g,
-                                                       y_batch_)
-                # appending adversarial training loss
-                # loss_train -= beta_a * torch.mean(logits_g[2 * batch_size:])
-                # loss_train += beta_a * F.binary_cross_entropy_with_logits(logits_g[2 * batch_size:],
-                #                                                           y_batch_[2 * batch_size:])
-                loss_train.backward()
-                optimizer.step()
-                # clamp
-                for name, module in self.model.named_modules():
-                    if 'non_neg_layer' in name:
-                        module.apply(constraint)
-                total_time += time.time() - start_time
-
-                acc_f_train = (logits_f.argmax(1) == y_batch).sum().item()
-                acc_f_train /= x_batch.size()[0]
-                acc_g_train = ((torch.sigmoid(logits_g) >= 0.5) == y_batch_).sum().item()
-                acc_g_train /= x_batch_.size()[0]
-                mins, secs = int(total_time / 60), int(total_time % 60)
-                losses.append(loss_train.item())
-                accuracies.append(acc_f_train)
-                accuracies.append(acc_g_train)
-                if verbose:
-                    print(
-                        f'Mini batch: {i * nbatches + idx_batch + 1}/{adv_epochs * nbatches} | training time in {mins:.0f} minutes, {secs} seconds.')
-                    logger.info(
-                        f'Training loss (batch level): {losses[-1]:.4f} | Train accuracy: {acc_f_train * 100:.2f}% & {acc_g_train * 100:.2f}%.')
-
-            if verbose:
-                logger.info(
-                    f'Training loss (epoch level): {np.mean(losses):.4f} | Train accuracy: {np.mean(accuracies) * 100:.2f}')
+            # for idx_batch, (x_batch, y_batch) in enumerate(train_data_producer):
+            #     x_batch, y_batch = utils.to_tensor(x_batch, y_batch.long(), self.model.device)
+            #     batch_size = x_batch.shape[0]
+            #     # make data
+            #     # 1. add pepper and salt noises
+            #     x_batch_noises = torch.clamp(x_batch + utils.psn(x_batch, np.minimum(np.random.uniform(0, 1), 0.05)),
+            #                                  min=0., max=1.)
+            #     x_batch_ = torch.cat([x_batch, x_batch_noises], dim=0)
+            #     y_batch_ = torch.cat([torch.zeros(batch_size,), torch.ones(batch_size,)]).float().to(
+            #         self.model.device)
+            #     idx = torch.randperm(y_batch_.shape[0])
+            #     x_batch_ = x_batch_[idx]
+            #     y_batch_ = y_batch_[idx]
+            #     # 2. perturb malware feature vectors
+            #     mal_x_batch, mal_y_batch, null_flag = PrincipledAdvTraining.get_mal_data(x_batch, y_batch)
+            #     if null_flag:
+            #         continue
+            #     start_time = time.time()
+            #     # the attack perturbs feature vectors using various hyper-parameter lambda, aiming to obtain
+            #     # adversarial examples as much as possible
+            #     lambda_ = np.random.choice(lambda_space)
+            #     self.model.eval()
+            #     pertb_mal_x = self.attack.perturb(self.model, mal_x_batch, mal_y_batch,
+            #                                       steps_of_max=self.attack_param['steps'],
+            #                                       min_lambda_=lambda_lower_bound,
+            #                                       # when lambda is small, we cannot get effective attacks
+            #                                       max_lambda_=lambda_upper_bound,
+            #                                       verbose=self.attack_param['verbose']
+            #                                       )
+            #     total_time += time.time() - start_time
+            #     x_batch_ = torch.cat([x_batch_, pertb_mal_x], dim=0)
+            #     y_batch_ = torch.cat([y_batch_, torch.ones(pertb_mal_x.shape[:1]).to(
+            #         self.model.device)]).float()
+            #     x_batch = torch.cat([x_batch, pertb_mal_x], dim=0)
+            #     y_batch = torch.cat([y_batch, torch.ones(pertb_mal_x.shape[:1]).to(self.model.device).long()])
+            #     start_time = time.time()
+            #     self.model.train()
+            #     optimizer.zero_grad()
+            #     logits_f = self.model.forward_f(x_batch)
+            #     logits_g = self.model.forward_g(x_batch_)
+            #     loss_train = self.model.customize_loss(logits_f,
+            #                                            y_batch,
+            #                                            logits_g,
+            #                                            y_batch_)
+            #     # appending adversarial training loss
+            #     # loss_train -= beta_a * torch.mean(logits_g[2 * batch_size:])
+            #     # loss_train += beta_a * F.binary_cross_entropy_with_logits(logits_g[2 * batch_size:],
+            #     #                                                           y_batch_[2 * batch_size:])
+            #     loss_train.backward()
+            #     optimizer.step()
+            #     # clamp
+            #     for name, module in self.model.named_modules():
+            #         if 'non_neg_layer' in name:
+            #             module.apply(constraint)
+            #     total_time += time.time() - start_time
+            #
+            #     acc_f_train = (logits_f.argmax(1) == y_batch).sum().item()
+            #     acc_f_train /= x_batch.size()[0]
+            #     acc_g_train = ((torch.sigmoid(logits_g) >= 0.5) == y_batch_).sum().item()
+            #     acc_g_train /= x_batch_.size()[0]
+            #     mins, secs = int(total_time / 60), int(total_time % 60)
+            #     losses.append(loss_train.item())
+            #     accuracies.append(acc_f_train)
+            #     accuracies.append(acc_g_train)
+            #     if verbose:
+            #         print(
+            #             f'Mini batch: {i * nbatches + idx_batch + 1}/{adv_epochs * nbatches} | training time in {mins:.0f} minutes, {secs} seconds.')
+            #         logger.info(
+            #             f'Training loss (batch level): {losses[-1]:.4f} | Train accuracy: {acc_f_train * 100:.2f}% & {acc_g_train * 100:.2f}%.')
+            #
+            # if verbose:
+            #     logger.info(
+            #         f'Training loss (epoch level): {np.mean(losses):.4f} | Train accuracy: {np.mean(accuracies) * 100:.2f}')
 
             # get threshold tau
             self.model.get_threshold(validation_data_producer)
