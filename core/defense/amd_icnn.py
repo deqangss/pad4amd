@@ -182,7 +182,8 @@ class AdvMalwareDetectorICNN(nn.Module, DensityEstimatorTemplate):
         self.eval()
         with torch.no_grad():
             for x, y in test_data_producer:
-                x, y = utils.to_tensor(x, y.long(), self.device)
+                print(y)
+                x, y = utils.to_device(x, y.long(), self.device)
                 logits_f = self.forward_f(x)
                 y_cent.append(F.softmax(logits_f, dim=-1))
                 x_prob.append(self.forward_g(x))
@@ -265,9 +266,10 @@ class AdvMalwareDetectorICNN(nn.Module, DensityEstimatorTemplate):
             assert i >= 0
             self.tau[0] = s[i]
 
-    def customize_loss(self, logits_x, labels_x, logits_adv_x, labels_adv_x):
-        G = F.binary_cross_entropy_with_logits(logits_adv_x, labels_adv_x)
-        F_ = F.cross_entropy(logits_x, labels_x)
+    def customize_loss(self, logits_x, labels, logits_adv_x, labels_adv):
+        G = F.binary_cross_entropy_with_logits(logits_adv_x, labels_adv)
+        # G = torch.mean(logits_adv_x * (1. - labels_adv)) - torch.mean(logits_adv_x * labels_adv)
+        F_ = F.cross_entropy(logits_x, labels)
         return F_ + self.beta * G
 
     def fit(self, train_data_producer, validation_data_producer, epochs=100, lr=0.005, weight_decay=0., verbose=True):
