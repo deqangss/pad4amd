@@ -98,7 +98,7 @@ def _main():
                               verbose=False
                               )
 
-    attack = Max(attack_list=[ompap],
+    attack = Max(attack_list=[ompap, pgdl2, pgdlinf],
                  varepsilon=1e-9,
                  is_attacker=False,
                  device=model.device
