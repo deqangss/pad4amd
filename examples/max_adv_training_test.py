@@ -100,7 +100,7 @@ def _main():
 
     attack = Max(attack_list=[pgdlinf, pgdl2, ompap],
                  varepsilon=1e-9,
-                 is_attacker=False,
+                 is_attacker=True,
                  device=model.device
                  )
 
