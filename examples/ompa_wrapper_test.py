@@ -123,8 +123,8 @@ def _main():
         x, y = utils.to_tensor(x, y.long(), model.device)
         adv_x_batch = attack.perturb(model, x, y,
                                      args.m_pertb,
-                                     min_lambda_=1e-3,
-                                     max_lambda_=1e3,
+                                     min_lambda_=1e-5,
+                                     max_lambda_=1e5,
                                      base=args.base,
                                      verbose=True)
         y_cent_batch, x_density_batch = model.inference_batch_wise(adv_x_batch, y)
