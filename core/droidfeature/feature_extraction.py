@@ -188,11 +188,9 @@ class Apk2features(object):
         (feature 1D array, label)
         """
         assert vocabulary is not None and len(vocabulary) > 0
-        use_cache = False
-        rpst_cached_name = self.get_cached_name(feature_path)
         if isinstance(cache_dir, str):
+            rpst_cached_name = self.get_cached_name(feature_path)
             rpst_cached_path = os.path.join(cache_dir, rpst_cached_name)
-            use_cache = True
             if os.path.exists(rpst_cached_path):
                 return utils.read_pickle(rpst_cached_path, use_gzip=True)
 
