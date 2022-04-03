@@ -158,7 +158,7 @@ def _main():
     logger.info("Load model parameters from {}.".format(model.model_save_path))
     model.predict(mal_test_dataset_producer, indicator_masking=True)
 
-    test_dataset_producer = dataset.get_input_producer(*dataset.test_dataset, batch_size=args.batch_size, name='test')
+    test_dataset_producer = dataset.get_input_producer(*dataset.test_dataset, batch_size=64, name='test')
     model.predict(test_dataset_producer, indicator_masking=True)
 
     # ben_hidden = []
