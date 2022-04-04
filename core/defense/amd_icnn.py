@@ -341,7 +341,7 @@ class AdvMalwareDetectorICNN(nn.Module, DensityEstimatorTemplate):
                     x_val_noises = torch.clamp(x_val + utils.psn(x_val, np.minimum(np.random.uniform(0, 1), 0.05)),
                                                min=0., max=1.)
                     x_val_ = torch.cat([x_val, x_val_noises], dim=0)
-                    y_val_ = torch.cat([torch.ones(x_val.shape[:1]), torch.zeros(x_val.shape[:1])]).long().to(
+                    y_val_ = torch.cat([torch.zeros(x_val.shape[:1]), torch.ones(x_val.shape[:1])]).long().to(
                         self.device)
                     logits_f = self.forward_f(x_val)
                     logits_g = self.forward_g(x_val_)

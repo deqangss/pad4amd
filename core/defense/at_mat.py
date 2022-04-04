@@ -182,7 +182,7 @@ class MaxAdvTraining(object):
                 x_val_noises = torch.clamp(x_val + utils.psn(x_val, np.minimum(np.random.uniform(0, 1), 0.05)),
                                            min=0., max=1.)
                 x_val_ = torch.cat([x_val, x_val_noises], dim=0)
-                y_val_ = torch.cat([torch.ones(x_val.shape[:1]), torch.zeros(x_val.shape[:1])]).long().to(
+                y_val_ = torch.cat([torch.zeros(x_val.shape[:1]), torch.ones(x_val.shape[:1])]).long().to(
                     self.model.device)
                 logits_f = self.model.forward_f(x_val)
                 logits_g = self.model.forward_g(x_val_)
@@ -212,10 +212,10 @@ class MaxAdvTraining(object):
             assert len(res_val) > 0
             res_val = np.concatenate(res_val)
             acc_val_adv = np.sum(res_val).astype(np.float) / res_val.shape[0]
-            acc_val = (acc_val_adv + np.mean(avg_acc_val)) / 2.
+            acc_val = (np.mean(avg_acc_val) + acc_val_adv) / 2.
             # Owing to we look for a new threshold after each epoch, this hinders the convergence of training.
             # We save the model's parameters at last several epochs as a well-trained model may be obtained.
-            if ((i + 1) >= adv_epochs - 10) and (acc_val >= best_acc_val):
+            if acc_val >= best_acc_val:
                 best_acc_val = acc_val
                 acc_val_adv_be = acc_val_adv
                 best_epoch = i + 1
