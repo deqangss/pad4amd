@@ -12,7 +12,7 @@ from tools.utils import save_args, get_group_args, dump_pickle
 from examples.amd_icnn_test import cmd_md
 
 max_adv_argparse = cmd_md.add_argument_group(title='max adv training')
-max_adv_argparse.add_argument('--beta_a', type=float, default=0.005, help='penalty factor on adversarial loss.')
+max_adv_argparse.add_argument('--beta', type=float, default=0.005, help='penalty factor on adversarial loss.')
 
 max_adv_argparse.add_argument('--m', type=int, default=20,
                               help='maximum number of perturbations.')
@@ -115,7 +115,7 @@ def _main():
                                    val_dataset_producer,
                                    epochs=5,
                                    adv_epochs=args.epochs - 5,
-                                   beta_a=args.beta_a,
+                                   beta=args.beta,
                                    lr=args.lr,
                                    weight_decay=args.weight_decay
                                    )

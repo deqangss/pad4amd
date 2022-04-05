@@ -46,7 +46,7 @@ class MaxAdvTraining(object):
         self.model.model_save_path = self.model_save_path
 
     def fit(self, train_data_producer, validation_data_producer=None, epochs=5, adv_epochs=20,
-            beta_a=0.001,
+            beta=0.001,
             lambda_lower_bound=1e-3,
             lambda_upper_bound=1e3,
             granularity=1,
@@ -61,7 +61,7 @@ class MaxAdvTraining(object):
         @param validation_data_producer: Object, an dataloader object for producing validation dataset
         @param epochs: Integer, epochs for adversarial training
         @param adv_epochs: Integer, epochs for adversarial training
-        @param beta_a: Float, penalty factor for adversarial loss
+        @param beta: Float, penalty factor for adversarial loss
         @param lambda_lower_bound: Float, lower boundary of penalty factor
         @param lambda_upper_bound: Float, upper boundary of penalty factor
         @param granularity: Integer, 10^base exp-space between penalty factors
@@ -101,7 +101,7 @@ class MaxAdvTraining(object):
                 x_batch_noises = torch.clamp(x_batch + utils.psn(x_batch, np.minimum(np.random.uniform(0, 1), 0.05)),
                                              min=0., max=1.)
                 x_batch_ = torch.cat([x_batch, x_batch_noises], dim=0)
-                y_batch_ = torch.cat([torch.zeros(batch_size,), torch.ones(batch_size,)]).float().to(
+                y_batch_ = torch.cat([torch.zeros(batch_size, ), torch.ones(batch_size, )]).float().to(
                     self.model.device)
                 idx = torch.randperm(y_batch_.shape[0])
                 x_batch_ = x_batch_[idx]
@@ -133,13 +133,17 @@ class MaxAdvTraining(object):
                 optimizer.zero_grad()
                 logits_f = self.model.forward_f(x_batch)
                 logits_g = self.model.forward_g(x_batch_)
-                loss_train = self.model.customize_loss(logits_f,
-                                                       y_batch,
-                                                       logits_g,
-                                                       y_batch_)
+                loss_train = self.model.customize_loss(logits_f[:batch_size],
+                                                       y_batch[:batch_size],
+                                                       logits_g[:2 * batch_size],
+                                                       y_batch_[:2 * batch_size])
+                loss_train += beta * self.model.customize_loss(logits_f[batch_size:],
+                                                               y_batch[batch_size:],
+                                                               logits_g[2 * batch_size:],
+                                                               y_batch_[2 * batch_size:])
                 # appending adversarial training loss
-                # loss_train -= beta_a * torch.mean(logits_g[2 * batch_size:])
-                # loss_train += beta_a * F.binary_cross_entropy_with_logits(logits_g[2 * batch_size:],
+                # loss_train -= beta * torch.mean(logits_g[2 * batch_size:])
+                # loss_train += beta * F.binary_cross_entropy_with_logits(logits_g[2 * batch_size:],
                 #                                                           y_batch_[2 * batch_size:])
                 loss_train.backward()
                 optimizer.step()

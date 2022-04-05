@@ -10,7 +10,6 @@ from tools.utils import save_args, get_group_args, dump_pickle
 from examples.nn_dnn_test import cmd_md
 
 indicator_argparse = cmd_md.add_argument_group(title='adv indicator')
-indicator_argparse.add_argument('--beta', type=float, default=1., help='balance factor.')
 indicator_argparse.add_argument('--ratio', type=float, default=0.95,
                                 help='ratio of validation examples remained for passing through malware detector')
 

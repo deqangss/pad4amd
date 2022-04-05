@@ -25,13 +25,12 @@ logger.addHandler(ErrorHandler)
 
 
 class AdvMalwareDetectorICNN(nn.Module, DensityEstimatorTemplate):
-    def __init__(self, md_nn_model, input_size, n_classes, beta=1., ratio=0.95,
+    def __init__(self, md_nn_model, input_size, n_classes, ratio=0.95,
                  device='cpu', name='', **kwargs):
         nn.Module.__init__(self)
         DensityEstimatorTemplate.__init__(self)
         self.input_size = input_size
         self.n_classes = n_classes
-        self.beta = beta
         self.ratio = ratio
         self.device = device
         self.name = name
@@ -269,7 +268,7 @@ class AdvMalwareDetectorICNN(nn.Module, DensityEstimatorTemplate):
         G = F.binary_cross_entropy_with_logits(logits_adv_x, labels_adv)
         # G = torch.mean(logits_adv_x * (1. - labels_adv)) - torch.mean(logits_adv_x * labels_adv)
         F_ = F.cross_entropy(logits_x, labels)
-        return F_ + self.beta * G
+        return F_ + G
 
     def fit(self, train_data_producer, validation_data_producer, epochs=100, lr=0.005, weight_decay=0., verbose=True):
         """
