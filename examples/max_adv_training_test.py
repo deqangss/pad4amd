@@ -12,7 +12,7 @@ from tools.utils import save_args, get_group_args, dump_pickle
 from examples.amd_icnn_test import cmd_md
 
 max_adv_argparse = cmd_md.add_argument_group(title='max adv training')
-max_adv_argparse.add_argument('--beta', type=float, default=0.005, help='penalty factor on adversarial loss.')
+max_adv_argparse.add_argument('--beta', type=float, default=0.1, help='penalty factor on adversarial loss.')
 
 max_adv_argparse.add_argument('--m', type=int, default=20,
                               help='maximum number of perturbations.')
@@ -57,19 +57,19 @@ def _main():
         dv = 'cuda'
 
     model_name = args.model_name if args.mode == 'test' else time.strftime("%Y%m%d-%H%M%S")
-    md_model = DNNMalwareDetector(dataset.vocab_size,
+    model = DNNMalwareDetector(dataset.vocab_size,
                                   dataset.n_classes,
                                   device=dv,
                                   name=model_name,
                                   **vars(args)
                                   )
-    model = AdvMalwareDetectorICNN(md_model,
-                                   input_size=dataset.vocab_size,
-                                   n_classes=dataset.n_classes,
-                                   device=dv,
-                                   name=model_name,
-                                   **vars(args)
-                                   )
+    # model = AdvMalwareDetectorICNN(md_model,
+    #                                input_size=dataset.vocab_size,
+    #                                n_classes=dataset.n_classes,
+    #                                device=dv,
+    #                                name=model_name,
+    #                                **vars(args)
+    #                                )
     model = model.to(dv)
 
     # initialize the base attack model of max attack

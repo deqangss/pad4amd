@@ -239,6 +239,9 @@ class AdvMalwareDetectorICNN(nn.Module, DensityEstimatorTemplate):
         return self.tau
 
     def indicator(self, x_prob):
+        """
+        Return 'True' if a sample is original, and otherwise 'False' is returned.
+        """
         if isinstance(x_prob, np.ndarray):
             x_prob = torch.tensor(x_prob, device=self.device)
             return (x_prob <= self.tau).cpu().numpy()

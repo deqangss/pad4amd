@@ -77,8 +77,9 @@ class MaxAdvTraining(object):
                        lr=lr,
                        weight_decay=weight_decay)
         # get threshold tau
-        self.model.get_threshold(validation_data_producer)
-        logger.info(f"The threshold is {self.model.tau.item():.3f}.")
+        if hasattr(self.model, 'tau'):
+            self.model.get_threshold(validation_data_producer)
+            logger.info(f"The threshold is {self.model.tau.item():.3f}.")
         constraint = utils.NonnegWeightConstraint()
 
         optimizer = optim.Adam(self.model.parameters(), lr=lr, weight_decay=weight_decay)
@@ -132,19 +133,22 @@ class MaxAdvTraining(object):
                 self.model.train()
                 optimizer.zero_grad()
                 logits_f = self.model.forward_f(x_batch)
-                logits_g = self.model.forward_g(x_batch_)
-                loss_train = self.model.customize_loss(logits_f[:batch_size],
-                                                       y_batch[:batch_size],
-                                                       logits_g[:2 * batch_size],
-                                                       y_batch_[:2 * batch_size])
-                loss_train += beta * self.model.customize_loss(logits_f[batch_size:],
-                                                               y_batch[batch_size:],
-                                                               logits_g[2 * batch_size:],
-                                                               y_batch_[2 * batch_size:])
-                # appending adversarial training loss
-                # loss_train -= beta * torch.mean(logits_g[2 * batch_size:])
-                # loss_train += beta * F.binary_cross_entropy_with_logits(logits_g[2 * batch_size:],
-                #                                                           y_batch_[2 * batch_size:])
+                if hasattr(self.model, 'forward_g'):
+                    logits_g = self.model.forward_g(x_batch_)
+                    loss_train = self.model.customize_loss(logits_f[:batch_size],
+                                                           y_batch[:batch_size],
+                                                           logits_g[:2 * batch_size],
+                                                           y_batch_[:2 * batch_size])
+                    loss_train += beta * self.model.customize_loss(logits_f[batch_size:],
+                                                                   y_batch[batch_size:],
+                                                                   logits_g[2 * batch_size:],
+                                                                   y_batch_[2 * batch_size:])
+                else:
+                    loss_train = self.model.customize_loss(logits_f[:batch_size],
+                                                           y_batch[:batch_size])
+                    loss_train += beta * self.model.customize_loss(logits_f[batch_size:],
+                                                                   y_batch[batch_size:])
+
                 loss_train.backward()
                 optimizer.step()
                 # clamp
@@ -153,27 +157,30 @@ class MaxAdvTraining(object):
                         module.apply(constraint)
 
                 total_time += time.time() - start_time
-
+                mins, secs = int(total_time / 60), int(total_time % 60)
                 acc_f_train = (logits_f.argmax(1) == y_batch).sum().item()
                 acc_f_train /= x_batch.size()[0]
-                acc_g_train = ((torch.sigmoid(logits_g) >= 0.5) == y_batch_).sum().item()
-                acc_g_train /= x_batch_.size()[0]
-                mins, secs = int(total_time / 60), int(total_time % 60)
-                losses.append(loss_train.item())
                 accuracies.append(acc_f_train)
-                accuracies.append(acc_g_train)
+                losses.append(loss_train.item())
                 if verbose:
                     print(
                         f'Mini batch: {i * nbatches + idx_batch + 1}/{adv_epochs * nbatches} | training time in {mins:.0f} minutes, {secs} seconds.')
+                if hasattr(self.model, 'forward_g'):
+                    acc_g_train = ((torch.sigmoid(logits_g) >= 0.5) == y_batch_).sum().item()
+                    acc_g_train /= x_batch_.size()[0]
+                    accuracies.append(acc_g_train)
                     logger.info(
                         f'Training loss (batch level): {losses[-1]:.4f} | Train accuracy: {acc_f_train * 100:.2f}% & {acc_g_train * 100:.2f}%.')
-
+                else:
+                    logger.info(
+                        f'Training loss (batch level): {losses[-1]:.4f} | Train accuracy: {acc_f_train * 100:.2f}%.')
             if verbose:
                 logger.info(
                     f'Training loss (epoch level): {np.mean(losses):.4f} | Train accuracy: {np.mean(accuracies) * 100:.2f}')
 
             # get threshold tau
-            self.model.get_threshold(validation_data_producer)
+            if hasattr(self.model, 'tau'):
+                self.model.get_threshold(validation_data_producer)
             # select model
             self.model.eval()
             # long-time to train (save the model temporally in case of interruption)
@@ -189,14 +196,14 @@ class MaxAdvTraining(object):
                 y_val_ = torch.cat([torch.zeros(x_val.shape[:1]), torch.ones(x_val.shape[:1])]).long().to(
                     self.model.device)
                 logits_f = self.model.forward_f(x_val)
-                logits_g = self.model.forward_g(x_val_)
                 acc_val = (logits_f.argmax(1) == y_val).sum().item()
                 acc_val /= x_val.size()[0]
                 avg_acc_val.append(acc_val)
-
-                acc_val_g = ((torch.sigmoid(logits_g) >= 0.5) == y_val_).sum().item()
-                acc_val_g /= x_val_.size()[0]
-                avg_acc_val.append(acc_val_g)
+                if hasattr(self.model, 'forward_g'):
+                    logits_g = self.model.forward_g(x_val_)
+                    acc_val_g = ((logits_g >= self.model.tau) == y_val_).sum().item()
+                    acc_val_g /= x_val_.size()[0]
+                    avg_acc_val.append(acc_val_g)
 
                 mal_x_batch, mal_y_batch, null_flag = PrincipledAdvTraining.get_mal_data(x_val, y_val)
                 if null_flag:
@@ -210,8 +217,11 @@ class MaxAdvTraining(object):
                 y_cent_batch, x_density_batch = self.model.inference_batch_wise(pertb_mal_x,
                                                                                 mal_y_batch
                                                                                 )
+                if hasattr(self.model, 'indicator'):
+                    indicator_flag = self.model.indicator(x_density_batch)
+                else:
+                    indicator_flag = np.ones([x_density_batch.shape[0], ]).astype(np.bool)
                 y_pred = np.argmax(y_cent_batch, axis=-1)
-                indicator_flag = self.model.indicator(x_density_batch)
                 res_val.append((~indicator_flag) | ((y_pred == 1.) & indicator_flag))
             assert len(res_val) > 0
             res_val = np.concatenate(res_val)
@@ -230,23 +240,30 @@ class MaxAdvTraining(object):
                     f"\tVal accuracy {acc_val * 100:.4}% with accuracy {acc_val_adv * 100:.4}% under attack.")
                 logger.info(
                     f"\tModel select at epoch {best_epoch} with validation accuracy {best_acc_val * 100:.4}% and accuracy {acc_val_adv_be * 100:.4}% under attack.")
-                logger.info(
-                    f'The threshold is {self.model.tau}.'
-                )
+                if hasattr(self.model, 'tau'):
+                    logger.info(
+                        f'The threshold is {self.model.tau}.'
+                    )
 
     def load(self):
         assert path.exists(self.model_save_path), 'train model first'
         ckpt = torch.load(self.model_save_path)
-        self.model.tau = ckpt['tau']
-        self.model.md_nn_model.load_state_dict(ckpt['md_model'])
-        self.model.load_state_dict(ckpt['amd_model'])
+        # self.model.tau = ckpt['tau']
+        # self.model.md_nn_model.load_state_dict(ckpt['md_model'])
+        # self.model.load_state_dict(ckpt['amd_model'])
+        self.model.load_state_dict(ckpt['model'])
 
     def save_to_disk(self, epoch, optimizer, save_path=None):
         if not path.exists(save_path):
             utils.mkdir(path.dirname(save_path))
-        torch.save({'tau': self.model.tau,
-                    'md_model': self.model.md_nn_model.state_dict(),
-                    'amd_model': self.model.state_dict(),
+        # torch.save({'tau': self.model.tau,
+        #             'md_model': self.model.md_nn_model.state_dict(),
+        #             'amd_model': self.model.state_dict(),
+        #             'epoch': epoch,
+        #             'optimizer_state_dict': optimizer.state_dict()
+        #             },
+        #            save_path)
+        torch.save({'model': self.model.state_dict(),
                     'epoch': epoch,
                     'optimizer_state_dict': optimizer.state_dict()
                     },
