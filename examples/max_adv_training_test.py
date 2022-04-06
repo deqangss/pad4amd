@@ -13,6 +13,9 @@ from examples.amd_icnn_test import cmd_md
 
 max_adv_argparse = cmd_md.add_argument_group(title='max adv training')
 max_adv_argparse.add_argument('--beta', type=float, default=0.1, help='penalty factor on adversarial loss.')
+max_adv_argparse.add_argument('--detector', type=str, default='icnn',
+                              choices=['none', 'icnn'],
+                              help="detector type, either of 'icnn' and 'none'.")
 
 max_adv_argparse.add_argument('--m', type=int, default=20,
                               help='maximum number of perturbations.')
@@ -58,18 +61,21 @@ def _main():
 
     model_name = args.model_name if args.mode == 'test' else time.strftime("%Y%m%d-%H%M%S")
     model = DNNMalwareDetector(dataset.vocab_size,
-                                  dataset.n_classes,
-                                  device=dv,
-                                  name=model_name,
-                                  **vars(args)
-                                  )
-    # model = AdvMalwareDetectorICNN(md_model,
-    #                                input_size=dataset.vocab_size,
-    #                                n_classes=dataset.n_classes,
-    #                                device=dv,
-    #                                name=model_name,
-    #                                **vars(args)
-    #                                )
+                               dataset.n_classes,
+                               device=dv,
+                               name=model_name,
+                               **vars(args)
+                               )
+    if args.detector == 'icnn':
+        model = AdvMalwareDetectorICNN(model,
+                                       input_size=dataset.vocab_size,
+                                       n_classes=dataset.n_classes,
+                                       device=dv,
+                                       name=model_name,
+                                       **vars(args)
+                                       )
+    else:
+        raise NotImplementedError
     model = model.to(dv)
 
     # initialize the base attack model of max attack
