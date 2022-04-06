@@ -66,7 +66,9 @@ def _main():
                                name=model_name,
                                **vars(args)
                                )
-    if args.detector == 'icnn':
+    if args.detector == 'none':
+        pass
+    elif args.detector == 'icnn':
         model = AdvMalwareDetectorICNN(model,
                                        input_size=dataset.vocab_size,
                                        n_classes=dataset.n_classes,
