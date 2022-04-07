@@ -94,6 +94,7 @@ class Apk2features(object):
         :return: list, a list of words
         """
         vocab_saving_path = os.path.join(self.intermediate_save_dir, 'data.vocab')
+        vocab_type_saving_path = os.path.join(self.intermediate_save_dir, 'data.vocab_type')
         vocab_extra_info_saving_path = os.path.join(self.intermediate_save_dir, 'data.vocab_info')
         if os.path.exists(vocab_saving_path) and os.path.exists(vocab_saving_path) and (not self.update):
             return utils.read_pickle(vocab_saving_path), utils.read_pickle(vocab_extra_info_saving_path)
@@ -110,8 +111,7 @@ class Apk2features(object):
         for feature_path, label in zip(feature_path_list, gt_labels):
             if not os.path.exists(feature_path):
                 continue
-            features = feat_gen.read_from_disk(
-                feature_path)  
+            features = feat_gen.read_from_disk(feature_path)
             feature_occurrence = set()
             feature_list, feature_info_list, feature_type_list = feat_gen.get_feature_list(features)
             feature_occurrence.update(feature_list)
@@ -122,12 +122,36 @@ class Apk2features(object):
                 counter_mal.update(list(feature_occurrence))
             else:
                 counter_ben.update(list(feature_occurrence))
-        all_words = list(set(list(counter_ben.keys()) + list(counter_mal.keys())))
+        all_words = list(dict.fromkeys(list(counter_ben.keys()) + list(counter_mal.keys())))
         if len(all_words) <= 0:
             raise ValueError("No features exist on this dataset.")
 
+        maximum_vocab_size = self.maximum_vocab_size
         if not self.use_feature_selection:  # no feature selection applied
-            self.maximum_vocab_size = len(all_words) + 1
+            maximum_vocab_size = len(all_words) + 1
+
+        selected_words = []
+        # 1. dangerous apis
+        all_words_type = list(map(feat_type_dict.get, all_words))
+        perm_pos = np.array(all_words_type)[...] == feat_gen.PERMISSION
+        perm_features = np.array(all_words)[perm_pos]
+        for perm in perm_features:
+            if feat_gen.permission_check(perm):
+                selected_words.append(perm)
+        # 2. intent
+        intent_pos = np.array(all_words_type)[...] == feat_gen.INTENT
+        intent_features = np.array(all_words)[intent_pos]
+        for intent in intent_features:
+            if feat_gen.intent_action_check(intent):
+                selected_words.append(intent)
+        # 3. apis
+        api_pos = np.array(all_words_type)[...] == feat_gen.SYS_API
+        selected_words.extend(np.array(all_words)[api_pos])
+        for s_word in selected_words:
+            all_words.remove(s_word)
+        maximum_vocab_size = maximum_vocab_size - len(selected_words)
+        maximum_vocab_size = 0 if maximum_vocab_size < 0 else maximum_vocab_size
+
         mal_feature_frequency = np.array(list(map(counter_mal.get, all_words)))
         mal_feature_frequency[mal_feature_frequency == None] = 0
         mal_feature_frequency /= float(np.sum(gt_labels))
@@ -135,18 +159,17 @@ class Apk2features(object):
         ben_feature_frequency[ben_feature_frequency == None] = 0
         ben_feature_frequency /= float(len(gt_labels) - np.sum(gt_labels))
         feature_freq_diff = abs(mal_feature_frequency - ben_feature_frequency)
-        posi_selected = np.argsort(feature_freq_diff)[::-1][:self.maximum_vocab_size]
-        selected_words = np.array([all_words[p] for p in posi_selected])
+        posi_selected = np.argsort(feature_freq_diff)[::-1][:maximum_vocab_size]
+        selected_words = np.array(selected_words + [all_words[p] for p in posi_selected])
         selected_word_type = list(map(feat_type_dict.get, selected_words))
-        selected_words_typized = (selected_words[np.array(selected_word_type)[...] == feat_gen.PERMISSION]).tolist()
-        selected_words_typized += (selected_words[np.array(selected_word_type)[...] == feat_gen.INTENT]).tolist()
-        selected_words_typized += (selected_words[np.array(selected_word_type)[...] == feat_gen.SYS_API]).tolist()
-        corresponding_word_info = list(map(feat_info_dict.get, selected_words_typized))
+        corresponding_word_info = list(map(feat_info_dict.get, selected_words))
+
         # saving
         if len(selected_words) > 0:
-            utils.dump_pickle(selected_words_typized, vocab_saving_path)
+            utils.dump_pickle(selected_words, vocab_saving_path)
+            utils.dump_pickle(selected_word_type, vocab_type_saving_path)
             utils.dump_pickle(corresponding_word_info, vocab_extra_info_saving_path)
-        return selected_words_typized, corresponding_word_info
+        return selected_words, corresponding_word_info
 
     def feature_mapping(self, feature_path_list, dictionary):
         """

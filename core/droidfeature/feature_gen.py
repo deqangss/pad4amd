@@ -402,22 +402,23 @@ def get_feature_list(feature):
     feature_type_list = []
     for feat in feature:
         if isinstance(feat, str):  # manifest features
-            if TAG_SPLITTER in feat:
-                _feat, _feat_i = feat.split(TAG_SPLITTER, 1)
-                feature_type_list.append(INTENT)
+            feature_elements = feat.split(TAG_SPLITTER)
+            _feature = feature_elements[0]
+            _feature_type = feature_elements[1]
+            if len(feature_elements) >= 3:
+                _feat_info = TAG_SPLITTER.join(feature_elements[2:])
             else:
-                _feat = feat
-                _feat_i = ''
-                feature_type_list.append(PERMISSION)
-            feature_list.append(_feat)
-            feature_info_list.append(_feat_i)
+                _feat_info = ''
+            feature_list.append(_feature)
+            feature_type_list.append(_feature_type)
+            feature_info_list.append(_feat_info)
         elif isinstance(feat, list):  # apis
             for api in feat:
-                api_info, _1 = api.split(TAG_SPLITTER, 1)
-                _api_name = get_api_name(api_info)
+                feature_elements = api.split(TAG_SPLITTER)
+                _api_name = get_api_name(feature_elements[0])
                 feature_list.append(_api_name)
-                feature_info_list.append(api_info)
-                feature_type_list.append(SYS_API)
+                feature_type_list.append(feature_elements[1])
+                feature_info_list.append(feature_elements[0])
         else:
             raise ValueError("Expect String or List, but got {}.".format(type(feat)))
     return feature_list, feature_info_list, feature_type_list

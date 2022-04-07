@@ -13,7 +13,7 @@ cmd_md.add_argument('--number_of_smali_files', type=int, default=1000000,
                     help='maximum number of produced sequences for each app')
 cmd_md.add_argument('--use_top_disc_features', action='store_true', default=True,
                     help='use feature selection or not.')
-cmd_md.add_argument('--max_vocab_size', type=int, default=5000,
+cmd_md.add_argument('--max_vocab_size', type=int, default=10000,
                     help='maximum number of vocabulary size')
 cmd_md.add_argument('--update', action='store_true', default=False,
                     help='update the existed features.')
