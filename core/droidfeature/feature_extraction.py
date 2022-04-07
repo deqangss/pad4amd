@@ -150,6 +150,7 @@ class Apk2features(object):
         for s_word in selected_words:
             all_words.remove(s_word)
         print(maximum_vocab_size)
+        print(len(selected_words))
         append_maximum_vocab_size = maximum_vocab_size - len(selected_words)
         append_maximum_vocab_size = 0 if append_maximum_vocab_size < 0 else append_maximum_vocab_size
 
