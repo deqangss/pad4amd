@@ -1,5 +1,5 @@
 """
-generate API call sequences for an APK
+Extract features for APKs
 """
 
 from os import path, getcwd
@@ -21,6 +21,11 @@ from tools.utils import dump_pickle, read_pickle, java_class_name2smali_name, \
 
 PERMISSION = 'permission'
 INTENT = 'intent'
+ACTIVITY = 'activity'
+SERVICE = 'service'
+RECEIVER = 'receiver'
+PROVIDER = 'provider'
+HARDWARE = 'hardware'
 SYS_API = 'api'
 
 
@@ -83,7 +88,18 @@ DANGEROUS_API_SIMLI_TAGS = [
     'Ljava/security/spec',
     'Ldalvik/system/DexClassLoader',
     'Ljava/lang/System;->loadLibrary',
-    'Ljava/lang/Runtime'
+    'Ljava/lang/Runtime',
+    # Drebin
+    'getExternalStorageDirectory',
+    'getSimCountryIso',
+    'execHttpRequest',
+    'sendTextMessage',
+    'getPackageInfo',
+    'getSystemService',
+    'setWifiDisabled',
+    'Ljava/net/HttpURLconnection;->setRequestMethod',
+    'Ljava/io/IOException;->printStackTrace',
+    "system/bin/su"
 ]
 
 # handle the restricted APIs
@@ -153,48 +169,108 @@ def apk2features(apk_path, max_number_of_smali_files=10000, saving_path=None):
     except Exception as e:
         raise ValueError("Fail to read and analyze the apk {}:{} ".format(apk_path, str(e)))
 
-    # get permissions
-    # 1. components as entry point
+    # 1. get permissions
     try:
         permission_list = get_permissions(a)
     except Exception as e:
         raise ValueError("Fail to extract permissions {}:{} ".format(apk_path, str(e)))
 
-    # 2. get intent actions
+    # 2. get components except for providers
+    try:
+        component_list = get_components(a)
+    except Exception as e:
+        raise ValueError("Fail to extract components {}:{} ".format(apk_path, str(e)))
+
+    # 3.get providers
+    try:
+        provider_list = get_providers(a)
+    except Exception as e:
+        raise ValueError("Fail to extract providers {}:{} ".format(apk_path, str(e)))
+
+    # 4. get intent actions
     try:
         intent_actions = get_intent_actions(a)
     except Exception as e:
         raise ValueError("Fail to extract intents {}:{} ".format(apk_path, str(e)))
 
-    # 3. get apis
+    # 5. get hardware
+    try:
+        hardware_list = get_hardwares(a)
+    except Exception as e:
+        raise ValueError("Fail to extract hardware {}:{} ".format(apk_path, str(e)))
+
+    # 6. get apis
     try:
         api_sequences = get_apis(d, max_number_of_smali_files)
     except Exception as e:
         raise ValueError("Fail to extract apis {}:{} ".format(apk_path, str(e)))
 
     features = []
-    features.extend(permission_list + intent_actions)
+    features.extend(permission_list + component_list + provider_list + intent_actions + hardware_list)
     features.extend(api_sequences)
 
-    # 4. saving the results
     save_to_disk(features, saving_path)
     if len(features) <= 0:
         warnings.warn("No features found: " + apk_path)
     return saving_path
 
 
+def permission_check(permission):
+    if permission in DANGEROUS_PERMISSION_TAGS:
+        return True
+    else:
+        return False
+
+
 def get_permissions(app):
     """
-    Get dangerous permissions
+    Get permissions
     :param app: androidguard.core.bytecodes.apk
     """
-    rtn_permissions = []
+    rtn_permssions = []
     permissions = app.get_permissions()
     permissions += app.get_requested_third_party_permissions()
     for perm in permissions:
-        if perm in DANGEROUS_PERMISSION_TAGS:
-            rtn_permissions.append(perm)
-    return rtn_permissions
+        rtn_permssions.append(perm + TAG_SPLITTER + PERMISSION)
+    return rtn_permssions
+
+
+def get_components(app):
+    """
+    Get activities
+    :param app: androidguard.core.bytecodes.apk
+    """
+    component_names = []
+    for activity in app.get_activities():
+        component_names.append(activity + TAG_SPLITTER + ACTIVITY)
+    for service in app.get_services():
+        component_names.append(service + TAG_SPLITTER + SERVICE)
+    for receiver in app.get_receivers():
+        component_names.append(receiver + TAG_SPLITTER + RECEIVER)
+    return component_names
+
+
+def get_providers(app):
+    providers = []
+    manifest_xml = app.get_android_manifest_xml()
+    xml_dom = minidom.parseString(etree.tostring(manifest_xml, pretty_print=True))
+    providers_elements = xml_dom.getElementsByTagName("provider")
+    for provider in providers_elements:
+        if provider.hasAttribute("android:name"):
+            prov_name = provider.getAttribute("android:name")
+            writer = io.StringIO()
+            provider.writexml(writer)
+            prov_extra_info = writer.getvalue()
+            providers.append(prov_name + TAG_SPLITTER + PROVIDER + TAG_SPLITTER + prov_extra_info)
+    return providers
+
+
+def intent_action_check(action_in_question):
+    for pre_action_name in INTENT_TAGS:
+        if pre_action_name in action_in_question:
+            return True
+    else:
+        return False
 
 
 def get_intent_actions(app):
@@ -209,13 +285,6 @@ def get_intent_actions(app):
     """
     actions = []
 
-    def _action_check(action_in_question):
-        for pre_action_name in INTENT_TAGS:
-            if pre_action_name in action_in_question:
-                return True
-        else:
-            return False
-
     manifest_xml = app.get_android_manifest_xml()
     xml_dom = minidom.parseString(etree.tostring(manifest_xml, pretty_print=True))
 
@@ -228,17 +297,17 @@ def get_intent_actions(app):
                 for i, action_element in enumerate(action_elements):
                     if action_element.hasAttribute("android:name"):
                         action = action_element.getAttribute("android:name")
-                        if _action_check(action):
-                            action_parent = copy.deepcopy(intent_element)
-                            if len(action_elements) > 1:
-                                action_elements_copy = action_parent.getElementsByTagName('action')
-                                for _i in range(len(action_elements_copy)):
-                                    if _i != i:
-                                        action_parent.removeChild(action_elements_copy[_i])
-                            writer = io.StringIO()
-                            action_parent.writexml(writer)
-                            action_extra_info = writer.getvalue()
-                            actions.append(action + TAG_SPLITTER + component_name + TAG_SPLITTER + action_extra_info)
+                        action_parent = copy.deepcopy(intent_element)
+                        if len(action_elements) > 1:
+                            action_elements_copy = action_parent.getElementsByTagName('action')
+                            for _i in range(len(action_elements_copy)):
+                                if _i != i:
+                                    action_parent.removeChild(action_elements_copy[_i])
+                        writer = io.StringIO()
+                        action_parent.writexml(writer)
+                        action_extra_info = writer.getvalue()
+                        actions.append(action + TAG_SPLITTER + INTENT + TAG_SPLITTER + component_name + \
+                                       TAG_SPLITTER + action_extra_info)
 
     # 1. activities
     activity_elements = xml_dom.getElementsByTagName('activity')
@@ -250,6 +319,13 @@ def get_intent_actions(app):
     receiver_elements = xml_dom.getElementsByTagName('receiver')
     _analyze_component(receiver_elements, 'receiver')
     return actions
+
+
+def get_hardwares(app):
+    hardwares_rtn = []
+    for hardware in hardwares_rtn:
+        hardwares_rtn.append(hardware + TAG_SPLITTER + HARDWARE)
+    return hardwares_rtn
 
 
 def get_apis(dexes, max_number_of_smali_files):
@@ -300,6 +376,7 @@ def get_apis(dexes, max_number_of_smali_files):
                     if _check_sensitive_api(class_name + '->' + method_name) or \
                             _check_dangerous_api(class_name + '->' + method_name):
                         api_info = invoke_type + ' ' + class_name + '->' + method_name + proto + \
+                                   TAG_SPLITTER + SYS_API +  \
                                    TAG_SPLITTER + method_header
                         apis.append(api_info)
             if len(apis) <= 0:
@@ -429,7 +506,7 @@ def get_same_class_prefix(entry_node_list):
 
 def _main():
     rtn_str = apk2features(
-        '/mnt/c/Users/lideq/datasets/drebin/malicious_samples/0a073153ba87aebad2f47bc8a0eb3a40f4f24599c7f3926502c070133a09c1c0',
+        '/mnt/c/Users/lideq/datasets/drebin/malicious_samples/0a7695a7a6c27bdf7e3acd77136642589a28de08b14a81328a39bd3ab5fd095d',
         200000,
         "./abc.feat")
     print(rtn_str)
