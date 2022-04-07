@@ -97,7 +97,7 @@ class Apk2features(object):
         vocab_type_saving_path = os.path.join(self.intermediate_save_dir, 'data.vocab_type')
         vocab_extra_info_saving_path = os.path.join(self.intermediate_save_dir, 'data.vocab_info')
         if os.path.exists(vocab_saving_path) and os.path.exists(vocab_saving_path) and (not self.update):
-            return utils.read_pickle(vocab_saving_path), utils.read_pickle(vocab_extra_info_saving_path)
+            return utils.read_pickle(vocab_saving_path), utils.read_pickle(vocab_extra_info_saving_path), utils.read_pickle(vocab_type_saving_path)
         elif feature_path_list is None and gt_labels is None:
             raise FileNotFoundError("No vocabulary found and no features for producing vocabulary!")
         else:
@@ -169,7 +169,7 @@ class Apk2features(object):
             utils.dump_pickle(selected_words, vocab_saving_path)
             utils.dump_pickle(selected_word_type, vocab_type_saving_path)
             utils.dump_pickle(corresponding_word_info, vocab_extra_info_saving_path)
-        return selected_words, corresponding_word_info
+        return selected_words, corresponding_word_info, selected_word_type
 
     def feature_mapping(self, feature_path_list, dictionary):
         """

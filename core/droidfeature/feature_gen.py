@@ -180,6 +180,7 @@ def apk2features(apk_path, max_number_of_smali_files=10000, saving_path=None):
         component_list = get_components(a)
     except Exception as e:
         raise ValueError("Fail to extract components {}:{} ".format(apk_path, str(e)))
+    print(component_list)
 
     # 3.get providers
     try:

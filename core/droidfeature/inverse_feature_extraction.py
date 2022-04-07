@@ -141,16 +141,18 @@ EMPTY_SERVICE_BODY = '''.class public L{fullClassName}
 
 
 class InverseDroidFeature(object):
-    vocab, vocab_info = None, None
+    vocab, vocab_info, vocab_type = None, None, None
 
     def __init__(self, seed=0):
         random.seed(seed)
         meta_data_saving_dir = config.get('dataset', 'intermediate')
         naive_data_saving_dir = config.get('metadata', 'naive_data_pool')
         self.feature_extractor = Apk2features(naive_data_saving_dir, meta_data_saving_dir)
-        InverseDroidFeature.vocab, InverseDroidFeature.vocab_info = self.feature_extractor.get_vocab()
+        InverseDroidFeature.vocab, InverseDroidFeature.vocab_info, InverseDroidFeature.vocab_type = \
+            self.feature_extractor.get_vocab()
         self.vocab = InverseDroidFeature.vocab
         self.vocab_info = InverseDroidFeature.vocab_info
+        self.vocab_type = InverseDroidFeature.vocab_type
 
     def get_manipulation(self):
         """
@@ -159,8 +161,10 @@ class InverseDroidFeature(object):
         This means the value "1" in the mask vector corresponds to a reflectable api, and "0" means otherwise.
         """
         manipulation = np.zeros((len(self.vocab),), dtype=np.float32)
-        for i, v, v_info in zip(range(len(self.vocab)), self.vocab, self.vocab_info):
-            if self.approx_check_public_method(v, v_info):
+        for i, v, v_info, v_type in zip(range(len(self.vocab)), self.vocab, self.vocab_info, self.vocab_type):
+            if v_type in [seq_gen.ACTIVITY, seq_gen.SERVICE, seq_gen.RECEIVER, seq_gen.PROVIDER]:
+                manipulation[i] = 1.
+            if v_type == seq_gen.SYS_API and self.approx_check_public_method(v, v_info):
                 manipulation[i] = 1.
         return manipulation
 
@@ -193,7 +197,7 @@ class InverseDroidFeature(object):
     @staticmethod
     def approx_check_public_method(word, word_info):
         assert isinstance(word, str) and isinstance(word_info, set)
-        # see: https://docs.oracle.com/javase/specs/jvms/se10/html/jvms-2.html#jvms-2.12 do not hide reflection again
+        # see: https://docs.oracle.com/javase/specs/jvms/se10/html/jvms-2.html#jvms-2.12, we do not hide reflection-related API again
         if re.search(r'\<init\>|\<clinit\>', word) is None and \
                 re.search(r'Ljava\/lang\/reflect\/|Ljava\/lang\/Object;->getClass|Ljava\/lang\/Class;->getMethod', word) is None and \
                 all(
