@@ -162,9 +162,9 @@ class Apk2features(object):
         selected_word_type = list(map(feat_type_dict.get, selected_words))
         corresponding_word_info = list(map(feat_info_dict.get, selected_words))
 
-        print(selected_words)
-        print(selected_word_type)
-        print(corresponding_word_info)
+        print(selected_words[:100])
+        print(selected_word_type[:100])
+        # print(corresponding_word_info)
         import sys
         sys.exit(1)
 
