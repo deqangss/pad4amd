@@ -89,17 +89,18 @@ DANGEROUS_API_SIMLI_TAGS = [
     'Ldalvik/system/DexClassLoader',
     'Ljava/lang/System;->loadLibrary',
     'Ljava/lang/Runtime',
-    # Drebin
-    'getExternalStorageDirectory',
-    'getSimCountryIso',
+    'Landroid/os/Environment;->getExternalStorageDirectory',
+    'Landroid/telephony/TelephonyManager;->getDeviceId',
+    'Landroid/telephony/TelephonyManager;->getSubscriberId',
+    'setWifiEnabled',
     'execHttpRequest',
-    'sendTextMessage',
     'getPackageInfo',
-    'getSystemService',
+    'Landroid/content/Context;->getSystemService',
     'setWifiDisabled',
     'Ljava/net/HttpURLconnection;->setRequestMethod',
+    'Landroid/telephony/SmsMessage;->getMessageBody',
     'Ljava/io/IOException;->printStackTrace',
-    "system/bin/su"
+    'system/bin/su'
 ]
 
 # handle the restricted APIs
@@ -328,25 +329,27 @@ def get_hardwares(app):
     return hardwares_rtn
 
 
+def check_suspicious_api(api_query):
+    for specific_api in DANGEROUS_API_SIMLI_TAGS:
+        if specific_api in api_query:
+            return True
+    else:
+        return False
+
+
+def check_sensitive_api(api_query):
+    if api_query in sensitive_apis:
+        return True
+    else:
+        return False
+
+
 def get_apis(dexes, max_number_of_smali_files):
     """
     get api sequences by class-wise
     """
     if isinstance(dexes, DalvikVMFormat):
         dexes = [dexes]
-
-    def _check_dangerous_api(api_query):
-        for specific_api in DANGEROUS_API_SIMLI_TAGS:
-            if specific_api in api_query:
-                return True
-        else:
-            return False
-
-    def _check_sensitive_api(api_query):
-        if api_query in sensitive_apis:
-            return True
-        else:
-            return False
 
     apis_classwise = []
     for dex in dexes:
@@ -373,8 +376,8 @@ def get_apis(dexes, max_number_of_smali_files):
                     # todo: justify the method is not the type of overload
                     # note: androidguard provides the EncodedMethod type, which is indeed not helpful, sometimes it is problematic
                     # e.g., from now on (version 3.3.5), the encodedmethod is actually implemented in the parent class yet neglected by androidguard
-                    if _check_sensitive_api(class_name + '->' + method_name) or \
-                            _check_dangerous_api(class_name + '->' + method_name):
+                    if check_sensitive_api(class_name + '->' + method_name) or \
+                            check_suspicious_api(class_name + '->' + method_name):
                         api_info = invoke_type + ' ' + class_name + '->' + method_name + proto + \
                                    TAG_SPLITTER + SYS_API +  \
                                    TAG_SPLITTER + method_header
