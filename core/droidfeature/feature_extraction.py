@@ -148,11 +148,7 @@ class Apk2features(object):
         api_pos = np.array(all_words_type)[...] == feature_gen.SYS_API
         susp_apis = np.array(all_words)[api_pos]
         for api in susp_apis:
-            if feature_gen.check_suspicious_api(api):
-                selected_words.append(api)
-
-        for api in susp_apis:
-            if feature_gen.check_sensitive_api(api):
+            if feature_gen.check_suspicious_api(api) or feature_gen.check_sensitive_api(api):
                 selected_words.append(api)
 
         for s_word in selected_words:
