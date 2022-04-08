@@ -264,6 +264,7 @@ class InverseDroidFeature(object):
                 logger.error("Unable to disassemble app {}".format(app_path))
                 return
             manifest_tree = xml_manip.get_xmltree_by_ET(os.path.join(dst_file, "AndroidManifest.xml"))
+            methods = dex_manip.retrieve_methods(dst_file)
             for instruction in x_mod_instr:
                 for feature, op in instruction:
                     idx = InverseDroidFeature.vocab.index(feature)
@@ -295,17 +296,11 @@ class InverseDroidFeature(object):
                             xml_manip.dump_xml(os.path.join(dst_file, "AndroidManifest.xml"),
                                                new_manifest_tree)
                         elif feature_type == feature_gen.SYS_API:
-                            insert_api(feature, dst_file)
+                            if len(methods) <= 0:
+                                warnings.warn("No space for method injection.")
+                            method = random.choice(methods)[0]
+                            insert_api(feature, method)
 
-            return
-
-            for instruction, (root_call, cg) in zip(x_mod_instr, cg_dict.items()):
-                for api_name, op in instruction:
-                    if op == OP_REMOVAL:
-                        remove_api(api_name, cg, dst_file)
-                    else:
-                        # A large scale of insertion operations will trigger unexpected issues, such as method limitation in a class
-                        insert_api(api_name, root_call, dst_file)
             dst_file_apk = os.path.join(save_dir, os.path.splitext(os.path.basename(app_path))[0] + '_adv')
             cmd_response = subprocess.call("apktool -q b " + dst_file + " -o " + dst_file_apk, shell=True)
             if cmd_response != 0:
@@ -436,14 +431,14 @@ def create_entry_point(disassemble_dir):
         return 'L' + full_classname + '.method ' + ENTRY_METHOD_STATEMENT
 
 
-def insert_api(api_name, disassemble_dir):
+def insert_api(api_name, method_location):
     """
     insert an api.
 
     Parameters
     -------
     @param api_name, composite of class name and method name
-    @param disassemble_dir, work directory
+    @param method_location, work file
     """
     api_info = InverseDroidFeature.vocab_info[InverseDroidFeature.vocab.index(api_name)]
     class_name, method_name = api_name.split('->')
@@ -603,58 +598,34 @@ def insert_api(api_name, disassemble_dir):
             varEndCont=var_end_content
         )
 
-    injection_done = False
+    smali_path, class_name, a_method_statement = method_location
+    if smali_path is None:
+        logger.warning('smali file {} is absent.'.format(smali_path))
 
-    # find a smali file for conducting injection
-    a_method = "abc"
-    root_call = a_method
-    for rc in root_call:
-        root_class_name, caller_method_statement = rc.split(';', 1)
+    method_finder_flag = False
+    fh = dex_manip.read_file_by_fileinput(smali_path, inplace=True)
+    for line in fh:
+        print(line.rstrip())
 
-        method_match = re.match(
-            r'^([ ]*?)\.method\s+(?P<methodPre>([^ ].*?))\((?P<methodArg>(.*?))\)(?P<methodRtn>(.*?))$',
-            caller_method_statement)
-        caller_method_statement = '.method ' + method_match['methodPre'].strip() + '(' + method_match[
-            'methodArg'].strip().replace(' ', '') + ')' + method_match['methodRtn'].strip()
-
-        smali_dirs = dex_manip.retrieve_smali_dirs(disassemble_dir)
-        smali_path = None
-        for smali_dir in smali_dirs:
-            _path = os.path.join(smali_dir, root_class_name.lstrip('L') + '.smali')
-            if os.path.exists(_path):
-                smali_path = _path
-                break
-        if smali_path is None:
-            logger.warning('root call file {} is absent.'.format(smali_path))
+        if line.strip() == a_method_statement:
+            method_finder_flag = True
             continue
 
-        method_finder_flag = False
-        fh = dex_manip.read_file_by_fileinput(smali_path, inplace=True)
-        for line in fh:
-            print(line.rstrip())
+        if method_finder_flag and line.strip() == '.end method':
+            method_finder_flag = False
+            # issue: injection ruins the correct line number in smali codes
+            print('\n')
+            print(new_method_body)
+            continue
 
-            if line.strip() == caller_method_statement:
-                method_finder_flag = True
-                continue
+        invoke_static = 'invoke-static'
+        if method_finder_flag and '.locals' in line:
+            reg_match = re.match(r'^[ ]*?(.locals)[ ]*?(?P<regNumber>\d+)', line)
+            if reg_match is not None and int(reg_match.group('regNumber')) > 15:
+                invoke_static = 'invoke-static/range'
 
-            if method_finder_flag and line.strip() == '.end method':
-                method_finder_flag = False
-                # issue: injection ruins the correct line number in smali codes
-                print('\n')
-                print(new_method_body)
-                continue
-
-            invoke_static = 'invoke-static'
-            if method_finder_flag and '.locals' in line:
-                reg_match = re.match(r'^[ ]*?(.locals)[ ]*?(?P<regNumber>\d+)', line)
-                if reg_match is not None and int(reg_match.group('regNumber')) > 15:
-                    invoke_static = 'invoke-static/range'
-
-            if method_finder_flag:
-                if re.match(r'^[ ]*?(.locals)', line) is not None:
-                    print(
-                        '    ' + invoke_static + ' {}, ' + root_class_name + ';->' + new_method_name + '()V' + '\n')
-                    injection_done = True
-        fh.close()
-        if injection_done:
-            break
+        if method_finder_flag:
+            if re.match(r'^[ ]*?(.locals)', line) is not None:
+                print(
+                    '    ' + invoke_static + ' {}, ' + class_name + '->' + new_method_name + '()V' + '\n')
+    fh.close()

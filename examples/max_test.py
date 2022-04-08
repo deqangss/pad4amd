@@ -260,10 +260,11 @@ def _main():
     if args.real:
         adv_app_dir = os.path.join(save_dir, 'adv_apps')
 
-        # attack.produce_adv_mal(x_mod_integrated, mal_test_x.tolist(),
-        #                        config.get('dataset', 'malware_dir'),
-        #                        adj_mod=None,
-        #                        save_dir=adv_app_dir)
+        attack.produce_adv_mal(x_mod_integrated, mal_test_x.tolist(),
+                               config.get('dataset', 'malware_dir'),
+                               adj_mod=None,
+                               save_dir=adv_app_dir)
+
         adv_feature_paths = dataset.apk_preprocess(adv_app_dir, update_feature_extraction=False)
         # dataset.feature_preprocess(adv_feature_paths)
         adv_test_dataset_producer = dataset.get_input_producer(adv_feature_paths,

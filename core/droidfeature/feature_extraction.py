@@ -111,9 +111,8 @@ class Apk2features(object):
             if not os.path.exists(feature_path):
                 continue
             features = feature_gen.read_from_disk(feature_path)
-            feature_occurrence = set()
             feature_list, feature_info_list, feature_type_list = feature_gen.get_feature_list(features)
-            feature_occurrence.update(feature_list)
+            feature_occurrence = list(dict.fromkeys(feature_list))
             for _feat, _feat_info, _feat_type in zip(feature_list, feature_info_list, feature_type_list):
                 feat_info_dict[_feat].add(_feat_info)
                 feat_type_dict[_feat] = _feat_type

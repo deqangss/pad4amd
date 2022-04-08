@@ -4,7 +4,7 @@ feasible manipulations on dex files: codes are from: https://github.com/deqangss
 
 from __future__ import print_function
 
-
+import re
 from tools.utils import *
 
 curr_dir = os.path.dirname(os.path.realpath(__file__))
@@ -517,6 +517,30 @@ def retrieve_smali_dirs(disassembly_dir):
         if 'smali' in cont:
             smali_dirs.append(os.path.join(disassembly_dir, cont))
     return smali_dirs
+
+
+def retrieve_methods(disassembly_dir):
+    methods = []
+    smali_dirs = retrieve_smali_dirs(disassembly_dir)
+    for smali_dir in smali_dirs:
+        file_path_set = retrive_files_set(smali_dir, '', '.smali')
+        for file_path in file_path_set:
+            with open(file_path) as fh:
+                context = fh.read()
+                if len(context.split('.method')) >= 3:
+                    lines = context.split('\n')
+                else:
+                    continue
+                for line in lines:
+                    class_match = re.search(r'^([ ]*?)\.class(.*?)(?P<className>L([^;\(\) ]*?);)', line)
+                    if class_match is not None:
+                        class_name = class_match.group('className')
+                    method_match = re.match(
+                        r'^([ ]*?)\.method\s+(?P<methodPre>([^ ].*?))\((?P<methodArg>(.*?))\)(?P<methodRtn>(.*?))$',
+                        line)
+                    if method_match is not None:
+                        methods.append([(file_path, class_name, line.strip())])
+    return methods
 
 
 def retrieve_api_caller_info(api_name, disassembly_dir):
