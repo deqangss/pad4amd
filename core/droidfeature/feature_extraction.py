@@ -151,12 +151,12 @@ class Apk2features(object):
         for api in susp_apis:
             if feature_gen.check_suspicious_api(api):
                 selected_words.append(api)
-                print(api)
+                # print(api)
         print(len(selected_words))
         for api in susp_apis:
             if feature_gen.check_sensitive_api(api):
                 selected_words.append(api)
-                print(api)
+                # print(api)
         print(len(selected_words))
 
         for s_word in selected_words:
