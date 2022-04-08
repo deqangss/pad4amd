@@ -144,12 +144,11 @@ class Apk2features(object):
         for intent in intent_features:
             if feat_gen.intent_action_check(intent):
                 selected_words.append(intent)
-        # 3. apis
+        # 3. sensitive & suspicious apis
         api_pos = np.array(all_words_type)[...] == feat_gen.SYS_API
         selected_words.extend(np.array(all_words)[api_pos])
 
         all_words = selected_words
-        print(len(all_words))
         mal_feature_frequency = np.array(list(map(counter_mal.get, all_words)))
         mal_feature_frequency[mal_feature_frequency == None] = 0
         mal_feature_frequency /= float(np.sum(gt_labels))
@@ -161,12 +160,6 @@ class Apk2features(object):
         selected_words = np.array([all_words[p] for p in posi_selected])
         selected_word_type = list(map(feat_type_dict.get, selected_words))
         corresponding_word_info = list(map(feat_info_dict.get, selected_words))
-
-        print(selected_words[:100])
-        print(selected_word_type[:100])
-        # print(corresponding_word_info)
-        import sys
-        sys.exit(1)
 
         # saving
         if len(selected_words) > 0:
