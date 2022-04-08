@@ -131,25 +131,31 @@ class Apk2features(object):
             maximum_vocab_size = len(all_words) + 1
 
         selected_words = []
-        # 1. dangerous permission
+        # dangerous permission
         all_words_type = list(map(feat_type_dict.get, all_words))
         perm_pos = np.array(all_words_type)[...] == feat_gen.PERMISSION
         perm_features = np.array(all_words)[perm_pos]
         for perm in perm_features:
             if feat_gen.permission_check(perm):
                 selected_words.append(perm)
-        # 2. intent
+
+        hdw_pos = np.array(all_words_type)[...] == feat_gen.HARDWARE
+        hdw_features = np.array(all_words)[hdw_pos]
+        for hdw in hdw_features:
+            selected_words.append(hdw)
+
+        # intent
         intent_pos = np.array(all_words_type)[...] == feat_gen.INTENT
         intent_features = np.array(all_words)[intent_pos]
         for intent in intent_features:
             if feat_gen.intent_action_check(intent):
                 selected_words.append(intent)
-        # 3. sensitive & suspicious apis
+
+        # sensitive & suspicious apis
         api_pos = np.array(all_words_type)[...] == feat_gen.SYS_API
         selected_words.extend(np.array(all_words)[api_pos])
 
-        # all_words = selected_words
-
+        all_words = selected_words
         mal_feature_frequency = np.array(list(map(counter_mal.get, all_words)))
         mal_feature_frequency[mal_feature_frequency == None] = 0
         mal_feature_frequency /= float(np.sum(gt_labels))
