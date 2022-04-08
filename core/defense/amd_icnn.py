@@ -269,7 +269,6 @@ class AdvMalwareDetectorICNN(nn.Module, DensityEstimatorTemplate):
 
     def customize_loss(self, logits_x, labels, logits_adv_x, labels_adv):
         G = F.binary_cross_entropy_with_logits(logits_adv_x, labels_adv)
-        # G = torch.mean(logits_adv_x * (1. - labels_adv)) - torch.mean(logits_adv_x * labels_adv)
         F_ = F.cross_entropy(logits_x, labels)
         return F_ + G
 
