@@ -7,13 +7,12 @@ import numpy as np
 import networkx as nx
 import itertools
 
-from core.droidfeature import feature_gen as feat_gen
+from core.droidfeature import feature_gen
 from tools import utils
 from config import logging, ErrorHandler
 
 logger = logging.getLogger('core.droidfeature.feature_extraction')
 logger.addHandler(ErrorHandler)
-NULL_ID = 'null'
 
 
 class Apk2features(object):
@@ -70,7 +69,7 @@ class Apk2features(object):
 
         params = [(apk_path, self.number_of_smali_files, get_save_path(apk_path)) for \
                   apk_path in sample_path_list if get_save_path(apk_path) is not None]
-        for res in tqdm(pool.imap_unordered(feat_gen.apk2feat_wrapper, params), total=len(params)):
+        for res in tqdm(pool.imap_unordered(feature_gen.apk2feat_wrapper, params), total=len(params)):
             if isinstance(res, Exception):
                 logger.error("Failed processing: {}".format(str(res)))
         pool.close()
@@ -111,9 +110,9 @@ class Apk2features(object):
         for feature_path, label in zip(feature_path_list, gt_labels):
             if not os.path.exists(feature_path):
                 continue
-            features = feat_gen.read_from_disk(feature_path)
+            features = feature_gen.read_from_disk(feature_path)
             feature_occurrence = set()
-            feature_list, feature_info_list, feature_type_list = feat_gen.get_feature_list(features)
+            feature_list, feature_info_list, feature_type_list = feature_gen.get_feature_list(features)
             feature_occurrence.update(feature_list)
             for _feat, _feat_info, _feat_type in zip(feature_list, feature_info_list, feature_type_list):
                 feat_info_dict[_feat].add(_feat_info)
@@ -133,24 +132,24 @@ class Apk2features(object):
         selected_words = []
         # dangerous permission
         all_words_type = list(map(feat_type_dict.get, all_words))
-        perm_pos = np.array(all_words_type)[...] == feat_gen.PERMISSION
+        perm_pos = np.array(all_words_type)[...] == feature_gen.PERMISSION
         perm_features = np.array(all_words)[perm_pos]
         for perm in perm_features:
-            if feat_gen.permission_check(perm):
+            if feature_gen.permission_check(perm):
                 selected_words.append(perm)
 
         # intent
-        intent_pos = np.array(all_words_type)[...] == feat_gen.INTENT
+        intent_pos = np.array(all_words_type)[...] == feature_gen.INTENT
         intent_features = np.array(all_words)[intent_pos]
         for intent in intent_features:
-            if feat_gen.intent_action_check(intent):
+            if feature_gen.intent_action_check(intent):
                 selected_words.append(intent)
 
         # sensitive & suspicious apis
-        api_pos = np.array(all_words_type)[...] == feat_gen.SYS_API
+        api_pos = np.array(all_words_type)[...] == feature_gen.SYS_API
         api_features = list(np.array(all_words)[api_pos])
 
-        all_words = api_features
+        # all_words = api_features
         mal_feature_frequency = np.array(list(map(counter_mal.get, all_words)))
         mal_feature_frequency[mal_feature_frequency == None] = 0
         mal_feature_frequency /= float(np.sum(gt_labels))
@@ -159,7 +158,8 @@ class Apk2features(object):
         ben_feature_frequency /= float(len(gt_labels) - np.sum(gt_labels))
         feature_freq_diff = abs(mal_feature_frequency - ben_feature_frequency)
         posi_selected = np.argsort(feature_freq_diff)[::-1]
-        ordered_words = selected_words + [all_words[p] for p in posi_selected]
+        # ordered_words = selected_words + [all_words[p] for p in posi_selected]
+        ordered_words = [all_words[p] for p in posi_selected]
         selected_words = ordered_words[:maximum_vocab_size]
         selected_word_type = list(map(feat_type_dict.get, selected_words))
         corresponding_word_info = list(map(feat_info_dict.get, selected_words))
@@ -225,8 +225,8 @@ class Apk2features(object):
             logger.warning("Cannot find the feature path: {}, zero vector used".format(feature_path))
             return np.zeros((len(vocabulary), ), dtype=np.float32), []
 
-        native_features = feat_gen.read_from_disk(feature_path)
-        non_api_features, api_features = feat_gen.format_feature(native_features)
+        native_features = feature_gen.read_from_disk(feature_path)
+        non_api_features, api_features = feature_gen.format_feature(native_features)
         features = non_api_features + api_features
 
         representation_vector = np.zeros((len(vocabulary), ), dtype=np.float32)
