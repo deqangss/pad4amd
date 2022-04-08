@@ -148,7 +148,8 @@ class Apk2features(object):
         api_pos = np.array(all_words_type)[...] == feat_gen.SYS_API
         selected_words.extend(np.array(all_words)[api_pos])
 
-        all_words = selected_words
+        # all_words = selected_words
+
         mal_feature_frequency = np.array(list(map(counter_mal.get, all_words)))
         mal_feature_frequency[mal_feature_frequency == None] = 0
         mal_feature_frequency /= float(np.sum(gt_labels))
@@ -157,7 +158,7 @@ class Apk2features(object):
         ben_feature_frequency /= float(len(gt_labels) - np.sum(gt_labels))
         feature_freq_diff = abs(mal_feature_frequency - ben_feature_frequency)
         posi_selected = np.argsort(feature_freq_diff)[::-1][:maximum_vocab_size]
-        selected_words = np.array([all_words[p] for p in posi_selected])
+        selected_words = [all_words[p] for p in posi_selected]
         selected_word_type = list(map(feat_type_dict.get, selected_words))
         corresponding_word_info = list(map(feat_info_dict.get, selected_words))
 
