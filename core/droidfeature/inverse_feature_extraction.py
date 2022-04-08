@@ -1,5 +1,6 @@
 import os
 import time
+import warnings
 import random
 import shutil
 import tempfile
@@ -10,8 +11,8 @@ import re
 import numpy as np
 import networkx as nx
 import torch
-from core.droidfeature import Apk2features, NULL_ID
-from core.droidfeature import feature_gen as seq_gen
+from core.droidfeature import Apk2features
+from core.droidfeature import feature_gen
 from tools import dex_manip, xml_manip, utils
 from config import config, logging, ErrorHandler
 
@@ -162,9 +163,9 @@ class InverseDroidFeature(object):
         """
         manipulation = np.zeros((len(self.vocab),), dtype=np.float32)
         for i, v, v_info, v_type in zip(range(len(self.vocab)), self.vocab, self.vocab_info, self.vocab_type):
-            if v_type in [seq_gen.ACTIVITY, seq_gen.SERVICE, seq_gen.RECEIVER, seq_gen.PROVIDER]:
+            if v_type in [feature_gen.ACTIVITY, feature_gen.SERVICE, feature_gen.RECEIVER, feature_gen.PROVIDER]:
                 manipulation[i] = 1.
-            if v_type == seq_gen.SYS_API and self.approx_check_public_method(v, v_info):
+            if v_type == feature_gen.SYS_API and self.approx_check_public_method(v, v_info):
                 manipulation[i] = 1.
         return manipulation
 
@@ -199,14 +200,15 @@ class InverseDroidFeature(object):
         assert isinstance(word, str) and isinstance(word_info, set)
         # see: https://docs.oracle.com/javase/specs/jvms/se10/html/jvms-2.html#jvms-2.12, we do not hide reflection-related API again
         if re.search(r'\<init\>|\<clinit\>', word) is None and \
-                re.search(r'Ljava\/lang\/reflect\/|Ljava\/lang\/Object;->getClass|Ljava\/lang\/Class;->getMethod', word) is None and \
+                re.search(r'Ljava\/lang\/reflect\/|Ljava\/lang\/Object;->getClass|Ljava\/lang\/Class;->getMethod',
+                          word) is None and \
                 all(
                     [re.search(r'invoke\-virtual|invoke\-static|invoke\-interface', info) for info in word_info]):
             return True
 
     def inverse_map_manipulation(self, x_mod):
         """
-        map the numerical manipulation to operation tuples (i.e., (api name, '+') or (api name, '-'))
+        map the numerical manipulation to operation tuples (i.e., (feature, '+') or (feature, '-'))
 
         Parameters
         --------
@@ -216,24 +218,13 @@ class InverseDroidFeature(object):
         if isinstance(x_mod, torch.Tensor) and (not x_mod.is_sparse):
             x_mod = x_mod.detach().cpu().numpy()
 
-        if isinstance(x_mod, np.ndarray):
-            indices = np.nonzero(x_mod)
-            values = x_mod[indices]
-        else:
-            indices = x_mod._indices()
-            values = x_mod._values()
-
-        num_cg = x_mod.shape[0]
+        indices = np.nonzero(x_mod)
         instruction = []
-        for i in range(num_cg):
-            vocab_ind = indices[1][indices[0] == i]
-            apis = list(map(self.vocab.__getitem__, vocab_ind))
-            if NULL_ID in apis:  # not an api
-                apis = list(sorted(set(apis), key=apis.index))
-                apis.remove(NULL_ID)
-            manip_x = values[indices[0] == i]
-            op_info = map(lambda v: OP_INSERTION if v > 0 else OP_REMOVAL, manip_x)
-            instruction.append(tuple(zip(apis, op_info)))
+        features = list(map(self.vocab.__getitem__, indices[0]))
+        manip_x = x_mod[indices]
+        op_info = map(lambda v: OP_INSERTION if v > 0 else OP_REMOVAL, manip_x)
+        instruction.append(tuple(zip(features, op_info)))
+
         return instruction
 
     @staticmethod
@@ -257,7 +248,10 @@ class InverseDroidFeature(object):
         @param app_path, String, app path
         @param save_dir, String, saving directory
         """
-        cg_dict = seq_gen.read_from_disk(feature_path)
+        print(feature_path)
+        features = feature_gen.read_from_disk(feature_path)
+        feature_list, feature_info_list, feature_type_list = feature_gen.get_feature_list(features)
+
         assert os.path.isfile(app_path)
         if save_dir is None:
             save_dir = os.path.join(TMP_DIR, 'adv_mal_cache')
@@ -269,6 +263,42 @@ class InverseDroidFeature(object):
             if cmd_response != 0:
                 logger.error("Unable to disassemble app {}".format(app_path))
                 return
+            manifest_tree = xml_manip.get_xmltree_by_ET(os.path.join(dst_file, "AndroidManifest.xml"))
+            for instruction in x_mod_instr:
+                for feature, op in instruction:
+                    idx = InverseDroidFeature.vocab.index(feature)
+                    feature_type = InverseDroidFeature.vocab_type[idx]
+                    feature_info = InverseDroidFeature.vocab_info[idx]
+                    if op == OP_REMOVAL:
+                        assert feature in feature_list
+                        if feature_type in [feature_gen.ACTIVITY, feature_gen.SERVICE, feature_gen.RECEIVER,
+                                            feature_gen.PROVIDER]:
+                            raise NotImplementedError
+                        elif feature_type == feature_gen.SYS_API:
+                            print(feature)
+                            remove_api(feature, dst_file)
+                        else:
+                            raise ValueError("{} may be un-removed".format(feature_type))
+                    else:
+                        # A large scale of insertion operations will trigger unexpected issues, such as method limitation in a class
+                        if feature_type in [feature_gen.ACTIVITY, feature_gen.SERVICE, feature_gen.RECEIVER,
+                                            feature_gen.PROVIDER]:
+                            raise NotImplementedError
+                        elif feature_type == feature_gen.PERMISSION:
+                            new_manifest_tree = xml_manip.insert_elem_manifest(manifest_tree, "uses-permission",
+                                                                               feature)
+                            xml_manip.dump_xml(os.path.join(dst_file, "AndroidManifest.xml"),
+                                               new_manifest_tree)
+                        elif feature_type == feature_gen.HARDWARE:
+                            new_manifest_tree = xml_manip.insert_elem_manifest(manifest_tree, "uses-feature",
+                                                                               feature)
+                            xml_manip.dump_xml(os.path.join(dst_file, "AndroidManifest.xml"),
+                                               new_manifest_tree)
+                        elif feature_type == feature_gen.SYS_API:
+                            insert_api(feature, dst_file)
+
+            return
+
             for instruction, (root_call, cg) in zip(x_mod_instr, cg_dict.items()):
                 for api_name, op in instruction:
                     if op == OP_REMOVAL:
@@ -293,38 +323,35 @@ class InverseDroidFeature(object):
                 return True
 
 
-def remove_api(api_name, call_graph, disassemble_dir, coarse=True):
+def remove_api(api_name, disassemble_dir):
     """
     remove an api
 
     Parameters
     --------
     @param api_name, composite of class name and method name
-    @param call_graph, call graph
     @param disassemble_dir, the work directory
     @param coarse, whether use reflection to all matched methods
     """
-    if not (api_name in call_graph.nodes()):
-        logger.warning("Removing {}, but got it non-found in {}.".format(api_name, disassemble_dir))
-        return
-
-    api_tag_set = call_graph.nodes(data=True)[api_name]['tag']
     # we attempt to obtain more relevant info about this api. Nonetheless, once there is class inheritance,
     # we cannot make it.
-    if coarse:
-        api_info_list = dex_manip.retrieve_api_caller_info(api_name, disassemble_dir)
-        for api_info in api_info_list:
-            api_tag_set.add(seq_gen.get_api_tag(api_info['ivk_method'],
+    api_tag_set = set()
+    api_info_list = dex_manip.retrieve_api_caller_info(api_name, disassemble_dir)
+    for api_info in api_info_list:
+        api_tag_set.add(feature_gen.get_api_tag(api_info['ivk_method'],
                                                 api_info['caller_cls_name'],
                                                 api_info['caller_mth_stm']
                                                 )
-                            )
+                        )
+    if len(api_tag_set) <= 0:
+        warnings.warn("Cannot retrieve the {} in the disassemble folder {}".format(api_name, disassemble_dir))
+        return
     api_class_set = set()
     for api_tag in api_tag_set:
-        api_class_set.add(seq_gen.get_api_class(api_tag))
+        api_class_set.add(feature_gen.get_api_class(api_tag))
 
     for api_tag in api_tag_set:
-        caller_class_name, caller_method_statement = seq_gen.get_caller_info(api_tag)
+        caller_class_name, caller_method_statement = feature_gen.get_caller_info(api_tag)
         smali_dirs = dex_manip.retrieve_smali_dirs(disassemble_dir)
         smali_path_of_class = None
         for smali_dir in smali_dirs:
@@ -409,19 +436,15 @@ def create_entry_point(disassemble_dir):
         return 'L' + full_classname + '.method ' + ENTRY_METHOD_STATEMENT
 
 
-def insert_api(api_name, root_call, disassemble_dir):
+def insert_api(api_name, disassemble_dir):
     """
     insert an api.
 
     Parameters
     -------
     @param api_name, composite of class name and method name
-    @param api_info, invoke information about api, obtaining by vocab_info
-    @param root_call, a tuple of several root nodes (owing to the composite of several subgrashs)
     @param disassemble_dir, work directory
     """
-    assert len(root_call) > 0, "Expect at least a root call."
-
     api_info = InverseDroidFeature.vocab_info[InverseDroidFeature.vocab.index(api_name)]
     class_name, method_name = api_name.split('->')
     invoke_types, return_classes, arguments = list(), list(), list()
@@ -581,10 +604,13 @@ def insert_api(api_name, root_call, disassemble_dir):
         )
 
     injection_done = False
-    if isinstance(root_call, str):
-        root_call = (root_call,)
+
+    # find a smali file for conducting injection
+    a_method = "abc"
+    root_call = a_method
     for rc in root_call:
         root_class_name, caller_method_statement = rc.split(';', 1)
+
         method_match = re.match(
             r'^([ ]*?)\.method\s+(?P<methodPre>([^ ].*?))\((?P<methodArg>(.*?))\)(?P<methodRtn>(.*?))$',
             caller_method_statement)
