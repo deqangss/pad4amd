@@ -131,40 +131,47 @@ class Apk2features(object):
             maximum_vocab_size = len(all_words) + 1
 
         selected_words = []
-        # 1. dangerous apis
+        # 1. dangerous permissions
         all_words_type = list(map(feat_type_dict.get, all_words))
         perm_pos = np.array(all_words_type)[...] == feat_gen.PERMISSION
         perm_features = np.array(all_words)[perm_pos]
         for perm in perm_features:
             if feat_gen.permission_check(perm):
                 selected_words.append(perm)
+        print(len(selected_words))
         # 2. intent
         intent_pos = np.array(all_words_type)[...] == feat_gen.INTENT
         intent_features = np.array(all_words)[intent_pos]
         for intent in intent_features:
             if feat_gen.intent_action_check(intent):
                 selected_words.append(intent)
+        print(len(selected_words))
         # 3. apis
         api_pos = np.array(all_words_type)[...] == feat_gen.SYS_API
         selected_words.extend(np.array(all_words)[api_pos])
-        for s_word in selected_words:
-            all_words.remove(s_word)
+        print(len(selected_words))
+        print(selected_words[-100:])
         print(maximum_vocab_size)
         print(len(selected_words))
-        append_maximum_vocab_size = maximum_vocab_size - len(selected_words)
-        append_maximum_vocab_size = 0 if append_maximum_vocab_size < 0 else append_maximum_vocab_size
-
-        if append_maximum_vocab_size > 0:
-            mal_feature_frequency = np.array(list(map(counter_mal.get, all_words)))
-            mal_feature_frequency[mal_feature_frequency == None] = 0
-            mal_feature_frequency /= float(np.sum(gt_labels))
-            ben_feature_frequency = np.array(list(map(counter_ben.get, all_words)))
-            ben_feature_frequency[ben_feature_frequency == None] = 0
-            ben_feature_frequency /= float(len(gt_labels) - np.sum(gt_labels))
-            feature_freq_diff = abs(mal_feature_frequency - ben_feature_frequency)
-            posi_selected = np.argsort(feature_freq_diff)[::-1][:append_maximum_vocab_size]
+        if len(selected_words) >= maximum_vocab_size:
+            all_words = selected_words
+        else:
+            for s_word in selected_words:
+                all_words.remove(s_word)
+        mal_feature_frequency = np.array(list(map(counter_mal.get, all_words)))
+        mal_feature_frequency[mal_feature_frequency == None] = 0
+        mal_feature_frequency /= float(np.sum(gt_labels))
+        ben_feature_frequency = np.array(list(map(counter_ben.get, all_words)))
+        ben_feature_frequency[ben_feature_frequency == None] = 0
+        ben_feature_frequency /= float(len(gt_labels) - np.sum(gt_labels))
+        feature_freq_diff = abs(mal_feature_frequency - ben_feature_frequency)
+        if len(selected_words) >= maximum_vocab_size:
+            posi_selected = np.argsort(feature_freq_diff)[::-1][:maximum_vocab_size]
+            selected_words = np.array([all_words[p] for p in posi_selected])
+            selected_words = selected_words[:maximum_vocab_size]
+        else:
+            posi_selected = np.argsort(feature_freq_diff)[::-1][:maximum_vocab_size - len(selected_words)]
             selected_words = np.array(selected_words + [all_words[p] for p in posi_selected])
-        selected_words = selected_words[:maximum_vocab_size]
         selected_word_type = list(map(feat_type_dict.get, selected_words))
         corresponding_word_info = list(map(feat_info_dict.get, selected_words))
 
