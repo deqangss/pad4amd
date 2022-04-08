@@ -139,10 +139,10 @@ class Apk2features(object):
             if feat_gen.permission_check(perm):
                 selected_words.append(perm)
 
-        hdw_pos = np.array(all_words_type)[...] == feat_gen.HARDWARE
-        hdw_features = np.array(all_words)[hdw_pos]
-        for hdw in hdw_features:
-            selected_words.append(hdw)
+        # hdw_pos = np.array(all_words_type)[...] == feat_gen.HARDWARE
+        # hdw_features = np.array(all_words)[hdw_pos]
+        # for hdw in hdw_features:
+        #     selected_words.append(hdw)
 
         # intent
         intent_pos = np.array(all_words_type)[...] == feat_gen.INTENT
