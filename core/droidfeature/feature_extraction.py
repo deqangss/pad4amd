@@ -139,11 +139,6 @@ class Apk2features(object):
             if feat_gen.permission_check(perm):
                 selected_words.append(perm)
 
-        # hdw_pos = np.array(all_words_type)[...] == feat_gen.HARDWARE
-        # hdw_features = np.array(all_words)[hdw_pos]
-        # for hdw in hdw_features:
-        #     selected_words.append(hdw)
-
         # intent
         intent_pos = np.array(all_words_type)[...] == feat_gen.INTENT
         intent_features = np.array(all_words)[intent_pos]
@@ -153,7 +148,6 @@ class Apk2features(object):
 
         # sensitive & suspicious apis
         api_pos = np.array(all_words_type)[...] == feat_gen.SYS_API
-        # selected_words.extend(np.array(all_words)[api_pos])
         api_features = list(np.array(all_words)[api_pos])
 
         all_words = api_features
