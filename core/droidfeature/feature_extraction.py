@@ -143,7 +143,6 @@ class Apk2features(object):
         for intent in intent_features:
             if feature_gen.intent_action_check(intent):
                 selected_words.append(intent)
-        print(len(selected_words))
 
         # suspicious apis
         api_pos = np.array(all_words_type)[...] == feature_gen.SYS_API
@@ -151,19 +150,14 @@ class Apk2features(object):
         for api in susp_apis:
             if feature_gen.check_suspicious_api(api):
                 selected_words.append(api)
-                # print(api)
-        print(len(selected_words))
+
         for api in susp_apis:
             if feature_gen.check_sensitive_api(api):
                 selected_words.append(api)
-                # print(api)
-        print(len(selected_words))
 
         for s_word in selected_words:
             all_words.remove(s_word)
 
-        import sys
-        sys.exit(1)
         # api_features = list(np.array(all_words)[api_pos])
 
         # all_words = api_features

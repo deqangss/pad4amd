@@ -89,28 +89,18 @@ DANGEROUS_API_SIMLI_TAGS = [
     'Ldalvik/system/DexClassLoader',
     'Ljava/lang/System;->loadLibrary',
     'Ljava/lang/Runtime',
-    # 'Landroid/os/Environment;->getExternalStorageDirectory',
-    # 'Landroid/telephony/TelephonyManager;->getDeviceId',
-    # 'Landroid/telephony/TelephonyManager;->getSubscriberId',
-    # 'setWifiEnabled',
-    # 'execHttpRequest',
-    # 'getPackageInfo',
-    # 'Landroid/content/Context;->getSystemService',
-    # 'setWifiDisabled',
-    # 'Ljava/net/HttpURLconnection;->setRequestMethod',
-    # 'Landroid/telephony/SmsMessage;->getMessageBody',
-    # 'Ljava/io/IOException;->printStackTrace',
-    # 'system/bin/su'
-    'getExternalStorageDirectory',
-    'getSimCountryIso',
+    'Landroid/os/Environment;->getExternalStorageDirectory',
+    'Landroid/telephony/TelephonyManager;->getDeviceId',
+    'Landroid/telephony/TelephonyManager;->getSubscriberId',
+    'setWifiEnabled',
     'execHttpRequest',
-    'sendTextMessage',
     'getPackageInfo',
-    'getSystemService',
+    'Landroid/content/Context;->getSystemService',
     'setWifiDisabled',
     'Ljava/net/HttpURLconnection;->setRequestMethod',
+    'Landroid/telephony/SmsMessage;->getMessageBody',
     'Ljava/io/IOException;->printStackTrace',
-    "system/bin/su"
+    'system/bin/su'
 ]
 
 # handle the restricted APIs
