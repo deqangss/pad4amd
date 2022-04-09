@@ -138,21 +138,21 @@ class PGD(BaseAttack):
         div_zero_overflow = torch.tensor(1e-30, dtype=gradients.dtype, device=gradients.device)
         red_ind = list(range(1, len(features.size())))
 
-        # # 1. look for allowable position, because only '1--> -' and '0 --> +' are permitted
-        # #    1.1 api insertion
-        # pos_insertion = (adv_features <= 0.5) * 1 * (adv_features >= 0.)
-        # grad4insertion = (gradients > 0) * pos_insertion * gradients
-        # # grad4insertion = (gradients > 0) * gradients
-        # #    2 api removal
-        # pos_removal = (adv_features > 0.5) * 1
-        # # if self.is_attacker:
-        # #     #     2.1 cope with the interdependent apis
-        # #     checking_nonexist_api = (pos_removal ^ self.omega) & self.omega
-        # #     grad4removal = torch.sum(gradients * checking_nonexist_api, dim=-1, keepdim=True) + gradients
-        # #     grad4removal *= (grad4removal < 0) * (pos_removal & self.manipulation_x)
-        # # else:
-        # grad4removal = (gradients < 0) * (pos_removal & self.manipulation_x) * gradients
-        # gradients = grad4removal + grad4insertion
+        # 1. look for allowable position, because only '1--> -' and '0 --> +' are permitted
+        #    1.1 api insertion
+        pos_insertion = (adv_features <= 0.5) * 1 * (adv_features >= 0.)
+        grad4insertion = (gradients > 0) * pos_insertion * gradients
+        # grad4insertion = (gradients > 0) * gradients
+        #    2 api removal
+        pos_removal = (adv_features > 0.5) * 1
+        # if self.is_attacker:
+        #     #     2.1 cope with the interdependent apis
+        #     checking_nonexist_api = (pos_removal ^ self.omega) & self.omega
+        #     grad4removal = torch.sum(gradients * checking_nonexist_api, dim=-1, keepdim=True) + gradients
+        #     grad4removal *= (grad4removal < 0) * (pos_removal & self.manipulation_x)
+        # else:
+        grad4removal = (gradients < 0) * (pos_removal & self.manipulation_x) * gradients
+        gradients = grad4removal + grad4insertion
 
         # 3. norm
         if self.norm == 'linf':
