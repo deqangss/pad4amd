@@ -95,7 +95,7 @@ class MaxAdvTraining(object):
         for i in range(adv_epochs):
             losses, accuracies = [], []
             for idx_batch, (x_batch, y_batch) in enumerate(train_data_producer):
-                x_batch, y_batch = utils.to_tensor(x_batch, y_batch.long(), self.model.device)
+                x_batch, y_batch = utils.to_tensor(x_batch.double(), y_batch.long(), self.model.device)
                 batch_size = x_batch.shape[0]
                 # make data
                 # 1. add pepper and salt noises
