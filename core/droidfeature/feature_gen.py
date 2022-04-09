@@ -100,7 +100,7 @@ DANGEROUS_API_SIMLI_TAGS = [
     'Ljava/net/HttpURLconnection;->setRequestMethod',
     'Landroid/telephony/SmsMessage;->getMessageBody',
     'Ljava/io/IOException;->printStackTrace',
-    'system/bin/su'
+    'system/bin/su'   # non-alike an api but emerging in Drebin paper
 ]
 
 # handle the restricted APIs
