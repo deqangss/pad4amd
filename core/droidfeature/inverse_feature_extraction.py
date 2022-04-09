@@ -271,15 +271,10 @@ class InverseDroidFeature(object):
                     feature_info = InverseDroidFeature.vocab_info[idx]
                     if op == OP_REMOVAL:
                         assert feature in feature_list
-                        print(feature_type)
                         if feature_type in [feature_gen.ACTIVITY, feature_gen.SERVICE, feature_gen.RECEIVER,
                                             feature_gen.PROVIDER]:
-                            pass
-                            # raise NotImplementedError
+                            raise NotImplementedError # todo
                         elif feature_type == feature_gen.SYS_API:
-                            if 'Ljava/lang/reflect' in feature:
-                                print(feature_path)
-                                print(feature)
                             remove_api(feature, dst_file)
                         else:
                             raise ValueError("{} may be un-removed".format(feature_type))
@@ -287,8 +282,7 @@ class InverseDroidFeature(object):
                         # A large scale of insertion operations will trigger unexpected issues, such as method limitation in a class
                         if feature_type in [feature_gen.ACTIVITY, feature_gen.SERVICE, feature_gen.RECEIVER,
                                             feature_gen.PROVIDER]:
-                            pass
-                            # raise NotImplementedError
+                            raise NotImplementedError  # todo
                         elif feature_type == feature_gen.PERMISSION:
                             new_manifest_tree = xml_manip.insert_elem_manifest(manifest_tree, "uses-permission",
                                                                                feature)
