@@ -273,8 +273,11 @@ class InverseDroidFeature(object):
                         assert feature in feature_list
                         if feature_type in [feature_gen.ACTIVITY, feature_gen.SERVICE, feature_gen.RECEIVER,
                                             feature_gen.PROVIDER]:
-                            raise NotImplementedError # todo
+                            pass # raise NotImplementedError # todo
                         elif feature_type == feature_gen.SYS_API:
+                            if not all(['invoke\-interface' in feat_info for feat_info in feature_info]):
+                                print(feature)
+                                print(feature_path)
                             remove_api(feature, dst_file)
                         else:
                             raise ValueError("{} may be un-removed".format(feature_type))
@@ -282,7 +285,7 @@ class InverseDroidFeature(object):
                         # A large scale of insertion operations will trigger unexpected issues, such as method limitation in a class
                         if feature_type in [feature_gen.ACTIVITY, feature_gen.SERVICE, feature_gen.RECEIVER,
                                             feature_gen.PROVIDER]:
-                            raise NotImplementedError  # todo
+                            pass # raise NotImplementedError  # todo
                         elif feature_type == feature_gen.PERMISSION:
                             new_manifest_tree = xml_manip.insert_elem_manifest(manifest_tree, "uses-permission",
                                                                                feature)

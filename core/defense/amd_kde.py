@@ -136,7 +136,7 @@ class KernelDensityEstimation(DensityEstimatorTemplate):
                 y_conf_batches = []
                 x_prob_batches = []
                 for x, adj, y, _1 in test_data_producer:
-                    x, adj, y = utils.to_tensor(x, adj, y, self.device)
+                    x, adj, y = utils.to_tensor(x.double(), adj, y, self.device)
                     x_hidden, logit = self.forward(x, adj)
                     y_conf_batches.append(F.softmax(logit, dim=-1))
                     x_prob_batches.append(self.forward_g(x_hidden, logit.argmax(dim=1)))

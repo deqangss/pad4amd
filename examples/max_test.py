@@ -136,7 +136,7 @@ def _main():
     #                                    name=args.model_name,
     #                                    **hp_params
     #                                    )
-    model = model.to(dv)
+    model = model.to(dv).double()
     if args.model == 'kde':
         model = KernelDensityEstimation(model,
                                         n_centers=hp_params['n_centers'],

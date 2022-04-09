@@ -37,7 +37,7 @@ class OMPA(BaseAttack):
         Parameters
         -----------
         @param model, a victim model
-        @param x: torch.FloatTensor, node feature vectors (each represents the occurrences of apis in a graph) with shape [batch_size, number_of_graphs, vocab_dim]
+        @param x: torch.DoubleTensor, node feature vectors (each represents the occurrences of apis in a graph) with shape [batch_size, number_of_graphs, vocab_dim]
         @param label: torch.LongTensor, ground truth labels
         @param m: Integer, maximum number of perturbations
         @param lambda_, float, penalty factor
@@ -50,7 +50,7 @@ class OMPA(BaseAttack):
         assert 0 < step_length <= 1.
         # node, adj, label = utils.to_device(x, adj, label, self.device)
         if clone:
-            adv_x = x.detach().clone().to(torch.float)
+            adv_x = x.detach().clone().to(torch.double)
         else:
             adv_x = x
         self.lambda_ = lambda_
@@ -107,7 +107,7 @@ class OMPA(BaseAttack):
         # 4. look for important position
         absolute_grad = torch.abs(gradients).reshape(features.shape[0], -1)
         _, position = torch.max(absolute_grad, dim=-1)
-        perturbations = F.one_hot(position, num_classes=absolute_grad.shape[-1]).float()
+        perturbations = F.one_hot(position, num_classes=absolute_grad.shape[-1]).double()
         perturbations = perturbations.reshape(features.shape)
         directions = torch.sign(gradients) * (perturbations > 1e-6)
 
