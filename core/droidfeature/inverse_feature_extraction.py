@@ -275,8 +275,9 @@ class InverseDroidFeature(object):
                                             feature_gen.PROVIDER]:
                             pass # raise NotImplementedError # todo
                         elif feature_type == feature_gen.SYS_API:
-                            if not all(['invoke\-interface' in feat_info for feat_info in feature_info]):
+                            if any(['invoke\-interface' in feat_info for feat_info in feature_info]):
                                 print(feature)
+                                print(feature_info)
                                 print(feature_path)
                             remove_api(feature, dst_file)
                         else:
