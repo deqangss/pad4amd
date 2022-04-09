@@ -259,7 +259,7 @@ class AdvMalwareDetectorICNN(nn.Module, DensityEstimatorTemplate):
         probabilities = []
         with torch.no_grad():
             for x_val, y_val in validation_data_producer:
-                x_val, y_val = utils.to_tensor(x_val, y_val.long(), self.device)
+                x_val, y_val = utils.to_tensor(x_val.double(), y_val.long(), self.device)
                 x_logits = self.forward_g(x_val)
                 probabilities.append(x_logits)
             s, _ = torch.sort(torch.cat(probabilities, dim=0))
