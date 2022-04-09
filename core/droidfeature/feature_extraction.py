@@ -150,20 +150,15 @@ class Apk2features(object):
         for api in susp_apis:
             if feature_gen.check_suspicious_api(api) or feature_gen.check_sensitive_api(api):
                 selected_words.append(api)
-
-        # remove components
-        api_comps = np.array(all_words_type)[...] == feature_gen.ACTIVITY
-        api_comps = api_comps | (np.array(all_words_type)[...] == feature_gen.SERVICE)
-        api_comps = api_comps | (np.array(all_words_type)[...] == feature_gen.RECEIVER)
-        api_comps = api_comps | (np.array(all_words_type)[...] == feature_gen.PROVIDER)
-        all_words = list(np.array(all_words)[~api_comps])
-
+        # # remove components
+        # api_comps = np.array(all_words_type)[...] == feature_gen.ACTIVITY
+        # api_comps = api_comps | (np.array(all_words_type)[...] == feature_gen.SERVICE)
+        # api_comps = api_comps | (np.array(all_words_type)[...] == feature_gen.RECEIVER)
+        # api_comps = api_comps | (np.array(all_words_type)[...] == feature_gen.PROVIDER)
+        # all_words = list(np.array(all_words)[~api_comps])
         for s_word in selected_words:
             all_words.remove(s_word)
 
-        # api_features = list(np.array(all_words)[api_pos])
-
-        # all_words = api_features
         mal_feature_frequency = np.array(list(map(counter_mal.get, all_words)))
         mal_feature_frequency[mal_feature_frequency == None] = 0
         mal_feature_frequency /= float(np.sum(gt_labels))
@@ -173,7 +168,6 @@ class Apk2features(object):
         feature_freq_diff = mal_feature_frequency - ben_feature_frequency
         posi_selected = np.argsort(feature_freq_diff)[::-1]
         ordered_words = selected_words + [all_words[p] for p in posi_selected]
-        # ordered_words = [all_words[p] for p in posi_selected]
         selected_words = ordered_words[:maximum_vocab_size]
         selected_word_type = list(map(feat_type_dict.get, selected_words))
         corresponding_word_info = list(map(feat_info_dict.get, selected_words))
