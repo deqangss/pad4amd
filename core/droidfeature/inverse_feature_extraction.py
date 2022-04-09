@@ -200,7 +200,7 @@ class InverseDroidFeature(object):
         assert isinstance(word, str) and isinstance(word_info, set)
         # see: https://docs.oracle.com/javase/specs/jvms/se10/html/jvms-2.html#jvms-2.12, we do not hide reflection-related API again
         if re.search(r'\<init\>|\<clinit\>', word) is None and \
-                re.search(r'Ljava\/lang\/reflect\/|Ljava\/lang\/Object;->getClass|Ljava\/lang\/Class;->getMethod',
+                re.search(r'Ljava\/lang\/reflect\/Method;->invoke|Ljava\/lang\/Object;->getClass|Ljava\/lang\/Class;->getMethod',
                           word) is None and \
                 all(
                     [re.search(r'invoke\-virtual|invoke\-static|invoke\-interface', info) for info in word_info]):

@@ -53,6 +53,9 @@ class BaseAttack(Module):
     def initialize(self):
         if self.manipulation_x is None:
             self.manipulation_x = self.inverse_feature.get_manipulation()
+        print(np.sum(self.manipulation_x))
+        import sys
+        sys.exit(1)
         self.manipulation_x = torch.LongTensor(self.manipulation_x).to(self.device)
         if self.omega is None:
             self.omega = self.inverse_feature.get_interdependent_apis()
