@@ -271,6 +271,7 @@ class InverseDroidFeature(object):
                     feature_info = InverseDroidFeature.vocab_info[idx]
                     if op == OP_REMOVAL:
                         assert feature in feature_list
+                        print(feature_type)
                         if feature_type in [feature_gen.ACTIVITY, feature_gen.SERVICE, feature_gen.RECEIVER,
                                             feature_gen.PROVIDER]:
                             pass

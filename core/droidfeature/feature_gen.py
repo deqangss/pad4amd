@@ -421,7 +421,7 @@ def get_feature_list(feature):
                 _api_name = get_api_name(feature_elements[0])
                 feature_list.append(_api_name)
                 feature_type_list.append(feature_elements[1])
-                feature_info_list.append(TAG_SPLITTER.join(feature_elements[0]))
+                feature_info_list.append(feature_elements[0])
         else:
             raise ValueError("Expect String or List, but got {}.".format(type(feat)))
     return feature_list, feature_info_list, feature_type_list
