@@ -158,8 +158,10 @@ class Apk2features(object):
         api_comps = api_comps | (np.array(all_words_type)[...] == feature_gen.PROVIDER)
         print(np.sum(api_comps))
 
+        print(len(all_words))
         all_words = list(np.array(all_words)[~api_comps])
         print(len(all_words))
+        print(all_words[:10])
 
         for s_word in selected_words:
             all_words.remove(s_word)
