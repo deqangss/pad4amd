@@ -232,7 +232,7 @@ def _main():
     x_mod_integrated = []
     for x, y in mal_test_dataset_producer:
         x, y = utils.to_tensor(x, y.long(), model.device)
-        adv_x_batch = attack.perturb(model, x, y,
+        adv_x_batch = attack.perturb(model.double(), x.double(), y,
                                      steps_of_max=args.n_step_max,
                                      min_lambda_=1e-5,
                                      max_lambda_=1e5,

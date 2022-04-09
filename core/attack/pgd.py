@@ -99,7 +99,7 @@ class PGD(BaseAttack):
         mini_steps = [step_check] * (steps // step_check)
         mini_steps = mini_steps + [steps % step_check] if steps % step_check != 0 else mini_steps
 
-        adv_x = x.detach().clone().to(torch.float)
+        adv_x = x.detach().clone().to(torch.double)
         while self.lambda_ <= max_lambda_:
             pert_x_cont = None
             prev_done = None
