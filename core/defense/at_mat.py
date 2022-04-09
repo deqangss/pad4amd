@@ -102,7 +102,7 @@ class MaxAdvTraining(object):
                 x_batch_noises = torch.clamp(x_batch + utils.psn(x_batch, np.minimum(np.random.uniform(0, 1), 0.05)),
                                              min=0., max=1.)
                 x_batch_ = torch.cat([x_batch, x_batch_noises], dim=0)
-                y_batch_ = torch.cat([torch.zeros(batch_size, ), torch.ones(batch_size, )]).double().to(
+                y_batch_ = torch.cat([torch.zeros(batch_size, ), torch.ones(batch_size, )]).long().to(
                     self.model.device)
                 idx = torch.randperm(y_batch_.shape[0])
                 x_batch_ = x_batch_[idx]
