@@ -248,7 +248,6 @@ class InverseDroidFeature(object):
         @param app_path, String, app path
         @param save_dir, String, saving directory
         """
-        print(feature_path)
         features = feature_gen.read_from_disk(feature_path)
         feature_list, feature_info_list, feature_type_list = feature_gen.get_feature_list(features)
 
@@ -276,7 +275,9 @@ class InverseDroidFeature(object):
                                             feature_gen.PROVIDER]:
                             raise NotImplementedError
                         elif feature_type == feature_gen.SYS_API:
-                            print(feature)
+                            if 'Ljava/lang/reflect' in feature:
+                                print(feature_path)
+                                print(feature)
                             remove_api(feature, dst_file)
                         else:
                             raise ValueError("{} may be un-removed".format(feature_type))
