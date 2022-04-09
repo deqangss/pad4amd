@@ -102,7 +102,7 @@ class MaxAdvTraining(object):
                 x_batch_noises = torch.clamp(x_batch + utils.psn(x_batch, np.minimum(np.random.uniform(0, 1), 0.05)),
                                              min=0., max=1.)
                 x_batch_ = torch.cat([x_batch, x_batch_noises], dim=0)
-                y_batch_ = torch.cat([torch.zeros(batch_size, ), torch.ones(batch_size, )]).float().to(
+                y_batch_ = torch.cat([torch.zeros(batch_size, ), torch.ones(batch_size, )]).double().to(
                     self.model.device)
                 idx = torch.randperm(y_batch_.shape[0])
                 x_batch_ = x_batch_[idx]
@@ -126,7 +126,7 @@ class MaxAdvTraining(object):
                 total_time += time.time() - start_time
                 x_batch_ = torch.cat([x_batch_, pertb_mal_x], dim=0)
                 y_batch_ = torch.cat([y_batch_, torch.ones(pertb_mal_x.shape[:1]).to(
-                    self.model.device)]).float()
+                    self.model.device)]).double()
                 x_batch = torch.cat([x_batch, pertb_mal_x], dim=0)
                 y_batch = torch.cat([y_batch, torch.ones(pertb_mal_x.shape[:1]).to(self.model.device).long()])
                 start_time = time.time()
@@ -189,7 +189,7 @@ class MaxAdvTraining(object):
             res_val = []
             avg_acc_val = []
             for x_val, y_val in validation_data_producer:
-                x_val, y_val = utils.to_tensor(x_val, y_val.long(), self.model.device)
+                x_val, y_val = utils.to_tensor(x_val.double(), y_val.long(), self.model.device)
                 x_val_noises = torch.clamp(x_val + utils.psn(x_val, np.minimum(np.random.uniform(0, 1), 0.05)),
                                            min=0., max=1.)
                 x_val_ = torch.cat([x_val, x_val_noises], dim=0)

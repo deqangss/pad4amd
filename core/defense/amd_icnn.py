@@ -215,7 +215,7 @@ class AdvMalwareDetectorICNN(nn.Module, DensityEstimatorTemplate):
         for i, (x, y) in enumerate(test_data_producer):
             x, y = utils.to_tensor(x, y, self.device)
             x.requires_grad = True
-            base_lines = torch.zeros_like(x, dtype=torch.float32, device=self.device)
+            base_lines = torch.zeros_like(x, dtype=torch.double, device=self.device)
             base_lines[:, -1] = 1
             attribution_bs = ig_cls.attribute(x,
                                               baselines=base_lines,
@@ -294,13 +294,13 @@ class AdvMalwareDetectorICNN(nn.Module, DensityEstimatorTemplate):
             self.train()
             losses, accuracies = [], []
             for idx_batch, (x_train, y_train) in enumerate(train_data_producer):
-                x_train, y_train = utils.to_device(x_train.float(), y_train.long(), self.device)
+                x_train, y_train = utils.to_device(x_train.double(), y_train.long(), self.device)
                 # make data for training g
                 # 1. add pepper and salt noises
                 x_train_noises = torch.clamp(x_train + utils.psn(x_train, np.minimum(np.random.uniform(0, 1), 0.05)),
                                              min=0., max=1.)
                 x_train_ = torch.cat([x_train, x_train_noises], dim=0)
-                y_train_ = torch.cat([torch.zeros(x_train.shape[:1]), torch.ones(x_train.shape[:1])]).float().to(
+                y_train_ = torch.cat([torch.zeros(x_train.shape[:1]), torch.ones(x_train.shape[:1])]).double().to(
                     self.device)
                 idx = torch.randperm(y_train_.shape[0])
                 x_train_ = x_train_[idx]
@@ -338,7 +338,7 @@ class AdvMalwareDetectorICNN(nn.Module, DensityEstimatorTemplate):
             avg_acc_val = []
             with torch.no_grad():
                 for x_val, y_val in validation_data_producer:
-                    x_val, y_val = utils.to_device(x_val.float(), y_val.long(), self.device)
+                    x_val, y_val = utils.to_device(x_val.double(), y_val.long(), self.device)
                     x_val_noises = torch.clamp(x_val + utils.psn(x_val, np.minimum(np.random.uniform(0, 1), 0.05)),
                                                min=0., max=1.)
                     x_val_ = torch.cat([x_val, x_val_noises], dim=0)

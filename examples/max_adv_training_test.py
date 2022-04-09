@@ -78,7 +78,7 @@ def _main():
                                        )
     else:
         raise NotImplementedError
-    model = model.to(dv)
+    model = model.to(dv).double()
 
     # initialize the base attack model of max attack
     ompap = OMPAP(is_attacker=False, device=model.device)
