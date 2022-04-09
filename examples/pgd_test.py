@@ -139,7 +139,7 @@ def _main():
                                      args.n_step,
                                      args.step_length,
                                      step_check=args.step_check,
-                                     min_lambda_=1e-5,
+                                     min_lambda_=1e5,
                                      max_lambda_=1e5,
                                      verbose=True)
         y_cent_batch, x_density_batch = model.inference_batch_wise(adv_x_batch, y)
