@@ -273,7 +273,8 @@ class InverseDroidFeature(object):
                         assert feature in feature_list
                         if feature_type in [feature_gen.ACTIVITY, feature_gen.SERVICE, feature_gen.RECEIVER,
                                             feature_gen.PROVIDER]:
-                            raise NotImplementedError
+                            pass
+                            # raise NotImplementedError
                         elif feature_type == feature_gen.SYS_API:
                             if 'Ljava/lang/reflect' in feature:
                                 print(feature_path)
@@ -285,7 +286,8 @@ class InverseDroidFeature(object):
                         # A large scale of insertion operations will trigger unexpected issues, such as method limitation in a class
                         if feature_type in [feature_gen.ACTIVITY, feature_gen.SERVICE, feature_gen.RECEIVER,
                                             feature_gen.PROVIDER]:
-                            raise NotImplementedError
+                            pass
+                            # raise NotImplementedError
                         elif feature_type == feature_gen.PERMISSION:
                             new_manifest_tree = xml_manip.insert_elem_manifest(manifest_tree, "uses-permission",
                                                                                feature)
