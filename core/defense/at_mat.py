@@ -124,7 +124,7 @@ class MaxAdvTraining(object):
                                                   verbose=self.attack_param['verbose']
                                                   )
                 total_time += time.time() - start_time
-                x_batch_ = torch.cat([x_batch_, pertb_mal_x], dim=0)
+                x_batch_ = torch.cat([x_batch_, pertb_mal_x], dim=0).double()
                 y_batch_ = torch.cat([y_batch_, torch.ones(pertb_mal_x.shape[:1]).to(
                     self.model.device)]).double()
                 x_batch = torch.cat([x_batch, pertb_mal_x], dim=0)
