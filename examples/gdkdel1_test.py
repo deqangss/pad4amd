@@ -177,8 +177,7 @@ def _main():
 
     if args.real:
         attack.produce_adv_mal(x_mod_integrated, mal_test_x.tolist(),
-                               config.get('dataset', 'malware_dir'),
-                               adj_mod=None)
+                               config.get('dataset', 'malware_dir'))
 
 
 if __name__ == '__main__':
