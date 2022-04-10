@@ -47,7 +47,6 @@ class BaseAttack(Module):
         self.device = device
         self.omega = omega
         self.inverse_feature = InverseDroidFeature()
-        self.padding_mask = None
         self.initialize()
 
     def initialize(self):
@@ -73,7 +72,7 @@ class BaseAttack(Module):
         """
         raise NotImplementedError
 
-    def produce_adv_mal(self, x_mod_list, feature_path_list, app_dir, adj_mod=None, save_dir=None):
+    def produce_adv_mal(self, x_mod_list, feature_path_list, app_dir, save_dir=None):
         """
         produce adversarial malware in practice
 
@@ -82,11 +81,8 @@ class BaseAttack(Module):
         @param x_mod_list, list of tensor, each of which corresponds to the numerical modification applied to features
         @param feature_path_list, list of feature paths, each of which corresponds to the saved file of call graph
         @param app_dir, string, a directory (or a list of path) pointing to (pristine) malicious apps
-        @param adj_mod, modifications on adjacency matrix
         @param save_dir, directory for saving resultant apks
         """
-        if adj_mod is not None:
-            raise NotImplementedError("Un-support to apply the modifications of adjacency matrix to apps.")
         if len(x_mod_list) <= 0:
             return
         assert len(x_mod_list) == len(feature_path_list)
