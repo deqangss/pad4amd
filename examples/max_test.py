@@ -127,15 +127,18 @@ def _main():
                                name=args.model_name,
                                **hp_params
                                )
-    # if not(args.model == 'md_dnn' or args.model == 'kde'):
-    #     model = AdvMalwareDetectorICNN(model,
-    #                                    input_size=dataset.vocab_size,
-    #                                    n_classes=dataset.n_classes,
-    #                                    device=dv,
-    #                                    sample_weights=dataset.sample_weights,
-    #                                    name=args.model_name,
-    #                                    **hp_params
-    #                                    )
+    if not (args.model == 'md_dnn' or args.model == 'kde'):
+        if args.model == 'at_amd_pad' and hp_params['detector'] == 'none':
+            pass
+        else:
+            model = AdvMalwareDetectorICNN(model,
+                                           input_size=dataset.vocab_size,
+                                           n_classes=dataset.n_classes,
+                                           device=dv,
+                                           sample_weights=dataset.sample_weights,
+                                           name=args.model_name,
+                                           **hp_params
+                                           )
     model = model.to(dv).double()
     if args.model == 'kde':
         model = KernelDensityEstimation(model,
