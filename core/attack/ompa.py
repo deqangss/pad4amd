@@ -76,8 +76,7 @@ class OMPA(BaseAttack):
                         (adv_x.unsqueeze(dim=0) + perturbations).permute(1, 0, 2).reshape(b * steps, dim),
                         min=0,
                         max=1)
-                    logits_ = model.forward(adv_x_expanded)
-                    adv_loss_ = self.get_loss(model, logits_, torch.cat([label] * steps, dim=0))
+                    adv_loss_, _1 = self.get_loss(model, adv_x_expanded, torch.cat([label] * steps, dim=0))
                     _, worst_pos = torch.max(adv_loss_.reshape(b, steps), dim=1)
                     adv_x = adv_x_expanded.reshape(b, steps, dim)[torch.arange(b), worst_pos]
             else:
@@ -121,7 +120,7 @@ class OMPA(BaseAttack):
         logits_f = model.forward_f(adv_x)
         ce = F.cross_entropy(logits_f, label, reduction='none')
         y_pred = logits_f.argmax(1)
-        if 'forward_g' in type(model).__dict__.keys() and (not self.oblivion):
+        if hasattr(model, 'forward_g') and (not self.oblivion):
             logits_g = model.forward_g(adv_x)
             if self.is_attacker:
                 loss_no_reduction = ce + self.lambda_ * (torch.clamp(

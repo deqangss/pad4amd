@@ -94,7 +94,7 @@ def _main():
                                        name=args.model_name,
                                        **hp_params
                                        )
-    model = model.to(dv)
+    model = model.to(dv).double()
     if args.model == 'kde':
         model = KernelDensityEstimation(model,
                                         n_centers=hp_params['n_centers'],
@@ -124,7 +124,7 @@ def _main():
     x_mod_integrated = []
     model.eval()
     for x, y in mal_test_dataset_producer:
-        x, y = utils.to_tensor(x, y.long(), model.device)
+        x, y = utils.to_tensor(x.double(), y.long(), model.device)
         adv_x_batch = attack.perturb(model, x, y,
                                      args.m_pertb,
                                      args.lambda_,
