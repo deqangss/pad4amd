@@ -9,7 +9,7 @@ from config import logging, ErrorHandler
 logger = logging.getLogger('core.attack.gdkde')
 logger.addHandler(ErrorHandler)
 
-EXP_OVER_FLOW = 1e-30
+EXP_OVER_FLOW = 1e-90
 
 
 class GDKDE(BaseAttack):
@@ -131,7 +131,7 @@ class GDKDE(BaseAttack):
         return adv_x
 
     def get_perturbation(self, gradients, features, adv_features):
-        div_zero_overflow = torch.tensor(1e-60, dtype=gradients.dtype, device=gradients.device)
+        div_zero_overflow = torch.tensor(EXP_OVER_FLOW, dtype=gradients.dtype, device=gradients.device)
         red_ind = list(range(1, len(features.size())))
 
         # 1. look for allowable position, because only '1--> -' and '0 --> +' are permitted
