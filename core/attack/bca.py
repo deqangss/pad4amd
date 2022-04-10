@@ -70,7 +70,6 @@ class BCA(BaseAttack):
                 adv_x = get_x0(adv_x, rounding_threshold=0.5, is_sample=True)
             var_adv_x = torch.autograd.Variable(adv_x, requires_grad=True)
             loss, done = self.get_loss(model, var_adv_x, label, self.lambda_)
-            print("debug: iteration {} accuracy {}".format(t + 1, torch.sum(done).item()/len(done)))
             if torch.all(done):
                 break
             grad = torch.autograd.grad(torch.mean(loss), var_adv_x)[0]
@@ -105,6 +104,7 @@ class BCA(BaseAttack):
         adv_x = x.detach().clone().to(torch.double)
         while self.lambda_ <= max_lambda_:
             _, done = self.get_loss(model, adv_x, label, self.lambda_)
+            print("debug: lambda {} accuracy {}".format(self.lambda_, torch.sum(done).item() / len(done)))
             if torch.all(done):
                 break
             pert_x = self._perturb(model, adv_x[~done], label[~done],
