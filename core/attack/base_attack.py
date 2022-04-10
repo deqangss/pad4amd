@@ -129,7 +129,7 @@ class BaseAttack(Module):
             logits_g = model.forward_g(adv_x)
             tau = model.get_tau_sample_wise()
             if self.is_attacker:
-                loss_no_reduction = ce - lambda_ * (torch.clamp(tau - logits_g,
+                loss_no_reduction = ce + lambda_ * (torch.clamp(tau - logits_g,
                                                                 max=self.kappa)
                                                     )
             else:
