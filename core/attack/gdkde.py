@@ -19,7 +19,7 @@ class GDKDE(BaseAttack):
 
     Parameters
     ---------
-    @param ben_hidden: torch.Tensor, hidden representation of benign files on the hidden space
+    @param benign_feat: torch.Tensor, representation of benign files on the feature space
     @param bandwidth: float, variance of gaussian distribution
     @param penalty_factor: float, penalty factor on kernel density estimation
     @param is_attacker, Boolean, play the role of attacker (note: the defender conducts adversarial training)
@@ -30,21 +30,21 @@ class GDKDE(BaseAttack):
     @param device, 'cpu' or 'cuda'
     """
 
-    def __init__(self, ben_hidden=None, bandwidth=20., penalty_factor=1000.,
+    def __init__(self, benign_feat=None, bandwidth=20., penalty_factor=1000.,
                  is_attacker=True, oblivion=False, kappa=1., manipulation_x=None, omega=None, device=None):
         super(GDKDE, self).__init__(is_attacker, oblivion, kappa, manipulation_x, omega, device)
-        self.ben_hidden = ben_hidden
+        self.benign_feat = benign_feat
         self.bandwidth = bandwidth
         self.penalty_factor = penalty_factor
         self.lambda_ = 1.
-        if isinstance(self.ben_hidden, torch.Tensor):
+        if isinstance(self.benign_feat, torch.Tensor):
             pass
-        elif isinstance(self.ben_hidden, np.ndarray):
-            self.ben_hidden = torch.tensor(self.ben_hidden, device=device)
+        elif isinstance(self.benign_feat, np.ndarray):
+            self.benign_feat = torch.tensor(self.benign_feat, device=device).double()
         else:
             raise TypeError
 
-    def _perturb(self, model, x, adj=None, label=None,
+    def _perturb(self, model, x, label=None,
                  steps=10,
                  step_length=1.,
                  lambda_=1.):
@@ -54,8 +54,7 @@ class GDKDE(BaseAttack):
         Parameters
         -----------
         @param model, a victim model
-        @param x: torch.FloatTensor, node feature vectors (each represents the occurrences of apis in a graph) with shape [batch_size, number_of_graphs, vocab_dim]
-        @param adj: torch.FloatTensor or None, adjacency matrix (if not None, the shape is [number_of_graphs, batch_size, vocab_dim, vocab_dim])
+        @param x: torch.DoubleTensor, feature vectors with shape [batch_size, vocab_dim]
         @param label: torch.LongTensor, ground truth labels
         @param steps: Integer, maximum number of iterations
         @param step_length: float, the step length in each iteration
@@ -69,15 +68,14 @@ class GDKDE(BaseAttack):
         model.eval()
         for t in range(steps):
             var_adv_x = torch.autograd.Variable(adv_x, requires_grad=True)
-            hidden, logit = model.forward(var_adv_x, adj)
-            loss, done = self.get_loss(model, logit, label, hidden)
+            loss, done = self.get_loss(model, var_adv_x, label)
             grad = torch.autograd.grad(torch.mean(loss), var_adv_x)[0]
             perturbation = self.get_perturbation(grad, x, adv_x)
             # avoid to perturb the examples that are successful to evade the victim
             adv_x = torch.clamp(adv_x + perturbation * step_length, min=0., max=1.)
         return adv_x
 
-    def perturb(self, model, x, adj=None, label=None,
+    def perturb(self, model, x, label=None,
                 steps=10,
                 step_length=1.,
                 step_check=10,
@@ -90,32 +88,32 @@ class GDKDE(BaseAttack):
         """
         assert 0 < min_lambda_ <= max_lambda_
         assert steps >= 0 and step_check > 0 and step_length >= 0
-        if 'k' in list(model.__dict__.keys()) and model.k > 0:
-            logger.warning("The attack leads to dense graph and trigger the issue of out of memory.")
         model.eval()
 
-        self.lambda_ = min_lambda_
+        if hasattr(model, 'forward_g'):
+            self.lambda_ = min_lambda_
+        else:
+            self.lambda_ = max_lambda_
+
         mini_steps = [step_check] * (steps // step_check)
         mini_steps = mini_steps + [steps % step_check] if steps % step_check != 0 else mini_steps
 
-        adv_x = x.detach().clone().to(torch.float)
+        adv_x = x.detach().clone().to(torch.double)
         while self.lambda_ <= max_lambda_:
             pert_x_cont = None
             prev_done = None
             for i, mini_step in enumerate(mini_steps):
-                hidden, logit = model.forward(adv_x, adj)
-                _, done = self.get_loss(model, logit, label, hidden)
+                _, done = self.get_loss(model, adv_x, label)
+                print("debug: lambda {} accuracy {}".format(self.lambda_, torch.sum(done).item() / len(done)))
                 if torch.all(done):
                     break
                 if i == 0:
                     adv_x[~done] = x[~done]  # recompute the perturbation under other penalty factors
-                    adv_adj = None if adj is None else adj[~done]
                     prev_done = done
                 else:
                     adv_x[~done] = pert_x_cont[~done[~prev_done]]
-                    adv_adj = None if adj is None else adj[~done]
                     prev_done = done
-                pert_x_cont = self._perturb(model, adv_x[~done], adv_adj, label[~done],
+                pert_x_cont = self._perturb(model, adv_x[~done], label[~done],
                                             mini_step,
                                             step_length,
                                             lambda_=self.lambda_
@@ -127,8 +125,7 @@ class GDKDE(BaseAttack):
             if not self.check_lambda(model):
                 break
         with torch.no_grad():
-            hidden, logit = model.forward(adv_x, adj)
-            _, done = self.get_loss(model, logit, label, hidden)
+            _, done = self.get_loss(model, adv_x, label)
             if verbose:
                 logger.info(f"gdkde: attack effectiveness {done.sum().item() / x.size()[0] * 100:.3}%.")
         return adv_x
@@ -136,14 +133,12 @@ class GDKDE(BaseAttack):
     def get_perturbation(self, gradients, features, adv_features):
         div_zero_overflow = torch.tensor(1e-30, dtype=gradients.dtype, device=gradients.device)
         red_ind = list(range(1, len(features.size())))
-        # 1. mask paddings
-        gradients = gradients * self.padding_mask
 
-        # 2. look for allowable position, because only '1--> -' and '0 --> +' are permitted
-        #    2.1 api insertion
+        # 1. look for allowable position, because only '1--> -' and '0 --> +' are permitted
+        #    1.1 api insertion
         pos_insertion = (adv_features <= 0.5) * 1 * (adv_features >= 0.)
         grad4insertion = (gradients > 0) * pos_insertion * gradients
-        #    2.2 api removal
+        #    1.2 api removal
         pos_removal = (adv_features > 0.5) * 1
         # #     2.2.1 cope with the interdependent apis
         # checking_nonexist_api = (pos_removal ^ self.omega) & self.omega
@@ -152,7 +147,7 @@ class GDKDE(BaseAttack):
         grad4removal = (gradients < 0) * (pos_removal & self.manipulation_x) * gradients
         gradients = grad4removal + grad4insertion
 
-        # 3. normalize gradient in the direction of l2 norm
+        # 2. normalize gradient in the direction of l2 norm
         l2norm = torch.sqrt(torch.max(div_zero_overflow, torch.sum(gradients ** 2, dim=red_ind, keepdim=True)))
         perturbation = torch.minimum(
             torch.tensor(1., dtype=features.dtype, device=features.device),
@@ -160,22 +155,21 @@ class GDKDE(BaseAttack):
         )
         return perturbation
 
-    def get_loss(self, model, logit, label, hidden):
-        ce = F.cross_entropy(logit, label, reduction='none')
-        y_pred = logit.argmax(1)
-        square = torch.sum(torch.square(self.ben_hidden.unsqueeze(dim=0) - hidden.unsqueeze(dim=1)), dim=-1)
+    def get_loss(self, model, adv_x, label):
+        logits_f = model.forward_f(adv_x)
+        ce = F.cross_entropy(logits_f, label, reduction='none')
+        y_pred = logits_f.argmax(1)
+        square = torch.sum(torch.square(self.benign_feat.unsqueeze(dim=0) - adv_x.unsqueeze(dim=1)), dim=-1)
         kde = torch.mean(torch.exp(-square / self.bandwidth), dim=-1)
         loss_no_reduction = ce + self.penalty_factor * kde
-        if 'forward_g' in type(model).__dict__.keys() and (not self.oblivion):
-            de = model.forward_g(hidden, y_pred)
+        if hasattr(model, 'forward_g') and (not self.oblivion):
+            logits_g = model.forward_g(adv_x)
             tau = model.get_tau_sample_wise(y_pred)
             if self.is_attacker:
-                loss_no_reduction += self.lambda_ * (torch.clamp(
-                    torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW), max=self.kappa))
+                loss_no_reduction += self.lambda_ * (torch.clamp(tau - logits_g, max=self.kappa))
             else:
-                loss_no_reduction += self.lambda_ * \
-                                     torch.log(de + EXP_OVER_FLOW) - torch.log(tau + EXP_OVER_FLOW)
-            done = (y_pred == 0.) & (de >= tau)
+                loss_no_reduction += self.lambda_ * (tau - logits_g)
+            done = (y_pred == 0.) & (logits_g <= tau)
         else:
             done = y_pred == 0.
         return loss_no_reduction, done
