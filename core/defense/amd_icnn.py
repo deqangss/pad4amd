@@ -181,7 +181,7 @@ class AdvMalwareDetectorICNN(nn.Module, DensityEstimatorTemplate):
         self.eval()
         with torch.no_grad():
             for x, y in test_data_producer:
-                x, y = utils.to_device(x, y.long(), self.device)
+                x, y = utils.to_device(x.double(), y.long(), self.device)
                 logits_f = self.forward_f(x)
                 y_cent.append(F.softmax(logits_f, dim=-1))
                 x_prob.append(self.forward_g(x))
