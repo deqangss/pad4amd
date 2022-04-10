@@ -104,7 +104,6 @@ class GDKDE(BaseAttack):
             prev_done = None
             for i, mini_step in enumerate(mini_steps):
                 _, done = self.get_loss(model, adv_x, label)
-                print("debug: lambda {} accuracy {}".format(self.lambda_, torch.sum(done).item() / len(done)))
                 if torch.all(done):
                     break
                 if i == 0:
