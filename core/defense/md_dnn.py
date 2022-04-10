@@ -98,6 +98,8 @@ class DNNMalwareDetector(nn.Module):
 
         latent_representation = F.dropout(x, self.dropout, training=self.training)
         logits = self.dense_layers[-1](latent_representation)
+        max_e, _1 = torch.max(logits, dim=-1, keepdim=True)
+        logits -= max_e
         return logits
 
     def forward_f(self, x):
