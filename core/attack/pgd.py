@@ -89,11 +89,14 @@ class PGD(BaseAttack):
         enhance attack
         """
         assert 0 < min_lambda_ <= max_lambda_
-        self.lambda_ = min_lambda_
         if 'k' in list(model.__dict__.keys()) and model.k > 0:
             logger.warning("The attack leads to dense graph and trigger the issue of out of memory.")
         assert steps >= 0 and step_check > 0 and step_length >= 0
         model.eval()
+        if hasattr(model, 'forward_g'):
+            self.lambda_ = min_lambda_
+        else:
+            self.lambda_ = max_lambda_
         mini_steps = [step_check] * (steps // step_check)
         mini_steps = mini_steps + [steps % step_check] if steps % step_check != 0 else mini_steps
 

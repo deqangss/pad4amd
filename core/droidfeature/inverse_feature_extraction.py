@@ -159,7 +159,7 @@ class InverseDroidFeature(object):
         """
         All features are insertable and the apis that have public descriptor can be hidden by java reflection.
         For efficiency and simplicity consideration, this function only returns a mask to filter out the apis that are non-refelectable.
-        This means the value "1" in the mask vector corresponds to a reflectable api, and "0" means otherwise.
+        This means the value "1" in the mask vector corresponds to a removable feature, and "0" means otherwise.
         """
         manipulation = np.zeros((len(self.vocab),), dtype=np.float32)
         for i, v, v_info, v_type in zip(range(len(self.vocab)), self.vocab, self.vocab_info, self.vocab_type):
@@ -179,21 +179,14 @@ class InverseDroidFeature(object):
         return omega
 
     @staticmethod
-    def merge_features(cg_dict1, cg_dict2):
+    def merge_features(features_list1, features_list2):
         """
-        randomly pick a graph from cg1 and inject graphs of cg_dict2 into it
+        inject features of list1 into list2
         """
-        n_src_cgs = len(cg_dict1)
-        if n_src_cgs <= 0:
-            return cg_dict2
-        idx_mod = []
-        for root_call, cg in cg_dict2.items():
-            idx = random.choice(range(n_src_cgs))
-            src_root_call, src_cg = list(cg_dict1.items())[idx]
-            src_cg = nx.compose(src_cg, cg)
-            cg_dict1[src_root_call] = src_cg
-            idx_mod.append(idx)
-        return cg_dict1, idx_mod
+        assert isinstance(features_list1, list) and isinstance(features_list2, list)
+        for feature in features_list2:
+            features_list1.append(feature)
+        return features_list1
 
     @staticmethod
     def approx_check_public_method(word, word_info):

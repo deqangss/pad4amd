@@ -33,7 +33,7 @@ class Max(BaseAttack):
         Parameters
         -----------
         @param model, a victim model
-        @param x: torch.FloatTensor, node feature vectors (each represents the occurrences of apis in a graph) with shape [batch_size, vocab_dim]
+        @param x: torch.FloatTensor, feature vectors with shape [batch_size, vocab_dim]
         @param label: torch.LongTensor, ground truth labels
         @param steps_of_max: Integer, maximum number of iterations
         @param min_lambda_, float, minimum value of penalty factor

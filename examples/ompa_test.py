@@ -79,6 +79,7 @@ def _main():
         dv = 'cpu'
     else:
         dv = 'cuda'
+    # initial model
     model = DNNMalwareDetector(dataset.vocab_size,
                                dataset.n_classes,
                                device=dv,
@@ -86,14 +87,17 @@ def _main():
                                **hp_params
                                )
     if not (args.model == 'md_dnn' or args.model == 'kde'):
-        model = AdvMalwareDetectorICNN(model,
-                                       input_size=dataset.vocab_size,
-                                       n_classes=dataset.n_classes,
-                                       device=dv,
-                                       sample_weights=dataset.sample_weights,
-                                       name=args.model_name,
-                                       **hp_params
-                                       )
+        if args.model == 'at_amd_pad' and hp_params['detector'] == 'none':
+            pass
+        else:
+            model = AdvMalwareDetectorICNN(model,
+                                           input_size=dataset.vocab_size,
+                                           n_classes=dataset.n_classes,
+                                           device=dv,
+                                           sample_weights=dataset.sample_weights,
+                                           name=args.model_name,
+                                           **hp_params
+                                           )
     model = model.to(dv).double()
     if args.model == 'kde':
         model = KernelDensityEstimation(model,
@@ -153,8 +157,7 @@ def _main():
                                 os.path.join(save_dir, 'x_mod.list'))
     if args.real:
         attack.produce_adv_mal(x_mod_integrated, mal_test_x.tolist(),
-                               config.get('dataset', 'malware_dir'),
-                               adj_mod=None)
+                               config.get('dataset', 'malware_dir'))
 
 
 if __name__ == '__main__':

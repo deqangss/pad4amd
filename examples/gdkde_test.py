@@ -187,7 +187,6 @@ def _main():
         adv_app_dir = os.path.join(save_dir, 'adv_apps')
         attack.produce_adv_mal(x_mod_integrated, mal_test_x.tolist(),
                                config.get('dataset', 'malware_dir'),
-                               adj_mod=None,
                                save_dir=adv_app_dir)
         adv_feature_paths = dataset.apk_preprocess(adv_app_dir, update_feature_extraction=True)
 

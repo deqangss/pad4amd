@@ -7,7 +7,7 @@ import argparse
 import numpy as np
 
 from core.defense import Dataset
-from core.defense import MalwareDetector, KernelDensityEstimation, MalwareDetectorIndicator, MaxAdvTraining, PrincipledAdvTraining
+from core.defense import DNNMalwareDetector, KernelDensityEstimation, AdvMalwareDetectorICNN, MaxAdvTraining, PrincipledAdvTraining
 from core.attack import PGDl1
 from tools import utils
 from config import config, logging, ErrorHandler
@@ -29,47 +29,37 @@ atta_argparse.add_argument('--n_sample_times', type=int, default=1,
 atta_argparse.add_argument('--real', action='store_true', default=False,
                            help='whether produce the perturbed apks.')
 atta_argparse.add_argument('--model', type=str, default='maldet',
-                           choices=['maldet', 'kde', 'gmm', 'madvtrain', 'padvtrain'],
-                           help="model type, either of 'maldet', 'kde', 'gmm', 'madvtrain', and 'padvtrain'.")
+                           choices=['md_dnn', 'kde', 'amd_icnn', 'at_amd_pad', 'mad'],
+                           help="model type, either of 'md_dnn', 'kde', 'amd_icnn', 'at_amd_pad', and 'padvtrain'.")
 atta_argparse.add_argument('--model_name', type=str, default='xxxxxxxx-xxxxxx',
                            help='model timestamp.')
 
 
 def _main():
     args = atta_argparse.parse_args()
-    if args.model == 'maldet':
-        save_dir = config.get('experiments', 'malware_detector') + '_' + args.model_name
+    if args.model == 'md_dnn':
+        save_dir = config.get('experiments', 'md_dnn') + '_' + args.model_name
     elif args.model == 'kde':
         save_dir = config.get('experiments', 'kde') + '_' + args.model_name
-    elif args.model == 'gmm':
-        save_dir = config.get('experiments', 'gmm') + '_' + args.model_name
-    elif args.model == 'madvtrain':
+    elif args.model == 'amd_icnn':
+        save_dir = config.get('experiments', 'amd_icnn') + '_' + args.model_name
+    elif args.model == 'at_amd_pad':
         save_dir = config.get('experiments', 'm_adv_training') + '_' + args.model_name
     elif args.model == 'padvtrain':
         save_dir = config.get('experiments', 'p_adv_training') + '_' + args.model_name
     else:
-        raise TypeError("Expected 'maldet', 'kde', 'gmm', 'madvtrain' or 'padvtrain'.")
+        raise TypeError("Expected 'md_dnn', 'kde', 'amd_icnn', 'at_amd_pad', and 'padvtrain'.")
 
     hp_params = utils.read_pickle(os.path.join(save_dir, 'hparam.pkl'))
-    dataset = Dataset(k=hp_params['k'],
-                      is_adj=hp_params['is_adj'],
-                      feature_ext_args={'proc_number': hp_params['proc_number'],
-                                        'timeout': hp_params['timeout'],
-                                        'N': hp_params['N']
-                                        }
-                      )
+    dataset = Dataset(feature_ext_args={'proc_number': hp_params['proc_number']})
     test_x, testy = dataset.test_dataset
     mal_save_path = os.path.join(config.get('dataset', 'dataset_dir'), 'attack.idx')
     if not os.path.exists(mal_save_path):
         mal_test_x, mal_testy = test_x[testy == 1], testy[testy == 1]
-        from numpy import random
-        mal_count = len(mal_testy) if len(mal_testy) < 1000 else 1000
-        mal_test_x = random.choice(mal_test_x, mal_count, replace=False)
-        mal_testy = mal_testy[:mal_count]
         utils.dump_pickle_frd_space((mal_test_x, mal_testy), mal_save_path)
     else:
         mal_test_x, mal_testy = utils.read_pickle_frd_space(mal_save_path)
-        mal_count = len(mal_testy)
+    mal_count = len(mal_testy)
     if mal_count <= 0:
         return
     mal_test_dataset_producer = dataset.get_input_producer(mal_test_x, mal_testy,
@@ -82,22 +72,26 @@ def _main():
         dv = 'cpu'
     else:
         dv = 'cuda'
-    if args.model == 'maldet' or args.model == 'kde':
-        model = MalwareDetector(dataset.vocab_size,
-                                dataset.n_classes,
-                                device=dv,
-                                name=args.model_name,
-                                **hp_params
-                                )
-    else:
-        model = MalwareDetectorIndicator(vocab_size=dataset.vocab_size,
-                                         n_classes=dataset.n_classes,
-                                         device=dv,
-                                         sample_weights=dataset.sample_weights,
-                                         name=args.model_name,
-                                         **hp_params
-                                         )
-    model = model.to(dv)
+    # initial model
+    model = DNNMalwareDetector(dataset.vocab_size,
+                               dataset.n_classes,
+                               device=dv,
+                               name=args.model_name,
+                               **hp_params
+                               )
+    if not (args.model == 'md_dnn' or args.model == 'kde'):
+        if args.model == 'at_amd_pad' and hp_params['detector'] == 'none':
+            pass
+        else:
+            model = AdvMalwareDetectorICNN(model,
+                                           input_size=dataset.vocab_size,
+                                           n_classes=dataset.n_classes,
+                                           device=dv,
+                                           sample_weights=dataset.sample_weights,
+                                           name=args.model_name,
+                                           **hp_params
+                                           )
+    model = model.to(dv).double()
 
     if args.model == 'kde':
         model = KernelDensityEstimation(model,
@@ -107,7 +101,7 @@ def _main():
                                         ratio=hp_params['ratio']
                                         )
         model.load()
-    elif args.model == 'madvtrain':
+    elif args.model == 'at_amd_pad':
         adv_model = MaxAdvTraining(model)
         adv_model.load()
         model = adv_model.model
@@ -118,7 +112,7 @@ def _main():
     else:
         model.load()
     logger.info("Load model parameters from {}.".format(model.model_save_path))
-    # model.predict(mal_test_dataset_producer, indicator_masking=True)
+    model.predict(mal_test_dataset_producer, indicator_masking=True)
 
     attack = PGDl1(oblivion=args.oblivion, kappa=args.kappa, device=model.device)
 
@@ -126,45 +120,36 @@ def _main():
     y_cent_list, x_density_list = [], []
     x_mod_integrated = []
     model.eval()
-    for i in range(args.n_sample_times):
-        y_cent, x_density = [], []
-        x_mod = []
-        for x, a, y, g_ind in mal_test_dataset_producer:
-            x, a, y = utils.to_tensor(x, a, y, model.device)
-            adv_x_batch = attack.perturb(model, x, a, y,
-                                         args.m_pertb,
-                                         min_lambda_=1e-5,
-                                         max_lambda_=1e5,
-                                         base=args.base,
-                                         verbose=True)
-            y_cent_batch, x_density_batch = model.inference_batch_wise(adv_x_batch, a, y, use_indicator=True)
-            y_cent.append(y_cent_batch)
-            x_density.append(x_density_batch)
-            x_mod.extend(dataset.get_modification(adv_x_batch, x, g_ind, True))
-        y_cent_list.append(np.vstack(y_cent))
-        x_density_list.append(np.concatenate(x_density))
-        x_mod_integrated = dataset.modification_integ(x_mod_integrated, x_mod)
-    y_cent = np.mean(np.stack(y_cent_list, axis=1), axis=1)
-    y_pred = np.argmax(y_cent, axis=-1)
+    for x, y in mal_test_dataset_producer:
+        x, y = utils.to_tensor(x.double(), y.long(), model.device)
+        adv_x_batch = attack.perturb(model, x, y,
+                                     args.m_pertb,
+                                     min_lambda_=1e-5,
+                                     max_lambda_=1e5,
+                                     base=args.base,
+                                     verbose=True)
+        y_cent_batch, x_density_batch = model.inference_batch_wise(adv_x_batch, y)
+        y_cent_list.append(y_cent_batch)
+        x_density_list.append(x_density_batch)
+        x_mod_integrated.append((adv_x_batch - x).detach().cpu().numpy())
+    y_pred = np.argmax(np.concatenate(y_cent_list), axis=-1)
     logger.info(
         f'The mean accuracy on perturbed malware is {sum(y_pred == 1.) / mal_count * 100:.3f}%')
 
     if 'indicator' in type(model).__dict__.keys():
-        indicator_flag = model.indicator(np.mean(np.stack(x_density_list, axis=1), axis=1), y_pred)
+        indicator_flag = model.indicator(np.concatenate(x_density_list))
         logger.info(f"The effectiveness of indicator is {sum(~indicator_flag) / mal_count * 100:.3f}%")
         acc_w_indicator = (sum(~indicator_flag) + sum((y_pred == 1.) & indicator_flag)) / mal_count * 100
         logger.info(f'The mean accuracy on adversarial malware (w/ indicator) is {acc_w_indicator:.3f}%.')
 
     save_dir = os.path.join(config.get('experiments', 'pgdl1'), args.model)
-    if not os.path.exists(save_dir):
-        utils.mkdir(save_dir)
+    x_mod_integrated = np.concatenate(x_mod_integrated, axis=0)
     utils.dump_pickle_frd_space(x_mod_integrated,
                                 os.path.join(save_dir, 'x_mod.list'))
 
     if args.real:
         attack.produce_adv_mal(x_mod_integrated, mal_test_x.tolist(),
-                               config.get('dataset', 'malware_dir'),
-                               adj_mod=None)
+                               config.get('dataset', 'malware_dir'))
 
 
 if __name__ == '__main__':

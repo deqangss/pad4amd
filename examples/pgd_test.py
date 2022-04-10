@@ -84,23 +84,25 @@ def _main():
     else:
         dv = 'cuda'
     # initial model
-    if args.model == 'md_dnn' or args.model == 'kde':
-        model = DNNMalwareDetector(dataset.vocab_size,
-                                   dataset.n_classes,
-                                   device=dv,
-                                   name=args.model_name,
-                                   **hp_params
-                                   )
-    else:
-        model = AdvMalwareDetectorICNN(None,
-                                       input_size=dataset.vocab_size,
-                                       n_classes=dataset.n_classes,
-                                       device=dv,
-                                       sample_weights=dataset.sample_weights,
-                                       name=args.model_name,
-                                       **hp_params
-                                       )
-    model = model.to(dv)
+    model = DNNMalwareDetector(dataset.vocab_size,
+                               dataset.n_classes,
+                               device=dv,
+                               name=args.model_name,
+                               **hp_params
+                               )
+    if not (args.model == 'md_dnn' or args.model == 'kde'):
+        if args.model == 'at_amd_pad' and hp_params['detector'] == 'none':
+            pass
+        else:
+            model = AdvMalwareDetectorICNN(model,
+                                           input_size=dataset.vocab_size,
+                                           n_classes=dataset.n_classes,
+                                           device=dv,
+                                           sample_weights=dataset.sample_weights,
+                                           name=args.model_name,
+                                           **hp_params
+                                           )
+    model = model.to(dv).double()
     if args.model == 'kde':
         model = KernelDensityEstimation(model,
                                         n_centers=hp_params['n_centers'],
@@ -109,7 +111,7 @@ def _main():
                                         ratio=hp_params['ratio']
                                         )
         model.load()
-    elif args.model == 'madvtrain':
+    elif args.model == 'at_amd_pad':
         adv_model = MaxAdvTraining(model)
         adv_model.load()
         model = adv_model.model
@@ -134,8 +136,8 @@ def _main():
     x_mod_integrated = []
     model.eval()
     for x, y in mal_test_dataset_producer:
-        x, y = utils.to_tensor(x, y.long(), model.device)
-        adv_x_batch = attack.perturb(model.double(), x.double(), y,
+        x, y = utils.to_tensor(x.double(), y.long(), model.device)
+        adv_x_batch = attack.perturb(model.double(), x, y,
                                      args.n_step,
                                      args.step_length,
                                      step_check=args.step_check,
@@ -164,8 +166,7 @@ def _main():
 
     if args.real:
         attack.produce_adv_mal(x_mod_integrated, mal_test_x.tolist(),
-                               config.get('dataset', 'malware_dir'),
-                               adj_mod=None)
+                               config.get('dataset', 'malware_dir'))
 
 
 if __name__ == '__main__':

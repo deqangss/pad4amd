@@ -38,7 +38,10 @@ class OMPAP(OMPA):
         model.eval()
 
         adv_x = x.detach().clone().to(torch.double)
-        self.lambda_ = min_lambda_
+        if hasattr(model, 'forward_g'):
+            self.lambda_ = min_lambda_
+        else:
+            self.lambda_ = max_lambda_
         while self.lambda_ <= max_lambda_:
             with torch.no_grad():
                 _, done = self.get_loss(model, adv_x, label)

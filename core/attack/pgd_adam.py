@@ -17,7 +17,7 @@ from config import logging, ErrorHandler
 logger = logging.getLogger('core.attack.pgd')
 logger.addHandler(ErrorHandler)
 
-EXP_OVER_FLOW = 1e-30
+EXP_OVER_FLOW = 1e-120
 
 
 class PGDAdam(BaseAttack):
@@ -43,7 +43,7 @@ class PGDAdam(BaseAttack):
         self.round_threshold = rounding_threshold
         self.lambda_ = 1.
 
-    def _perturb(self, model, x, adj=None, label=None,
+    def _perturb(self, model, x, label=None,
                  steps=10,
                  lr=1.,
                  lambda_=1.,
@@ -54,8 +54,7 @@ class PGDAdam(BaseAttack):
         Parameters
         -----------
         @param model, a victim model
-        @param x: torch.FloatTensor, node feature vectors (each represents the occurrences of apis in a graph) with shape [batch_size, number_of_graphs, vocab_dim]
-        @param adj: torch.FloatTensor or None, adjacency matrix (if not None, the shape is [number_of_graphs, batch_size, vocab_dim, vocab_dim])
+        @param x: torch.DoubleTensor, feature vectors with shape [batch_size, vocab_dim]
         @param label: torch.LongTensor, ground truth labels
         @param steps: Integer, maximum number of iterations
         @param lr: float, learning rate
@@ -65,10 +64,8 @@ class PGDAdam(BaseAttack):
             return []
         adv_x = x.detach()
         self.lambda_ = lambda_
-        self.padding_mask = torch.sum(adv_x, dim=-1, keepdim=True) > 1  # we set a graph contains two apis at least
         if self.use_random:
             adv_x = get_x0(adv_x, rounding_threshold=self.round_threshold, is_sample=True)
-        padding_mask = torch.sum(adv_x, dim=-1, keepdim=True) > 1
         adv_x.requires_grad = True
         optimizer = torch.optim.Adam([adv_x], lr=lr)
 
@@ -77,23 +74,22 @@ class PGDAdam(BaseAttack):
         model.eval()
         for t in range(steps):
             optimizer.zero_grad()
-            hidden, logit = model.forward(adv_x, adj)
-            loss, _ = self.get_loss(model, logit, label, hidden, self.lambda_)
+            loss, _ = self.get_loss(model, adv_x, label, self.lambda_)
             loss = -1 * torch.mean(loss)  # optimizer is a type of gradient descent method
             loss.backward()
-            grad = adv_x.grad * padding_mask
+            grad = adv_x.grad
             pos_insertion = (adv_x <= 0.5) * 1 * (adv_x >= 0.)
-            grad4insertion = (
-                                     grad < 0) * pos_insertion * grad  # positions of gradient value smaller than zero are used for insertion
+            grad4insertion = (grad < 0) * pos_insertion * grad  # positions of gradient value smaller than zero are used for insertion
             pos_removal = (adv_x > 0.5) * 1 * (adv_x <= 1.)
             grad4removal = (grad > 0) * (pos_removal & self.manipulation_x) * grad
             adv_x.grad = (grad4removal + grad4insertion)
             adv_x.grad = grad
             optimizer.step()
+
             adv_x.data = adv_x.data.clamp(min=0., max=1.)
         return adv_x.detach(), optimizer.state_dict()
 
-    def perturb(self, model, x, adj=None, label=None,
+    def perturb(self, model, x, label=None,
                 steps=10,
                 lr=1.,
                 step_check=10,
@@ -107,32 +103,31 @@ class PGDAdam(BaseAttack):
         assert 0 < min_lambda_ <= max_lambda_
         if 'k' in list(model.__dict__.keys()) and model.k > 0:
             logger.warning("The attack leads to dense graph and trigger the issue of out of memory.")
-        self.lambda_ = min_lambda_
         assert steps >= 0 and step_check > 0 and lr >= 0
         model.eval()
-
+        if hasattr(model, 'forward_g'):
+            self.lambda_ = min_lambda_
+        else:
+            self.lambda_ = max_lambda_
         mini_steps = [step_check] * (steps // step_check)
         mini_steps = mini_steps + [steps % step_check] if steps % step_check != 0 else mini_steps
 
-        adv_x = x.detach().clone().to(torch.float)
+        adv_x = x.detach().clone().to(torch.double)
         while self.lambda_ <= max_lambda_:
             pert_x_cont = None
             prev_done = None
             for i, mini_step in enumerate(mini_steps):
                 with torch.no_grad():
-                    hidden, logit = model.forward(adv_x, adj)
-                    _, done = self.get_loss(model, logit, label, hidden, self.lambda_)
+                    _, done = self.get_loss(model, adv_x, label, self.lambda_)
                 if torch.all(done):
                     break
                 if i == 0:
                     adv_x[~done] = x[~done]  # recompute the perturbation under other penalty factors
-                    adv_adj = None if adj is None else adj[~done]
                     prev_done = done
                 else:
                     adv_x[~done] = pert_x_cont[~done[~prev_done]]
-                    adv_adj = None if adj is None else adj[~done]
                     prev_done = done
-                pert_x_cont, _ = self._perturb(model, adv_x[~done], adv_adj, label[~done],
+                pert_x_cont, _ = self._perturb(model, adv_x[~done], label[~done],
                                                mini_step,
                                                lr,
                                                lambda_=self.lambda_,
@@ -144,8 +139,7 @@ class PGDAdam(BaseAttack):
             if not self.check_lambda(model):
                 break
         with torch.no_grad():
-            hidden, logit = model.forward(adv_x, adj)
-            _, done = self.get_loss(model, logit, label, hidden, self.lambda_)
+            _, done = self.get_loss(model, adv_x, label, self.lambda_)
             if verbose:
                 logger.info(f"pgd adam attack: attack effectiveness {done.sum().item() / x.size()[0] * 100}%.")
         return adv_x

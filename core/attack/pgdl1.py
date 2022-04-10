@@ -81,8 +81,10 @@ class PGDl1(BaseAttack):
         """
         assert 0 < min_lambda_ <= max_lambda_
         model.eval()
-
-        self.lambda_ = min_lambda_
+        if hasattr(model, 'forward_g'):
+            self.lambda_ = min_lambda_
+        else:
+            self.lambda_ = max_lambda_
         adv_x = x.detach().clone().to(torch.double)
         while self.lambda_ <= max_lambda_:
             _, done = self.get_loss(model, adv_x, label, self.lambda_)
