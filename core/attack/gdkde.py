@@ -99,6 +99,7 @@ class GDKDE(BaseAttack):
         mini_steps = mini_steps + [steps % step_check] if steps % step_check != 0 else mini_steps
 
         adv_x = x.detach().clone().to(torch.double)
+        adv_x = get_x0(adv_x, rounding_threshold=0.1, is_sample=True)
         while self.lambda_ <= max_lambda_:
             pert_x_cont = None
             prev_done = None
