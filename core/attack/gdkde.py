@@ -130,7 +130,7 @@ class GDKDE(BaseAttack):
         return adv_x
 
     def get_perturbation(self, gradients, features, adv_features):
-        div_zero_overflow = torch.tensor(1e-30, dtype=gradients.dtype, device=gradients.device)
+        div_zero_overflow = torch.tensor(1e-60, dtype=gradients.dtype, device=gradients.device)
         red_ind = list(range(1, len(features.size())))
 
         # 1. look for allowable position, because only '1--> -' and '0 --> +' are permitted
@@ -157,7 +157,6 @@ class GDKDE(BaseAttack):
     def get_loss(self, model, adv_x, label):
         logits_f = model.forward_f(adv_x)
         ce = F.cross_entropy(logits_f, label, reduction='none')
-        print(logits_f[:10])
         y_pred = logits_f.argmax(1)
         square = torch.sum(torch.square(self.benign_feat.unsqueeze(dim=0) - adv_x.unsqueeze(dim=1)),
                            dim=-1)
