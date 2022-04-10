@@ -99,7 +99,6 @@ class GDKDE(BaseAttack):
         mini_steps = mini_steps + [steps % step_check] if steps % step_check != 0 else mini_steps
 
         adv_x = x.detach().clone().to(torch.double)
-        adv_x = get_x0(adv_x, rounding_threshold=0.5, is_sample=True)
         while self.lambda_ <= max_lambda_:
             pert_x_cont = None
             prev_done = None
@@ -158,7 +157,7 @@ class GDKDE(BaseAttack):
     def get_loss(self, model, adv_x, label):
         logits_f = model.forward_f(adv_x)
         ce = F.cross_entropy(logits_f, label, reduction='none')
-        print(ce[:10])
+        print(logits_f[:10])
         y_pred = logits_f.argmax(1)
         square = torch.sum(torch.square(self.benign_feat.unsqueeze(dim=0) - adv_x.unsqueeze(dim=1)),
                            dim=-1)
