@@ -133,21 +133,22 @@ class GDKDE(BaseAttack):
         div_zero_overflow = torch.tensor(1e-30, dtype=gradients.dtype, device=gradients.device)
         red_ind = list(range(1, len(features.size())))
 
-        # # 1. look for allowable position, because only '1--> -' and '0 --> +' are permitted
-        # #    1.1 api insertion
-        # pos_insertion = (adv_features <= 0.5) * 1 * (adv_features >= 0.)
-        # grad4insertion = (gradients > 0) * pos_insertion * gradients
-        # #    1.2 api removal
-        # pos_removal = (adv_features > 0.5) * 1
-        # # #     2.2.1 cope with the interdependent apis
-        # # checking_nonexist_api = (pos_removal ^ self.omega) & self.omega
-        # # grad4removal = torch.sum(gradients * checking_nonexist_api, dim=-1, keepdim=True) + gradients
-        # # grad4removal *= (grad4removal < 0) * (pos_removal & self.manipulation_x)
-        # grad4removal = (gradients < 0) * (pos_removal & self.manipulation_x) * gradients
-        # gradients = grad4removal + grad4insertion
+        # 1. look for allowable position, because only '1--> -' and '0 --> +' are permitted
+        #    1.1 api insertion
+        pos_insertion = (adv_features <= 0.5) * 1 * (adv_features >= 0.)
+        grad4insertion = (gradients > 0) * pos_insertion * gradients
+        #    1.2 api removal
+        pos_removal = (adv_features > 0.5) * 1
+        # #     2.2.1 cope with the interdependent apis
+        # checking_nonexist_api = (pos_removal ^ self.omega) & self.omega
+        # grad4removal = torch.sum(gradients * checking_nonexist_api, dim=-1, keepdim=True) + gradients
+        # grad4removal *= (grad4removal < 0) * (pos_removal & self.manipulation_x)
+        grad4removal = (gradients < 0) * (pos_removal & self.manipulation_x) * gradients
+        gradients = grad4removal + grad4insertion
 
         # 2. normalize gradient in the direction of l2 norm
         l2norm = torch.sqrt(torch.max(div_zero_overflow, torch.sum(gradients ** 2, dim=red_ind, keepdim=True)))
+        print(l2norm[:10])
         perturbation = torch.minimum(
             torch.tensor(1., dtype=features.dtype, device=features.device),
             gradients / l2norm
