@@ -119,7 +119,6 @@ class BaseAttack(Module):
     def get_loss(self, model, adv_x, label, lambda_=None):
         logits_f = model.forward_f(adv_x)
         ce = F.cross_entropy(logits_f, label, reduction='none')
-        print(ce)
         y_pred = logits_f.argmax(1)
         if 'forward_g' in type(model).__dict__.keys() and (not self.oblivion):
             assert lambda_ is not None
