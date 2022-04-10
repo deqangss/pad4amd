@@ -9,7 +9,7 @@ from config import logging, ErrorHandler
 logger = logging.getLogger('core.attack.gdkde')
 logger.addHandler(ErrorHandler)
 
-EXP_OVER_FLOW = 1e-100
+EXP_OVER_FLOW = 1e-120
 
 
 class GDKDE(BaseAttack):
