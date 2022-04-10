@@ -83,6 +83,7 @@ def _main():
         if args.model == 'at_amd_pad' and hp_params['detector'] is None:
             pass
         else:
+            print('okok')
             model = AdvMalwareDetectorICNN(model,
                                            input_size=dataset.vocab_size,
                                            n_classes=dataset.n_classes,
