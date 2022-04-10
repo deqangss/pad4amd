@@ -157,6 +157,7 @@ class GDKDE(BaseAttack):
     def get_loss(self, model, adv_x, label):
         logits_f = model.forward_f(adv_x)
         ce = F.cross_entropy(logits_f, label, reduction='none')
+        print(ce[:10])
         y_pred = logits_f.argmax(1)
         square = torch.sum(torch.square(self.benign_feat.float().unsqueeze(dim=0) - adv_x.float().unsqueeze(dim=1)),
                            dim=-1)
