@@ -53,7 +53,7 @@ class BCA(BaseAttack):
         Parameters
         -----------
         @param model, a victim model
-        @param x: torch.FloatTensor, node feature vectors (each represents the occurrences of apis in a graph) with shape [batch_size, number_of_graphs, vocab_dim]
+        @param x: torch.FloatTensor, feature vectors with shape [batch_size, vocab_dim]
         @param label: torch.LongTensor, ground truth labels
         @param m: Integer, maximum number of perturbations
         @param lambda_, float, penalty factor
@@ -104,7 +104,6 @@ class BCA(BaseAttack):
         adv_x = x.detach().clone().to(torch.double)
         while self.lambda_ <= max_lambda_:
             _, done = self.get_loss(model, adv_x, label, self.lambda_)
-            print("debug: lambda {} accuracy {}".format(self.lambda_, torch.sum(done).item() / len(done)))
             if torch.all(done):
                 break
             pert_x = self._perturb(model, adv_x[~done], label[~done],
