@@ -133,18 +133,18 @@ class GDKDE(BaseAttack):
         div_zero_overflow = torch.tensor(1e-30, dtype=gradients.dtype, device=gradients.device)
         red_ind = list(range(1, len(features.size())))
 
-        # 1. look for allowable position, because only '1--> -' and '0 --> +' are permitted
-        #    1.1 api insertion
-        pos_insertion = (adv_features <= 0.5) * 1 * (adv_features >= 0.)
-        grad4insertion = (gradients > 0) * pos_insertion * gradients
-        #    1.2 api removal
-        pos_removal = (adv_features > 0.5) * 1
-        # #     2.2.1 cope with the interdependent apis
-        # checking_nonexist_api = (pos_removal ^ self.omega) & self.omega
-        # grad4removal = torch.sum(gradients * checking_nonexist_api, dim=-1, keepdim=True) + gradients
-        # grad4removal *= (grad4removal < 0) * (pos_removal & self.manipulation_x)
-        grad4removal = (gradients < 0) * (pos_removal & self.manipulation_x) * gradients
-        gradients = grad4removal + grad4insertion
+        # # 1. look for allowable position, because only '1--> -' and '0 --> +' are permitted
+        # #    1.1 api insertion
+        # pos_insertion = (adv_features <= 0.5) * 1 * (adv_features >= 0.)
+        # grad4insertion = (gradients > 0) * pos_insertion * gradients
+        # #    1.2 api removal
+        # pos_removal = (adv_features > 0.5) * 1
+        # # #     2.2.1 cope with the interdependent apis
+        # # checking_nonexist_api = (pos_removal ^ self.omega) & self.omega
+        # # grad4removal = torch.sum(gradients * checking_nonexist_api, dim=-1, keepdim=True) + gradients
+        # # grad4removal *= (grad4removal < 0) * (pos_removal & self.manipulation_x)
+        # grad4removal = (gradients < 0) * (pos_removal & self.manipulation_x) * gradients
+        # gradients = grad4removal + grad4insertion
 
         # 2. normalize gradient in the direction of l2 norm
         l2norm = torch.sqrt(torch.max(div_zero_overflow, torch.sum(gradients ** 2, dim=red_ind, keepdim=True)))
@@ -159,7 +159,7 @@ class GDKDE(BaseAttack):
         ce = F.cross_entropy(logits_f, label, reduction='none')
         print(ce[:10])
         y_pred = logits_f.argmax(1)
-        square = torch.sum(torch.square(self.benign_feat.float().unsqueeze(dim=0) - adv_x.float().unsqueeze(dim=1)),
+        square = torch.sum(torch.square(self.benign_feat.unsqueeze(dim=0) - adv_x.unsqueeze(dim=1)),
                            dim=-1)
         kde = torch.mean(torch.exp(-square / self.bandwidth), dim=-1)
         loss_no_reduction = ce + self.penalty_factor * kde
