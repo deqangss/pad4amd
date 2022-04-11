@@ -150,12 +150,12 @@ class Apk2features(object):
         for api in susp_apis:
             if feature_gen.check_suspicious_api(api) or feature_gen.check_sensitive_api(api):
                 selected_words.append(api)
-        # # remove components
-        # api_comps = np.array(all_words_type)[...] == feature_gen.ACTIVITY
-        # api_comps = api_comps | (np.array(all_words_type)[...] == feature_gen.SERVICE)
-        # api_comps = api_comps | (np.array(all_words_type)[...] == feature_gen.RECEIVER)
-        # api_comps = api_comps | (np.array(all_words_type)[...] == feature_gen.PROVIDER)
-        # all_words = list(np.array(all_words)[~api_comps])
+        # remove components
+        api_comps = np.array(all_words_type)[...] == feature_gen.ACTIVITY
+        api_comps = api_comps | (np.array(all_words_type)[...] == feature_gen.SERVICE)
+        api_comps = api_comps | (np.array(all_words_type)[...] == feature_gen.RECEIVER)
+        api_comps = api_comps | (np.array(all_words_type)[...] == feature_gen.PROVIDER)
+        all_words = list(np.array(all_words)[~api_comps])
         for s_word in selected_words:
             all_words.remove(s_word)
 
