@@ -44,7 +44,7 @@ class Max(BaseAttack):
             return []
         model.eval()
         with torch.no_grad():
-            loss, done = self.get_loss_without_lambda(model, x, label)
+            loss, done = self.get_scores(model, x, label)
         pre_loss = loss
         n, red_n = x.size()[0], x.size()[1:]
         red_ind = list(range(2, len(x.size()) + 1))
@@ -68,7 +68,7 @@ class Max(BaseAttack):
 
             with torch.no_grad():
                 red_label_ext = torch.cat([red_label] * len(self.attack_list))
-                loss, done = self.get_loss_without_lambda(model, pertbx, red_label_ext)
+                loss, done = self.get_scores(model, pertbx, red_label_ext)
                 loss = loss.reshape(len(self.attack_list), num_sample_red).permute(1, 0)
                 done = done.reshape(len(self.attack_list), num_sample_red).permute(1, 0)
                 success_flag = torch.any(done, dim=-1)
@@ -85,11 +85,11 @@ class Max(BaseAttack):
                 pre_loss[~pre_stop_flag] = a_loss
         if verbose:
             with torch.no_grad():
-                _, done = self.get_loss_without_lambda(model, adv_x, label)
+                _, done = self.get_scores(model, adv_x, label)
                 logger.info(f"max: attack effectiveness {done.sum().item() / x.size()[0] * 100}%.")
         return adv_x
 
-    def get_loss_without_lambda(self, model, pertb_x, label):
+    def get_scores(self, model, pertb_x, label):
         logits_f = model.forward_f(pertb_x)
         ce = F.cross_entropy(logits_f, label, reduction='none')
         y_pred = logits_f.argmax(1)

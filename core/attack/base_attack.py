@@ -58,6 +58,8 @@ class BaseAttack(Module):
         self.omega = torch.sum(
             F.one_hot(torch.tensor(self.omega), num_classes=len(self.inverse_feature.vocab)),
             dim=0).to(self.device)
+        api_flag = self.inverse_feature.get_api_flag()
+        self.api_flag = torch.LongTensor(api_flag).bool().to(self.device)
 
     def perturb(self, model, x, adj=None, label=None):
         """

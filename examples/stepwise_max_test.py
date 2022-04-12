@@ -7,23 +7,26 @@ import argparse
 import numpy as np
 
 from core.defense import Dataset
-from core.defense import DNNMalwareDetector, KernelDensityEstimation, AdvMalwareDetectorICNN, MaxAdvTraining, PrincipledAdvTraining
-from core.attack import PGD
+from core.defense import DNNMalwareDetector, KernelDensityEstimation, AdvMalwareDetectorICNN, MaxAdvTraining, \
+    PrincipledAdvTraining
+from core.attack import StepwiseMax
 from tools import utils
 from config import config, logging, ErrorHandler
 
-logger = logging.getLogger('examples.pgd_test')
+logger = logging.getLogger('examples.stepwise_max_test')
 logger.addHandler(ErrorHandler)
 
-atta_argparse = argparse.ArgumentParser(description='arguments for projected gradient descent attack')
-atta_argparse.add_argument('--norm', type=str, default='l2', choices=['l2', 'linf'],
-                           help="gradient normalization, either of 'l2' and 'linf'.")
-atta_argparse.add_argument('--n_step', type=int, default=50,
+atta_argparse = argparse.ArgumentParser(description='arguments for step-wise max attack')
+atta_argparse.add_argument('--n_step', type=int, default=100,
                            help='maximum number of steps.')
-atta_argparse.add_argument('--step_length', type=float, default=0.2,
-                           help='step length in each step.')
 atta_argparse.add_argument('--step_check', type=int, default=10,
                            help='number of steps when checking the effectiveness of continuous perturbations')
+atta_argparse.add_argument('--step_length_l1', type=float, default=1.,
+                           help='step length in each step of pgd l1.')
+atta_argparse.add_argument('--step_length_l2', type=float, default=1.,
+                           help='step length in each step of pgd l2.')
+atta_argparse.add_argument('--step_length_linf', type=float, default=1.,
+                           help='step length in each step of pgd linf.')
 atta_argparse.add_argument('--random_start', action='store_true', default=False,
                            help='randomly initialize the start points.')
 atta_argparse.add_argument('--round_threshold', type=float, default=0.5,
@@ -121,14 +124,13 @@ def _main():
         model.load()
     logger.info("Load model parameters from {}.".format(model.model_save_path))
 
-    # model.predict(mal_test_dataset_producer, indicator_masking=True)
-    attack = PGD(norm=args.norm,
-                 use_random=args.random_start,
-                 rounding_threshold=args.round_threshold,
-                 oblivion=args.oblivion,
-                 kappa=args.kappa,
-                 device=model.device
-                 )
+    model.predict(mal_test_dataset_producer, indicator_masking=True)
+    attack = StepwiseMax(use_random=args.random_start,
+                         rounding_threshold=args.round_threshold,
+                         oblivion=args.oblivion,
+                         kappa=args.kappa,
+                         device=model.device
+                         )
 
     y_cent_list, x_density_list = [], []
     x_mod_integrated = []
@@ -137,8 +139,10 @@ def _main():
         x, y = utils.to_tensor(x.double(), y.long(), model.device)
         adv_x_batch = attack.perturb(model.double(), x, y,
                                      args.n_step,
-                                     args.step_length,
-                                     step_check=args.step_check,
+                                     args.step_check,
+                                     args.step_length_l1,
+                                     args.step_length_l2,
+                                     args.step_length_linf,
                                      min_lambda_=1e-5,
                                      max_lambda_=1e5,
                                      verbose=True)
@@ -155,7 +159,7 @@ def _main():
         acc_w_indicator = (sum(~indicator_flag) + sum((y_pred == 1.) & indicator_flag)) / mal_count * 100
         logger.info(f'The mean accuracy on adversarial malware (w/ indicator) is {acc_w_indicator:.3f}%.')
 
-    save_dir = os.path.join(config.get('experiments', 'pgd'+args.norm), args.model)
+    save_dir = os.path.join(config.get('experiments', 'stepwise_max'), args.model)
     if not os.path.exists(save_dir):
         utils.mkdir(save_dir)
     x_mod_integrated = np.concatenate(x_mod_integrated, axis=0)

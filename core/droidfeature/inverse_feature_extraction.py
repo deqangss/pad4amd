@@ -178,6 +178,9 @@ class InverseDroidFeature(object):
         omega = [self.vocab.index(api) for api in interdependent_apis if api in self.vocab]
         return omega
 
+    def get_api_flag(self):
+        return [feature_gen.SYS_API == feature_type for feature_type in self.vocab_type]
+
     @staticmethod
     def merge_features(features_list1, features_list2):
         """

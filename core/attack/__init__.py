@@ -9,3 +9,4 @@ from core.attack.mimicry import Mimicry
 from core.attack.gdkde import GDKDE
 from core.attack.max import Max
 from core.attack.gdkdel1 import GDKDEl1
+from core.attack.stepwise_max import StepwiseMax
