@@ -42,6 +42,7 @@ class PGD(BaseAttack):
         assert norm == 'l2' or norm == 'linf', "Expect 'l2' or 'linf'."
         self.norm = norm
         self.use_random = use_random
+        assert 0 < rounding_threshold < 1
         self.round_threshold = rounding_threshold
         self.lambda_ = 1.
 

@@ -41,6 +41,7 @@ class PGDAdam(BaseAttack):
         super(PGDAdam, self).__init__(is_attacker, oblivion, kappa, manipulation_x, omega, device)
         self.use_random = use_random
         self.round_threshold = rounding_threshold
+        assert 0 < rounding_threshold < 1
         self.lambda_ = 1.
 
     def _perturb(self, model, x, label=None,

@@ -39,6 +39,7 @@ class StepwiseMax(BaseAttack):
                  is_attacker=True, oblivion=False, kappa=1., manipulation_x=None, omega=None, device=None):
         super(StepwiseMax, self).__init__(is_attacker, oblivion, kappa, manipulation_x, omega, device)
         self.use_random = use_random
+        assert 0 < rounding_threshold < 1
         self.round_threshold = rounding_threshold
         self.lambda_ = 1.
 
@@ -137,7 +138,6 @@ class StepwiseMax(BaseAttack):
                                             sl_linf,
                                             lambda_=self.lambda_
                                             )
-                print(self.round_threshold)
                 adv_x[~done] = round_x(pert_x_cont, self.round_threshold)
             self.lambda_ *= base
             if not self.check_lambda(model):
