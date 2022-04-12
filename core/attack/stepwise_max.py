@@ -137,6 +137,7 @@ class StepwiseMax(BaseAttack):
                                             sl_linf,
                                             lambda_=self.lambda_
                                             )
+                print(self.round_threshold)
                 adv_x[~done] = round_x(pert_x_cont, self.round_threshold)
             self.lambda_ *= base
             if not self.check_lambda(model):
