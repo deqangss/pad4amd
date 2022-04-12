@@ -199,9 +199,8 @@ class StepwiseMax(BaseAttack):
         y_pred = logits_f.argmax(1)
         if 'forward_g' in type(model).__dict__.keys() and (not self.oblivion):
             logits_g = model.forward_g(pertb_x)
-            tau = model.get_tau_sample_wise()
-            loss_no_reduction = ce + tau - logits_g
-            done = (y_pred == 0.) & (logits_g <= tau)
+            loss_no_reduction = ce + model.tau - logits_g
+            done = (y_pred == 0.) & (logits_g <= model.tau)
         else:
             loss_no_reduction = ce
             done = y_pred == 0.

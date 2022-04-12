@@ -175,12 +175,11 @@ class GDKDEl1(BaseAttack):
         loss_no_reduction = ce + self.penalty_factor * kde
         if hasattr(model, 'forward_g') and (not self.oblivion):
             logits_g = model.forward_g(adv_x)
-            tau = model.get_tau_sample_wise(y_pred)
             if self.is_attacker:
-                loss_no_reduction += self.lambda_ * (torch.clamp(tau - logits_g, max=self.kappa))
+                loss_no_reduction += self.lambda_ * (torch.clamp(model.tau - logits_g, max=self.kappa))
             else:
-                loss_no_reduction += self.lambda_ * (tau - logits_g)
-            done = (y_pred == 0.) & (logits_g <= tau)
+                loss_no_reduction += self.lambda_ * (model.tau - logits_g)
+            done = (y_pred == 0.) & (logits_g <= model.tau)
         else:
             done = y_pred == 0.
         return loss_no_reduction, done
