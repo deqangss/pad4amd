@@ -173,7 +173,7 @@ class PGD(BaseAttack):
             perturbation += torch.any(perturbation[:, self.api_flag] < 0, dim=-1,
                                       keepdim=True) * checking_nonexist_api
         if self.norm == 'l2' and self.is_attacker:
-            min_val = torch.amin(perturbation_l2, dim=-1, keepdim=True).clamp_(max=0.)
+            min_val = torch.amin(perturbation, dim=-1, keepdim=True).clamp_(max=0.)
             perturbation += (torch.any(perturbation[:, self.api_flag] < 0, dim=-1,
                                        keepdim=True) * torch.abs(min_val) * checking_nonexist_api)
         return perturbation
