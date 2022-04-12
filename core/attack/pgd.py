@@ -72,7 +72,7 @@ class PGD(BaseAttack):
                 adv_x = get_x0(adv_x, rounding_threshold=self.round_threshold, is_sample=True)
             var_adv_x = torch.autograd.Variable(adv_x, requires_grad=True)
             loss, done = self.get_loss(model, var_adv_x, label, self.lambda_)
-            grad = torch.autograd.grad(torch.mean(loss), var_adv_x)[0]
+            grad = torch.autograd.grad(torch.mean(loss), var_adv_x)[0].detach().data
             perturbation = self.get_perturbation(grad, x, adv_x)
             adv_x = torch.clamp(adv_x + perturbation * step_length, min=0., max=1.)
         return adv_x
