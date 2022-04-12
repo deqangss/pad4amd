@@ -56,13 +56,13 @@ class Mimicry(BaseAttack):
                 modified_x, y = utils.to_tensor(modified_x.double(), torch.ones(trials,).long(), model.device)
                 y_cent, x_density = model.inference_batch_wise(modified_x, y)
                 y_pred = np.argmax(y_cent, axis=-1)
-                if ('indicator' in type(model).__dict__.keys()) and (not self.oblivion):
+                if hasattr(model, 'indicator') and (not self.oblivion):
                     attack_flag = (y_pred == 0) & (model.indicator(x_density))
                 else:
                     attack_flag = (y_pred == 0)
                 ben_id_sel = np.argmax(attack_flag)
 
-                if 'indicator' in type(model).__dict__.keys():
+                if hasattr(model, 'indicator'):
                     use_flag = (y_pred == 0) & (model.indicator(x_density))
                 else:
                     use_flag = attack_flag
