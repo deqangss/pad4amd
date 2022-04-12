@@ -16,7 +16,7 @@ logger = logging.getLogger('examples.pgdl1')
 logger.addHandler(ErrorHandler)
 
 atta_argparse = argparse.ArgumentParser(description='arguments for l1 norm based projected gradient descent attack')
-atta_argparse.add_argument('--m_pertb', type=int, default=100,
+atta_argparse.add_argument('--m', type=int, default=100,
                            help='maximum number of perturbations.')
 atta_argparse.add_argument('--base', type=float, default=10.,
                            help='base of a logarithm function.')
@@ -116,14 +116,14 @@ def _main():
 
     attack = PGDl1(oblivion=args.oblivion, kappa=args.kappa, device=model.device)
 
-    logger.info("\nThe maximum number of perturbations for each example is {}:".format(args.m_pertb))
+    logger.info("\nThe maximum number of perturbations for each example is {}:".format(args.m))
     y_cent_list, x_density_list = [], []
     x_mod_integrated = []
     model.eval()
     for x, y in mal_test_dataset_producer:
         x, y = utils.to_tensor(x.double(), y.long(), model.device)
         adv_x_batch = attack.perturb(model, x, y,
-                                     args.m_pertb,
+                                     args.m,
                                      min_lambda_=1e-5,
                                      max_lambda_=1e5,
                                      base=args.base,
