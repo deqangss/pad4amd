@@ -147,13 +147,11 @@ class PGD(BaseAttack):
         # grad4insertion = (gradients > 0) * gradients
         #    2 api removal
         pos_removal = (adv_features > 0.5) * 1
-        # if self.is_attacker:
-        #     #     2.1 cope with the interdependent apis
-        #     checking_nonexist_api = (pos_removal ^ self.omega) & self.omega
-        #     grad4removal = torch.sum(gradients * checking_nonexist_api, dim=-1, keepdim=True) + gradients
-        #     grad4removal *= (grad4removal < 0) * (pos_removal & self.manipulation_x)
-        # else:
         grad4removal = (gradients < 0) * (pos_removal & self.manipulation_x) * gradients
+        if self.is_attacker:
+            #     2.1 cope with the interdependent apis
+            checking_nonexist_api = (pos_removal ^ self.omega) & self.omega
+            grad4removal[:, self.api_flag] += torch.sum(gradients * checking_nonexist_api, dim=-1, keepdim=True)
         gradients = grad4removal + grad4insertion
 
         # 3. norm
@@ -171,5 +169,11 @@ class PGD(BaseAttack):
 
         # problematic
         # 5. tailor the interdependent apis, application specific
-        # perturbation += torch.any(perturbation < 0, dim=-1, keepdim=True) * checking_nonexist_api * perturbation
+        if self.norm == 'linf' and self.is_attacker:
+            perturbation += torch.any(perturbation[:, self.api_flag] < 0, dim=-1,
+                                      keepdim=True) * checking_nonexist_api
+        if self.norm == 'l2' and self.is_attacker:
+            min_val = torch.amin(perturbation_l2, dim=-1, keepdim=True).clamp_(max=0.)
+            perturbation += (torch.any(perturbation[:, self.api_flag] < 0, dim=-1,
+                                       keepdim=True) * torch.abs(min_val) * checking_nonexist_api)
         return perturbation
