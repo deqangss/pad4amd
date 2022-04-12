@@ -76,8 +76,6 @@ class StepwiseMax(BaseAttack):
             num_sample_red = n - torch.sum(stop_flag)
             if t == 0 and self.use_random:
                 adv_x = get_x0(adv_x, rounding_threshold=self.round_threshold, is_sample=True)
-                print(torch.sum((adv_x - x) >= 1, dim=-1))
-                print('okok')
             var_adv_x = torch.autograd.Variable(adv_x, requires_grad=True)
             loss, done = self.get_loss(model, var_adv_x, label, self.lambda_)
             grad = torch.autograd.grad(torch.mean(loss), var_adv_x)[0].detach().data
