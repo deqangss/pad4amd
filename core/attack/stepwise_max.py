@@ -139,6 +139,7 @@ class StepwiseMax(BaseAttack):
                                             lambda_=self.lambda_
                                             )
                 adv_x[~done] = round_x(pert_x_cont, self.round_threshold)
+
             self.lambda_ *= base
             if not self.check_lambda(model):
                 break
