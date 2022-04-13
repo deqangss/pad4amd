@@ -86,6 +86,7 @@ class StepwiseMax(BaseAttack):
                 pertbx = torch.vstack(pertbx_list)
                 label_ext = torch.cat([label] * n_attacks)
                 scores, done = self.get_scores(model, pertbx, label_ext)
+                print('scores:', t+ 1, scores)
                 pertbx = pertbx.reshape(n_attacks, num_sample_red, *red_n).permute([1, 0, *red_ind])
                 scores = scores.reshape(n_attacks, num_sample_red).permute(1, 0)
                 _, s_idx = scores.max(dim=-1)
