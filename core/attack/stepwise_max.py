@@ -171,7 +171,7 @@ class StepwiseMax(BaseAttack):
             perturbation_linf += (torch.any(perturbation_linf[:, self.api_flag] < 0, dim=-1,
                                             keepdim=True) * checking_nonexist_api)
         perturbx_linf = torch.clamp(adv_x + sl_linf * perturbation_linf, min=0., max=1.)
-        pertbx.append(perturbx_linf)
+        # pertbx.append(perturbx_linf)
         #    l2 norm
         l2norm = torch.linalg.norm(gradients, dim=-1, keepdim=True).clamp_(min=EXP_OVER_FLOW)
         perturbation_l2 = torch.minimum(
@@ -192,7 +192,7 @@ class StepwiseMax(BaseAttack):
         if self.is_attacker:
             perturbation_l1 += (torch.any(perturbation_l1[:, self.api_flag] < 0, dim=-1, keepdim=True) * checking_nonexist_api)
         perturbx_l1 = torch.clamp(adv_x + sl_l1 * perturbation_l1, min=0., max=1.)
-        pertbx.append(perturbx_l1)
+        # pertbx.append(perturbx_l1)
         return pertbx
 
     def get_scores(self, model, pertb_x, label):
