@@ -18,9 +18,9 @@ logger.addHandler(ErrorHandler)
 atta_argparse = argparse.ArgumentParser(description='arguments for projected gradient descent attack')
 atta_argparse.add_argument('--norm', type=str, default='l2', choices=['l2', 'linf'],
                            help="gradient normalization, either of 'l2' and 'linf'.")
-atta_argparse.add_argument('--n_step', type=int, default=50,
+atta_argparse.add_argument('--n_step', type=int, default=100,
                            help='maximum number of steps.')
-atta_argparse.add_argument('--step_length', type=float, default=0.2,
+atta_argparse.add_argument('--step_length', type=float, default=1.0,
                            help='step length in each step.')
 atta_argparse.add_argument('--step_check', type=int, default=10,
                            help='number of steps when checking the effectiveness of continuous perturbations')

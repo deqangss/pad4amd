@@ -16,7 +16,7 @@ from config import logging, ErrorHandler
 logger = logging.getLogger('core.attack.pgd')
 logger.addHandler(ErrorHandler)
 
-EXP_OVER_FLOW = 1e-30
+EXP_OVER_FLOW = 1e-120
 
 
 class PGD(BaseAttack):
@@ -138,13 +138,11 @@ class PGD(BaseAttack):
         return adv_x
 
     def get_perturbation(self, gradients, features, adv_features):
-        div_zero_overflow = torch.tensor(1e-30, dtype=gradients.dtype, device=gradients.device)
-        red_ind = list(range(1, len(features.size())))
 
         # 1. look for allowable position, because only '1--> -' and '0 --> +' are permitted
         #    1.1 api insertion
         pos_insertion = (adv_features <= 0.5) * 1 * (adv_features >= 0.)
-        grad4insertion = (gradients > 0) * pos_insertion * gradients
+        grad4insertion = (gradients >= 0) * pos_insertion * gradients
         # grad4insertion = (gradients > 0) * gradients
         #    2 api removal
         pos_removal = (adv_features > 0.5) * 1
@@ -159,14 +157,14 @@ class PGD(BaseAttack):
         if self.norm == 'linf':
             perturbation = torch.sign(gradients)
         elif self.norm == 'l2':
-            # l2norm = torch.sqrt(torch.max(div_zero_overflow, torch.sum(gradients ** 2, dim=red_ind, keepdim=True)))
-            l2norm = torch.linalg.norm(gradients)
+            l2norm = torch.linalg.norm(gradients, dim=-1, keepdim=True).clamp_(min=EXP_OVER_FLOW)
             perturbation = torch.minimum(
                 torch.tensor(1., dtype=features.dtype, device=features.device),
                 gradients / l2norm
             )
         else:
             raise ValueError("'l2' or 'linf' are expected.")
+
 
         # problematic
         # 5. tailor the interdependent apis, application specific

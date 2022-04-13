@@ -9,7 +9,6 @@
 
 import torch
 import torch.nn.functional as F
-import numpy as np
 
 from core.attack.base_attack import BaseAttack
 from tools.utils import get_x0, round_x
@@ -17,6 +16,7 @@ from config import logging, ErrorHandler
 
 logger = logging.getLogger('core.attack.stepwise_max')
 logger.addHandler(ErrorHandler)
+EXP_OVER_FLOW = 1e-120
 
 
 class StepwiseMax(BaseAttack):
@@ -81,7 +81,6 @@ class StepwiseMax(BaseAttack):
             loss, done = self.get_loss(model, var_adv_x, label, self.lambda_)
             grad = torch.autograd.grad(torch.mean(loss), var_adv_x)[0].detach().data
             pertbx_list = self.get_perturbation(grad, x, adv_x, step_length_l1, step_length_l2, step_length_linf)
-
             with torch.no_grad():
                 n_attacks = len(pertbx_list)
                 pertbx = torch.vstack(pertbx_list)
@@ -90,8 +89,6 @@ class StepwiseMax(BaseAttack):
                 pertbx = pertbx.reshape(n_attacks, num_sample_red, *red_n).permute([1, 0, *red_ind])
                 scores = scores.reshape(n_attacks, num_sample_red).permute(1, 0)
                 _, s_idx = scores.max(dim=-1)
-                print(scores[:10])
-                print(s_idx)
                 adv_x = pertbx[torch.arange(num_sample_red), s_idx]
         return adv_x
 
@@ -175,7 +172,7 @@ class StepwiseMax(BaseAttack):
         perturbx_linf = torch.clamp(adv_x + sl_linf * perturbation_linf, min=0., max=1.)
         pertbx.append(perturbx_linf)
         #    l2 norm
-        l2norm = torch.linalg.norm(gradients)
+        l2norm = torch.linalg.norm(gradients, dim=-1, keepdim=True).clamp_(min=EXP_OVER_FLOW)
         perturbation_l2 = torch.minimum(
             torch.tensor(1., dtype=x.dtype, device=x.device),
             gradients / l2norm
@@ -191,7 +188,8 @@ class StepwiseMax(BaseAttack):
         val, idx = torch.abs(gradients).topk(k, dim=-1)
         perturbation_l1 = F.one_hot(idx, num_classes=x.shape[-1]).sum(dim=1).double()
         perturbation_l1 = perturbation_linf * perturbation_l1
-        perturbation_l1 += (torch.any(perturbation_l1[:, self.api_flag] < 0, dim=-1, keepdim=True) * checking_nonexist_api)
+        if self.is_attacker:
+            perturbation_l1 += (torch.any(perturbation_l1[:, self.api_flag] < 0, dim=-1, keepdim=True) * checking_nonexist_api)
         perturbx_l1 = torch.clamp(adv_x + sl_l1 * perturbation_l1, min=0., max=1.)
         pertbx.append(perturbx_l1)
         return pertbx
