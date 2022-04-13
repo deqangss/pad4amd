@@ -93,7 +93,7 @@ class StepwiseMax(BaseAttack):
                                                                   lambda_=self.lambda_
                                                                   )
                 with torch.no_grad():
-                    pertb_x_list = [pert_x_linf, pert_x_l2, pert_x_l1]
+                    pertb_x_list = [pert_x_l1]
                     n_attacks = len(pertb_x_list)
                     pertbx = torch.vstack(pertb_x_list)
                     label_ext = torch.cat([label[~done]] * n_attacks)
