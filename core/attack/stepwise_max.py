@@ -90,6 +90,8 @@ class StepwiseMax(BaseAttack):
                 pertbx = pertbx.reshape(n_attacks, num_sample_red, *red_n).permute([1, 0, *red_ind])
                 scores = scores.reshape(n_attacks, num_sample_red).permute(1, 0)
                 _, s_idx = scores.max(dim=-1)
+                print(scores[:10])
+                print(s_idx)
                 adv_x = pertbx[torch.arange(num_sample_red), s_idx]
         return adv_x
 
