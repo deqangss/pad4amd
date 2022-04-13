@@ -43,6 +43,73 @@ class StepwiseMax(BaseAttack):
         self.round_threshold = rounding_threshold
         self.lambda_ = 1.
 
+    def perturb(self, model, x, label=None,
+                steps=100,
+                step_check=10,
+                sl_l1=1.,
+                sl_l2=1.,
+                sl_linf=0.01,
+                min_lambda_=1e-5,
+                max_lambda_=1e5,
+                base=10.,
+                verbose=False):
+        """
+        enhance attack
+        """
+        assert 0 < min_lambda_ <= max_lambda_
+        assert steps >= 0 and 1 >= sl_l1 > 0 and sl_l2 >= 0 and sl_linf >= 0
+        model.eval()
+        if hasattr(model, 'forward_g'):
+            self.lambda_ = min_lambda_
+        else:
+            self.lambda_ = max_lambda_
+        mini_steps = [step_check] * (steps // step_check)
+        mini_steps = mini_steps + [steps % step_check] if steps % step_check != 0 else mini_steps
+        n, red_n = x.size()[0], x.size()[1:]
+        red_ind = list(range(2, len(x.size()) + 1))
+
+        adv_x = x.detach().clone().to(torch.double)
+        while self.lambda_ <= max_lambda_:
+            pert_x_cont = None
+            prev_done = None
+            for i, mini_step in enumerate(mini_steps):
+                with torch.no_grad():
+                    _, done = self.get_loss(model, adv_x, label, self.lambda_)
+                if torch.all(done):
+                    break
+                if i == 0:
+                    adv_x[~done] = x[~done]  # recompute the perturbation under other penalty factors
+                    prev_done = done
+                else:
+                    adv_x[~done] = pert_x_cont[~done[~prev_done]]
+                    prev_done = done
+
+                num_sample_red = torch.sum(~done).item()
+                pert_x_linf, pert_x_l2, pert_x_l1 = self._perturb(model, adv_x[~done], label[~done],
+                                                                  mini_step,
+                                                                  sl_l1,
+                                                                  sl_l2,
+                                                                  sl_linf,
+                                                                  lambda_=self.lambda_
+                                                                  )
+                with torch.no_grad():
+                    pertbx = torch.vstack([pert_x_linf, pert_x_l2, pert_x_l1])
+                    label_ext = torch.cat([label[~done]] * 3)
+                    scores, _1 = self.get_scores(model, pertbx, label_ext)
+                    pertbx = pertbx.reshape(3, num_sample_red, *red_n).permute([1, 0, *red_ind])
+                    scores = scores.reshape(3, num_sample_red).permute(1, 0)
+                    _, s_idx = scores.max(dim=-1)
+                    pert_x_cont = pertbx[torch.arange(num_sample_red), s_idx]
+                    adv_x[~done] = round_x(pert_x_cont, self.round_threshold)
+            self.lambda_ *= base
+            if not self.check_lambda(model):
+                break
+        with torch.no_grad():
+            _, done = self.get_loss(model, adv_x, label, self.lambda_)
+            if verbose:
+                logger.info(f"step-wise max: attack effectiveness {done.sum().item() / done.size()[0] * 100:.3f}%.")
+        return adv_x
+
     def _perturb(self, model, x, label=None,
                  steps=10,
                  step_length_l1=1.,
@@ -69,87 +136,31 @@ class StepwiseMax(BaseAttack):
         self.lambda_ = lambda_
         assert 0 <= step_length_l1 <= 1, "Expected a real-value in [0,1], but got {}".format(step_length_l1)
         model.eval()
-        n, red_n = x.size()[0], x.size()[1:]
-        red_ind = list(range(2, len(x.size()) + 1))
-        adv_x = x.detach().clone()
-        stop_flag = torch.zeros(n, dtype=torch.bool, device=self.device)
+        adv_x = x.detach()
+        if self.use_random:
+            adv_x = get_x0(adv_x, rounding_threshold=self.round_threshold, is_sample=True)
+        adv_x_linf, adv_x_l2, adv_x_l1 = adv_x.clone(), adv_x.clone(), adv_x.clone()
         for t in range(steps):
-            num_sample_red = n - torch.sum(stop_flag)
-            if t == 0 and self.use_random:
-                adv_x = get_x0(adv_x, rounding_threshold=self.round_threshold, is_sample=True)
-            var_adv_x = torch.autograd.Variable(adv_x, requires_grad=True)
-            loss, done = self.get_loss(model, var_adv_x, label, self.lambda_)
-            grad = torch.autograd.grad(torch.mean(loss), var_adv_x)[0].detach().data
-            pertbx_list = self.get_perturbation(grad, x, adv_x, step_length_l1, step_length_l2, step_length_linf)
-            with torch.no_grad():
-                n_attacks = len(pertbx_list)
-                pertbx = torch.vstack(pertbx_list)
-                label_ext = torch.cat([label] * n_attacks)
-                scores, done = self.get_scores(model, pertbx, label_ext)
-                pertbx = pertbx.reshape(n_attacks, num_sample_red, *red_n).permute([1, 0, *red_ind])
-                scores = scores.reshape(n_attacks, num_sample_red).permute(1, 0)
-                print('scores:', t + 1, scores[:2], torch.sum(done))
-                _, s_idx = scores.max(dim=-1)
-                adv_x = pertbx[torch.arange(num_sample_red), s_idx]
-        return adv_x
+            # linf
+            var_adv_x_linf = torch.autograd.Variable(adv_x_linf, requires_grad=True)
+            loss, done = self.get_loss(model, var_adv_x_linf, label, self.lambda_)
+            grad = torch.autograd.grad(torch.mean(loss), var_adv_x_linf)[0].detach().data
+            adv_x_linf = self.get_perturbation_linf(grad, adv_x_linf, step_length_linf)
 
-    def perturb(self, model, x, label=None,
-                steps=100,
-                step_check=10,
-                sl_l1=1.,
-                sl_l2=1.,
-                sl_linf=0.01,
-                min_lambda_=1e-5,
-                max_lambda_=1e5,
-                base=10.,
-                verbose=False):
-        """
-        enhance attack
-        """
-        assert 0 < min_lambda_ <= max_lambda_
-        assert steps >= 0 and 1 >= sl_l1 > 0 and sl_l2 >= 0 and sl_linf >= 0
-        model.eval()
-        if hasattr(model, 'forward_g'):
-            self.lambda_ = min_lambda_
-        else:
-            self.lambda_ = max_lambda_
-        mini_steps = [step_check] * (steps // step_check)
-        mini_steps = mini_steps + [steps % step_check] if steps % step_check != 0 else mini_steps
+            # l2
+            var_adv_x_l2 = torch.autograd.Variable(adv_x_l2, requires_grad=True)
+            loss, done = self.get_loss(model, var_adv_x_l2, label, self.lambda_)
+            grad = torch.autograd.grad(torch.mean(loss), var_adv_x_l2)[0].detach().data
+            adv_x_l2 = self.get_perturbation_l2(grad, adv_x_l2, step_length_l2)
 
-        adv_x = x.detach().clone().to(torch.double)
-        while self.lambda_ <= max_lambda_:
-            pert_x_cont = None
-            prev_done = None
-            for i, mini_step in enumerate(mini_steps):
-                with torch.no_grad():
-                    _, done = self.get_loss(model, adv_x, label, self.lambda_)
-                if torch.all(done):
-                    break
-                if i == 0:
-                    adv_x[~done] = x[~done]  # recompute the perturbation under other penalty factors
-                    prev_done = done
-                else:
-                    adv_x[~done] = pert_x_cont[~done[~prev_done]]
-                    prev_done = done
-                pert_x_cont = self._perturb(model, adv_x[~done], label[~done],
-                                            mini_step,
-                                            sl_l1,
-                                            sl_l2,
-                                            sl_linf,
-                                            lambda_=self.lambda_
-                                            )
-                adv_x[~done] = round_x(pert_x_cont, self.round_threshold)
+            # l1
+            var_adv_x_l1 = torch.autograd.Variable(adv_x_l1, requires_grad=True)
+            loss, done = self.get_loss(model, var_adv_x_l1, label, self.lambda_)
+            grad = torch.autograd.grad(torch.mean(loss), var_adv_x_l1)[0].detach().data
+            adv_x_l1 = self.get_perturbation_l1(grad, adv_x_l1, step_length_l1)
+        return adv_x_linf, adv_x_l2, adv_x_l1
 
-            self.lambda_ *= base
-            if not self.check_lambda(model):
-                break
-        with torch.no_grad():
-            _, done = self.get_loss(model, adv_x, label, self.lambda_)
-            if verbose:
-                logger.info(f"step-wise max: attack effectiveness {done.sum().item() / done.size()[0] * 100:.3f}%.")
-        return adv_x
-
-    def get_perturbation(self, gradients, x, adv_x, sl_l1, sl_l2, sl_linf):
+    def get_perturbation_linf(self, gradients, adv_x, step_length):
         # look for allowable position, because only '1--> -' and '0 --> +' are permitted
         # api insertion
         pos_insertion = (adv_x <= 0.5) * 1 * (adv_x >= 0.)
@@ -164,37 +175,61 @@ class StepwiseMax(BaseAttack):
 
         gradients = grad4removal + grad4insertion
 
-        pertbx = []
-        # norm
-        #    linf norm
         perturbation_linf = torch.sign(gradients)
         if self.is_attacker:
             perturbation_linf += (torch.any(perturbation_linf[:, self.api_flag] < 0, dim=-1,
                                             keepdim=True) * checking_nonexist_api)
-        perturbx_linf = torch.clamp(adv_x + sl_linf * perturbation_linf, min=0., max=1.)
-        # pertbx.append(perturbx_linf)
-        #    l2 norm
+        return torch.clamp(adv_x + step_length * perturbation_linf, min=0., max=1.)
+
+    def get_perturbation_l2(self, gradients, adv_x, step_length):
+        # look for allowable position, because only '1--> -' and '0 --> +' are permitted
+        # api insertion
+        pos_insertion = (adv_x <= 0.5) * 1 * (adv_x >= 0.)
+        grad4insertion = (gradients > 0) * pos_insertion * gradients
+        # api removal
+        pos_removal = (adv_x > 0.5) * 1
+        grad4removal = (gradients <= 0) * (pos_removal & self.manipulation_x) * gradients
+        if self.is_attacker:
+            #     2.1 cope with the interdependent apis
+            checking_nonexist_api = (pos_removal ^ self.omega) & self.omega
+            grad4removal[:, self.api_flag] += torch.sum(gradients * checking_nonexist_api, dim=-1, keepdim=True)
+
+        gradients = grad4removal + grad4insertion
+
         l2norm = torch.linalg.norm(gradients, dim=-1, keepdim=True).clamp_(min=EXP_OVER_FLOW)
         perturbation_l2 = torch.minimum(
-            torch.tensor(1., dtype=x.dtype, device=x.device),
+            torch.tensor(1., dtype=adv_x.dtype, device=adv_x.device),
             gradients / l2norm
         )
         if self.is_attacker:
             min_val = torch.amin(perturbation_l2, dim=-1, keepdim=True).clamp_(max=0.)
             perturbation_l2 += (torch.any(perturbation_l2[:, self.api_flag] < 0, dim=-1,
                                           keepdim=True) * torch.abs(min_val) * checking_nonexist_api)
-        perturbx_l2 = torch.clamp(adv_x + sl_l2 * perturbation_l2, min=0., max=1.)
-        pertbx.append(perturbx_l2)
-        #    l1 norm
-        k = int(1. / sl_l1)
-        val, idx = torch.abs(gradients).topk(k, dim=-1)
-        perturbation_l1 = F.one_hot(idx, num_classes=x.shape[-1]).sum(dim=1).double()
-        perturbation_l1 = perturbation_linf * perturbation_l1
+        return torch.clamp(adv_x + step_length * perturbation_l2, min=0., max=1.)
+
+    def get_perturbation_l1(self, gradients, adv_x, step_length):
+        # look for allowable position, because only '1--> -' and '0 --> +' are permitted
+        # api insertion
+        pos_insertion = (adv_x <= 0.5) * 1 * (adv_x >= 0.)
+        grad4insertion = (gradients > 0) * pos_insertion * gradients
+        # api removal
+        pos_removal = (adv_x > 0.5) * 1
+        grad4removal = (gradients <= 0) * (pos_removal & self.manipulation_x) * gradients
         if self.is_attacker:
-            perturbation_l1 += (torch.any(perturbation_l1[:, self.api_flag] < 0, dim=-1, keepdim=True) * checking_nonexist_api)
-        perturbx_l1 = torch.clamp(adv_x + sl_l1 * perturbation_l1, min=0., max=1.)
-        # pertbx.append(perturbx_l1)
-        return pertbx
+            #     2.1 cope with the interdependent apis
+            checking_nonexist_api = (pos_removal ^ self.omega) & self.omega
+            grad4removal[:, self.api_flag] += torch.sum(gradients * checking_nonexist_api, dim=-1, keepdim=True)
+
+        gradients = grad4removal + grad4insertion
+
+        k = int(1. / step_length)
+        val, idx = torch.abs(gradients).topk(k, dim=-1)
+        perturbation_l1 = F.one_hot(idx, num_classes=adv_x.shape[-1]).sum(dim=1).double()
+        perturbation_l1 = torch.sign(gradients) * perturbation_l1
+        if self.is_attacker:
+            perturbation_l1 += (
+                    torch.any(perturbation_l1[:, self.api_flag] < 0, dim=-1, keepdim=True) * checking_nonexist_api)
+        return torch.clamp(adv_x + step_length * perturbation_l1, min=0., max=1.)
 
     def get_scores(self, model, pertb_x, label):
         logits_f = model.forward_f(pertb_x)
