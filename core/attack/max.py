@@ -78,6 +78,7 @@ class Max(BaseAttack):
                 loss = (loss * done.to(torch.float)) + torch.min(loss) * (~done).to(torch.float)
                 pertbx = pertbx.reshape(len(self.attack_list), num_sample_red, *red_n).permute([1, 0, *red_ind])
                 _, indices = loss.max(dim=-1)
+                print(loss[:10], indices[:10])
                 adv_x[~stop_flag] = pertbx[torch.arange(num_sample_red), indices]
                 a_loss = loss[torch.arange(num_sample_red), indices]
                 pre_stop_flag = stop_flag.clone()
