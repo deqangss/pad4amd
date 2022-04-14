@@ -157,8 +157,8 @@ class PGD(BaseAttack):
         if self.norm == 'linf':
             perturbation = torch.sign(gradients)
         elif self.norm == 'l2':
-            # l2norm = torch.linalg.norm(gradients, dim=-1, keepdim=True).clamp_(min=EXP_OVER_FLOW)
-            l2norm = torch.linalg.norm(gradients)
+            l2norm = torch.linalg.norm(gradients, dim=-1, keepdim=True).clamp_(min=EXP_OVER_FLOW)
+            # l2norm = torch.linalg.norm(gradients)
             perturbation = torch.minimum(
                 torch.tensor(1., dtype=features.dtype, device=features.device),
                 gradients / l2norm
