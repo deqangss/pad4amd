@@ -198,7 +198,7 @@ class StepwiseMax(BaseAttack):
 
         gradients = grad4removal + grad4insertion
 
-        l2norm = torch.linalg.norm(gradients, dim=-1, keepdim=True).clamp_(min=EXP_OVER_FLOW)
+        l2norm = torch.linalg.norm(gradients, dim=-1, keepdim=True)
         perturbation_l2 = torch.minimum(
             torch.tensor(1., dtype=adv_x.dtype, device=adv_x.device),
             gradients / l2norm

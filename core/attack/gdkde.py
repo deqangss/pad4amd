@@ -148,7 +148,7 @@ class GDKDE(BaseAttack):
         gradients = grad4removal + grad4insertion
 
         # 2. normalize gradient in the direction of l2 norm
-        l2norm = torch.linalg.norm(gradients, dim=-1, keepdim=True).clamp_(min=EXP_OVER_FLOW)
+        l2norm = torch.linalg.norm(gradients, dim=-1, keepdim=True)
         perturbation = torch.minimum(
             torch.tensor(1., dtype=features.dtype, device=features.device),
             gradients / l2norm
