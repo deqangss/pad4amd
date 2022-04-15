@@ -257,7 +257,7 @@ def _main():
         acc_w_indicator = (sum(~indicator_flag) + sum((y_pred == 1.) & indicator_flag)) / mal_count * 100
         logger.info(f'The mean accuracy on adversarial malware (w/ indicator) is {acc_w_indicator:.3f}%.')
 
-    dir_name = 'max' if not args.orthogonal_v else 'max_ortho'
+    dir_name = 'max' if not args.orthogonal_v else 'orthogonal_max'
     save_dir = os.path.join(config.get('experiments', dir_name), args.model)
     if not os.path.exists(save_dir):
         utils.mkdir(save_dir)
