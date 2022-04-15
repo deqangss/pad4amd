@@ -94,7 +94,7 @@ class StepwiseMax(BaseAttack):
                                                                   )
                 with torch.no_grad():
                     if self.is_attacker:
-                        pertbx_linf_disc = round_x(pertbx_linf, torch.rand(pertb_linf.size()).to(self.device))
+                        pertbx_linf_disc = round_x(pertbx_linf, torch.rand(pertbx_linf.size()).to(self.device))
                         pertbx_l2_disc = round_x(pertbx_l2, self.round_threshold)
                         pertbx_l1_disc = round_x(pertbx_l1, self.round_threshold)
                     pertbx_list = [pertbx_linf_disc, pertbx_l2_disc, pertbx_l1_disc]
