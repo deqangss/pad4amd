@@ -70,7 +70,7 @@ class StepwiseMax(BaseAttack):
 
         adv_x = x.detach().clone().to(torch.double)
         while self.lambda_ <= max_lambda_:
-            pert_x_cont = None
+            pertbx_cont = None
             prev_done = None
             for i, mini_step in enumerate(mini_steps):
                 with torch.no_grad():
@@ -81,11 +81,11 @@ class StepwiseMax(BaseAttack):
                     adv_x[~done] = x[~done]  # recompute the perturbation under other penalty factors
                     prev_done = done
                 else:
-                    adv_x[~done] = pert_x_cont[~done[~prev_done]]
+                    adv_x[~done] = pertbx_cont[~done[~prev_done]]
                     prev_done = done
 
                 num_sample_red = torch.sum(~done).item()
-                pert_x_linf, pert_x_l2, pert_x_l1 = self._perturb(model, adv_x[~done], label[~done],
+                pertbx_linf, pertbx_l2, pertbx_l1 = self._perturb(model, adv_x[~done], label[~done],
                                                                   mini_step,
                                                                   sl_l1,
                                                                   sl_l2,
@@ -94,18 +94,21 @@ class StepwiseMax(BaseAttack):
                                                                   )
                 with torch.no_grad():
                     if self.is_attacker:
-                        pert_x_linf = round_x(pert_x_linf, torch.rand(pert_x_linf.size()).to(self.device))
-                        pert_x_l2 = round_x(pert_x_l2, self.round_threshold)
-                        pert_x_l1 = round_x(pert_x_l1, self.round_threshold)
-                    pertb_x_list = [pert_x_linf, pert_x_l2, pert_x_l1]
-                    n_attacks = len(pertb_x_list)
-                    pertbx = torch.vstack(pertb_x_list)
+                        pertbx_linf_disc = round_x(pertbx_linf, torch.rand(pertb_linf.size()).to(self.device))
+                        pertbx_l2_disc = round_x(pertbx_l2, self.round_threshold)
+                        pertbx_l1_disc = round_x(pertbx_l1, self.round_threshold)
+                    pertbx_list = [pertbx_linf_disc, pertbx_l2_disc, pertbx_l1_disc]
+                    n_attacks = len(pertbx_list)
+                    pertbx = torch.vstack(pertbx_list)
                     label_ext = torch.cat([label[~done]] * n_attacks)
                     scores, _1 = self.get_scores(model, pertbx, label_ext)
                     pertbx = pertbx.reshape(n_attacks, num_sample_red, *red_n).permute([1, 0, *red_ind])
                     scores = scores.reshape(n_attacks, num_sample_red).permute(1, 0)
                     _, s_idx = scores.max(dim=-1)
                     adv_x[~done] = pertbx[torch.arange(num_sample_red), s_idx]
+                    pertbx_cont = torch.vstack([pertbx_linf, pertbx_l2, pertbx_l1])
+                    pertbx_cont = pertbx_cont.reshape(n_attacks, num_sample_red, *red_n).permute([1, 0, *red_ind])
+                    pertbx_cont = pertbx_cont[torch.arange(num_sample_red), s_idx]
             self.lambda_ *= base
             if not self.check_lambda(model):
                 break
