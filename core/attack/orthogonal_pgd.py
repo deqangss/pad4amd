@@ -34,7 +34,7 @@ class OrthogonalPGD(PGD):
     @param device, 'cpu' or 'cuda'
     """
 
-    def __init__(self, norm, project_detector=False, project_classifier=False, k=1,
+    def __init__(self, norm, project_detector=False, project_classifier=False, k=None,
                  use_random=False, rounding_threshold=0.5,
                  is_attacker=True, manipulation_x=None, omega=None, device=None):
         super(OrthogonalPGD, self).__init__(norm, use_random, rounding_threshold, is_attacker,
@@ -146,8 +146,12 @@ class OrthogonalPGD(PGD):
                     torch.tensor(1., dtype=x.dtype, device=x.device),
                     grad / l2norm
                 )
+            elif self.norm == 'l1':
+                val, idx = torch.abs(grad).topk(int(1. / step_length), dim=-1)
+                perturbation = F.one_hot(idx, num_classes=adv_x.shape[-1]).sum(dim=1).double()
+                perturbation = torch.sign(grad) * perturbation
             else:
-                raise ValueError("'l2' or 'linf' are expected.")
+                raise ValueError("Expect 'l2', 'linf' or 'l1' norm.")
             adv_x = torch.clamp(adv_x + perturbation * step_length, min=0., max=1.)
         return adv_x
 
@@ -184,7 +188,13 @@ class OrthogonalPGD(PGD):
                                         step_length
                                         )
             # round
-            adv_x[~done] = round_x(pert_x_cont)
+            # round
+            if self.norm == 'linf':
+                # see paper: Adversarial Deep Learning for Robust Detection of Binary Encoded Malware
+                round_threshold = torch.rand(pert_x_cont.size()).to(self.device)
+            else:
+                round_threshold = 0.5
+            adv_x[~done] = round_x(pert_x_cont, round_threshold)
         with torch.no_grad():
             _, done = self.get_loss(model, adv_x, label, self.lambda_)
             if verbose:

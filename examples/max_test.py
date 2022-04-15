@@ -11,9 +11,10 @@ import torch
 import numpy as np
 
 from core.defense import Dataset
-from core.defense import DNNMalwareDetector, KernelDensityEstimation, AdvMalwareDetectorICNN, MaxAdvTraining, PrincipledAdvTraining
+from core.defense import DNNMalwareDetector, KernelDensityEstimation, AdvMalwareDetectorICNN, MaxAdvTraining, \
+    PrincipledAdvTraining
 from core.attack import Max
-from core.attack import GDKDEl1, PGDAdam, PGD, PGDl1
+from core.attack import GDKDEl1, PGDAdam, PGD, PGDl1, OrthogonalPGD
 from tools import utils
 from config import config, logging, ErrorHandler
 
@@ -26,35 +27,30 @@ atta_argparse.add_argument('--n_step_max', type=int, default=5,
                            help='maximum number of steps in max attack.')
 atta_argparse.add_argument('--varepsilon', type=float, default=1e-9,
                            help='small value for checking convergence.')
+atta_argparse.add_argument('--step_check', type=int, default=-1,
+                           help='number of steps when checking the effectiveness of continuous perturbations.')
 
 atta_argparse.add_argument('--lambda_', type=float, default=1.,
                            help='balance factor for waging attack.')
-atta_argparse.add_argument('--m_pertb', type=int, default=10,
+atta_argparse.add_argument('--m', type=int, default=100,
                            help='maximum number of perturbations.')
-atta_argparse.add_argument('--bandwidth', type=float, default=20.,
-                           help='variance of Gaussian distribution.')
-atta_argparse.add_argument('--n_benware', type=int, default=5000,
-                           help='number of centers.')
-atta_argparse.add_argument('--penalty_factor', type=float, default=1000.,
-                           help='penalty factor for density estimation.')
+
 atta_argparse.add_argument('--n_step_l2', type=int, default=100,
                            help='maximum number of steps.')
-atta_argparse.add_argument('--step_length_l2', type=float, default=1.,
+atta_argparse.add_argument('--step_length_l2', type=float, default=0.5,
                            help='step length in each step.')
-atta_argparse.add_argument('--step_check_l2', type=int, default=10,
-                            help='number of steps when checking the effectiveness of continuous perturbations.')
 atta_argparse.add_argument('--n_step_linf', type=int, default=100,
                            help='maximum number of steps.')
 atta_argparse.add_argument('--step_length_linf', type=float, default=0.01,
                            help='step length in each step.')
-atta_argparse.add_argument('--step_check_linf', type=int, default=10,
-                            help='number of steps when checking the effectiveness of continuous perturbations.')
-atta_argparse.add_argument('--n_step_adam', type=int, default=100,
-                           help='maximum number of steps.')
-atta_argparse.add_argument('--lr', type=float, default=0.1,
-                           help='learning rate.')
-atta_argparse.add_argument('--step_check_adam', type=int, default=10,
-                            help='number of steps when checking the effectiveness of continuous perturbations.')
+
+atta_argparse.add_argument('--orthogonal_v', action='store_true', default=False,
+                           help='use the orthogonal version of pgd.')
+atta_argparse.add_argument('--project_detector', action='store_true', default=False,
+                           help='whether know the adversary indicator or not.')
+atta_argparse.add_argument('--project_classifier', action='store_true', default=False,
+                           help='whether know the adversary indicator or not.')
+
 atta_argparse.add_argument('--random_start', action='store_true', default=False,
                            help='randomly initialize the start points.')
 atta_argparse.add_argument('--round_threshold', type=float, default=0.5,
@@ -66,8 +62,6 @@ atta_argparse.add_argument('--oblivion', action='store_true', default=False,
                            help='whether know the adversary indicator or not.')
 atta_argparse.add_argument('--kappa', type=float, default=1.,
                            help='attack confidence.')
-atta_argparse.add_argument('--n_sample_times', type=int, default=1,
-                           help='data sampling times when waging attacks')
 atta_argparse.add_argument('--real', action='store_true', default=False,
                            help='whether produce the perturbed apks.')
 atta_argparse.add_argument('--model', type=str, default='maldet',
@@ -161,67 +155,83 @@ def _main():
     logger.info("Load model parameters from {}.".format(model.model_save_path))
     model.predict(mal_test_dataset_producer)
 
-    # ben_hidden = []
-    # with torch.no_grad():
-    #     c = args.n_benware if args.n_benware < ben_count else ben_count
-    #     for ben_x, ben_a, ben_y, _1 in ben_test_dataset_producer:
-    #         ben_x, ben_a, ben_y = utils.to_tensor(ben_x, ben_a, ben_y, device=dv)
-    #         ben_x_hidden, _2 = model.forward(ben_x, ben_a)
-    #         ben_hidden.append(ben_x_hidden)
-    #         if len(ben_hidden) * hp_params['batch_size'] >= c:
-    #             break
-    #     ben_hidden = torch.vstack(ben_hidden)[:c]
-    #
-    # gdkde = GDKDEl1(ben_hidden,
-    #                 args.bandwidth,
-    #                 penalty_factor=args.penalty_factor,
-    #                 oblivion=args.oblivion,
-    #                 kappa=args.kappa,
-    #                 device=model.device
-    #                 )
-    # gdkde.perturb = partial(gdkde.perturb,
-    #                         m=args.m_pertb,
-    #                         base=args.base,
-    #                         verbose=False
-    #                         )
+    step_check = None if args.step_check <= 0 else args.step_check
+    if step_check:
+        step_check_l1, step_check_l2, step_check_linf = step_check, step_check, step_check
+    else:
+        step_check_l1, step_check_l2, step_check_linf = args.m, args.n_step_l2, args.n_step_linf
+    if not args.orthogonal_v:
+        pgdl1 = PGDl1(oblivion=args.oblivion, kappa=args.kappa, device=model.device)
+        pgdl1.perturb = partial(pgdl1.perturb,
+                                m=args.m,
+                                min_lambda_=1e-5,
+                                max_lambda_=1e5,
+                                base=args.base,
+                                verbose=False
+                                )
+    else:
+        pgdl1 = OrthogonalPGD(norm='l1',
+                              project_detector=args.project_detector,
+                              project_classifier=args.project_classifier,
+                              device=model.device)
 
-    pgdl1 = PGDl1(oblivion=args.oblivion, kappa=args.kappa, device=model.device)
-    pgdl1.perturb = partial(pgdl1.perturb,
-                            m=args.m_pertb,
-                            base=args.base,
-                            verbose=False
-                            )
+        pgdl1.perturb = partial(pgdl1.perturb,
+                                steps=args.m,
+                                step_length=1.0,
+                                step_check=step_check_l1,
+                                verbose=False
+                                )
 
-    pgdl2 = PGD(norm='l2', use_random=args.random_start, rounding_threshold=args.round_threshold,
-                oblivion=args.oblivion, kappa=args.kappa, device=model.device)
-    pgdl2.perturb = partial(pgdl2.perturb,
-                            steps=args.n_step_l2,
-                            step_length=args.step_length_l2,
-                            step_check=args.step_check_l2,
-                            base=args.base,
-                            verbose=False
-                            )
-
-    pgdlinf = PGD(norm='linf', use_random=False,
-                  oblivion=args.oblivion, kappa=args.kappa, device=model.device)
-    pgdlinf.perturb = partial(pgdlinf.perturb,
-                              steps=args.n_step_linf,
-                              step_length=args.step_length_linf,
-                              step_check=args.step_check_linf,
-                              base=args.base,
-                              verbose=False
-                              )
-
-    pgdadma = PGDAdam(use_random=args.random_start, rounding_threshold=args.round_threshold,
+    if not args.orthogonal_v:
+        pgdl2 = PGD(norm='l2', use_random=args.random_start, rounding_threshold=args.round_threshold,
+                    oblivion=args.oblivion, kappa=args.kappa, device=model.device)
+        pgdl2.perturb = partial(pgdl2.perturb,
+                                steps=args.n_step_l2,
+                                step_length=args.step_length_l2,
+                                step_check=step_check_l2,
+                                min_lambda_=1e-5,
+                                max_lambda_=1e5,
+                                base=args.base,
+                                verbose=False
+                                )
+    else:
+        pgdl2 = OrthogonalPGD(norm='l2',
+                              project_detector=args.project_detector,
+                              project_classifier=args.project_classifier,
+                              use_random=args.random_start,
+                              rounding_threshold=args.round_threshold,
+                              device=model.device)
+        pgdl1.perturb = partial(pgdl1.perturb,
+                                steps=args.n_step_l2,
+                                step_length=args.step_length_l2,
+                                step_check=step_check_l2,
+                                verbose=False
+                                )
+    if not args.orthogonal_v:
+        pgdlinf = PGD(norm='linf', use_random=False,
                       oblivion=args.oblivion, kappa=args.kappa, device=model.device)
-    pgdadma.perturb = partial(pgdadma.perturb,
-                              steps=args.n_step_adam,
-                              lr=args.lr,
-                              step_check=args.step_check_adam,
-                              base=args.base,
-                              verbose=False)
+        pgdlinf.perturb = partial(pgdlinf.perturb,
+                                  steps=args.n_step_linf,
+                                  step_length=args.step_length_linf,
+                                  step_check=step_check_linf,
+                                  min_lambda_=1e-5,
+                                  max_lambda_=1e5,
+                                  base=args.base,
+                                  verbose=False
+                                  )
+    else:
+        pgdlinf = OrthogonalPGD(norm='linf',
+                                project_detector=args.project_detector,
+                                project_classifier=args.project_classifier,
+                                device=model.device)
+        pgdlinf.perturb = partial(pgdlinf.perturb,
+                                  steps=args.n_step_linf,
+                                  step_length=args.step_length_linf,
+                                  step_check=step_check_linf,
+                                  verbose=False
+                                  )
 
-    attack = Max(attack_list=[pgdlinf, pgdl2, pgdl1], # pgdlinf, pgdl2, pgdl1
+    attack = Max(attack_list=[pgdlinf, pgdl2, pgdl1],
                  varepsilon=1e-9,
                  oblivion=args.oblivion,
                  device=model.device
@@ -234,8 +244,6 @@ def _main():
         x, y = utils.to_tensor(x, y.long(), model.device)
         adv_x_batch = attack.perturb(model.double(), x.double(), y,
                                      steps_of_max=args.n_step_max,
-                                     min_lambda_=1e-5,
-                                     max_lambda_=1e5,
                                      verbose=True)
         y_cent_batch, x_density_batch = model.inference_batch_wise(adv_x_batch, y)
         y_cent_list.append(y_cent_batch)

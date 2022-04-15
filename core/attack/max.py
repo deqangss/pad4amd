@@ -26,7 +26,7 @@ class Max(BaseAttack):
         self.varepsilon = varepsilon
         self.device = device
 
-    def perturb(self, model, x, label=None, steps_of_max=5, min_lambda_=1e-5, max_lambda_=1e5, verbose=False):
+    def perturb(self, model, x, label=None, steps_of_max=5, verbose=False):
         """
         perturb node features
 
@@ -36,8 +36,6 @@ class Max(BaseAttack):
         @param x: torch.FloatTensor, feature vectors with shape [batch_size, vocab_dim]
         @param label: torch.LongTensor, ground truth labels
         @param steps_of_max: Integer, maximum number of iterations
-        @param min_lambda_, float, minimum value of penalty factor
-        @param max_lambda_, float, maximum value of penalty factor
         @param verbose: Boolean, print verbose log
         """
         if x is None or x.shape[0] <= 0:
@@ -61,9 +59,7 @@ class Max(BaseAttack):
                 assert 'perturb' in type(attack).__dict__.keys()
                 if t > 0 and 'use_random' in attack.__dict__.keys():
                     attack.use_random = False
-                pertbx.append(attack.perturb(model=model, x=adv_x[~stop_flag], label=red_label,
-                                             min_lambda_=min_lambda_,
-                                             max_lambda_=max_lambda_))
+                pertbx.append(attack.perturb(model=model, x=adv_x[~stop_flag], label=red_label))
             pertbx = torch.vstack(pertbx)
 
             with torch.no_grad():
@@ -96,7 +92,8 @@ class Max(BaseAttack):
         if 'forward_g' in type(model).__dict__.keys() and (not self.oblivion):
             logits_g = model.forward_g(pertb_x)
             tau = model.get_tau_sample_wise()
-            loss_no_reduction = ce + tau - logits_g
+            # loss_no_reduction = ce + tau - logits_g
+            loss_no_reduction = ce - F.sigmoid(logits_g)
             done = (y_pred == 0.) & (logits_g <= tau)
         else:
             loss_no_reduction = ce

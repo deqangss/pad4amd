@@ -39,7 +39,7 @@ class PGD(BaseAttack):
     def __init__(self, norm, use_random=False, rounding_threshold=0.5,
                  is_attacker=True, oblivion=False, kappa=1., manipulation_x=None, omega=None, device=None):
         super(PGD, self).__init__(is_attacker, oblivion, kappa, manipulation_x, omega, device)
-        assert norm == 'l2' or norm == 'linf', "Expect 'l2' or 'linf'."
+        assert norm == 'l1' or norm == 'l2' or norm == 'linf', "Expect 'l1', 'l2' or 'linf'."
         self.norm = norm
         self.use_random = use_random
         assert 0 < rounding_threshold < 1
@@ -163,7 +163,7 @@ class PGD(BaseAttack):
                 gradients / l2norm
             )
         else:
-            raise ValueError("'l2' or 'linf' are expected.")
+            raise ValueError("Expect 'l2' or 'linf' norm.")
 
 
         # problematic

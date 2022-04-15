@@ -17,15 +17,15 @@ logger = logging.getLogger('examples.pgd_test')
 logger.addHandler(ErrorHandler)
 
 atta_argparse = argparse.ArgumentParser(description='arguments for projected gradient descent attack')
-atta_argparse.add_argument('--norm', type=str, default='linf', choices=['l2', 'linf'],
-                           help="gradient normalization, either of 'l2' and 'linf'.")
+atta_argparse.add_argument('--norm', type=str, default='l1', choices=['l1', 'l2', 'linf'],
+                           help="gradient normalization, either of 'l1', 'l2' and 'linf'.")
 atta_argparse.add_argument('--project_detector', action='store_true', default=False,
                            help='whether know the adversary indicator or not.')
 atta_argparse.add_argument('--project_classifier', action='store_true', default=False,
                            help='whether know the adversary indicator or not.')
 atta_argparse.add_argument('--n_step', type=int, default=100,
                            help='maximum number of steps.')
-atta_argparse.add_argument('--step_length', type=float, default=0.01,
+atta_argparse.add_argument('--step_length', type=float, default=1.,
                            help='step length in each step.')
 atta_argparse.add_argument('--step_check', type=int, default=10,
                            help='number of steps when checking the effectiveness of continuous perturbations')

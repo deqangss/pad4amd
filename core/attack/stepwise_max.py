@@ -224,8 +224,7 @@ class StepwiseMax(BaseAttack):
 
         gradients = grad4removal + grad4insertion
 
-        k = int(1. / step_length)
-        val, idx = torch.abs(gradients).topk(k, dim=-1)
+        val, idx = torch.abs(gradients).topk(int(1. / step_length), dim=-1)
         perturbation_l1 = F.one_hot(idx, num_classes=adv_x.shape[-1]).sum(dim=1).double()
         perturbation_l1 = torch.sign(gradients) * perturbation_l1
         if self.is_attacker:
