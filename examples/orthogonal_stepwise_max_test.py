@@ -23,8 +23,6 @@ atta_argparse.add_argument('--project_detector', action='store_true', default=Fa
                            help='whether know the adversary indicator or not.')
 atta_argparse.add_argument('--project_classifier', action='store_true', default=False,
                            help='whether know the adversary indicator or not.')
-atta_argparse.add_argument('--step_check', type=int, default=1,
-                           help='number of steps when checking the effectiveness of continuous perturbations')
 atta_argparse.add_argument('--step_length_l1', type=float, default=1.,
                            help='step length in each step of pgd l1.')
 atta_argparse.add_argument('--step_length_l2', type=float, default=0.5,
@@ -137,7 +135,6 @@ def _main():
         x, y = utils.to_tensor(x.double(), y.long(), model.device)
         adv_x_batch = attack.perturb(model.double(), x, y,
                                      args.n_step,
-                                     args.step_check,
                                      args.step_length_l1,
                                      args.step_length_l2,
                                      args.step_length_linf,
