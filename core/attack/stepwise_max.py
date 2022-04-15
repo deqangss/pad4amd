@@ -21,7 +21,7 @@ EXP_OVER_FLOW = 1e-120
 
 class StepwiseMax(BaseAttack):
     """
-    Stepwise max attack (mixture of pgd l1, pgd l2, pgd linf
+    Stepwise max attack (mixture of pgd l1, pgd l2, pgd linf)
 
     Parameters
     ---------
@@ -238,7 +238,7 @@ class StepwiseMax(BaseAttack):
         y_pred = logits_f.argmax(1)
         if 'forward_g' in type(model).__dict__.keys() and (not self.oblivion):
             logits_g = model.forward_g(pertb_x)
-            loss_no_reduction = ce + model.tau - logits_g
+            loss_no_reduction = ce + F.sigmoid(logits_g)
             done = (y_pred == 0.) & (logits_g <= model.tau)
         else:
             loss_no_reduction = ce
