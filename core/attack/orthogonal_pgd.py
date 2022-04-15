@@ -118,7 +118,7 @@ class OrthogonalPGD(PGD):
                 logits_classifier[range(batch_size), 0] = logits_classifier[range(batch_size), 0] - 10.
                 has_attack_succeeded = (logits_classifier.argmax(1) == 0.)[:, None].float()
             else:
-                has_attack_succeeded = (logits_detector + 10. <= model.tau)[:, None].float()
+                has_attack_succeeded = (logits_detector <= model.tau)[:, None].float()
 
             if self.k:
                 # take gradients of g onto f every kth step
