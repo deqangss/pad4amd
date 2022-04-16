@@ -153,7 +153,7 @@ class PGD(BaseAttack):
             grad4removal[:, self.api_flag] += torch.sum(gradients * checking_nonexist_api, dim=-1, keepdim=True)
         gradients = grad4removal + grad4insertion
 
-        # 3. norm
+        # norm
         if self.norm == 'linf':
             perturbation = torch.sign(gradients)
         elif self.norm == 'l2':
@@ -166,8 +166,7 @@ class PGD(BaseAttack):
             raise ValueError("Expect 'l2' or 'linf' norm.")
 
 
-        # problematic
-        # 5. tailor the interdependent apis, application specific
+        # add the extra perturbation owing to the interdependent apis
         if self.norm == 'linf' and self.is_attacker:
             perturbation += torch.any(perturbation[:, self.api_flag] < 0, dim=-1,
                                       keepdim=True) * checking_nonexist_api

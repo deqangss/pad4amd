@@ -9,8 +9,7 @@ import argparse
 import numpy as np
 
 from core.defense import Dataset
-from core.defense import DNNMalwareDetector, KernelDensityEstimation, AdvMalwareDetectorICNN, MaxAdvTraining, \
-    PrincipledAdvTraining
+from core.defense import DNNMalwareDetector, KernelDensityEstimation, AdvMalwareDetectorICNN, MaxAdvTraining
 from core.attack import GDKDE
 from tools import utils
 from config import config, logging, ErrorHandler
@@ -124,10 +123,10 @@ def _main():
         adv_model = MaxAdvTraining(model)
         adv_model.load()
         model = adv_model.model
-    elif args.model == 'padvtrain':
-        adv_model = PrincipledAdvTraining(model)
-        adv_model.load()
-        model = adv_model.model
+    # elif args.model == 'padvtrain':
+    #     adv_model = PrincipledAdvTraining(model)
+    #     adv_model.load()
+    #     model = adv_model.model
     else:
         model.load()
     logger.info("Load model parameters from {}.".format(model.model_save_path))

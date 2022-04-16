@@ -131,28 +131,31 @@ class GDKDE(BaseAttack):
         return adv_x
 
     def get_perturbation(self, gradients, features, adv_features):
-        div_zero_overflow = torch.tensor(EXP_OVER_FLOW, dtype=gradients.dtype, device=gradients.device)
-        red_ind = list(range(1, len(features.size())))
-
-        # 1. look for allowable position, because only '1--> -' and '0 --> +' are permitted
-        #    1.1 api insertion
+        # look for allowable position, because only '1--> -' and '0 --> +' are permitted
+        # api insertion
         pos_insertion = (adv_features <= 0.5) * 1 * (adv_features >= 0.)
         grad4insertion = (gradients > 0) * pos_insertion * gradients
-        #    1.2 api removal
+        # api removal
         pos_removal = (adv_features > 0.5) * 1
-        # #     2.2.1 cope with the interdependent apis
-        # checking_nonexist_api = (pos_removal ^ self.omega) & self.omega
-        # grad4removal = torch.sum(gradients * checking_nonexist_api, dim=-1, keepdim=True) + gradients
-        # grad4removal *= (grad4removal < 0) * (pos_removal & self.manipulation_x)
+        grad4removal = (gradients < 0) * (pos_removal & self.manipulation_x) * gradients
+        if self.is_attacker:
+            # cope with the interdependent apis
+            checking_nonexist_api = (pos_removal ^ self.omega) & self.omega
+            grad4removal[:, self.api_flag] += torch.sum(gradients * checking_nonexist_api, dim=-1, keepdim=True)
         grad4removal = (gradients < 0) * (pos_removal & self.manipulation_x) * gradients
         gradients = grad4removal + grad4insertion
 
-        # 2. normalize gradient in the direction of l2 norm
+        # normalize gradient in the direction of l2 norm
         l2norm = torch.linalg.norm(gradients, dim=-1, keepdim=True)
         perturbation = torch.minimum(
             torch.tensor(1., dtype=features.dtype, device=features.device),
             gradients / l2norm
         )
+
+        # add the extra perturbation owing to the interdependent apis
+        min_val = torch.amin(perturbation, dim=-1, keepdim=True).clamp_(max=0.)
+        perturbation += (torch.any(perturbation[:, self.api_flag] < 0, dim=-1,
+                                   keepdim=True) * torch.abs(min_val) * checking_nonexist_api)
         return perturbation
 
     def get_loss(self, model, adv_x, label):
