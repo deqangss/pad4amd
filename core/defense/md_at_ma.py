@@ -84,7 +84,6 @@ class MaxAdvTraining(object):
                                                   **self.attack_param
                                                   )
                 correct_flag = self.model.forward(pertb_mal_x).argmax(1) == mal_y_batch.reshape(-1)
-                print(correct_flag)
                 adv_mal_x = pertb_mal_x[~correct_flag]
                 adv_mal_y = mal_y_batch[~correct_flag]
                 total_time += time.time() - start_time
