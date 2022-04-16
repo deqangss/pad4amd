@@ -60,7 +60,6 @@ class OrthogonalPGD(PGD):
         @param label: torch.LongTensor, ground truth labels
         @param steps: Integer, maximum number of iterations
         @param step_length: float, the step length in each iteration
-        @param lambda_, float, penalty factor
         """
         if x is None or x.shape[0] <= 0:
             return []
