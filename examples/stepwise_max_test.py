@@ -18,8 +18,6 @@ logger.addHandler(ErrorHandler)
 atta_argparse = argparse.ArgumentParser(description='arguments for step-wise max attack')
 atta_argparse.add_argument('--steps', type=int, default=100,
                            help='maximum number of steps.')
-atta_argparse.add_argument('--step_check', type=int, default=10,
-                           help='number of steps when checking the effectiveness of continuous perturbations')
 atta_argparse.add_argument('--step_length_l1', type=float, default=1.,
                            help='step length in each step of pgd l1.')
 atta_argparse.add_argument('--step_length_l2', type=float, default=1.,
@@ -134,7 +132,6 @@ def _main():
         x, y = utils.to_tensor(x.double(), y.long(), model.device)
         adv_x_batch = attack.perturb(model.double(), x, y,
                                      args.steps,
-                                     args.step_check,
                                      args.step_length_l1,
                                      args.step_length_l2,
                                      args.step_length_linf,
