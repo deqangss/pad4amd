@@ -136,7 +136,7 @@ def _main():
     with torch.no_grad():
         c = args.n_center if args.n_center < ben_count else ben_count
         for ben_x, ben_y in ben_test_dataset_producer:
-            ben_x, ben_y = utils.to_tensor(ben_x.float(), ben_y.long(), device=dv)
+            ben_x, ben_y = utils.to_tensor(ben_x, ben_y.long(), device=dv)
             ben_feature_vectors.append(ben_x)
             if len(ben_feature_vectors) * hp_params['batch_size'] >= c:
                 break
