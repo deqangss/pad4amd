@@ -35,11 +35,12 @@ class RFGSM(BaseAttack):
     @param device, 'cpu' or 'cuda'
     """
 
-    def __init__(self, is_attacker=True, oblivion=False, kappa=1., manipulation_x=None, omega=None, device=None):
+    def __init__(self, is_attacker=True, random=False, oblivion=False, kappa=1., manipulation_x=None, omega=None, device=None):
         super(RFGSM, self).__init__(is_attacker, oblivion, kappa, manipulation_x, omega, device)
         self.omega = None  # no interdependent apis if just api insertion is considered
         self.manipulation_z = None  # all apis are permitted to be insertable
         self.lmba = 1.
+        self.random = random
 
     def _perturb(self, model, x, label=None,
                  highest_score=None,
@@ -80,7 +81,10 @@ class RFGSM(BaseAttack):
             adv_x = torch.clamp(adv_x + step_length * torch.sign(grad4ins_), min=0., max=1.)
 
         # select adv x
-        round_threshold = torch.rand(adv_x.size()).to(self.device)
+        if self.random:
+            round_threshold = torch.rand(adv_x.size()).to(self.device)
+        else:
+            round_threshold = 0.5
         adv_x = round_x(adv_x, round_threshold)
         # feasible projection
         adv_x = or_tensors(adv_x, x)

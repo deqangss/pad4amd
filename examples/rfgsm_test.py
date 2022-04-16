@@ -20,6 +20,8 @@ atta_argparse.add_argument('--steps', type=int, default=100,
                            help='maximum number of iterations.')
 atta_argparse.add_argument('--step_length', type=float, default=0.02,
                            help='step size in each iteration.')
+atta_argparse.add_argument('--random', action='store_true', default=False,
+                           help='use random fgsm or deterministic fgsm')
 atta_argparse.add_argument('--oblivion', action='store_true', default=False,
                            help='whether know the adversary indicator or not.')
 atta_argparse.add_argument('--base', type=float, default=10.,
@@ -78,7 +80,7 @@ def _main():
                                name=args.model_name,
                                **hp_params
                                )
-    if not(args.model == 'md_dnn' or args.model == 'kde'):
+    if not (args.model == 'md_dnn' or args.model == 'kde'):
         if args.model == 'at_amd_pad' and hp_params['detector'] == 'none':
             pass
         else:
@@ -110,9 +112,11 @@ def _main():
     logger.info("Load model parameters from {}.".format(model.model_save_path))
     model.predict(mal_test_dataset_producer, indicator_masking=True)
 
-    attack = RFGSM(oblivion=args.oblivion,
-                 kappa=args.kappa,
-                 device=model.device)
+    attack = RFGSM(is_attacker=True,
+                   random=args.random,
+                   oblivion=args.oblivion,
+                   kappa=args.kappa,
+                   device=model.device)
 
     logger.info("\nThe maximum number of iterations for each example is {}:".format(args.steps))
     y_cent_list, x_density_list = [], []
