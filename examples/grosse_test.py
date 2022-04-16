@@ -7,8 +7,7 @@ import argparse
 import numpy as np
 
 from core.defense import Dataset
-from core.defense import DNNMalwareDetector, KernelDensityEstimation, AdvMalwareDetectorICNN, MaxAdvTraining, \
-    PrincipledAdvTraining
+from core.defense import DNNMalwareDetector, KernelDensityEstimation, AdvMalwareDetectorICNN, MaxAdvTraining
 from core.attack import Groose
 from tools import utils
 from config import config, logging, ErrorHandler
@@ -17,7 +16,7 @@ logger = logging.getLogger('examples.grosse_test')
 logger.addHandler(ErrorHandler)
 
 atta_argparse = argparse.ArgumentParser(description='arguments for grosse attack')
-atta_argparse.add_argument('--m_pertb', type=int, default=100,
+atta_argparse.add_argument('--m', type=int, default=100,
                            help='maximum number of perturbations.')
 atta_argparse.add_argument('--base', type=float, default=10.,
                            help='base of a logarithm function.')
@@ -25,8 +24,6 @@ atta_argparse.add_argument('--oblivion', action='store_true', default=False,
                            help='whether know the adversary indicator or not.')
 atta_argparse.add_argument('--kappa', type=float, default=1.,
                            help='attack confidence.')
-atta_argparse.add_argument('--n_sample_times', type=int, default=1,
-                           help='data sampling times when waging attacks')
 atta_argparse.add_argument('--real', action='store_true', default=False,
                            help='whether produce the perturbed apks.')
 atta_argparse.add_argument('--model', type=str, default='maldet',
@@ -104,10 +101,6 @@ def _main():
         adv_model = MaxAdvTraining(model)
         adv_model.load()
         model = adv_model.model
-    elif args.model == 'padvtrain':
-        adv_model = PrincipledAdvTraining(model)
-        adv_model.load()
-        model = adv_model.model
     else:
         model.load()
     logger.info("Load model parameters from {}.".format(model.model_save_path))
@@ -117,14 +110,14 @@ def _main():
                     kappa=args.kappa,
                     device=model.device)
 
-    logger.info("\nThe maximum number of perturbations for each example is {}:".format(args.m_pertb))
+    logger.info("\nThe maximum number of perturbations for each example is {}:".format(args.m))
     y_cent_list, x_density_list = [], []
     x_mod_integrated = []
     model.eval()
     for x, y in mal_test_dataset_producer:
         x, y = utils.to_tensor(x.double(), y.long(), model.device)
         adv_x_batch = attack.perturb(model, x, y,
-                                     args.m_pertb,
+                                     args.m,
                                      min_lambda_=1e-5,
                                      max_lambda_=1e5,
                                      base=args.base,

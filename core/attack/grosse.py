@@ -42,6 +42,7 @@ class Groose(BaseAttack):
         self.lambda_ = 1.
 
     def _perturb(self, model, x, label=None,
+                 highest_score=None,
                  m=10,
                  lambda_=1.):
         """
@@ -58,23 +59,29 @@ class Groose(BaseAttack):
         if x is None or x.shape[0] <= 0:
             return []
         adv_x = x
-        self.lambda_ = lambda_
+        worst_x = x.detach().clone()
+        if highest_score is None:
+            highest_score = self.get_scores(model, adv_x, label).data
         model.eval()
         for t in range(m):
             var_adv_x = torch.autograd.Variable(adv_x, requires_grad=True)
-            loss, done = self.get_loss(model, var_adv_x, torch.zeros_like(label, device=self.device))
-            if torch.all(done):
-                break
+            loss, _1 = self.get_loss(model, var_adv_x, torch.zeros_like(label, device=self.device))
+
             grad = torch.autograd.grad(torch.mean(loss), var_adv_x)[0].data
             grad4insertion = (grad > 0) * grad * (adv_x <= 0.5)
-
             grad4ins_ = grad4insertion.reshape(x.shape[0], -1)
-            _, pos = torch.max(grad4ins_, dim=-1)
-            perturbation = F.one_hot(pos, num_classes=grad4ins_.shape[-1]).double().reshape(x.shape)
+
+            _2, pos = torch.max(grad4ins_, dim=-1)
+            perturbation = F.one_hot(pos, num_classes=grad4ins_.shape[-1]).float().reshape(x.shape)
             # avoid to perturb the examples that are successful to evade the victim
-            perturbation[done] = 0.
             adv_x = torch.clamp(adv_x + perturbation, min=0., max=1.)
-        return adv_x
+
+            # select adv x
+            scores = self.get_scores(model, adv_x, label).data
+            replace_flag = (scores > highest_score)
+            highest_score[replace_flag] = scores[replace_flag]
+            worst_x[replace_flag] = adv_x[replace_flag]
+        return worst_x
 
     def perturb(self, model, x, label=None,
                 m=10,
@@ -95,17 +102,17 @@ class Groose(BaseAttack):
         adv_x = x.detach().clone().to(torch.double)
         while self.lambda_ <= max_lambda_:
             _, done = self.get_loss(model, adv_x, label)
+            score = self.get_scores(model, adv_x, label)
             if torch.all(done):
                 break
             adv_x[~done] = x[~done]  # recompute the perturbation under other penalty factors
             pert_x = self._perturb(model, adv_x[~done], label[~done],
+                                   score[~done],
                                    m,
                                    lambda_=self.lambda_
                                    )
             adv_x[~done] = pert_x
             self.lambda_ *= base
-            if not self.check_lambda(model):
-                break
         with torch.no_grad():
             _, done = self.get_loss(model, adv_x, torch.zeros_like(label, device=self.device))
             if verbose:
