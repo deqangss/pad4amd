@@ -97,17 +97,22 @@ class StepwiseMax(BaseAttack):
                         pertbx_linf_disc = round_x(pertbx_linf, torch.rand(pertbx_linf.size()).to(self.device))
                         pertbx_l2_disc = round_x(pertbx_l2, self.round_threshold)
                         pertbx_l1_disc = round_x(pertbx_l1, self.round_threshold)
-                    pertbx_list = [pertbx_linf_disc, pertbx_l2_disc, pertbx_l1_disc]
-                    n_attacks = len(pertbx_list)
-                    pertbx = torch.vstack(pertbx_list)
+                        pertbx_disc_list = [pertbx_linf_disc, pertbx_l2_disc, pertbx_l1_disc]
+                        n_attacks = len(pertbx_disc_list)
+                        pertbx = torch.vstack(pertbx_disc_list)
+                    else:
+                        pertbx = torch.vstack([pertbx_linf, pertbx_l2, pertbx_l1])
                     label_ext = torch.cat([label[~done]] * n_attacks)
                     scores, _1 = self.get_scores(model, pertbx, label_ext)
                     pertbx = pertbx.reshape(n_attacks, num_sample_red, *red_n).permute([1, 0, *red_ind])
                     scores = scores.reshape(n_attacks, num_sample_red).permute(1, 0)
                     _, s_idx = scores.max(dim=-1)
                     adv_x[~done] = pertbx[torch.arange(num_sample_red), s_idx]
-                    pertbx_cont = torch.vstack([pertbx_linf, pertbx_l2, pertbx_l1])
-                    pertbx_cont = pertbx_cont.reshape(n_attacks, num_sample_red, *red_n).permute([1, 0, *red_ind])
+                    if self.is_attacker:
+                        pertbx_cont = torch.vstack([pertbx_linf, pertbx_l2, pertbx_l1])
+                        pertbx_cont = pertbx_cont.reshape(n_attacks, num_sample_red, *red_n).permute([1, 0, *red_ind])
+                    else:
+                        pertbx_cont = pertbx
                     pertbx_cont = pertbx_cont[torch.arange(num_sample_red), s_idx]
             self.lambda_ *= base
             if not self.check_lambda(model):
@@ -224,7 +229,7 @@ class StepwiseMax(BaseAttack):
         pos_removal = (adv_x > 0.5) * 1
         grad4removal = (gradients <= 0) * (pos_removal & self.manipulation_x) * gradients
         if self.is_attacker:
-            #     2.1 cope with the interdependent apis
+            #     cope with the interdependent apis
             checking_nonexist_api = (pos_removal ^ self.omega) & self.omega
             grad4removal[:, self.api_flag] += torch.sum(gradients * checking_nonexist_api, dim=-1, keepdim=True)
 
