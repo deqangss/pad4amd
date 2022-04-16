@@ -8,8 +8,7 @@ import torch
 import numpy as np
 
 from core.defense import Dataset
-from core.defense import DNNMalwareDetector, KernelDensityEstimation, AdvMalwareDetectorICNN, MaxAdvTraining, \
-    PrincipledAdvTraining
+from core.defense import DNNMalwareDetector, KernelDensityEstimation, AdvMalwareDetectorICNN, MaxAdvTraining
 from core.attack import Mimicry
 from tools import utils
 from config import config, logging, ErrorHandler
@@ -103,10 +102,6 @@ def _main():
         model.load()
     elif args.model == 'at_amd_pad':
         adv_model = MaxAdvTraining(model)
-        adv_model.load()
-        model = adv_model.model
-    elif args.model == 'padvtrain':
-        adv_model = PrincipledAdvTraining(model)
         adv_model.load()
         model = adv_model.model
     else:
