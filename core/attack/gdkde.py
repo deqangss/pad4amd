@@ -73,7 +73,7 @@ class GDKDE(BaseAttack):
             perturbation = self.get_perturbation(grad, x, adv_x)
             # avoid to perturb the examples that are successful to evade the victim
             adv_x = torch.clamp(adv_x + perturbation * step_length, min=0., max=1.)
-        return adv_x
+        return round_x(adv_x)
 
     def perturb(self, model, x, label=None,
                 steps=10,
@@ -95,35 +95,18 @@ class GDKDE(BaseAttack):
         else:
             self.lambda_ = max_lambda_
 
-        mini_steps = [step_check] * (steps // step_check)
-        mini_steps = mini_steps + [steps % step_check] if steps % step_check != 0 else mini_steps
-
         adv_x = x.detach().clone().to(torch.double)
-        # adv_x = get_x0(adv_x, rounding_threshold=0.995, is_sample=True)
         while self.lambda_ <= max_lambda_:
-            pert_x_cont = None
-            prev_done = None
-            for i, mini_step in enumerate(mini_steps):
-                _, done = self.get_loss(model, adv_x, label)
-                if torch.all(done):
-                    break
-                if i == 0:
-                    adv_x[~done] = x[~done]  # recompute the perturbation under other penalty factors
-                    prev_done = done
-                else:
-                    adv_x[~done] = pert_x_cont[~done[~prev_done]]
-                    prev_done = done
-                pert_x_cont = self._perturb(model, adv_x[~done], label[~done],
-                                            mini_step,
-                                            step_length,
-                                            lambda_=self.lambda_
-                                            )
-                # round
-                adv_x[~done] = pert_x_cont.round()
-
-            self.lambda_ *= base
-            if not self.check_lambda(model):
+            _, done = self.get_loss(model, adv_x, label)
+            if torch.all(done):
                 break
+            pert_x = self._perturb(model, adv_x[~done], label[~done],
+                                   steps,
+                                   step_length,
+                                   lambda_=self.lambda_
+                                   )
+            adv_x[~done] = pert_x
+            self.lambda_ *= base
         with torch.no_grad():
             _, done = self.get_loss(model, adv_x, label)
             if verbose:
