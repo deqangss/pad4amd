@@ -7,7 +7,7 @@ import argparse
 import numpy as np
 
 from core.defense import Dataset
-from core.defense import DNNMalwareDetector, KernelDensityEstimation, AdvMalwareDetectorICNN, MaxAdvTraining, PrincipledAdvTraining
+from core.defense import DNNMalwareDetector, KernelDensityEstimation, AdvMalwareDetectorICNN, MaxAdvTraining
 from core.attack import PGD
 from tools import utils
 from config import config, logging, ErrorHandler
@@ -18,12 +18,10 @@ logger.addHandler(ErrorHandler)
 atta_argparse = argparse.ArgumentParser(description='arguments for projected gradient descent attack')
 atta_argparse.add_argument('--norm', type=str, default='l2', choices=['l2', 'linf'],
                            help="gradient normalization, either of 'l2' and 'linf'.")
-atta_argparse.add_argument('--n_step', type=int, default=100,
+atta_argparse.add_argument('--steps', type=int, default=100,
                            help='maximum number of steps.')
 atta_argparse.add_argument('--step_length', type=float, default=1.0,
                            help='step length in each step.')
-atta_argparse.add_argument('--step_check', type=int, default=10,
-                           help='number of steps when checking the effectiveness of continuous perturbations')
 atta_argparse.add_argument('--random_start', action='store_true', default=False,
                            help='randomly initialize the start points.')
 atta_argparse.add_argument('--round_threshold', type=float, default=0.5,
@@ -113,10 +111,6 @@ def _main():
         adv_model = MaxAdvTraining(model)
         adv_model.load()
         model = adv_model.model
-    elif args.model == 'padvtrain':
-        adv_model = PrincipledAdvTraining(model)
-        adv_model.load()
-        model = adv_model.model
     else:
         model.load()
     logger.info("Load model parameters from {}.".format(model.model_save_path))
@@ -136,9 +130,8 @@ def _main():
     for x, y in mal_test_dataset_producer:
         x, y = utils.to_tensor(x.double(), y.long(), model.device)
         adv_x_batch = attack.perturb(model.double(), x, y,
-                                     args.n_step,
+                                     args.steps,
                                      args.step_length,
-                                     step_check=args.step_check,
                                      min_lambda_=1e-5,
                                      max_lambda_=1e5,
                                      verbose=True)

@@ -76,12 +76,16 @@ class PGD(BaseAttack):
             grad = torch.autograd.grad(torch.mean(loss), var_adv_x)[0].detach().data
             perturbation = self.get_perturbation(grad, x, adv_x)
             adv_x = torch.clamp(adv_x + perturbation * step_length, min=0., max=1.)
-        return adv_x
+        # round
+        if self.norm == 'linf':
+            round_threshold = torch.rand(x.size()).to(self.device)
+        else:
+            round_threshold = self.round_threshold
+        return round_x(adv_x, round_threshold)
 
     def perturb(self, model, x, label=None,
                 steps=10,
                 step_length=1.,
-                step_check=10,
                 min_lambda_=1e-5,
                 max_lambda_=1e5,
                 base=10.,
@@ -92,45 +96,26 @@ class PGD(BaseAttack):
         assert 0 < min_lambda_ <= max_lambda_
         if 'k' in list(model.__dict__.keys()) and model.k > 0:
             logger.warning("The attack leads to dense graph and trigger the issue of out of memory.")
-        assert steps >= 0 and step_check > 0 and step_length >= 0
+        assert steps >= 0 and step_length >= 0
         model.eval()
         if hasattr(model, 'forward_g'):
             self.lambda_ = min_lambda_
         else:
             self.lambda_ = max_lambda_
-        mini_steps = [step_check] * (steps // step_check)
-        mini_steps = mini_steps + [steps % step_check] if steps % step_check != 0 else mini_steps
 
         adv_x = x.detach().clone().to(torch.double)
         while self.lambda_ <= max_lambda_:
-            pert_x_cont = None
-            prev_done = None
-            for i, mini_step in enumerate(mini_steps):
-                with torch.no_grad():
-                    _, done = self.get_loss(model, adv_x, label, self.lambda_)
-                if torch.all(done):
-                    break
-                if i == 0:
-                    adv_x[~done] = x[~done]  # recompute the perturbation under other penalty factors
-                    prev_done = done
-                else:
-                    adv_x[~done] = pert_x_cont[~done[~prev_done]]
-                    prev_done = done
-                pert_x_cont = self._perturb(model, adv_x[~done], label[~done],
-                                            mini_step,
-                                            step_length,
-                                            lambda_=self.lambda_
-                                            )
-                # round
-                if self.norm == 'linf':
-                    # see paper: Adversarial Deep Learning for Robust Detection of Binary Encoded Malware
-                    round_threshold = torch.rand(pert_x_cont.size()).to(self.device)
-                else:
-                    round_threshold = 0.5
-                adv_x[~done] = round_x(pert_x_cont, round_threshold)
-            self.lambda_ *= base
-            if not self.check_lambda(model):
+            with torch.no_grad():
+                _, done = self.get_loss(model, adv_x, label, self.lambda_)
+            if torch.all(done):
                 break
+            pert_x = self._perturb(model, adv_x[~done], label[~done],
+                                   steps,
+                                   step_length,
+                                   lambda_=self.lambda_
+                                   )
+            adv_x[~done] = pert_x
+            self.lambda_ *= base
         with torch.no_grad():
             _, done = self.get_loss(model, adv_x, label, self.lambda_)
             if verbose:
@@ -138,13 +123,12 @@ class PGD(BaseAttack):
         return adv_x
 
     def get_perturbation(self, gradients, features, adv_features):
-
-        # 1. look for allowable position, because only '1--> -' and '0 --> +' are permitted
-        #    1.1 api insertion
+        # look for allowable position, because only '1--> -' and '0 --> +' are permitted
+        # api insertion
         pos_insertion = (adv_features <= 0.5) * 1 * (adv_features >= 0.)
         grad4insertion = (gradients >= 0) * pos_insertion * gradients
         # grad4insertion = (gradients > 0) * gradients
-        #    2 api removal
+        # api removal
         pos_removal = (adv_features > 0.5) * 1
         grad4removal = (gradients < 0) * (pos_removal & self.manipulation_x) * gradients
         if self.is_attacker:
@@ -164,7 +148,6 @@ class PGD(BaseAttack):
             )
         else:
             raise ValueError("Expect 'l2' or 'linf' norm.")
-
 
         # add the extra perturbation owing to the interdependent apis
         if self.norm == 'linf' and self.is_attacker:

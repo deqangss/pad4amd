@@ -7,8 +7,7 @@ import argparse
 import numpy as np
 
 from core.defense import Dataset
-from core.defense import DNNMalwareDetector, KernelDensityEstimation, AdvMalwareDetectorICNN, MaxAdvTraining, \
-    PrincipledAdvTraining
+from core.defense import DNNMalwareDetector, KernelDensityEstimation, AdvMalwareDetectorICNN, MaxAdvTraining
 from core.attack import OMPAP
 from tools import utils
 from config import config, logging, ErrorHandler
@@ -104,10 +103,6 @@ def _main():
         adv_model = MaxAdvTraining(model)
         adv_model.load()
         model = adv_model.model
-    elif args.model == 'padvtrain':
-        adv_model = PrincipledAdvTraining(model)
-        adv_model.load()
-        model = adv_model.model
     else:
         model.load()
 
@@ -154,7 +149,6 @@ def _main():
         adv_app_dir = os.path.join(save_dir, 'adv_apps')
         attack.produce_adv_mal(x_mod_integrated, mal_test_x.tolist(),
                                config.get('dataset', 'malware_dir'),
-                               adj_mod=None,
                                save_dir=adv_app_dir)
         adv_feature_paths = dataset.apk_preprocess(adv_app_dir, update_feature_extraction=True)
         dataset.feature_preprocess(adv_feature_paths)

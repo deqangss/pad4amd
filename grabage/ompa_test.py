@@ -8,8 +8,7 @@ import torch
 import numpy as np
 
 from core.defense import Dataset
-from core.defense import DNNMalwareDetector, KernelDensityEstimation, AdvMalwareDetectorICNN, MaxAdvTraining, \
-    PrincipledAdvTraining
+from core.defense import DNNMalwareDetector, KernelDensityEstimation, AdvMalwareDetectorICNN, MaxAdvTraining
 from core.attack import OMPA
 from tools import utils
 from config import config, logging, ErrorHandler
@@ -18,7 +17,7 @@ logger = logging.getLogger('examples.omp_attack_test')
 logger.addHandler(ErrorHandler)
 
 atta_argparse = argparse.ArgumentParser(description='arguments for orthogonal matching pursuit attack')
-atta_argparse.add_argument('--lambda_', type=float, default=1.,
+atta_argparse.add_argument('--lmda', type=float, default=1.,
                            help='balance factor for waging attack.')
 atta_argparse.add_argument('--step_length', type=float, default=1.,
                            help='step length.')
@@ -111,10 +110,10 @@ def _main():
         adv_model = MaxAdvTraining(model)
         adv_model.load()
         model = adv_model.model
-    elif args.model == 'padvtrain':
-        adv_model = PrincipledAdvTraining(model)
-        adv_model.load()
-        model = adv_model.model
+    # elif args.model == 'padvtrain':
+    #     adv_model = PrincipledAdvTraining(model)
+    #     adv_model.load()
+    #     model = adv_model.model
     else:
         model.load()
     logger.info("Load model parameters from {}.".format(model.model_save_path))
