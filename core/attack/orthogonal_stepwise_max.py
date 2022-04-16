@@ -55,7 +55,7 @@ class OrthogonalStepwiseMax(StepwiseMax):
         adv_x = x.detach().clone().to(torch.double)
         pert_x_cont = None
         prev_done = None
-        for i, mini_step in enumerate(range(steps)):
+        for i in range(steps):
             with torch.no_grad():
                 if i == 0 and self.use_random:
                     adv_x = get_x0(adv_x, rounding_threshold=self.round_threshold, is_sample=True)
