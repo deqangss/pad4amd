@@ -135,6 +135,6 @@ class PGDl1(BaseAttack):
 
         # 5. tailor the interdependent apis
         if self.is_attacker:
-            perturbations += (torch.sum(directions[:, self.api_flag], dim=-1, keepdim=True) < 0) * checking_nonexist_api
+            perturbations += (torch.any(directions[:, self.api_flag] < 0, dim=-1, keepdim=True)) * checking_nonexist_api
             directions += perturbations * self.omega
         return perturbations, directions
