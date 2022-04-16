@@ -391,6 +391,51 @@ def get_x0(x, rounding_threshold=0.5, is_sample=False):
         return x
 
 
+def or_tensors(x_1, x_2):
+    """
+    ORs two float tensors by converting them to byte and back
+    Note that byte() takes the first 8 bit after the decimal point of the float
+    e.g., 0.0 ==> 0
+          0.1 ==> 0
+          1.1 ==> 1
+        255.1 ==> 255
+        256.1 ==> 0
+    Subsequently the purpose of this function is to map 1s float tensors to 1
+    and those of 0s to 0. I.e., it is meant to be used on tensors of 0s and 1s.
+    :param x_1: tensor one
+    :param x_2: tensor two
+    :return: float tensor of 0s and 1s.
+    """
+    return (x_1.byte() | x_2.byte()).double()
+
+
+def xor_tensors(x_1, x_2):
+    """
+    XORs two float tensors by converting them to byte and back
+    Note that byte() takes the first 8 bit after the decimal point of the float
+    e.g., 0.0 ==> 0
+          0.1 ==> 0
+          1.1 ==> 1
+        255.1 ==> 255
+        256.1 ==> 0
+    Subsequently the purpose of this function is to map 1s float tensors to 1
+    and those of 0s to 0. I.e., it is meant to be used on tensors of 0s and 1s.
+    :param x_1: tensor one
+    :param x_2: tensor two
+    :return: float tensor of 0s and 1s.
+    """
+    return (x_1.byte() ^ x_2.byte()).double()
+
+
+def get_mal_data(x_batch, y_batch):
+    """
+    filter out malware feature vectors and adjacency matrix (if it is necessary)
+    """
+    assert isinstance(x_batch, torch.Tensor) and isinstance(y_batch, torch.Tensor)
+    mal_x_batch = x_batch[y_batch == 1]
+    mal_y_batch = y_batch[y_batch == 1]
+    null_flag = len(mal_x_batch) <= 0
+    return mal_x_batch, mal_y_batch, null_flag
 #################################################################################
 ################################# smali code ####################################
 #################################################################################
