@@ -138,10 +138,10 @@ class GDKDE(BaseAttack):
         # api removal
         pos_removal = (adv_features > 0.5) * 1
         grad4removal = (gradients < 0) * (pos_removal & self.manipulation_x) * gradients
-        if self.is_attacker:
-            # cope with the interdependent apis
-            checking_nonexist_api = (pos_removal ^ self.omega) & self.omega
-            grad4removal[:, self.api_flag] += torch.sum(gradients * checking_nonexist_api, dim=-1, keepdim=True)
+        # if self.is_attacker:
+        #     # cope with the interdependent apis
+        #     checking_nonexist_api = (pos_removal ^ self.omega) & self.omega
+        #     grad4removal[:, self.api_flag] += torch.sum(gradients * checking_nonexist_api, dim=-1, keepdim=True)
         grad4removal = (gradients < 0) * (pos_removal & self.manipulation_x) * gradients
         gradients = grad4removal + grad4insertion
 
@@ -153,9 +153,10 @@ class GDKDE(BaseAttack):
         )
 
         # add the extra perturbation owing to the interdependent apis
-        min_val = torch.amin(perturbation, dim=-1, keepdim=True).clamp_(max=0.)
-        perturbation += (torch.any(perturbation[:, self.api_flag] < 0, dim=-1,
-                                   keepdim=True) * torch.abs(min_val) * checking_nonexist_api)
+        # if self.is_attacker:
+        #     min_val = torch.amin(perturbation, dim=-1, keepdim=True).clamp_(max=0.)
+        #     perturbation += (torch.any(perturbation[:, self.api_flag] < 0, dim=-1,
+        #                                keepdim=True) * torch.abs(min_val) * checking_nonexist_api)
         return perturbation
 
     def get_loss(self, model, adv_x, label):
