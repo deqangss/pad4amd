@@ -140,7 +140,7 @@ def _main():
         acc_w_indicator = (sum(~indicator_flag) + sum((y_pred == 1.) & indicator_flag)) / mal_count * 100
         logger.info(f'The mean accuracy on adversarial malware (w/ indicator) is {acc_w_indicator:.3f}%.')
 
-    save_dir = os.path.join(config.get('experiments', 'bga'), args.model)
+    save_dir = os.path.join(config.get('experiments', 'rfgsm'), args.model)
     x_mod_integrated = np.concatenate(x_mod_integrated, axis=0)
     utils.dump_pickle_frd_space(x_mod_integrated,
                                 os.path.join(save_dir, 'x_mod.list'))
