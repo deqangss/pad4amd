@@ -28,9 +28,9 @@ class BCA(BaseAttack):
 
     Parameters
     ---------
-    @param is_attacker, Boolean, play the role of attacker (note: the defender conducts adversarial training)
+    @param is_attacker, Boolean, if ture means the role is the attacker
     @param oblivion, Boolean, whether know the adversary indicator or not
-    @param kappa, attack confidence
+    @param kappa, attack confidence on adversary indicator
     @param manipulation_x, manipulations
     @param omega, the indices of interdependent apis corresponding to each api
     @param device, 'cpu' or 'cuda'
@@ -43,10 +43,10 @@ class BCA(BaseAttack):
         self.lambda_ = 1.
 
     def _perturb(self, model, x, label=None,
+                 highest_score=None,
                  m=10,
-                 lambda_=1.,
-                 use_sample=False,
-                 verbose=False):
+                 lmda=1.,
+                 use_sample=False):
         """
         perturb node feature vectors
 
@@ -55,35 +55,38 @@ class BCA(BaseAttack):
         @param model, a victim model
         @param x: torch.FloatTensor, feature vectors with shape [batch_size, vocab_dim]
         @param label: torch.LongTensor, ground truth labels
-        @param m: Integer, maximum number of perturbations
-        @param lambda_, float, penalty factor
+        @param m: Integer, maximum number of perturbations, namely the hp k in the paper
+        @param lmda, float, penalty factor for balancing the importance of adversary detector
         @param use_sample, Boolean, whether use random start point
-        @param verbose, Boolean, whether present attack information or not
         """
         if x is None or x.shape[0] <= 0:
             return []
         adv_x = x
-        self.lambda_ = lambda_
+        worst_x = x.detach().clone()
+        if highest_score is None:
+            highest_score = self.get_scores(model, adv_x, label).data
         model.eval()
         for t in range(m):
-            if use_sample and t == 0:
-                adv_x = get_x0(adv_x, rounding_threshold=0.5, is_sample=True)
+            if t == 0:
+                adv_x = get_x0(adv_x, rounding_threshold=0.5, is_sample=use_sample)
+
             var_adv_x = torch.autograd.Variable(adv_x, requires_grad=True)
-            loss, done = self.get_loss(model, var_adv_x, label, self.lambda_)
-            if torch.all(done):
-                break
-            grad = torch.autograd.grad(torch.mean(loss), var_adv_x)[0]
+            loss, _1 = self.get_loss(model, var_adv_x, label, lmda)
+            grad = torch.autograd.grad(loss.mean(), var_adv_x)[0].data
 
             # filtering un-considered graphs & positions
             grad4insertion = (grad > 0) * grad * (adv_x <= 0.5)
-
             grad4ins_ = grad4insertion.reshape(x.shape[0], -1)
-            _, pos = torch.max(grad4ins_, dim=-1)
+            _2, pos = torch.max(grad4ins_, dim=-1)
             perturbation = F.one_hot(pos, num_classes=grad4ins_.shape[-1]).float().reshape(x.shape)
-            # avoid to perturb the examples that are successful to evade the victim
-            perturbation[done] = 0.
+
             adv_x = torch.clamp(adv_x + perturbation, min=0., max=1.)
-        return adv_x
+            # select adv x
+            scores = self.get_scores(model, adv_x, label).data
+            replace_flag = (scores > highest_score)
+            highest_score[replace_flag] = scores[replace_flag]
+            worst_x[replace_flag] = adv_x[replace_flag]
+        return worst_x
 
     def perturb(self, model, x, label=None,
                 m=10,
@@ -103,19 +106,19 @@ class BCA(BaseAttack):
             self.lambda_ = max_lambda_
         adv_x = x.detach().clone().to(torch.double)
         while self.lambda_ <= max_lambda_:
-            _, done = self.get_loss(model, adv_x, label, self.lambda_)
+            with torch.no_grad():
+                _, done = self.get_loss(model, adv_x, label, self.lambda_)
+                score = self.get_scores(model, adv_x, label)
             if torch.all(done):
                 break
             pert_x = self._perturb(model, adv_x[~done], label[~done],
+                                   score[~done],
                                    m,
-                                   lambda_=self.lambda_,
-                                   use_sample=use_sample,
-                                   verbose=False
+                                   lmda=self.lambda_,
+                                   use_sample=use_sample
                                    )
             adv_x[~done] = pert_x
             self.lambda_ *= base
-            if not self.check_lambda(model):
-                break
         with torch.no_grad():
             _, done = self.get_loss(model, adv_x, label, self.lambda_)
             if verbose:

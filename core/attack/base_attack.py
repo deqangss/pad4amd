@@ -137,3 +137,12 @@ class BaseAttack(Module):
             loss_no_reduction = ce
             done = y_pred == 0.
         return loss_no_reduction, done
+
+    def get_scores(self, model, pertb_x, label):
+        ce = F.cross_entropy(model.forward_f(pertb_x), label, reduction='none')
+        if 'forward_g' in type(model).__dict__.keys() and (not self.oblivion):
+            logits_g = model.forward_g(pertb_x)
+            loss_no_reduction = ce - torch.sigmoid(logits_g)
+        else:
+            loss_no_reduction = ce
+        return loss_no_reduction
