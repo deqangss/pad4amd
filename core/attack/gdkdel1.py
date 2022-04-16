@@ -64,8 +64,7 @@ class GDKDEl1(BaseAttack):
 
     def _perturb(self, model, x, label=None,
                  m=10,
-                 lambda_=1.,
-                 verbose=False):
+                 lambda_=1.):
         """
         perturb node feature vectors
 
@@ -119,13 +118,10 @@ class GDKDEl1(BaseAttack):
             adv_x[~done] = x[~done]  # recompute the perturbation under other penalty factors
             pert_x = self._perturb(model, adv_x[~done], label[~done],
                                    m,
-                                   lambda_=self.lambda_,
-                                   verbose=False
+                                   lambda_=self.lambda_
                                    )
             adv_x[~done] = pert_x
             self.lambda_ *= base
-            if not self.check_lambda(model):
-                break
         with torch.no_grad():
             _, done = self.get_loss(model, adv_x, label)
             if verbose:
@@ -134,26 +130,26 @@ class GDKDEl1(BaseAttack):
 
     def get_perturbation(self, gradients, features, adv_features):
 
-        # 1. look for allowable position, because only '1--> -' and '0 --> +' are permitted
-        #    1.1 api insertion
+        # look for allowable position, because only '1--> -' and '0 --> +' are permitted
+        # api insertion
         pos_insertion = (adv_features <= 0.5) * 1
         grad4insertion = (gradients > 0) * pos_insertion * gradients
-        #    1.2 api removal
+        # api removal
         pos_removal = (adv_features > 0.5) * 1
-        #     1.2.1 cope with the interdependent apis
+        grad4removal = (gradients <= 0) * (pos_removal & self.manipulation_x) * gradients
+        # cope with the interdependent apis
         if self.is_attacker:
+            # cope with the interdependent apis
             checking_nonexist_api = (pos_removal ^ self.omega) & self.omega
-            grad4removal = torch.sum(gradients * checking_nonexist_api, dim=-1, keepdim=True) + gradients
-            grad4removal *= (grad4removal < 0) * (pos_removal & self.manipulation_x)
-        else:
-            grad4removal = (gradients < 0) * (pos_removal & self.manipulation_x) * gradients
+            grad4removal[:, self.api_flag] += torch.sum(gradients * checking_nonexist_api, dim=-1, keepdim=True)
+
         gradients = grad4removal + grad4insertion
 
-        # 2. remove duplications (i.e., neglect the positions whose values have been modified previously.)
+        # remove duplications (i.e., neglect the positions whose values have been modified previously.)
         un_mod = torch.abs(features - adv_features) <= 1e-6
         gradients = gradients * un_mod
 
-        # 3. look for important position
+        # look for important position
         absolute_grad = torch.abs(gradients).reshape(features.shape[0], -1)
         _, position = torch.max(absolute_grad, dim=-1)
         perturbations = F.one_hot(position, num_classes=absolute_grad.shape[-1]).double()
@@ -161,7 +157,7 @@ class GDKDEl1(BaseAttack):
         directions = torch.sign(gradients) * (perturbations > 1e-6)
 
         if self.is_attacker:
-            perturbations += (torch.sum(directions, dim=-1, keepdim=True) < 0) * checking_nonexist_api
+            perturbations += (torch.any(directions[:, self.api_flag] < 0, dim=-1, keepdim=True)) * checking_nonexist_api
             directions += perturbations * self.omega
         return perturbations, directions
 
@@ -169,7 +165,7 @@ class GDKDEl1(BaseAttack):
         logits_f = model.forward_f(adv_x)
         ce = F.cross_entropy(logits_f, label, reduction='none')
         y_pred = logits_f.argmax(1)
-        square = torch.sum(torch.square(self.benign_feat.float().unsqueeze(dim=0) - adv_x.float().unsqueeze(dim=1)),
+        square = torch.sum(torch.square(self.benign_feat.unsqueeze(dim=0) - adv_x.unsqueeze(dim=1)),
                            dim=-1)
         kde = torch.mean(torch.exp(-square / self.bandwidth), dim=-1)
         loss_no_reduction = ce + self.penalty_factor * kde
