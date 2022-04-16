@@ -1,9 +1,9 @@
 """
-abstract class of dense estimator
+abstract class of detecting adversarial malware
 """
 
 
-class DensityEstimatorTemplate(object):
+class DetectorTemplate(object):
     def __init__(self):
         self.tau = None
 

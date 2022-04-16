@@ -152,8 +152,6 @@ def _main():
         pgdl1 = PGDl1(oblivion=args.oblivion, kappa=args.kappa, device=model.device)
         pgdl1.perturb = partial(pgdl1.perturb,
                                 m=args.m,
-                                min_lambda_=1e-5,
-                                max_lambda_=1e5,
                                 base=args.base,
                                 verbose=False
                                 )
@@ -175,8 +173,6 @@ def _main():
         pgdl2.perturb = partial(pgdl2.perturb,
                                 steps=args.steps_l2,
                                 step_length=args.step_length_l2,
-                                min_lambda_=1e-5,
-                                max_lambda_=1e5,
                                 base=args.base,
                                 verbose=False
                                 )
@@ -198,8 +194,6 @@ def _main():
         pgdlinf.perturb = partial(pgdlinf.perturb,
                                   steps=args.steps_linf,
                                   step_length=args.step_length_linf,
-                                  min_lambda_=1e-5,
-                                  max_lambda_=1e5,
                                   base=args.base,
                                   verbose=False
                                   )
@@ -226,7 +220,9 @@ def _main():
     for x, y in mal_test_dataset_producer:
         x, y = utils.to_tensor(x, y.long(), model.device)
         adv_x_batch = attack.perturb(model.double(), x.double(), y,
-                                     steps_of_max=args.steps_max,
+                                     steps_max=args.steps_max,
+                                     min_lambda_=1e-5,
+                                     max_lambda_=1e5,
                                      verbose=True)
         y_cent_batch, x_density_batch = model.inference_batch_wise(adv_x_batch, y)
         y_cent_list.append(y_cent_batch)

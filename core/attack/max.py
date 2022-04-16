@@ -26,7 +26,7 @@ class Max(BaseAttack):
         self.varepsilon = varepsilon
         self.device = device
 
-    def perturb(self, model, x, label=None, steps_of_max=5, verbose=False):
+    def perturb(self, model, x, label=None, steps_max=5, min_lambda_=1e-5, max_lambda_=1e5, verbose=False):
         """
         perturb node features
 
@@ -35,7 +35,9 @@ class Max(BaseAttack):
         @param model, a victim model
         @param x: torch.FloatTensor, feature vectors with shape [batch_size, vocab_dim]
         @param label: torch.LongTensor, ground truth labels
-        @param steps_of_max: Integer, maximum number of iterations
+        @param steps_max: Integer, maximum number of iterations
+        @param min_lambda_: float, balance the importance of adversary detector, if it exists
+        @param max_lambda_: float, balance the importance of adversary detector, if it exists
         @param verbose: Boolean, print verbose log
         """
         if x is None or x.shape[0] <= 0:
@@ -48,7 +50,7 @@ class Max(BaseAttack):
         red_ind = list(range(2, len(x.size()) + 1))
         adv_x = x.detach().clone()
         stop_flag = torch.zeros(n, dtype=torch.bool, device=self.device)
-        for t in range(steps_of_max):
+        for t in range(steps_max):
             num_sample_red = n - torch.sum(stop_flag)
             if num_sample_red <= 0:
                 break
@@ -59,7 +61,13 @@ class Max(BaseAttack):
                 assert 'perturb' in type(attack).__dict__.keys()
                 if t > 0 and 'use_random' in attack.__dict__.keys():
                     attack.use_random = False
-                pertbx.append(attack.perturb(model=model, x=adv_x[~stop_flag], label=red_label))
+                if 'Orthogonal' in type(attack).__name__:
+                    pertbx.append(attack.perturb(model=model, x=adv_x[~stop_flag], label=red_label))
+                else:
+                    pertbx.append(attack.perturb(model=model, x=adv_x[~stop_flag], label=red_label,
+                                                 min_lambda_=1e-5,
+                                                 max_lambda_=1e5,
+                                                 ))
             pertbx = torch.vstack(pertbx)
 
             with torch.no_grad():

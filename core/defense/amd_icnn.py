@@ -16,7 +16,7 @@ from captum.attr import IntegratedGradients
 import numpy as np
 
 from core.defense.md_dnn import DNNMalwareDetector
-from core.defense.de_template import DensityEstimatorTemplate
+from core.defense.amd_template import DetectorTemplate
 from config import config, logging, ErrorHandler
 from tools import utils
 
@@ -24,11 +24,11 @@ logger = logging.getLogger('core.defense.amd_input_convex_nn')
 logger.addHandler(ErrorHandler)
 
 
-class AdvMalwareDetectorICNN(nn.Module, DensityEstimatorTemplate):
+class AdvMalwareDetectorICNN(nn.Module, DetectorTemplate):
     def __init__(self, md_nn_model, input_size, n_classes, ratio=0.95,
                  device='cpu', name='', **kwargs):
         nn.Module.__init__(self)
-        DensityEstimatorTemplate.__init__(self)
+        DetectorTemplate.__init__(self)
         self.input_size = input_size
         self.n_classes = n_classes
         self.ratio = ratio

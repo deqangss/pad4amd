@@ -6,35 +6,25 @@ import time
 from functools import partial
 
 from core.defense import Dataset
-from core.defense import DNNMalwareDetector, AdvMalwareDetectorICNN, MaxAdvTraining
-from core.attack import Max, PGD, OMPAP, PGDAdam
+from core.defense import DNNMalwareDetector, MaxAdvTraining
+from core.attack import Max, PGD, PGDl1, StepwiseMax
 from tools.utils import save_args, get_group_args, dump_pickle
 from examples.amd_icnn_test import cmd_md
 
 max_adv_argparse = cmd_md.add_argument_group(title='max adv training')
 max_adv_argparse.add_argument('--beta', type=float, default=0.1, help='penalty factor on adversarial loss.')
-max_adv_argparse.add_argument('--detector', type=str, default='icnn',
-                              choices=['none', 'icnn'],
-                              help="detector type, either of 'icnn' and 'none'.")
-
+max_adv_argparse.add_argument('--ma', type=str, default='max', choices=['max', 'stepwise_max'],
+                              help="Type of mixture of attack: 'max' or 'stepwise_max' strategy.")
 max_adv_argparse.add_argument('--m', type=int, default=20,
                               help='maximum number of perturbations.')
-max_adv_argparse.add_argument('--step_length_ompa', type=float, default=1.,
-                              help='step length.')
-max_adv_argparse.add_argument('--n_step_l2', type=int, default=50,
+max_adv_argparse.add_argument('--steps_l2', type=int, default=50,
                               help='maximum number of steps for base attacks.')
-max_adv_argparse.add_argument('--step_length_l2', type=float, default=2.,
+max_adv_argparse.add_argument('--step_length_l2', type=float, default=0.5,
                               help='step length in each step.')
-max_adv_argparse.add_argument('--n_step_linf', type=int, default=100,
+max_adv_argparse.add_argument('--steps_linf', type=int, default=100,
                               help='maximum number of steps for base attacks.')
 max_adv_argparse.add_argument('--step_length_linf', type=float, default=0.01,
                               help='step length in each step.')
-max_adv_argparse.add_argument('--step_check_l2', type=int, default=10,
-                              help='number of steps when checking the effectiveness of continuous perturbations.')
-max_adv_argparse.add_argument('--step_check_linf', type=int, default=1,
-                              help='number of steps when checking the effectiveness of continuous perturbations.')
-max_adv_argparse.add_argument('--atta_lr', type=float, default=0.05,
-                              help='learning rate for pgd adam attack.')
 max_adv_argparse.add_argument('--random_start', action='store_true', default=False,
                               help='randomly initialize the start points.')
 max_adv_argparse.add_argument('--round_threshold', type=float, default=0.98,
@@ -66,63 +56,54 @@ def _main():
                                name=model_name,
                                **vars(args)
                                )
-    if args.detector == 'none':
-        pass
-    elif args.detector == 'icnn':
-        model = AdvMalwareDetectorICNN(model,
-                                       input_size=dataset.vocab_size,
-                                       n_classes=dataset.n_classes,
-                                       device=dv,
-                                       name=model_name,
-                                       **vars(args)
-                                       )
-    else:
-        raise NotImplementedError
     model = model.to(dv).double()
-
-    # initialize the base attack model of max attack
-    ompap = OMPAP(is_attacker=False, device=model.device)
-    ompap.perturb = partial(ompap.perturb,
-                            m=args.m,
-                            step_length=args.step_length_ompa,
-                            verbose=False
-                            )
-
-    pgdl2 = PGD(norm='l2', use_random=False, is_attacker=False, device=model.device)
-    pgdl2.perturb = partial(pgdl2.perturb,
-                            steps=args.n_step_l2,
-                            step_length=args.step_length_l2,
-                            step_check=args.step_check_l2,
-                            verbose=False
-                            )
 
     pgdlinf = PGD(norm='linf', use_random=False,
                   is_attacker=False,
                   device=model.device)
     pgdlinf.perturb = partial(pgdlinf.perturb,
-                              steps=args.n_step_linf,
+                              steps=args.steps_linf,
                               step_length=args.step_length_linf,
-                              step_check=args.step_check_linf,
                               verbose=False
                               )
+    pgdl2 = PGD(norm='l2', use_random=False, is_attacker=False, device=model.device)
+    pgdl2.perturb = partial(pgdl2.perturb,
+                            steps=args.steps_l2,
+                            step_length=args.step_length_l2,
+                            verbose=False
+                            )
+    pgdl1 = PGDl1(is_attacker=False, device=model.device)
+    pgdl1.perturb = partial(pgdl1.perturb,
+                            m=args.m,
+                            verbose=False)
 
-    attack = Max(attack_list=[pgdlinf, pgdl2, ompap],
-                 varepsilon=1e-9,
-                 is_attacker=False,
-                 device=model.device
-                 )
+    if args.ma == 'max':
+        attack = Max(attack_list=[pgdlinf, pgdl2, pgdl1],
+                     varepsilon=1e-9,
+                     is_attacker=False,
+                     device=model.device
+                     )
+        attack_param = {
+            'steps_max': 1,  # steps for max attack
+            'verbose': True
+        }
 
-    attack_param = {
-        'steps': 1,  # steps for max attack
-        'verbose': True
-    }
+    elif args.ma == 'stepwise_max':
+        attack = StepwiseMax(is_attacker=False)
+        attack_param = {
+            'steps': max(max(args.m, args.steps_linf), args.steps_l2),
+            'sl_l1': 1.,
+            'sl_l2': args.step_length_l2,
+            'sl_linf': args.step_length_linf
+        }
+    else:
+        raise NotImplementedError("Expected 'max' and 'stepwise_max'.")
+
     max_adv_training_model = MaxAdvTraining(model, attack, attack_param)
-
     if args.mode == 'train':
         max_adv_training_model.fit(train_dataset_producer,
                                    val_dataset_producer,
-                                   epochs=5,
-                                   adv_epochs=args.epochs - 5,
+                                   adv_epochs=args.epochs,
                                    beta=args.beta,
                                    lr=args.lr,
                                    weight_decay=args.weight_decay

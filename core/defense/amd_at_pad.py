@@ -88,7 +88,7 @@ class PrincipledAdvDetection(object):
                 batch_size = x_batch.shape[0]
 
                 # perturb malware feature vectors
-                mal_x_batch, mal_adj_batch, mal_y_batch, null_flag = self.get_mal_data(x_batch, adj_batch, y_batch)
+                mal_x_batch, mal_adj_batch, mal_y_batch, null_flag = utils.get_mal_data(x_batch, adj_batch, y_batch)
                 mal_batch_size = mal_x_batch.shape[0]
                 if null_flag:  # if no malware in this batch, exit straightly
                     continue

@@ -2,11 +2,9 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import numpy as np
 import argparse
 
 from core.defense import Dataset
-from tools.utils import ivs_to_tensor_coo_sp
 
 
 cmd_md = argparse.ArgumentParser(description='arguments for feature extraction')

@@ -10,11 +10,9 @@ import time
 
 import torch
 import torch.optim as optim
-import torch.nn.functional as F
 import numpy as np
 
 from core.attack.max import Max
-from core.defense.principled_adv_training import PrincipledAdvTraining
 from config import config, logging, ErrorHandler
 from tools import utils
 
@@ -108,7 +106,7 @@ class MaxAdvTraining(object):
                 x_batch_ = x_batch_[idx]
                 y_batch_ = y_batch_[idx]
                 # 2. perturb malware feature vectors
-                mal_x_batch, mal_y_batch, null_flag = PrincipledAdvTraining.get_mal_data(x_batch, y_batch)
+                mal_x_batch, mal_y_batch, null_flag = utils.get_mal_data(x_batch, y_batch)
                 if null_flag:
                     continue
                 start_time = time.time()
@@ -117,7 +115,7 @@ class MaxAdvTraining(object):
                 lambda_ = np.random.choice(lambda_space)
                 self.model.eval()
                 pertb_mal_x = self.attack.perturb(self.model, mal_x_batch, mal_y_batch,
-                                                  steps_of_max=self.attack_param['steps'],
+                                                  steps_max=self.attack_param['steps'],
                                                   min_lambda_=lambda_lower_bound,
                                                   # when lambda is small, we cannot get effective attacks
                                                   max_lambda_=lambda_upper_bound,
@@ -205,11 +203,11 @@ class MaxAdvTraining(object):
                     acc_val_g /= x_val_.size()[0]
                     avg_acc_val.append(acc_val_g)
 
-                mal_x_batch, mal_y_batch, null_flag = PrincipledAdvTraining.get_mal_data(x_val, y_val)
+                mal_x_batch, mal_y_batch, null_flag = utils.get_mal_data(x_val, y_val)
                 if null_flag:
                     continue
                 pertb_mal_x = self.attack.perturb(self.model, mal_x_batch, mal_y_batch,
-                                                  steps_of_max=self.attack_param['steps'],
+                                                  steps_max=self.attack_param['steps'],
                                                   min_lambda_=lambda_lower_bound,
                                                   max_lambda_=lambda_upper_bound,
                                                   verbose=self.attack_param['verbose']
