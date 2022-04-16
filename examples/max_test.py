@@ -11,8 +11,7 @@ import torch
 import numpy as np
 
 from core.defense import Dataset
-from core.defense import DNNMalwareDetector, KernelDensityEstimation, AdvMalwareDetectorICNN, MaxAdvTraining, \
-    PrincipledAdvTraining
+from core.defense import DNNMalwareDetector, KernelDensityEstimation, AdvMalwareDetectorICNN, MaxAdvTraining
 from core.attack import Max
 from core.attack import GDKDEl1, PGDAdam, PGD, PGDl1, OrthogonalPGD
 from tools import utils
@@ -23,23 +22,21 @@ logger.addHandler(ErrorHandler)
 
 atta_argparse = argparse.ArgumentParser(description='arguments for l1 norm based projected gradient descent attack')
 
-atta_argparse.add_argument('--n_step_max', type=int, default=5,
+atta_argparse.add_argument('--steps_max', type=int, default=5,
                            help='maximum number of steps in max attack.')
 atta_argparse.add_argument('--varepsilon', type=float, default=1e-9,
                            help='small value for checking convergence.')
-atta_argparse.add_argument('--step_check', type=int, default=-1,
-                           help='number of steps when checking the effectiveness of continuous perturbations.')
 
-atta_argparse.add_argument('--lambda_', type=float, default=1.,
+atta_argparse.add_argument('--lmda', type=float, default=1.,
                            help='balance factor for waging attack.')
 atta_argparse.add_argument('--m', type=int, default=100,
                            help='maximum number of perturbations.')
 
-atta_argparse.add_argument('--n_step_l2', type=int, default=100,
+atta_argparse.add_argument('--steps_l2', type=int, default=100,
                            help='maximum number of steps.')
 atta_argparse.add_argument('--step_length_l2', type=float, default=0.5,
                            help='step length in each step.')
-atta_argparse.add_argument('--n_step_linf', type=int, default=100,
+atta_argparse.add_argument('--steps_linf', type=int, default=100,
                            help='maximum number of steps.')
 atta_argparse.add_argument('--step_length_linf', type=float, default=0.01,
                            help='step length in each step.')
@@ -146,20 +143,11 @@ def _main():
         adv_model = MaxAdvTraining(model)
         adv_model.load()
         model = adv_model.model
-    elif args.model == 'padvtrain':
-        adv_model = PrincipledAdvTraining(model)
-        adv_model.load()
-        model = adv_model.model
     else:
         model.load()
     logger.info("Load model parameters from {}.".format(model.model_save_path))
     model.predict(mal_test_dataset_producer)
 
-    step_check = None if args.step_check <= 0 else args.step_check
-    if step_check:
-        step_check_l1, step_check_l2, step_check_linf = step_check, step_check, step_check
-    else:
-        step_check_l1, step_check_l2, step_check_linf = args.m, args.n_step_l2, args.n_step_linf
     if not args.orthogonal_v:
         pgdl1 = PGDl1(oblivion=args.oblivion, kappa=args.kappa, device=model.device)
         pgdl1.perturb = partial(pgdl1.perturb,
@@ -178,7 +166,6 @@ def _main():
         pgdl1.perturb = partial(pgdl1.perturb,
                                 steps=args.m,
                                 step_length=1.0,
-                                step_check=step_check_l1,
                                 verbose=False
                                 )
 
@@ -186,9 +173,8 @@ def _main():
         pgdl2 = PGD(norm='l2', use_random=args.random_start, rounding_threshold=args.round_threshold,
                     oblivion=args.oblivion, kappa=args.kappa, device=model.device)
         pgdl2.perturb = partial(pgdl2.perturb,
-                                steps=args.n_step_l2,
+                                steps=args.steps_l2,
                                 step_length=args.step_length_l2,
-                                step_check=step_check_l2,
                                 min_lambda_=1e-5,
                                 max_lambda_=1e5,
                                 base=args.base,
@@ -202,18 +188,16 @@ def _main():
                               rounding_threshold=args.round_threshold,
                               device=model.device)
         pgdl1.perturb = partial(pgdl1.perturb,
-                                steps=args.n_step_l2,
+                                steps=args.steps_l2,
                                 step_length=args.step_length_l2,
-                                step_check=step_check_l2,
                                 verbose=False
                                 )
     if not args.orthogonal_v:
         pgdlinf = PGD(norm='linf', use_random=False,
                       oblivion=args.oblivion, kappa=args.kappa, device=model.device)
         pgdlinf.perturb = partial(pgdlinf.perturb,
-                                  steps=args.n_step_linf,
+                                  steps=args.steps_linf,
                                   step_length=args.step_length_linf,
-                                  step_check=step_check_linf,
                                   min_lambda_=1e-5,
                                   max_lambda_=1e5,
                                   base=args.base,
@@ -225,9 +209,8 @@ def _main():
                                 project_classifier=args.project_classifier,
                                 device=model.device)
         pgdlinf.perturb = partial(pgdlinf.perturb,
-                                  steps=args.n_step_linf,
+                                  steps=args.steps_linf,
                                   step_length=args.step_length_linf,
-                                  step_check=step_check_linf,
                                   verbose=False
                                   )
 
@@ -243,7 +226,7 @@ def _main():
     for x, y in mal_test_dataset_producer:
         x, y = utils.to_tensor(x, y.long(), model.device)
         adv_x_batch = attack.perturb(model.double(), x.double(), y,
-                                     steps_of_max=args.n_step_max,
+                                     steps_of_max=args.steps_max,
                                      verbose=True)
         y_cent_batch, x_density_batch = model.inference_batch_wise(adv_x_batch, y)
         y_cent_list.append(y_cent_batch)

@@ -128,10 +128,10 @@ class OrthogonalPGD(PGD):
             else:
                 if self.project_detector:
                     grad = grad_classifier_proj * (
-                                1. - has_attack_succeeded) + grad_detector_proj * has_attack_succeeded
+                            1. - has_attack_succeeded) + grad_detector_proj * has_attack_succeeded
                 else:
                     grad = grad_classifier_proj * has_attack_succeeded + grad_detector_proj * (
-                                1. - has_attack_succeeded)
+                            1. - has_attack_succeeded)
 
             # if torch.any(torch.isnan(grad)):
             #     print(torch.mean(torch.isnan(grad)))
@@ -152,47 +152,34 @@ class OrthogonalPGD(PGD):
             else:
                 raise ValueError("Expect 'l2', 'linf' or 'l1' norm.")
             adv_x = torch.clamp(adv_x + perturbation * step_length, min=0., max=1.)
-        return adv_x
+        # round
+        if self.norm == 'linf':
+            # see paper: Adversarial Deep Learning for Robust Detection of Binary Encoded Malware
+            round_threshold = torch.rand(x.size()).to(self.device)
+        else:
+            round_threshold = 0.5
+        return round_x(adv_x, round_threshold)
 
     def perturb(self, model, x, label=None,
                 steps=10,
                 step_length=1.,
-                step_check=10,
                 verbose=False):
         """
         enhance attack
         """
-        assert steps >= 0 and step_check > 0 and step_length >= 0
+        assert steps >= 0 and step_length >= 0
         model.eval()
-        mini_steps = [step_check] * (steps // step_check)
-        mini_steps = mini_steps + [steps % step_check] if steps % step_check != 0 else mini_steps
-
         adv_x = x.detach().clone().to(torch.double)
-        pert_x_cont = None
-        prev_done = None
-        for i, mini_step in enumerate(mini_steps):
-            with torch.no_grad():
-                _, done = self.get_loss(model, adv_x, label, self.lambda_)
-            if torch.all(done):
-                break
-            if i == 0:
-                adv_x[~done] = x[~done]  # recompute the perturbation under other penalty factors
-                prev_done = done
-            else:
-                adv_x[~done] = pert_x_cont[~done[~prev_done]]
-                prev_done = done
+        with torch.no_grad():
+            _, done = self.get_loss(model, adv_x, label, self.lambda_)
+        if torch.all(done):
+            return adv_x
+        pert_x = self._perturb(model, adv_x[~done], label[~done],
+                               steps,
+                               step_length
+                               )
 
-            pert_x_cont = self._perturb(model, adv_x[~done], label[~done],
-                                        mini_step,
-                                        step_length
-                                        )
-            # round
-            if self.norm == 'linf':
-                # see paper: Adversarial Deep Learning for Robust Detection of Binary Encoded Malware
-                round_threshold = torch.rand(pert_x_cont.size()).to(self.device)
-            else:
-                round_threshold = 0.5
-            adv_x[~done] = round_x(pert_x_cont, round_threshold)
+        adv_x[~done] = pert_x
         with torch.no_grad():
             _, done = self.get_loss(model, adv_x, label, self.lambda_)
             if verbose:
