@@ -8,7 +8,7 @@ import numpy as np
 
 from core.defense import Dataset
 from core.defense import DNNMalwareDetector, KernelDensityEstimation, AdvMalwareDetectorICNN, MaxAdvTraining
-from core.attack import BCA
+from core.attack import RFGSM
 from tools import utils
 from config import config, logging, ErrorHandler
 
@@ -16,8 +16,10 @@ logger = logging.getLogger('examples.bca_test')
 logger.addHandler(ErrorHandler)
 
 atta_argparse = argparse.ArgumentParser(description='arguments for bca')
-atta_argparse.add_argument('--m', type=int, default=100,
-                           help='maximum number of perturbations.')
+atta_argparse.add_argument('--steps', type=int, default=100,
+                           help='maximum number of iterations.')
+atta_argparse.add_argument('--step_length', type=float, default=0.02,
+                           help='step size in each iteration.')
 atta_argparse.add_argument('--oblivion', action='store_true', default=False,
                            help='whether know the adversary indicator or not.')
 atta_argparse.add_argument('--base', type=float, default=10.,
@@ -108,22 +110,23 @@ def _main():
     logger.info("Load model parameters from {}.".format(model.model_save_path))
     model.predict(mal_test_dataset_producer, indicator_masking=True)
 
-    attack = BCA(oblivion=args.oblivion,
+    attack = RFGSM(oblivion=args.oblivion,
                  kappa=args.kappa,
                  device=model.device)
 
-    logger.info("\nThe maximum number of perturbations for each example is {}:".format(args.m))
+    logger.info("\nThe maximum number of iterations for each example is {}:".format(args.steps))
     y_cent_list, x_density_list = [], []
     x_mod_integrated = []
     model.eval()
     for x, y in mal_test_dataset_producer:
         x, y = utils.to_tensor(x.double(), y.long(), model.device)
         adv_x_batch = attack.perturb(model, x, y,
-                                     args.m,
+                                     args.steps,
+                                     args.step_length,
                                      min_lambda_=1e-5,
                                      max_lambda_=1e5,
-                                     use_sample=False,
-                                     verbose=True)
+                                     verbose=True,
+                                     use_sample=False)
         y_cent_batch, x_density_batch = model.inference_batch_wise(adv_x_batch, y)
         y_cent_list.append(y_cent_batch)
         x_density_list.append(x_density_batch)
@@ -137,7 +140,7 @@ def _main():
         acc_w_indicator = (sum(~indicator_flag) + sum((y_pred == 1.) & indicator_flag)) / mal_count * 100
         logger.info(f'The mean accuracy on adversarial malware (w/ indicator) is {acc_w_indicator:.3f}%.')
 
-    save_dir = os.path.join(config.get('experiments', 'bca'), args.model)
+    save_dir = os.path.join(config.get('experiments', 'bga'), args.model)
     x_mod_integrated = np.concatenate(x_mod_integrated, axis=0)
     utils.dump_pickle_frd_space(x_mod_integrated,
                                 os.path.join(save_dir, 'x_mod.list'))

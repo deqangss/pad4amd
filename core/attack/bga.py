@@ -70,10 +70,8 @@ class BGA(BaseAttack):
         if highest_score is None:
             highest_score = self.get_scores(model, adv_x, label).data
         model.eval()
+        adv_x = get_x0(adv_x, rounding_threshold=0.5, is_sample=use_sample)
         for t in range(m):
-            if t == 0:
-                adv_x = get_x0(adv_x, rounding_threshold=0.5, is_sample=use_sample)
-
             var_adv_x = torch.autograd.Variable(adv_x, requires_grad=True)
             loss, _1 = self.get_loss(model, var_adv_x, label, lmda)
             grad = torch.autograd.grad(loss.mean(), var_adv_x)[0].data

@@ -10,21 +10,20 @@
 """
 
 import torch
-import torch.nn.functional as F
 
 from core.attack.base_attack import BaseAttack
-from tools.utils import get_x0
+from tools.utils import get_x0, round_x, or_tensors
 from config import logging, ErrorHandler
 
-logger = logging.getLogger('core.attack.bca')
+logger = logging.getLogger('core.attack.rfgsm')
 logger.addHandler(ErrorHandler)
 
 EXP_OVER_FLOW = 1e-30
 
 
-class BCA(BaseAttack):
+class RFGSM(BaseAttack):
     """
-    Multi-step bit coordinate ascent
+    FGSM^k with randomized rounding
 
     Parameters
     ---------
@@ -37,14 +36,15 @@ class BCA(BaseAttack):
     """
 
     def __init__(self, is_attacker=True, oblivion=False, kappa=1., manipulation_x=None, omega=None, device=None):
-        super(BCA, self).__init__(is_attacker, oblivion, kappa, manipulation_x, omega, device)
+        super(RFGSM, self).__init__(is_attacker, oblivion, kappa, manipulation_x, omega, device)
         self.omega = None  # no interdependent apis if just api insertion is considered
         self.manipulation_z = None  # all apis are permitted to be insertable
-        self.lambda_ = 1.
+        self.lmba = 1.
 
     def _perturb(self, model, x, label=None,
                  highest_score=None,
-                 m=10,
+                 steps=10,
+                 step_length=0.02,
                  lmda=1.,
                  use_sample=False):
         """
@@ -55,19 +55,19 @@ class BCA(BaseAttack):
         @param model, a victim model
         @param x: torch.FloatTensor, feature vectors with shape [batch_size, vocab_dim]
         @param label: torch.LongTensor, ground truth labels
-        @param m: Integer, maximum number of perturbations, namely the hp k in the paper
+        @param steps: Integer, maximum number of iterations
+        @param step_length: Integer, update value in each direction
         @param lmda, float, penalty factor for balancing the importance of adversary detector
         @param use_sample, Boolean, whether use random start point
         """
         if x is None or x.shape[0] <= 0:
             return []
-        adv_x = x
-        worst_x = x.detach().clone()
+        adv_x = x.clone()
         if highest_score is None:
             highest_score = self.get_scores(model, adv_x, label).data
         model.eval()
         adv_x = get_x0(adv_x, rounding_threshold=0.5, is_sample=use_sample)
-        for t in range(m):
+        for t in range(steps):
             var_adv_x = torch.autograd.Variable(adv_x, requires_grad=True)
             loss, _1 = self.get_loss(model, var_adv_x, label, lmda)
             grad = torch.autograd.grad(loss.mean(), var_adv_x)[0].data
@@ -75,50 +75,56 @@ class BCA(BaseAttack):
             # filtering un-considered graphs & positions
             grad4insertion = (grad > 0) * grad * (adv_x <= 0.5)
             grad4ins_ = grad4insertion.reshape(x.shape[0], -1)
-            _2, pos = torch.max(grad4ins_, dim=-1)
-            perturbation = F.one_hot(pos, num_classes=grad4ins_.shape[-1]).float().reshape(x.shape)
 
-            adv_x = torch.clamp(adv_x + perturbation, min=0., max=1.)
-            # select adv x
-            scores = self.get_scores(model, adv_x, label).data
-            replace_flag = (scores > highest_score)
-            highest_score[replace_flag] = scores[replace_flag]
-            worst_x[replace_flag] = adv_x[replace_flag]
-        return worst_x
+            # find the next sample
+            adv_x = torch.clamp(adv_x + step_length * torch.sign(grad4ins_), min=0., max=1.)
+
+        # select adv x
+        round_threshold = torch.rand(adv_x.size()).to(self.device)
+        adv_x = round_x(adv_x, round_threshold)
+        # feasible projection
+        adv_x = or_tensors(adv_x, x)
+
+        scores = self.get_scores(model, adv_x, label).data
+        replace_flag = (scores < highest_score)
+        adv_x[replace_flag] = x[replace_flag]
+        return adv_x
 
     def perturb(self, model, x, label=None,
-                m=10,
+                steps=10,
+                step_length=0.02,
                 min_lambda_=1e-5,
                 max_lambda_=1e5,
-                use_sample=False,
                 base=10.,
-                verbose=False):
+                verbose=False,
+                use_sample=False):
         """
         enhance attack
         """
         assert 0 < min_lambda_ <= max_lambda_
         model.eval()
         if hasattr(model, 'forward_g'):
-            self.lambda_ = min_lambda_
+            self.lmba = min_lambda_
         else:
-            self.lambda_ = max_lambda_
+            self.lmba = max_lambda_
         adv_x = x.detach().clone().to(torch.double)
-        while self.lambda_ <= max_lambda_:
+        while self.lmba <= max_lambda_:
             with torch.no_grad():
-                _, done = self.get_loss(model, adv_x, label, self.lambda_)
+                _, done = self.get_loss(model, adv_x, label, self.lmba)
                 score = self.get_scores(model, adv_x, label)
             if torch.all(done):
                 break
             pert_x = self._perturb(model, adv_x[~done], label[~done],
                                    score[~done],
-                                   m,
-                                   lmda=self.lambda_,
+                                   steps,
+                                   step_length,
+                                   lmda=self.lmba,
                                    use_sample=use_sample
                                    )
             adv_x[~done] = pert_x
-            self.lambda_ *= base
+            self.lmba *= base
         with torch.no_grad():
-            _, done = self.get_loss(model, adv_x, label, self.lambda_)
+            _, done = self.get_loss(model, adv_x, label, self.lmba)
             if verbose:
-                logger.info(f"BCA: attack effectiveness {done.sum().item() / x.size()[0] * 100:.3f}%.")
+                logger.info(f"rFGSM: attack effectiveness {done.sum().item() / x.size()[0] * 100:.3f}%.")
         return adv_x
