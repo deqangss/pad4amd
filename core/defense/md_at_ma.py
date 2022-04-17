@@ -79,24 +79,24 @@ class MaxAdvTraining(object):
                     continue
                 start_time = time.time()
                 self.model.eval()
-                pertb_mal_x = self.attack.perturb(self.model, mal_x_batch, mal_y_batch,
-                                                  **self.attack_param
-                                                  )
-                correct_flag = self.model.forward(pertb_mal_x).argmax(1) == mal_y_batch.reshape(-1)
-                adv_mal_x = pertb_mal_x[~correct_flag]
-                adv_mal_y = mal_y_batch[~correct_flag]
-                total_time += time.time() - start_time
-                x_batch = torch.cat([x_batch, adv_mal_x], dim=0).double()
-                y_batch = torch.cat([y_batch, adv_mal_y])
+                # pertb_mal_x = self.attack.perturb(self.model, mal_x_batch, mal_y_batch,
+                #                                   **self.attack_param
+                #                                   )
+                # correct_flag = self.model.forward(pertb_mal_x).argmax(1) == mal_y_batch.reshape(-1)
+                # adv_mal_x = pertb_mal_x[~correct_flag]
+                # adv_mal_y = mal_y_batch[~correct_flag]
+                # total_time += time.time() - start_time
+                # x_batch = torch.cat([x_batch, adv_mal_x], dim=0).double()
+                # y_batch = torch.cat([y_batch, adv_mal_y])
                 start_time = time.time()
                 self.model.train()
                 optimizer.zero_grad()
                 logits = self.model.forward(x_batch)
                 loss_train = self.model.customize_loss(logits[:batch_size],
                                                        y_batch[:batch_size])
-                if len(adv_mal_x) > 0:
-                    loss_train += beta * self.model.customize_loss(logits[batch_size:],
-                                                                   y_batch[batch_size:])
+                # if len(adv_mal_x) > 0:
+                #     loss_train += beta * self.model.customize_loss(logits[batch_size:],
+                #                                                    y_batch[batch_size:])
 
                 loss_train.backward()
                 optimizer.step()
