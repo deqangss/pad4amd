@@ -438,7 +438,7 @@ def get_mal_data(x_batch, y_batch):
     return mal_x_batch, mal_y_batch, null_flag
 
 
-def get_ben_mal_data(x_batch, y_batch):
+def get_mal_ben_data(x_batch, y_batch):
     """
     malware feature vectors
     """
