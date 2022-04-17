@@ -45,7 +45,7 @@ def _main():
     elif args.model == 'at_amd_pad':
         save_dir = config.get('experiments', 'md_at_ma') + '_' + args.model_name
     elif args.model == 'padvtrain':
-        save_dir = config.get('experiments', 'p_adv_training') + '_' + args.model_name
+        save_dir = config.get('experiments', 'md_at_ma') + '_' + args.model_name
     else:
         raise TypeError("Expected 'md_dnn', 'kde', 'amd_icnn', 'md_at_ma', and 'padvtrain'.")
 
