@@ -25,6 +25,8 @@ max_adv_argparse.add_argument('--steps_linf', type=int, default=100,
                               help='maximum number of steps for base attacks.')
 max_adv_argparse.add_argument('--step_length_linf', type=float, default=0.01,
                               help='step length in each step.')
+max_adv_argparse.add_argument('--psn_ratio', type=float, default=0.95,
+                              help='step length in each step.')
 max_adv_argparse.add_argument('--random_start', action='store_true', default=False,
                               help='randomly initialize the start points.')
 max_adv_argparse.add_argument('--round_threshold', type=float, default=0.98,
@@ -33,7 +35,6 @@ max_adv_argparse.add_argument('--round_threshold', type=float, default=0.98,
 
 def _main():
     args = cmd_md.parse_args()
-
     dataset = Dataset(use_cache=args.cache,
                       feature_ext_args=get_group_args(args, cmd_md, 'feature'))
     train_dataset_producer = dataset.get_input_producer(*dataset.train_dataset, batch_size=args.batch_size,
@@ -107,6 +108,7 @@ def _main():
                                    adv_epochs=args.epochs - 5,
                                    beta=args.beta,
                                    lr=args.lr,
+                                   ratio=args.psn_ratio,
                                    weight_decay=args.weight_decay
                                    )
         # human readable parameters
