@@ -38,7 +38,7 @@ detector_argparse.add_argument('--smooth', action='store_true', default=False,
                                help='use smooth activation elu (rather than leaky-relu) in the GAT layer.')
 detector_argparse.add_argument('--batch_size', type=int, default=64,
                                help='mini-batch size')
-detector_argparse.add_argument('--epochs', type=int, default=100,
+detector_argparse.add_argument('--epochs', type=int, default=50,
                                help='number of epochs to train.')
 detector_argparse.add_argument('--lr', type=float, default=0.005,
                                help='initial learning rate.')

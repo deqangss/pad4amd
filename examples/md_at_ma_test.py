@@ -41,7 +41,7 @@ def _main():
     val_dataset_producer = dataset.get_input_producer(*dataset.validation_dataset, batch_size=args.batch_size,
                                                       name='val')
     test_dataset_producer = dataset.get_input_producer(*dataset.test_dataset, batch_size=args.batch_size, name='test')
-    assert dataset.n_classes == 2
+    assert dataset.n_classes == 2 & args.epochs >= 5
 
     # test: model training
     if not args.cuda:
@@ -103,7 +103,8 @@ def _main():
     if args.mode == 'train':
         max_adv_training_model.fit(train_dataset_producer,
                                    val_dataset_producer,
-                                   epochs=args.epochs,
+                                   epochs=5,
+                                   adv_epochs=args.epochs - 5,
                                    beta=args.beta,
                                    lr=args.lr,
                                    weight_decay=args.weight_decay
