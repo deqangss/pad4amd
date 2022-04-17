@@ -42,6 +42,7 @@ class MaxAdvTraining(object):
         self.model_save_path = path.join(config.get('experiments', 'md_at_ma') + '_' + self.name,
                                          'model.pth')
         self.model.model_save_path = self.model_save_path
+        logger.info("Adversarial training incorporating the attack {}".format(type(self.attack).__name__))
 
     def fit(self, train_data_producer, validation_data_producer=None, epochs=20,
             beta=0.001,
