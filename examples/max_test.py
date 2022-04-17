@@ -62,8 +62,8 @@ atta_argparse.add_argument('--kappa', type=float, default=1.,
 atta_argparse.add_argument('--real', action='store_true', default=False,
                            help='whether produce the perturbed apks.')
 atta_argparse.add_argument('--model', type=str, default='maldet',
-                           choices=['md_dnn', 'kde', 'amd_icnn', 'at_amd_pad', 'mad'],
-                           help="model type, either of 'md_dnn', 'kde', 'amd_icnn', 'at_amd_pad', and 'padvtrain'.")
+                           choices=['md_dnn', 'kde', 'amd_icnn', 'md_at_ma_max', 'mad'],
+                           help="model type, either of 'md_dnn', 'kde', 'amd_icnn', 'md_at_ma_max', and 'padvtrain'.")
 atta_argparse.add_argument('--model_name', type=str, default='xxxxxxxx-xxxxxx',
                            help='model timestamp.')
 
@@ -76,8 +76,8 @@ def _main():
         save_dir = config.get('experiments', 'kde') + '_' + args.model_name
     elif args.model == 'amd_icnn':
         save_dir = config.get('experiments', 'amd_icnn') + '_' + args.model_name
-    elif args.model == 'at_amd_pad':
-        save_dir = config.get('experiments', 'm_adv_training') + '_' + args.model_name
+    elif args.model == 'md_at_ma_max':
+        save_dir = config.get('experiments', 'md_at_ma_max') + '_' + args.model_name
     elif args.model == 'padvtrain':
         save_dir = config.get('experiments', 'p_adv_training') + '_' + args.model_name
     else:
@@ -139,7 +139,7 @@ def _main():
                                         ratio=hp_params['ratio']
                                         )
         model.load()
-    elif args.model == 'at_amd_pad':
+    elif args.model == 'md_at_ma_max':
         adv_model = MaxAdvTraining(model)
         adv_model.load()
         model = adv_model.model
