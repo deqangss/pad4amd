@@ -29,8 +29,8 @@ atta_argparse.add_argument('--n_sample_times', type=int, default=1,
 atta_argparse.add_argument('--real', action='store_true', default=False,
                            help='whether produce the perturbed apks.')
 atta_argparse.add_argument('--model', type=str, default='maldet',
-                           choices=['md_dnn', 'kde', 'amd_icnn', 'at_amd_pad', 'mad'],
-                           help="model type, either of 'md_dnn', 'kde', 'amd_icnn', 'at_amd_pad', and 'padvtrain'.")
+                           choices=['md_dnn', 'kde', 'amd_icnn', 'md_at_ma', 'mad'],
+                           help="model type, either of 'md_dnn', 'kde', 'amd_icnn', 'md_at_ma', and 'padvtrain'.")
 atta_argparse.add_argument('--model_name', type=str, default='xxxxxxxx-xxxxxx', help='model timestamp.')
 
 
@@ -43,11 +43,11 @@ def _main():
     elif args.model == 'amd_icnn':
         save_dir = config.get('experiments', 'amd_icnn') + '_' + args.model_name
     elif args.model == 'at_amd_pad':
-        save_dir = config.get('experiments', 'm_adv_training') + '_' + args.model_name
+        save_dir = config.get('experiments', 'md_at_ma') + '_' + args.model_name
     elif args.model == 'padvtrain':
         save_dir = config.get('experiments', 'p_adv_training') + '_' + args.model_name
     else:
-        raise TypeError("Expected 'md_dnn', 'kde', 'amd_icnn', 'at_amd_pad', and 'padvtrain'.")
+        raise TypeError("Expected 'md_dnn', 'kde', 'amd_icnn', 'md_at_ma', and 'padvtrain'.")
 
     hp_params = utils.read_pickle(os.path.join(save_dir, 'hparam.pkl'))
     dataset = Dataset(use_cache=hp_params['cache'],
@@ -78,18 +78,15 @@ def _main():
                                name=args.model_name,
                                **hp_params
                                )
-    if not(args.model == 'md_dnn' or args.model == 'kde'):
-        if args.model == 'at_amd_pad' and hp_params['detector'] == 'none':
-            pass
-        else:
-            model = AdvMalwareDetectorICNN(model,
-                                           input_size=dataset.vocab_size,
-                                           n_classes=dataset.n_classes,
-                                           device=dv,
-                                           sample_weights=dataset.sample_weights,
-                                           name=args.model_name,
-                                           **hp_params
-                                           )
+    if not (args.model == 'md_dnn' or args.model == 'kde' or args.model == 'md_at_ma'):
+        model = AdvMalwareDetectorICNN(model,
+                                       input_size=dataset.vocab_size,
+                                       n_classes=dataset.n_classes,
+                                       device=dv,
+                                       sample_weights=dataset.sample_weights,
+                                       name=args.model_name,
+                                       **hp_params
+                                       )
     model = model.to(dv).double()
 
     if args.model == 'kde':
@@ -100,7 +97,7 @@ def _main():
                                         ratio=hp_params['ratio']
                                         )
         model.load()
-    elif args.model == 'at_amd_pad':
+    elif args.model == 'md_at_ma':
         adv_model = MaxAdvTraining(model)
         adv_model.load()
         model = adv_model.model
