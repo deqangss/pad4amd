@@ -44,7 +44,7 @@ class MaxAdvTraining(object):
         self.model.model_save_path = self.model_save_path
         logger.info("Adversarial training incorporating the attack {}".format(type(self.attack).__name__))
 
-    def fit(self, train_data_producer, validation_data_producer=None, epochs=20,
+    def fit(self, train_data_producer, validation_data_producer=None, epochs=5, adv_epochs=20,
             beta=0.001,
             lr=0.005,
             weight_decay=5e-0, verbose=True):
@@ -56,11 +56,19 @@ class MaxAdvTraining(object):
         @param train_data_producer: Object, an dataloader object for producing a batch of training data
         @param validation_data_producer: Object, an dataloader object for producing validation dataset
         @param epochs: Integer, epochs for adversarial training
+        @param adv_epochs: Integer, epochs for adversarial training
         @param beta: Float, penalty factor for adversarial loss
         @param lr: Float, learning rate of Adam optimizer
         @param weight_decay: Float, penalty factor, default value 5e-4
         @param verbose: Boolean, whether to show verbose info
         """
+        # normal training is used for obtaining the initial indicator g
+        logger.info("Normal training is starting...")
+        self.model.fit(train_data_producer,
+                       validation_data_producer,
+                       epochs=epochs,
+                       lr=lr,
+                       weight_decay=weight_decay)
         optimizer = optim.Adam(self.model.parameters(), lr=lr, weight_decay=weight_decay)
         total_time = 0.
         nbatches = len(train_data_producer)
@@ -68,7 +76,7 @@ class MaxAdvTraining(object):
         best_acc_val = 0.
         acc_val_adv_be = 0.
         best_epoch = 0
-        for i in range(epochs):
+        for i in range(adv_epochs):
             losses, accuracies = [], []
             for idx_batch, (x_batch, y_batch) in enumerate(train_data_producer):
                 x_batch, y_batch = utils.to_tensor(x_batch.double(), y_batch.long(), self.model.device)
@@ -79,24 +87,24 @@ class MaxAdvTraining(object):
                     continue
                 start_time = time.time()
                 self.model.eval()
-                # pertb_mal_x = self.attack.perturb(self.model, mal_x_batch, mal_y_batch,
-                #                                   **self.attack_param
-                #                                   )
-                # correct_flag = self.model.forward(pertb_mal_x).argmax(1) == mal_y_batch.reshape(-1)
-                # adv_mal_x = pertb_mal_x[~correct_flag]
-                # adv_mal_y = mal_y_batch[~correct_flag]
-                # total_time += time.time() - start_time
-                # x_batch = torch.cat([x_batch, adv_mal_x], dim=0).double()
-                # y_batch = torch.cat([y_batch, adv_mal_y])
+                pertb_mal_x = self.attack.perturb(self.model, mal_x_batch, mal_y_batch,
+                                                  **self.attack_param
+                                                  )
+                correct_flag = self.model.forward(pertb_mal_x).argmax(1) == mal_y_batch.reshape(-1)
+                adv_mal_x = pertb_mal_x[~correct_flag]
+                adv_mal_y = mal_y_batch[~correct_flag]
+                total_time += time.time() - start_time
+                x_batch = torch.cat([x_batch, adv_mal_x], dim=0).double()
+                y_batch = torch.cat([y_batch, adv_mal_y])
                 start_time = time.time()
                 self.model.train()
                 optimizer.zero_grad()
                 logits = self.model.forward(x_batch)
                 loss_train = self.model.customize_loss(logits[:batch_size],
                                                        y_batch[:batch_size])
-                # if len(adv_mal_x) > 0:
-                #     loss_train += beta * self.model.customize_loss(logits[batch_size:],
-                #                                                    y_batch[batch_size:])
+                if len(adv_mal_x) > 0:
+                    loss_train += beta * self.model.customize_loss(logits[batch_size:],
+                                                                   y_batch[batch_size:])
 
                 loss_train.backward()
                 optimizer.step()
@@ -109,7 +117,7 @@ class MaxAdvTraining(object):
                 losses.append(loss_train.item())
                 if verbose:
                     print(
-                        f'Mini batch: {i * nbatches + idx_batch + 1}/{epochs * nbatches} | training time in {mins:.0f} minutes, {secs} seconds.')
+                        f'Mini batch: {i * nbatches + idx_batch + 1}/{adv_epochs * nbatches} | training time in {mins:.0f} minutes, {secs} seconds.')
                     logger.info(
                         f'Training loss (batch level): {losses[-1]:.4f} | Train accuracy: {acc_train * 100:.2f}%.')
             if verbose:
