@@ -103,7 +103,7 @@ def _main():
     if args.mode == 'train':
         max_adv_training_model.fit(train_dataset_producer,
                                    val_dataset_producer,
-                                   adv_epochs=args.epochs,
+                                   epochs=args.epochs,
                                    beta=args.beta,
                                    lr=args.lr,
                                    weight_decay=args.weight_decay

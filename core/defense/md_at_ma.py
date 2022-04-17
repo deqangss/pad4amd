@@ -39,11 +39,11 @@ class MaxAdvTraining(object):
         self.attack_param = attack_param
 
         self.name = self.model.name
-        self.model_save_path = path.join(config.get('experiments', 'md_at_ma_{}'.format(type(self.attack).__name__.lower())) + '_' + self.name,
+        self.model_save_path = path.join(config.get('experiments', 'md_at_ma') + '_' + self.name,
                                          'model.pth')
         self.model.model_save_path = self.model_save_path
 
-    def fit(self, train_data_producer, validation_data_producer=None, adv_epochs=20,
+    def fit(self, train_data_producer, validation_data_producer=None, epochs=20,
             beta=0.001,
             lr=0.005,
             weight_decay=5e-0, verbose=True):
@@ -55,9 +55,7 @@ class MaxAdvTraining(object):
         @param train_data_producer: Object, an dataloader object for producing a batch of training data
         @param validation_data_producer: Object, an dataloader object for producing validation dataset
         @param epochs: Integer, epochs for adversarial training
-        @param adv_epochs: Integer, epochs for adversarial training
         @param beta: Float, penalty factor for adversarial loss
-        @param granularity: Integer, 10^base exp-space between penalty factors
         @param lr: Float, learning rate of Adam optimizer
         @param weight_decay: Float, penalty factor, default value 5e-4
         @param verbose: Boolean, whether to show verbose info
@@ -69,7 +67,7 @@ class MaxAdvTraining(object):
         best_acc_val = 0.
         acc_val_adv_be = 0.
         best_epoch = 0
-        for i in range(adv_epochs):
+        for i in range(epochs):
             losses, accuracies = [], []
             for idx_batch, (x_batch, y_batch) in enumerate(train_data_producer):
                 x_batch, y_batch = utils.to_tensor(x_batch.double(), y_batch.long(), self.model.device)
@@ -110,7 +108,7 @@ class MaxAdvTraining(object):
                 losses.append(loss_train.item())
                 if verbose:
                     print(
-                        f'Mini batch: {i * nbatches + idx_batch + 1}/{adv_epochs * nbatches} | training time in {mins:.0f} minutes, {secs} seconds.')
+                        f'Mini batch: {i * nbatches + idx_batch + 1}/{epochs * nbatches} | training time in {mins:.0f} minutes, {secs} seconds.')
                     logger.info(
                         f'Training loss (batch level): {losses[-1]:.4f} | Train accuracy: {acc_train * 100:.2f}%.')
             if verbose:
