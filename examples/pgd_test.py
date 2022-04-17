@@ -50,7 +50,7 @@ def _main():
     elif args.model == 'amd_icnn':
         save_dir = config.get('experiments', 'amd_icnn') + '_' + args.model_name
     elif args.model == 'md_at_ma':
-        save_dir = config.get('experiments', 'm_adv_training') + '_' + args.model_name
+        save_dir = config.get('experiments', 'md_at_ma') + '_' + args.model_name
     elif args.model == 'padvtrain':
         save_dir = config.get('experiments', 'p_adv_training') + '_' + args.model_name
     else:
