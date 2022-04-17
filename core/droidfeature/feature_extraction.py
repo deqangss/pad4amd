@@ -148,6 +148,7 @@ class Apk2features(object):
         for api in susp_apis:
             if feature_gen.check_suspicious_api(api) or feature_gen.check_sensitive_api(api):
                 selected_words.append(api)
+        print(len(all_words))
         # remove components
         api_comps = np.array(all_words_type)[...] == feature_gen.ACTIVITY
         api_comps = api_comps | (np.array(all_words_type)[...] == feature_gen.SERVICE)
@@ -156,7 +157,7 @@ class Apk2features(object):
         all_words = list(np.array(all_words)[~api_comps])
         for s_word in selected_words:
             all_words.remove(s_word)
-
+        print(len(all_words))
         mal_feature_frequency = np.array(list(map(counter_mal.get, all_words)))
         mal_feature_frequency[mal_feature_frequency == None] = 0
         mal_feature_frequency /= float(np.sum(gt_labels))
