@@ -97,7 +97,7 @@ class MaxAdvTraining(object):
                 batch_size = x_batch.shape[0]
                 # make data
                 # 1. add pepper and salt noises
-                x_batch_noises = torch.clamp(x_batch + utils.psn(x_batch, np.minimum(np.random.uniform(0, 1), 0.05)),
+                x_batch_noises = torch.clamp(x_batch + utils.psn(x_batch, np.minimum(np.random.uniform(0, 0.95), 0.95)),
                                              min=0., max=1.)
                 x_batch_ = torch.cat([x_batch, x_batch_noises], dim=0)
                 y_batch_ = torch.cat([torch.zeros(batch_size, ), torch.ones(batch_size, )]).long().to(

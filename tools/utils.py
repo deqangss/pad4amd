@@ -429,13 +429,26 @@ def xor_tensors(x_1, x_2):
 
 def get_mal_data(x_batch, y_batch):
     """
-    filter out malware feature vectors and adjacency matrix (if it is necessary)
+    malware feature vectors
     """
     assert isinstance(x_batch, torch.Tensor) and isinstance(y_batch, torch.Tensor)
     mal_x_batch = x_batch[y_batch == 1]
     mal_y_batch = y_batch[y_batch == 1]
     null_flag = len(mal_x_batch) <= 0
     return mal_x_batch, mal_y_batch, null_flag
+
+
+def get_ben_mal_data(x_batch, y_batch):
+    """
+    malware feature vectors
+    """
+    assert isinstance(x_batch, torch.Tensor) and isinstance(y_batch, torch.Tensor)
+    mal_x_batch = x_batch[y_batch == 1]
+    ben_x_batch = x_batch[y_batch == 0]
+    mal_y_batch = y_batch[y_batch == 1]
+    ben_y_batch = y_batch[y_batch == 0]
+    null_flag = len(mal_x_batch) <= 0
+    return mal_x_batch, ben_x_batch, mal_y_batch, ben_y_batch, null_flag
 #################################################################################
 ################################# smali code ####################################
 #################################################################################

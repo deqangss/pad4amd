@@ -82,6 +82,8 @@ class MaxAdvTraining(object):
                 x_batch, y_batch = utils.to_tensor(x_batch.double(), y_batch.long(), self.model.device)
                 batch_size = x_batch.shape[0]
                 # make data
+                x_batch_noises = torch.clamp(x_batch + utils.psn(x_batch, np.maximum(np.random.uniform(0.95, 1), 0.95)),
+                                             min=0., max=1.)
                 mal_x_batch, mal_y_batch, null_flag = utils.get_mal_data(x_batch, y_batch)
                 if null_flag:
                     continue
@@ -94,7 +96,7 @@ class MaxAdvTraining(object):
                 # adv_mal_x = pertb_mal_x[~correct_flag]
                 # adv_mal_y = mal_y_batch[~correct_flag]
                 total_time += time.time() - start_time
-                x_batch = torch.cat([x_batch, pertb_mal_x], dim=0).double()
+                x_batch = torch.cat([x_batch_noises, pertb_mal_x], dim=0).double()
                 y_batch = torch.cat([y_batch, mal_y_batch])
                 start_time = time.time()
                 self.model.train()
