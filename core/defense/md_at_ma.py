@@ -82,7 +82,7 @@ class MaxAdvTraining(object):
                 x_batch, y_batch = utils.to_tensor(x_batch.double(), y_batch.long(), self.model.device)
                 batch_size = x_batch.shape[0]
                 # make data
-                x_batch_noises = torch.clamp(x_batch + utils.psn(x_batch, np.maximum(np.random.uniform(0.95, 1), 0.95)),
+                x_batch_noises = torch.clamp(x_batch + utils.psn(x_batch, np.maximum(np.random.uniform(0.95, 1.), 0.95)),
                                              min=0., max=1.)
                 mal_x_batch, mal_y_batch, null_flag = utils.get_mal_data(x_batch, y_batch)
                 if null_flag:
