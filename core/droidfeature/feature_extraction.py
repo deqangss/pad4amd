@@ -170,6 +170,9 @@ class Apk2features(object):
         selected_word_type = list(map(feat_type_dict.get, selected_words))
         corresponding_word_info = list(map(feat_info_dict.get, selected_words))
 
+        print(len(selected_words))
+        import sys
+        sys.exit(1)
         # saving
         if len(selected_words) > 0:
             utils.dump_pickle(selected_words, vocab_saving_path)
