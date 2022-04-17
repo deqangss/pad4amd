@@ -41,7 +41,7 @@ def _main():
     val_dataset_producer = dataset.get_input_producer(*dataset.validation_dataset, batch_size=args.batch_size,
                                                       name='val')
     test_dataset_producer = dataset.get_input_producer(*dataset.test_dataset, batch_size=args.batch_size, name='test')
-    assert dataset.n_classes == 2 & args.epochs >= 5
+    assert dataset.n_classes == 2 and args.epochs >= 5
 
     # test: model training
     if not args.cuda:
