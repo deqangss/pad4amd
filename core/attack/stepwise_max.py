@@ -162,7 +162,7 @@ class StepwiseMax(BaseAttack):
         adv_x_l2 = torch.clamp(adv_x + step_length_l2 * perturbation_l2, min=0., max=1.)
         # l1
         val, idx = torch.abs(grad).topk(int(1. / step_length_l1), dim=-1)
-        perturbation_l1 = F.one_hot(idx, num_classes=adv_x.shape[-1]).sum(dim=1).double()
+        perturbation_l1 = F.one_hot(idx, num_classes=adv_x.shape[-1]).sum(dim=1)
         perturbation_l1 = perturbation_linf * perturbation_l1
         if self.is_attacker:
             perturbation_l1 += (
