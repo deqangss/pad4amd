@@ -126,7 +126,7 @@ class PrincipledAdvDet(object):
                                                   max_lambda_=lambda_upper_bound,
                                                   **self.attack_param
                                                   )
-                disc_pertb_mal_x_ = utils.round_x(pertb_mal_x)
+                disc_pertb_mal_x_ = utils.round_x(pertb_mal_x, self.attack.round_threshold)
                 total_time += time.time() - start_time
                 x_batch_ = torch.cat([x_batch_, pertb_mal_x], dim=0).double()
                 y_batch_ = torch.cat([y_batch_, torch.ones(pertb_mal_x.shape[:1]).to(
@@ -211,6 +211,7 @@ class PrincipledAdvDet(object):
                                                   max_lambda_=lambda_upper_bound,
                                                   **self.attack_param
                                                   )
+                pertb_mal_x = utils.round_x(pertb_mal_x, self.attack.round_threshold)
                 y_cent_batch, x_density_batch = self.model.inference_batch_wise(pertb_mal_x,
                                                                                 mal_y_batch
                                                                                 )
