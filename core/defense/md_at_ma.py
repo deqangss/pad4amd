@@ -13,6 +13,7 @@ import torch.optim as optim
 import numpy as np
 
 from core.attack.max import Max
+from core.attack.stepwise_max import StepwiseMax
 from config import config, logging, ErrorHandler
 from tools import utils
 
@@ -32,7 +33,7 @@ class MaxAdvTraining(object):
     def __init__(self, model, attack=None, attack_param=None):
         self.model = model
         if attack is not None:
-            assert isinstance(attack, Max)
+            assert isinstance(attack, (Max, StepwiseMax))
             if 'is_attacker' in attack.__dict__.keys():
                 assert not attack.is_attacker
         self.attack = attack
