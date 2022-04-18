@@ -104,7 +104,7 @@ class Max(BaseAttack):
             loss_no_reduction = ce - torch.sigmoid(logits_g)
             done = (y_pred == 0.) & (logits_g <= tau)
         else:
-            loss_no_reduction = logits_f[:, 0]
+            loss_no_reduction = ce
             done = y_pred == 0.
         return loss_no_reduction, done
 
