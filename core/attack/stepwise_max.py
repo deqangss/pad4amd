@@ -128,7 +128,7 @@ class StepwiseMax(BaseAttack):
         adv_x = x.detach()
         var_adv_x = torch.autograd.Variable(adv_x, requires_grad=True)
         loss, done = self.get_loss(model, var_adv_x, label, self.lambda_)
-        grad = torch.autograd.grad(torch.mean(loss), var_adv_x)[0].detach().data
+        grad = torch.autograd.grad(torch.mean(loss), var_adv_x)[0].data
 
         # look for allowable position, because only '1--> -' and '0 --> +' are permitted
         # api insertion
