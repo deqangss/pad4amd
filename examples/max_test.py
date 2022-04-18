@@ -205,7 +205,7 @@ def _main():
                                   verbose=False
                                   )
 
-    attack = Max(attack_list=[pgdl1],
+    attack = Max(attack_list=[pgdl2],
                  varepsilon=1e-9,
                  oblivion=args.oblivion,
                  device=model.device
