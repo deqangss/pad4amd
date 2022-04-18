@@ -16,13 +16,13 @@ logger = logging.getLogger('examples.stepwise_max_test')
 logger.addHandler(ErrorHandler)
 
 atta_argparse = argparse.ArgumentParser(description='arguments for step-wise max attack')
-atta_argparse.add_argument('--steps', type=int, default=100,
+atta_argparse.add_argument('--steps', type=int, default=50,
                            help='maximum number of steps.')
 atta_argparse.add_argument('--step_length_l1', type=float, default=1.,
                            help='step length in each step of pgd l1.')
-atta_argparse.add_argument('--step_length_l2', type=float, default=1.,
+atta_argparse.add_argument('--step_length_l2', type=float, default=0.5,
                            help='step length in each step of pgd l2.')
-atta_argparse.add_argument('--step_length_linf', type=float, default=1.,
+atta_argparse.add_argument('--step_length_linf', type=float, default=0.005,
                            help='step length in each step of pgd linf.')
 atta_argparse.add_argument('--random_start', action='store_true', default=False,
                            help='randomly initialize the start points.')

@@ -56,7 +56,7 @@ class StepwiseMax(BaseAttack):
         n, red_n = x.size()[0], x.size()[1:]
         red_ind = list(range(2, len(x.size()) + 1))
 
-        adv_x = x.detach().clone().to(torch.double)
+        adv_x = x.detach().clone()
         while self.lambda_ <= max_lambda_:
             pert_x_cont = None
             prev_done = None
@@ -91,10 +91,10 @@ class StepwiseMax(BaseAttack):
                     scores = scores.reshape(n_attacks, num_sample_red).permute(1, 0)
                     _, s_idx = scores.max(dim=-1)
                     pert_x_cont = pertbx[torch.arange(num_sample_red), s_idx]
-                    # if self.is_attacker:
-                    adv_x[~done] = round_x(pert_x_cont, self.round_threshold)
-                    # else:
-                    #     adv_x[~done] = pert_x_cont
+                    if self.is_attacker:
+                        adv_x[~done] = round_x(pert_x_cont, self.round_threshold)
+                    else:
+                        adv_x[~done] = pert_x_cont
             self.lambda_ *= base
             if not self.check_lambda(model):
                 break
