@@ -136,7 +136,6 @@ class StepwiseMax(BaseAttack):
         grad4insertion = (grad > 0) * pos_insertion * grad
         # api removal
         pos_removal = (adv_x > 0.5) * 1
-        print(grad, pos_removal, self.manipulation_x)
         grad4removal = (grad <= 0) * (pos_removal & self.manipulation_x) * grad
         if self.is_attacker:
             #     2.1 cope with the interdependent apis

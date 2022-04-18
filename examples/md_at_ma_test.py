@@ -90,7 +90,7 @@ def _main():
         }
 
     elif args.ma == 'stepwise_max':
-        attack = StepwiseMax(is_attacker=False)
+        attack = StepwiseMax(is_attacker=False, device=model.device)
         attack_param = {
             'steps': max(max(args.m, args.steps_linf), args.steps_l2),
             'sl_l1': 1.,
