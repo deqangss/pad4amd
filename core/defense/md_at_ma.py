@@ -48,7 +48,6 @@ class MaxAdvTraining(object):
     def fit(self, train_data_producer, validation_data_producer=None, epochs=5, adv_epochs=20,
             beta=0.001,
             lr=0.005,
-            ratio=0.95,
             weight_decay=5e-0, verbose=True):
         """
         Applying adversarial train to enhance the malware detector.
@@ -87,7 +86,7 @@ class MaxAdvTraining(object):
                 mal_x_batch, ben_x_batch, mal_y_batch, ben_y_batch, null_flag = \
                     utils.get_mal_ben_data(x_batch, y_batch)
                 ben_batch_noises = torch.clamp(
-                    ben_x_batch + utils.psn(ben_x_batch, np.maximum(np.random.uniform(ratio, 1.), ratio)),
+                    ben_x_batch + utils.psn(ben_x_batch, np.maximum(np.random.uniform(0.9995, 1.), 0.9995)),
                     min=0., max=1.)
                 if null_flag:
                     continue
@@ -96,9 +95,6 @@ class MaxAdvTraining(object):
                 pertb_mal_x = self.attack.perturb(self.model, mal_x_batch, mal_y_batch,
                                                   **self.attack_param
                                                   )
-                # correct_flag = self.model.forward(pertb_mal_x).argmax(1) == mal_y_batch.reshape(-1)
-                # adv_mal_x = pertb_mal_x[~correct_flag]
-                # adv_mal_y = mal_y_batch[~correct_flag]
                 total_time += time.time() - start_time
                 x_batch = torch.cat([x_batch, ben_batch_noises, pertb_mal_x], dim=0)
                 y_batch = torch.cat([y_batch, ben_y_batch, mal_y_batch])

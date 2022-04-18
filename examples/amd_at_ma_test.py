@@ -6,13 +6,16 @@ import time
 from functools import partial
 
 from core.defense import Dataset
-from core.defense import DNNMalwareDetector, MaxAdvTraining
+from core.defense import DNNMalwareDetector, AdvMalwareDetectorICNN, PrincipledAdvDet
 from core.attack import Max, PGD, PGDl1, StepwiseMax
 from tools.utils import save_args, get_group_args, dump_pickle
 from examples.amd_icnn_test import cmd_md
 
 max_adv_argparse = cmd_md.add_argument_group(title='max adv training')
 max_adv_argparse.add_argument('--beta', type=float, default=0.1, help='penalty factor on adversarial loss.')
+max_adv_argparse.add_argument('--detector', type=str, default='icnn',
+                              choices=['none', 'icnn'],
+                              help="detector type, either of 'icnn' and 'none'.")
 max_adv_argparse.add_argument('--ma', type=str, default='max', choices=['max', 'stepwise_max'],
                               help="Type of mixture of attack: 'max' or 'stepwise_max' strategy.")
 max_adv_argparse.add_argument('--m', type=int, default=20,
@@ -55,8 +58,18 @@ def _main():
                                name=model_name,
                                **vars(args)
                                )
-    model = model.to(dv).double()
+    if args.detector == 'icnn':
+        model = AdvMalwareDetectorICNN(model,
+                                       input_size=dataset.vocab_size,
+                                       n_classes=dataset.n_classes,
+                                       device=dv,
+                                       name=model_name,
+                                       **vars(args)
+                                       )
 
+    else:
+        raise NotImplementedError
+    model = model.to(dv).double()
     pgdlinf = PGD(norm='linf', use_random=False,
                   is_attacker=False,
                   device=model.device)
@@ -99,7 +112,7 @@ def _main():
     else:
         raise NotImplementedError("Expected 'max' and 'stepwise_max'.")
 
-    max_adv_training_model = MaxAdvTraining(model, attack, attack_param)
+    max_adv_training_model = PrincipledAdvDet(model, attack, attack_param)
     if args.mode == 'train':
         max_adv_training_model.fit(train_dataset_producer,
                                    val_dataset_producer,
