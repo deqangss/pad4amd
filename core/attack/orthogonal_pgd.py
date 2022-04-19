@@ -148,7 +148,7 @@ class OrthogonalPGD(PGD):
                     torch.tensor(1., dtype=x.dtype, device=x.device),
                     grad / l2norm
                 )
-                # perturbation = torch.where(torch.isnan(perturbation), 0., perturbation)
+                perturbation = torch.where(torch.isnan(perturbation), 0., perturbation)
                 # if self.is_attacker:
                 #     min_val = torch.amin(perturbation, dim=-1, keepdim=True).clamp_(max=0.)
                 #     perturbation += (torch.any(perturbation[:, self.api_flag] < 0, dim=-1,
