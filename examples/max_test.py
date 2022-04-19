@@ -225,6 +225,7 @@ def _main():
                                      min_lambda_=1e-5,
                                      max_lambda_=1e5,
                                      verbose=True)
+        print(adv_x_batch[:5])
         y_cent_batch, x_density_batch = model.inference_batch_wise(adv_x_batch, y)
         y_cent_list.append(y_cent_batch)
         x_density_list.append(x_density_batch)
