@@ -68,6 +68,7 @@ class Max(BaseAttack):
                                                  min_lambda_=1e-5,
                                                  max_lambda_=1e5,
                                                  ))
+            print(pertbx[1])
             pertbx = torch.vstack(pertbx)
 
             with torch.no_grad():

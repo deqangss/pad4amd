@@ -166,7 +166,6 @@ class OrthogonalPGD(PGD):
             adv_x = torch.clamp(adv_x + perturbation * step_length, min=0., max=1.)
             if self.norm == 'l2':
                 print('perturbation l2:', perturbation)
-                print('adv_x:', adv_x)
         # round
         if self.norm == 'linf':
             # see paper: Adversarial Deep Learning for Robust Detection of Binary Encoded Malware
