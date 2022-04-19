@@ -139,9 +139,9 @@ class OrthogonalPGD(PGD):
             #     break
             if self.norm == 'linf':
                 perturbation = torch.sign(grad)
-                if self.is_attacker:
-                    perturbation += torch.any(perturbation[:, self.api_flag] < 0, dim=-1,
-                                              keepdim=True) * nonexist_api
+                # if self.is_attacker:
+                #     perturbation += torch.any(perturbation[:, self.api_flag] < 0, dim=-1,
+                #                               keepdim=True) * nonexist_api
             elif self.norm == 'l2':
                 l2norm = torch.linalg.norm(grad, dim=-1, keepdim=True)
                 perturbation = torch.minimum(
@@ -149,18 +149,18 @@ class OrthogonalPGD(PGD):
                     grad / l2norm
                 )
                 perturbation = torch.where(torch.isnan(perturbation), 0., perturbation)
-                if self.is_attacker:
-                    min_val = torch.amin(perturbation, dim=-1, keepdim=True).clamp_(max=0.)
-                    perturbation += (torch.any(perturbation[:, self.api_flag] < 0, dim=-1,
-                                               keepdim=True) * torch.abs(min_val) * nonexist_api)
+                # if self.is_attacker:
+                #     min_val = torch.amin(perturbation, dim=-1, keepdim=True).clamp_(max=0.)
+                #     perturbation += (torch.any(perturbation[:, self.api_flag] < 0, dim=-1,
+                #                                keepdim=True) * torch.abs(min_val) * nonexist_api)
             elif self.norm == 'l1':
                 val, idx = torch.abs(grad).topk(int(1. / step_length), dim=-1)
                 perturbation = F.one_hot(idx, num_classes=adv_x.shape[-1]).sum(dim=1).double()
                 perturbation = torch.sign(grad) * perturbation
-                if self.is_attacker:
-                    perturbation += (
-                            torch.any(perturbation[:, self.api_flag] < 0, dim=-1,
-                                      keepdim=True) * nonexist_api)
+                # if self.is_attacker:
+                #     perturbation += (
+                #             torch.any(perturbation[:, self.api_flag] < 0, dim=-1,
+                #                       keepdim=True) * nonexist_api)
             else:
                 raise ValueError("Expect 'l2', 'linf' or 'l1' norm.")
             adv_x = torch.clamp(adv_x + perturbation * step_length, min=0., max=1.)
@@ -207,8 +207,9 @@ class OrthogonalPGD(PGD):
         #    2 api removal
         pos_removal = (adv_features > 0.5) * 1
         grad4removal = (gradients < 0) * (pos_removal & self.manipulation_x) * gradients
-        if self.is_attacker:
-            # cope with the interdependent apis
-            checking_nonexist_api = (pos_removal ^ self.omega) & self.omega
-            grad4removal[:, self.api_flag] += torch.sum(gradients * checking_nonexist_api, dim=-1, keepdim=True)
+        checking_nonexist_api = None
+        # if self.is_attacker:
+        #     # cope with the interdependent apis
+        #     checking_nonexist_api = (pos_removal ^ self.omega) & self.omega
+        #     grad4removal[:, self.api_flag] += torch.sum(gradients * checking_nonexist_api, dim=-1, keepdim=True)
         return grad4removal + grad4insertion, checking_nonexist_api
