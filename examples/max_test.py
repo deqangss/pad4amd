@@ -11,7 +11,7 @@ import torch
 import numpy as np
 
 from core.defense import Dataset
-from core.defense import DNNMalwareDetector, KernelDensityEstimation, AdvMalwareDetectorICNN, MaxAdvTraining
+from core.defense import DNNMalwareDetector, KernelDensityEstimation, AdvMalwareDetectorICNN, MaxAdvTraining, PrincipledAdvDet
 from core.attack import Max
 from core.attack import GDKDEl1, PGDAdam, PGD, PGDl1, OrthogonalPGD
 from tools import utils
@@ -62,8 +62,8 @@ atta_argparse.add_argument('--kappa', type=float, default=1.,
 atta_argparse.add_argument('--real', action='store_true', default=False,
                            help='whether produce the perturbed apks.')
 atta_argparse.add_argument('--model', type=str, default='maldet',
-                           choices=['md_dnn', 'kde', 'amd_icnn', 'md_at_ma', 'mad'],
-                           help="model type, either of 'md_dnn', 'kde', 'amd_icnn', 'md_at_ma', and 'padvtrain'.")
+                           choices=['md_dnn', 'kde', 'amd_icnn', 'md_at_ma', 'amd_at_ma'],
+                           help="model type, either of 'md_dnn', 'kde', 'amd_icnn', 'md_at_ma', and 'amd_at_ma'.")
 atta_argparse.add_argument('--model_name', type=str, default='xxxxxxxx-xxxxxx',
                            help='model timestamp.')
 
@@ -79,9 +79,9 @@ def _main():
     elif args.model == 'md_at_ma':
         save_dir = config.get('experiments', 'md_at_ma') + '_' + args.model_name
     elif args.model == 'padvtrain':
-        save_dir = config.get('experiments', 'p_adv_training') + '_' + args.model_name
+        save_dir = config.get('experiments', 'amd_at_ma') + '_' + args.model_name
     else:
-        raise TypeError("Expected 'md_dnn', 'kde', 'amd_icnn', 'md_at_ma', and 'padvtrain'.")
+        raise TypeError("Expected 'md_dnn', 'kde', 'amd_icnn', 'md_at_ma', and 'amd_at_ma'.")
 
     hp_params = utils.read_pickle(os.path.join(save_dir, 'hparam.pkl'))
     dataset = Dataset(use_cache=hp_params['cache'],
@@ -138,6 +138,10 @@ def _main():
         model.load()
     elif args.model == 'md_at_ma':
         adv_model = MaxAdvTraining(model)
+        adv_model.load()
+        model = adv_model.model
+    elif args.model == 'amd_at_ma':
+        adv_model = PrincipledAdvDet(model)
         adv_model.load()
         model = adv_model.model
     else:
