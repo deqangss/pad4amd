@@ -69,7 +69,6 @@ class Max(BaseAttack):
                                                  max_lambda_=1e5,
                                                  ))
             pertbx = torch.vstack(pertbx)
-            print(pertbx)
 
             with torch.no_grad():
                 red_label_ext = torch.cat([red_label] * len(self.attack_list))
