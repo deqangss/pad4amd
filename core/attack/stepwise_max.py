@@ -56,6 +56,7 @@ class StepwiseMax(BaseAttack):
         else:
             self.lambda_ = max_lambda_
         if not self.is_attacker:
+            # relief the issue of setting the static step lengths
             upper_step_check = 9 if step_check > 9 else step_check
             step_check = random.choice(range(upper_step_check + 1))
         mini_steps = [step_check] * (steps // step_check)
