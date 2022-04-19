@@ -133,7 +133,7 @@ class GDKDE(BaseAttack):
             torch.tensor(1., dtype=features.dtype, device=features.device),
             gradients / l2norm
         )
-
+        perturbation = torch.where(torch.isnan(perturbation), 0., perturbation)
         # add the extra perturbation owing to the interdependent apis
         if self.is_attacker:
             min_val = torch.amin(perturbation, dim=-1, keepdim=True).clamp_(max=0.)

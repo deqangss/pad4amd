@@ -146,6 +146,7 @@ class PGD(BaseAttack):
                 torch.tensor(1., dtype=features.dtype, device=features.device),
                 gradients / l2norm
             )
+            perturbation = torch.where(torch.isnan(perturbation), 0., perturbation)
         else:
             raise ValueError("Expect 'l2' or 'linf' norm.")
 
