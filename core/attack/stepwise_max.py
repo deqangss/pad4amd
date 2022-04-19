@@ -1,6 +1,7 @@
 import torch
 import torch.nn.functional as F
 
+import random
 from core.attack.base_attack import BaseAttack
 from tools.utils import get_x0, round_x
 from config import logging, ErrorHandler
@@ -48,12 +49,15 @@ class StepwiseMax(BaseAttack):
         enhance attack
         """
         assert 0 < min_lambda_ <= max_lambda_
-        assert steps >= 0 and 1 >= sl_l1 > 0 and sl_l2 >= 0 and sl_linf >= 0
+        assert steps >= 0 and (step_check >= 1) and 1 >= sl_l1 > 0 and sl_l2 >= 0 and sl_linf >= 0
         model.eval()
         if hasattr(model, 'forward_g'):
             self.lambda_ = min_lambda_
         else:
             self.lambda_ = max_lambda_
+        if not self.is_attacker:
+            upper_step_check = 9 if step_check > 9 else step_check
+            step_check = random.choice(range(upper_step_check + 1))
         mini_steps = [step_check] * (steps // step_check)
         mini_steps = mini_steps + [steps % step_check] if steps % step_check != 0 else mini_steps
         n, red_n = x.size()[0], x.size()[1:]
