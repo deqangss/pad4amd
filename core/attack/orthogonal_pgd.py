@@ -148,7 +148,7 @@ class OrthogonalPGD(PGD):
                     torch.tensor(1., dtype=x.dtype, device=x.device),
                     grad / l2norm
                 )
-                # perturbation = torch.where(torch.isnan(perturbation), 0., perturbation)
+                perturbation = torch.where(torch.isnan(perturbation), 0., perturbation)
                 # if self.is_attacker:
                 #     min_val = torch.amin(perturbation, dim=-1, keepdim=True).clamp_(max=0.)
                 #     perturbation += (torch.any(perturbation[:, self.api_flag] < 0, dim=-1,
@@ -164,8 +164,6 @@ class OrthogonalPGD(PGD):
             else:
                 raise ValueError("Expect 'l2', 'linf' or 'l1' norm.")
             adv_x = torch.clamp(adv_x + perturbation * step_length, min=0., max=1.)
-            if self.norm == 'l2':
-                print('perturbation l2:', perturbation)
         # round
         if self.norm == 'linf':
             # see paper: Adversarial Deep Learning for Robust Detection of Binary Encoded Malware
@@ -173,8 +171,6 @@ class OrthogonalPGD(PGD):
         else:
             round_threshold = 0.5
 
-        if self.norm == 'l2':
-            print('value:', round_x(adv_x, round_threshold))
         return round_x(adv_x, round_threshold)
 
     def perturb(self, model, x, label=None,
