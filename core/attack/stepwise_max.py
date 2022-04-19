@@ -59,6 +59,7 @@ class StepwiseMax(BaseAttack):
             # relief the issue of setting the static step lengths
             upper_step_check = 9 if step_check > 9 else step_check
             step_check = random.choice(range(upper_step_check + 1))
+            print('step_check:', step_check)
         mini_steps = [step_check] * (steps // step_check)
         mini_steps = mini_steps + [steps % step_check] if steps % step_check != 0 else mini_steps
         n, red_n = x.size()[0], x.size()[1:]
