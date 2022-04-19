@@ -133,6 +133,7 @@ def _main():
         x, y = utils.to_tensor(x.double(), y.long(), model.device)
         adv_x_batch = attack.perturb(model.double(), x, y,
                                      args.steps,
+                                     args.step_check,
                                      args.step_length_l1,
                                      args.step_length_l2,
                                      args.step_length_linf,

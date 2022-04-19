@@ -40,6 +40,7 @@ class OrthogonalStepwiseMax(StepwiseMax):
 
     def perturb(self, model, x, label=None,
                 steps=100,
+                step_check=10,
                 sl_l1=1.,
                 sl_l2=1.,
                 sl_linf=0.01,
@@ -51,11 +52,15 @@ class OrthogonalStepwiseMax(StepwiseMax):
         model.eval()
         n, red_n = x.size()[0], x.size()[1:]
         red_ind = list(range(2, len(x.size()) + 1))
+        mini_steps = [step_check] * (steps // step_check)
+        mini_steps = mini_steps + [steps % step_check] if steps % step_check != 0 else mini_steps
+        n, red_n = x.size()[0], x.size()[1:]
+        red_ind = list(range(2, len(x.size()) + 1))
 
-        adv_x = x.detach().clone().to(torch.double)
+        adv_x = x.detach().clone()
         pert_x_cont = None
         prev_done = None
-        for i in range(steps):
+        for i, mini_step in enumerate(mini_steps):
             with torch.no_grad():
                 if i == 0 and self.use_random:
                     adv_x = get_x0(adv_x, rounding_threshold=self.round_threshold, is_sample=True)
@@ -71,7 +76,7 @@ class OrthogonalStepwiseMax(StepwiseMax):
 
             num_sample_red = torch.sum(~done).item()
             pert_x_linf, pert_x_l2, pert_x_l1 = self._perturb(model, adv_x[~done], label[~done],
-                                                              1,
+                                                              mini_step,
                                                               sl_l1,
                                                               sl_l2,
                                                               sl_linf
@@ -96,7 +101,7 @@ class OrthogonalStepwiseMax(StepwiseMax):
     def _perturb(self, model, x, label=None,
                  steps=10,
                  step_length_l1=1.,
-                 step_length_l2=1.,
+                 step_length_l2=0.5,
                  step_length_linf=0.01,
                  ):
         """
@@ -121,87 +126,93 @@ class OrthogonalStepwiseMax(StepwiseMax):
         assert hasattr(model, 'forward_g'), 'Expected an adversary detector'
         model.eval()
 
-        # for t in range(steps):
-        # if t == 0 and self.use_random:
-        #     adv_x = get_x0(adv_x, rounding_threshold=self.round_threshold, is_sample=True)
+        def one_iteration(_adv_x, norm_type, iteration_idx):
+            var_adv_x = torch.autograd.Variable(_adv_x, requires_grad=True)
+            # calculating gradient of classifier w.r.t. images
+            logits_classifier = model.forward_f(var_adv_x)
+            ce = torch.mean(F.cross_entropy(logits_classifier, label, reduction='none'))
+            ce.backward()
+            grad_classifier = var_adv_x.grad.detach().data  # we do not put it on cpu
+            grad_classifier = self.trans_grads(grad_classifier, _adv_x)
 
-        var_adv_x = torch.autograd.Variable(adv_x, requires_grad=True)
-        # calculating gradient of classifier w.r.t. images
-        logits_classifier = model.forward_f(var_adv_x)
-        ce = torch.mean(F.cross_entropy(logits_classifier, label, reduction='none'))
-        ce.backward()
-        grad_classifier = var_adv_x.grad.detach().data  # we do not put it on cpu
-        grad_classifier = self.trans_grads(grad_classifier, adv_x)
+            var_adv_x.grad = None
+            logits_detector = model.forward_g(var_adv_x)
+            loss_detector = F.binary_cross_entropy_with_logits(logits_detector, label_adv)
+            loss_detector.backward()
+            grad_detector = var_adv_x.grad.detach().data
+            grad_detector = self.trans_grads(grad_detector, _adv_x)
 
-        var_adv_x.grad = None
-        logits_detector = model.forward_g(var_adv_x)
-        loss_detector = F.binary_cross_entropy_with_logits(logits_detector, label_adv)
-        loss_detector.backward()
-        grad_detector = var_adv_x.grad.detach().data
-        grad_detector = self.trans_grads(grad_detector, adv_x)
-
-        if self.project_detector:
-            # using Orthogonal Projected Gradient Descent
-            # projection of gradient of detector on gradient of classifier
-            # then grad_d' = grad_d - (project grad_d onto grad_c)
-            grad_detector_proj = grad_detector - torch.bmm(
-                (torch.bmm(grad_detector.view(batch_size, 1, -1), grad_classifier.view(batch_size, -1, 1))) / (
-                        1e-20 + torch.bmm(grad_classifier.view(batch_size, 1, -1),
-                                          grad_classifier.view(batch_size, -1, 1))).view(-1, 1, 1),
-                grad_classifier.view(batch_size, 1, -1)).view(grad_detector.shape)
-        else:
-            grad_detector_proj = grad_detector
-
-        if self.project_classifier:
-            # using Orthogonal Projected Gradient Descent
-            # projection of gradient of detector on gradient of classifier
-            # then grad_c' = grad_c - (project grad_c onto grad_d)
-            grad_classifier_proj = grad_classifier - torch.bmm(
-                (torch.bmm(grad_classifier.view(batch_size, 1, -1), grad_detector.view(batch_size, -1, 1))) / (
-                        1e-20 + torch.bmm(grad_detector.view(batch_size, 1, -1),
-                                          grad_detector.view(batch_size, -1, 1))).view(-1, 1, 1),
-                grad_detector.view(batch_size, 1, -1)).view(grad_classifier.shape)
-        else:
-            grad_classifier_proj = grad_classifier
-
-        if self.project_detector:
-            logits_classifier[range(batch_size), 0] = logits_classifier[range(batch_size), 0] - 10.
-            has_attack_succeeded = (logits_classifier.argmax(1) == 0.)[:, None].float()
-        else:
-            has_attack_succeeded = (logits_detector <= model.tau)[:, None].float()
-
-        if self.k:
-            # take gradients of g onto f every kth step
-            if t % self.k == 0:
-                grad = grad_detector_proj
-            else:
-                grad = grad_classifier_proj
-        else:
             if self.project_detector:
-                grad = grad_classifier_proj * (
-                        1. - has_attack_succeeded) + grad_detector_proj * has_attack_succeeded
+                # using Orthogonal Projected Gradient Descent
+                # projection of gradient of detector on gradient of classifier
+                # then grad_d' = grad_d - (project grad_d onto grad_c)
+                grad_detector_proj = grad_detector - torch.bmm(
+                    (torch.bmm(grad_detector.view(batch_size, 1, -1), grad_classifier.view(batch_size, -1, 1))) / (
+                            1e-20 + torch.bmm(grad_classifier.view(batch_size, 1, -1),
+                                              grad_classifier.view(batch_size, -1, 1))).view(-1, 1, 1),
+                    grad_classifier.view(batch_size, 1, -1)).view(grad_detector.shape)
             else:
-                grad = grad_classifier_proj * has_attack_succeeded + grad_detector_proj * (
-                        1. - has_attack_succeeded)
+                grad_detector_proj = grad_detector
 
-        # if torch.any(torch.isnan(grad)):
-        #     print(torch.mean(torch.isnan(grad)))
-        #     print("ABORT")
-        #     break
-        perturbation = torch.sign(grad)
-        adv_x_linf = torch.clamp(adv_x + perturbation * step_length_linf, min=0., max=1.)
+            if self.project_classifier:
+                # using Orthogonal Projected Gradient Descent
+                # projection of gradient of detector on gradient of classifier
+                # then grad_c' = grad_c - (project grad_c onto grad_d)
+                grad_classifier_proj = grad_classifier - torch.bmm(
+                    (torch.bmm(grad_classifier.view(batch_size, 1, -1), grad_detector.view(batch_size, -1, 1))) / (
+                            1e-20 + torch.bmm(grad_detector.view(batch_size, 1, -1),
+                                              grad_detector.view(batch_size, -1, 1))).view(-1, 1, 1),
+                    grad_detector.view(batch_size, 1, -1)).view(grad_classifier.shape)
+            else:
+                grad_classifier_proj = grad_classifier
 
-        l2norm = torch.linalg.norm(grad, dim=-1, keepdim=True)
-        perturbation = torch.minimum(
-            torch.tensor(1., dtype=x.dtype, device=x.device),
-            grad / l2norm
-        )
-        adv_x_l2 = torch.clamp(adv_x + perturbation * step_length_l2, min=0., max=1.)
+            if self.project_detector:
+                logits_classifier[range(batch_size), 0] = logits_classifier[range(batch_size), 0] - 10.
+                has_attack_succeeded = (logits_classifier.argmax(1) == 0.)[:, None].float()
+            else:
+                has_attack_succeeded = (logits_detector <= model.tau)[:, None].float()
 
-        val, idx = torch.abs(grad).topk(int(1. / step_length_l1), dim=-1)
-        perturbation = F.one_hot(idx, num_classes=adv_x.shape[-1]).sum(dim=1).double()
-        perturbation = torch.sign(grad) * perturbation
-        adv_x_l1 = torch.clamp(adv_x + perturbation * step_length_l1, min=0., max=1.)
+            if self.k:
+                # take gradients of g onto f every kth step
+                if iteration_idx % self.k == 0:
+                    grad = grad_detector_proj
+                else:
+                    grad = grad_classifier_proj
+            else:
+                if self.project_detector:
+                    grad = grad_classifier_proj * (
+                            1. - has_attack_succeeded) + grad_detector_proj * has_attack_succeeded
+                else:
+                    grad = grad_classifier_proj * has_attack_succeeded + grad_detector_proj * (
+                            1. - has_attack_succeeded)
+
+            if norm_type == 'linf':
+                perturbation = torch.sign(grad)
+                return torch.clamp(_adv_x + perturbation * step_length_linf, min=0., max=1.)
+            elif norm_type == 'l2':
+                l2norm = torch.linalg.norm(grad, dim=-1, keepdim=True)
+                perturbation = torch.minimum(
+                    torch.tensor(1., dtype=x.dtype, device=x.device),
+                    grad / l2norm
+                )
+                return torch.clamp(_adv_x + perturbation * step_length_l2, min=0., max=1.)
+            elif norm_type == 'l1':
+                val, idx = torch.abs(grad).topk(int(1. / step_length_l1), dim=-1)
+                perturbation = F.one_hot(idx, num_classes=adv_x.shape[-1]).sum(dim=1).double()
+                perturbation = torch.sign(grad) * perturbation
+                return torch.clamp(_adv_x + perturbation * step_length_l1, min=0., max=1.)
+            else:
+                raise NotImplementedError
+
+        adv_x_linf = adv_x.clone()
+        for t in range(steps):
+            adv_x_linf = one_iteration(adv_x_linf, 'linf', t)
+        adv_x_l2 = adv_x.clone()
+        for t in range(steps):
+            adv_x_l2 = one_iteration(adv_x_l2, 'l2', t)
+        adv_x_l1 = adv_x.clone()
+        for t in range(steps):
+            adv_x_l1 = one_iteration(adv_x_l1, 'l1', t)
         return adv_x_linf, adv_x_l2, adv_x_l1
 
     def trans_grads(self, gradients, adv_features):
