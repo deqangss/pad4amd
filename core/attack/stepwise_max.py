@@ -36,6 +36,7 @@ class StepwiseMax(BaseAttack):
 
     def perturb(self, model, x, label=None,
                 steps=100,
+                step_check=10,
                 sl_l1=1.,
                 sl_l2=1.,
                 sl_linf=0.01,
@@ -53,6 +54,8 @@ class StepwiseMax(BaseAttack):
             self.lambda_ = min_lambda_
         else:
             self.lambda_ = max_lambda_
+        mini_steps = [step_check] * (steps // step_check)
+        mini_steps = mini_steps + [steps % step_check] if steps % step_check != 0 else mini_steps
         n, red_n = x.size()[0], x.size()[1:]
         red_ind = list(range(2, len(x.size()) + 1))
 
@@ -60,7 +63,7 @@ class StepwiseMax(BaseAttack):
         while self.lambda_ <= max_lambda_:
             pert_x_cont = None
             prev_done = None
-            for i, mini_step in enumerate(range(steps)):
+            for i, mini_step in enumerate(mini_steps):
                 with torch.no_grad():
                     if i == 0 and self.use_random:
                         adv_x = get_x0(adv_x, rounding_threshold=self.round_threshold, is_sample=True)
@@ -76,6 +79,7 @@ class StepwiseMax(BaseAttack):
 
                 num_sample_red = torch.sum(~done).item()
                 pert_x_linf, pert_x_l2, pert_x_l1 = self._perturb(model, adv_x[~done], label[~done],
+                                                                  mini_step,
                                                                   sl_l1,
                                                                   sl_l2,
                                                                   sl_linf,
@@ -105,6 +109,7 @@ class StepwiseMax(BaseAttack):
         return adv_x
 
     def _perturb(self, model, x, label=None,
+                 steps=10,
                  step_length_l1=1.,
                  step_length_l2=1.,
                  step_length_linf=0.01,
@@ -118,6 +123,7 @@ class StepwiseMax(BaseAttack):
         @param model, a victim model
         @param x: torch.FloatTensor, node feature vectors (each represents the occurrences of apis in a graph) with shape [batch_size, vocab_dim]
         @param label: torch.LongTensor, ground truth labels
+        @param steps: Integer, maximum number of iterations
         @param step_length_l1: float value in [0,1], the step length in each iteration
         @param step_length_l2: float, the step length in each iteration
         @param step_length_linf: float, the step length in each iteration
@@ -129,47 +135,62 @@ class StepwiseMax(BaseAttack):
         assert 0 <= step_length_l1 <= 1, "Expected a real-value in [0,1], but got {}".format(step_length_l1)
         model.eval()
         adv_x = x.detach()
-        var_adv_x = torch.autograd.Variable(adv_x, requires_grad=True)
-        loss, done = self.get_loss(model, var_adv_x, label, self.lambda_)
-        grad = torch.autograd.grad(torch.mean(loss), var_adv_x)[0].data
 
-        # look for allowable position, because only '1--> -' and '0 --> +' are permitted
-        # api insertion
-        pos_insertion = (adv_x <= 0.5) * 1 * (adv_x >= 0.)
-        grad4insertion = (grad > 0) * pos_insertion * grad
-        # api removal
-        pos_removal = (adv_x > 0.5) * 1
-        grad4removal = (grad <= 0) * (pos_removal & self.manipulation_x) * grad
-        if self.is_attacker:
-            #     2.1 cope with the interdependent apis
-            checking_nonexist_api = (pos_removal ^ self.omega) & self.omega
-            grad4removal[:, self.api_flag] += torch.sum(grad * checking_nonexist_api, dim=-1, keepdim=True)
-        grad = grad4removal + grad4insertion
+        def one_iteration(_adv_x, norm_type):
+            var_adv_x = torch.autograd.Variable(_adv_x, requires_grad=True)
+            loss, done = self.get_loss(model, var_adv_x, label, self.lambda_)
+            grad = torch.autograd.grad(torch.mean(loss), var_adv_x)[0].data
+            # look for allowable position, because only '1--> -' and '0 --> +' are permitted
+            # api insertion
+            pos_insertion = (_adv_x <= 0.5) * 1 * (_adv_x >= 0.)
+            grad4insertion = (grad > 0) * pos_insertion * grad
+            # api removal
+            pos_removal = (_adv_x > 0.5) * 1
+            grad4removal = (grad <= 0) * (pos_removal & self.manipulation_x) * grad
+            if self.is_attacker:
+                #     2.1 cope with the interdependent apis
+                checking_nonexist_api = (pos_removal ^ self.omega) & self.omega
+                grad4removal[:, self.api_flag] += torch.sum(grad * checking_nonexist_api, dim=-1, keepdim=True)
+            grad = grad4removal + grad4insertion
 
-        # linf
-        perturbation_linf = torch.sign(grad)
-        if self.is_attacker:
-            perturbation_linf += (torch.any(perturbation_linf[:, self.api_flag] < 0, dim=-1,
-                                            keepdim=True) * checking_nonexist_api)
-        adv_x_linf = torch.clamp(adv_x + step_length_linf * perturbation_linf, min=0., max=1.)
-        # l2
-        l2norm = torch.linalg.norm(grad, dim=-1, keepdim=True)
-        perturbation_l2 = torch.minimum(
-            torch.tensor(1., dtype=adv_x.dtype, device=adv_x.device),
-            grad / l2norm
-        )
-        perturbation_l2 = torch.where(torch.isnan(perturbation_l2), 0., perturbation_l2)
-        if self.is_attacker:
-            min_val = torch.amin(perturbation_l2, dim=-1, keepdim=True).clamp_(max=0.)
-            perturbation_l2 += (torch.any(perturbation_l2[:, self.api_flag] < 0, dim=-1,
-                                          keepdim=True) * torch.abs(min_val) * checking_nonexist_api)
-        adv_x_l2 = torch.clamp(adv_x + step_length_l2 * perturbation_l2, min=0., max=1.)
-        # l1
-        val, idx = torch.abs(grad).topk(int(1. / step_length_l1), dim=-1)
-        perturbation_l1 = F.one_hot(idx, num_classes=adv_x.shape[-1]).sum(dim=1)
-        perturbation_l1 = perturbation_linf * perturbation_l1
-        if self.is_attacker:
-            perturbation_l1 += (
-                    torch.any(perturbation_l1[:, self.api_flag] < 0, dim=-1, keepdim=True) * checking_nonexist_api)
-        adv_x_l1 = torch.clamp(adv_x + step_length_l1 * perturbation_l1, min=0., max=1.)
+            if norm_type == 'linf':
+                perturbation = torch.sign(grad)
+                if self.is_attacker:
+                    perturbation += (torch.any(perturbation[:, self.api_flag] < 0, dim=-1,
+                                                    keepdim=True) * checking_nonexist_api)
+                return torch.clamp(_adv_x + step_length_linf * perturbation, min=0., max=1.)
+            elif norm_type == 'l2':
+                l2norm = torch.linalg.norm(grad, dim=-1, keepdim=True)
+                perturbation = torch.minimum(
+                    torch.tensor(1., dtype=_adv_x.dtype, device=_adv_x.device),
+                    grad / l2norm
+                )
+                perturbation = torch.where(torch.isnan(perturbation), 0., perturbation)
+                if self.is_attacker:
+                    min_val = torch.amin(perturbation, dim=-1, keepdim=True).clamp_(max=0.)
+                    perturbation += (torch.any(perturbation[:, self.api_flag] < 0, dim=-1,
+                                                  keepdim=True) * torch.abs(min_val) * checking_nonexist_api)
+                return torch.clamp(_adv_x + step_length_l2 * perturbation, min=0., max=1.)
+            elif norm_type == 'l1':
+                # l1
+                val, idx = torch.abs(grad).topk(int(1. / step_length_l1), dim=-1)
+                perturbation = F.one_hot(idx, num_classes=_adv_x.shape[-1]).sum(dim=1)
+                perturbation = torch.sign(grad) * perturbation
+                if self.is_attacker:
+                    perturbation += (
+                            torch.any(perturbation[:, self.api_flag] < 0, dim=-1,
+                                      keepdim=True) * checking_nonexist_api)
+                return torch.clamp(_adv_x + step_length_l1 * perturbation, min=0., max=1.)
+            else:
+                raise NotImplementedError
+
+        adv_x_linf = adv_x.clone()
+        for t in range(steps):
+            adv_x_linf = one_iteration(adv_x_linf, norm_type='linf')
+        adv_x_l2 = adv_x.clone()
+        for t in range(steps):
+            adv_x_l2 = one_iteration(adv_x_l2, norm_type='l2')
+        adv_x_l1 = adv_x.clone()
+        for t in range(steps):
+            adv_x_l1 = one_iteration(adv_x_l1, norm_type='l1')
         return adv_x_linf, adv_x_l2, adv_x_l1
