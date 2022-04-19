@@ -7,7 +7,7 @@ import argparse
 import numpy as np
 
 from core.defense import Dataset
-from core.defense import DNNMalwareDetector, KernelDensityEstimation, AdvMalwareDetectorICNN, MaxAdvTraining
+from core.defense import DNNMalwareDetector, KernelDensityEstimation, AdvMalwareDetectorICNN, MaxAdvTraining, PrincipledAdvDet
 from core.attack import OrthogonalStepwiseMax
 from tools import utils
 from config import config, logging, ErrorHandler
@@ -16,8 +16,10 @@ logger = logging.getLogger('examples.orthogonal_stepwise_max_test')
 logger.addHandler(ErrorHandler)
 
 atta_argparse = argparse.ArgumentParser(description='arguments for step-wise max attack')
-atta_argparse.add_argument('--n_step', type=int, default=100,
+atta_argparse.add_argument('--steps', type=int, default=100,
                            help='maximum number of steps.')
+atta_argparse.add_argument('--step_check', type=int, default=1,
+                           help='check the maximum at $step_check$th step..')
 atta_argparse.add_argument('--project_detector', action='store_true', default=False,
                            help='whether know the adversary indicator or not.')
 atta_argparse.add_argument('--project_classifier', action='store_true', default=False,
@@ -35,8 +37,8 @@ atta_argparse.add_argument('--round_threshold', type=float, default=0.5,
 atta_argparse.add_argument('--real', action='store_true', default=False,
                            help='whether produce the perturbed apks.')
 atta_argparse.add_argument('--model', type=str, default='maldet',
-                           choices=['md_dnn', 'kde', 'amd_icnn', 'md_at_ma', 'mad'],
-                           help="model type, either of 'md_dnn', 'kde', 'amd_icnn', 'md_at_ma', and 'padvtrain'.")
+                           choices=['md_dnn', 'kde', 'amd_icnn', 'md_at_ma', 'amd_at_ma'],
+                           help="model type, either of 'md_dnn', 'kde', 'amd_icnn', 'md_at_ma', and 'amd_at_ma'.")
 atta_argparse.add_argument('--model_name', type=str, default='xxxxxxxx-xxxxxx',
                            help='model timestamp.')
 
@@ -51,10 +53,10 @@ def _main():
         save_dir = config.get('experiments', 'amd_icnn') + '_' + args.model_name
     elif args.model == 'md_at_ma':
         save_dir = config.get('experiments', 'md_at_ma') + '_' + args.model_name
-    elif args.model == 'padvtrain':
-        save_dir = config.get('experiments', 'p_adv_training') + '_' + args.model_name
+    elif args.model == 'amd_at_ma':
+        save_dir = config.get('experiments', 'amd_at_ma') + '_' + args.model_name
     else:
-        raise TypeError("Expected 'md_dnn', 'kde', 'amd_icnn', 'md_at_ma', and 'padvtrain'.")
+        raise TypeError("Expected 'md_dnn', 'kde', 'amd_icnn', 'md_at_ma', and 'amd_at_ma'.")
 
     hp_params = utils.read_pickle(os.path.join(save_dir, 'hparam.pkl'))
     dataset = Dataset(use_cache=hp_params['cache'],
@@ -108,6 +110,10 @@ def _main():
         adv_model = MaxAdvTraining(model)
         adv_model.load()
         model = adv_model.model
+    elif args.model == 'amd_at_ma':
+        adv_model = PrincipledAdvDet(model)
+        adv_model.load()
+        model = adv_model.model
     else:
         model.load()
     logger.info("Load model parameters from {}.".format(model.model_save_path))
@@ -126,7 +132,7 @@ def _main():
     for x, y in mal_test_dataset_producer:
         x, y = utils.to_tensor(x.double(), y.long(), model.device)
         adv_x_batch = attack.perturb(model.double(), x, y,
-                                     args.n_step,
+                                     args.steps,
                                      args.step_length_l1,
                                      args.step_length_l2,
                                      args.step_length_linf,
