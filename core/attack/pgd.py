@@ -132,7 +132,7 @@ class PGD(BaseAttack):
         pos_removal = (adv_features > 0.5) * 1
         grad4removal = (gradients < 0) * (pos_removal & self.manipulation_x) * gradients
         if self.is_attacker:
-            #     2.1 cope with the interdependent apis
+            # cope with the interdependent apis
             checking_nonexist_api = (pos_removal ^ self.omega) & self.omega
             grad4removal[:, self.api_flag] += torch.sum(gradients * checking_nonexist_api, dim=-1, keepdim=True)
         gradients = grad4removal + grad4insertion
