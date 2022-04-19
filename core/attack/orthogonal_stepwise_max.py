@@ -195,6 +195,7 @@ class OrthogonalStepwiseMax(StepwiseMax):
                     torch.tensor(1., dtype=x.dtype, device=x.device),
                     grad / l2norm
                 )
+                perturbation = torch.where(torch.isnan(perturbation), 0., perturbation)
                 return torch.clamp(_adv_x + perturbation * step_length_l2, min=0., max=1.)
             elif norm_type == 'l1':
                 val, idx = torch.abs(grad).topk(int(1. / step_length_l1), dim=-1)
