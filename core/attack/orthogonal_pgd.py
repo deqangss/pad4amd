@@ -172,6 +172,9 @@ class OrthogonalPGD(PGD):
             round_threshold = torch.rand(x.size()).to(self.device)
         else:
             round_threshold = 0.5
+
+        if self.norm == 'l2':
+            print('value:', round_x(adv_x, round_threshold))
         return round_x(adv_x, round_threshold)
 
     def perturb(self, model, x, label=None,
