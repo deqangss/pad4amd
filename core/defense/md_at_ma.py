@@ -95,6 +95,7 @@ class MaxAdvTraining(object):
                 pertb_mal_x = self.attack.perturb(self.model, mal_x_batch, mal_y_batch,
                                                   **self.attack_param
                                                   )
+                pertb_mal_x = utils.round_x(pertb_mal_x, 0.5)
                 total_time += time.time() - start_time
                 x_batch = torch.cat([x_batch, ben_batch_noises, pertb_mal_x], dim=0)
                 y_batch = torch.cat([y_batch, ben_y_batch, mal_y_batch])
