@@ -256,24 +256,26 @@ class AdvMalwareDetectorClsPlus(nn.Module, DetectorTemplate):
                 # make anomaly data
                 start_time = time.time()
                 if idx_batch >= len(pertb_train_data_list):
-                    mal_x_batch, mal_y_batch, null_flag = utils.get_mal_data(x_train, y_train)
                     pertb_x = attack.perturb(self.md_nn_model, x_train, y_train,
                                              **attack_param
                                              )
-                    if not null_flag:
-                        pertb_x = utils.round_x(pertb_x, alpha=0.5)
+                    pertb_x = utils.round_x(pertb_x, alpha=0.5)
+                    trivial_flag = torch.sum(torch.abs(x_train - pertb_x), dim=-1)[:] == 0.
+                    if torch.all(trivial_flag):
+                        pertb_train_data_list.append([])
+                        continue
+                    pertb_x = pertb_x[~trivial_flag]
                     pertb_train_data_list.append(pertb_x.detach().cpu().numpy())  # not scalable enough
                 else:
                     pertb_x = pertb_train_data_list[idx_batch]
-                    null_flag = len(pertb_x) == 0
-                    if not null_flag:
-                        pertb_x = torch.from_numpy(pertb_x).to(self.device)
-                if null_flag:
-                    continue
+                    if len(pertb_x) == 0:
+                        continue
+                    pertb_x = torch.from_numpy(pertb_x).to(self.device)
 
                 x_train = torch.cat([x_train, pertb_x], dim=0)
-                y_train = torch.cat([y_train, 2 * torch.ones(len(pertb_x,), dtype=torch.long, device=self.device)])
-                idx = torch.randperm(y_train.shape[0])
+                batch_size_ext = x_train.shape[0]
+                y_train = torch.cat([y_train, 2 * torch.ones((pertb_x.shape[0],), dtype=torch.long, device=self.device)])
+                idx = torch.randperm(batch_size_ext)
                 x_train = x_train[idx]
                 y_train = y_train[idx]
                 optimizer.zero_grad()
@@ -298,22 +300,18 @@ class AdvMalwareDetectorClsPlus(nn.Module, DetectorTemplate):
             for idx, (x_val, y_val) in enumerate(validation_data_producer):
                 x_val, y_val = utils.to_device(x_val.double(), y_val.long(), self.device)
                 if idx >= len(pertb_val_data_list):
-                    mal_x_batch, mal_y_batch, null_flag = utils.get_mal_data(x_val, y_val)
                     pertb_x = attack.perturb(self.md_nn_model, x_val, y_val,
                                              **attack_param
                                              )
-                    if not null_flag:
-                        pertb_x = utils.round_x(pertb_x, alpha=0.5)
+                    pertb_x = utils.round_x(pertb_x, alpha=0.5)
+                    trivial_flag = torch.sum(torch.abs(x_val - pertb_x), dim=-1)[:] == 0.
+                    assert (not torch.all(trivial_flag)), 'No modifications.'
+                    pertb_x = pertb_x[~trivial_flag]
                     pertb_val_data_list.append(pertb_x.detach().cpu().numpy())  # not scalable enough
                 else:
-                    pertb_x = pertb_val_data_list[idx]
-                    null_flag = len(pertb_x) == 0
-                    if not null_flag:
-                        pertb_x = torch.from_numpy(pertb_x).to(self.device)
-                if null_flag:
-                    continue
+                    pertb_x = torch.from_numpy(pertb_val_data_list[idx]).to(self.device)
                 x_val = torch.cat([x_val, pertb_x], dim=0)
-                y_val = torch.cat([y_val, torch.ones((pertb_x.shape[0],), device=self.device) * 2])
+                y_val = torch.cat([y_val, 2 * torch.ones((pertb_x.shape[0],), device=self.device)])
                 logits, _1 = self.forward(x_val)
                 acc_val = (logits.argmax(1) == y_val).sum().item()
                 acc_val = acc_val / (len(x_val))

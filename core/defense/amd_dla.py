@@ -256,7 +256,8 @@ class AdvMalwareDetectorDLA(nn.Module, DetectorTemplate):
                                              **attack_param
                                              )
                     pertb_x = utils.round_x(pertb_x, alpha=0.5)
-                    trivial_flag = torch.sum(torch.abs(x_train - pertb_x), dim=-1) == 0.
+                    trivial_flag = torch.sum(torch.abs(x_train - pertb_x), dim=-1)[:] == 0.
+                    assert (not torch.all(trivial_flag)), 'No modifications.'
                     pertb_x = pertb_x[~trivial_flag]
                     pertb_train_data_list.append(pertb_x.detach().cpu().numpy())  # not scalable enough
                 else:
@@ -295,7 +296,8 @@ class AdvMalwareDetectorDLA(nn.Module, DetectorTemplate):
                                              **attack_param
                                              )
                     pertb_x = utils.round_x(pertb_x, alpha=0.5)
-                    trivial_flag = torch.sum(torch.abs(x_val - pertb_x), dim=-1) == 0.
+                    trivial_flag = torch.sum(torch.abs(x_val - pertb_x), dim=-1)[:] == 0.
+                    assert (not torch.all(trivial_flag)), 'No modifications.'
                     pertb_x = pertb_x[~trivial_flag]
                     pertb_val_data_list.append(pertb_x.detach().cpu().numpy())  # not scalable enough
                 else:
