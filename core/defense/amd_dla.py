@@ -54,14 +54,13 @@ class AdvMalwareDetectorDLA(nn.Module, DetectorTemplate):
             self.md_nn_model = md_nn_model
             self.is_fitting_md_model = False
         else:
-            kwargs['smooth'] = True
             self.md_nn_model = DNNMalwareDetector(self.input_size,
                                                   n_classes,
                                                   self.device,
                                                   name,
                                                   **kwargs)
             self.is_fitting_md_model = True
-        self.md_nn_model = self.md_nn_model.to(self.device)
+
         assert len(self.dense_hidden_units) >= 1, "Expected at least one hidden layer."
         self.alarm_nn_model = TorchAlarm(input_size=sum(self.md_nn_model.dense_hidden_units))
 
@@ -214,72 +213,6 @@ class AdvMalwareDetectorDLA(nn.Module, DetectorTemplate):
             assert i >= 0
             self.tau[0] = s[i]
 
-    def _fit_md(self, train_data_producer, validation_data_producer, epochs=100, lr=0.005, weight_decay=0.,
-                verbose=True):
-        """
-        Train the malware detector, pick the best model according to the validation results
-
-        Parameters
-        ----------
-        @param train_data_producer: Object, an iterator for producing a batch of training data
-        @param validation_data_producer: Object, an iterator for producing validation dataset
-        @param epochs, Integer, epochs
-        @param lr, Float, learning rate for Adam optimizer
-        @param weight_decay, Float, penalty factor
-        @param verbose: Boolean, whether to show verbose logs
-        """
-        optimizer = optim.Adam(self.md_nn_model.parameters(), lr=lr, weight_decay=weight_decay)
-        best_avg_acc = 0.
-        best_epoch = 0
-        total_time = 0.
-        nbatches = len(train_data_producer)
-        for i in range(epochs):
-            self.train()
-            losses, accuracies = [], []
-            for idx_batch, (x_train, y_train) in enumerate(train_data_producer):
-                x_train, y_train = utils.to_device(x_train.double(), y_train.long(), self.device)
-                start_time = time.time()
-                optimizer.zero_grad()
-                logits_f = self.forward_f(x_train)
-                loss_train = F.cross_entropy(logits_f, y_train)
-                loss_train.backward()
-                optimizer.step()
-                total_time = total_time + time.time() - start_time
-                acc_f_train = (logits_f.argmax(1) == y_train).sum().item()
-                acc_f_train /= x_train.size()[0]
-                mins, secs = int(total_time / 60), int(total_time % 60)
-                losses.append(loss_train.item())
-                accuracies.append(acc_f_train)
-                if verbose:
-                    print(
-                        f'Mini batch: {i * nbatches + idx_batch + 1}/{epochs * nbatches} | training time in {mins:.0f} minutes, {secs} seconds.')
-                    logger.info(
-                        f'Training loss (batch level): {losses[-1]:.4f} | Train accuracy: {acc_f_train * 100:.2f}%.')
-
-            self.eval()
-            avg_acc_val = []
-            with torch.no_grad():
-                for x_val, y_val in validation_data_producer:
-                    x_val, y_val = utils.to_device(x_val.double(), y_val.long(), self.device)
-                    logits_f = self.forward_f(x_val)
-                    acc_val = (logits_f.argmax(1) == y_val).sum().item()
-                    acc_val /= x_val.size()[0]
-                    avg_acc_val.append(acc_val)
-                avg_acc_val = np.mean(avg_acc_val)
-
-            if avg_acc_val >= best_avg_acc:
-                best_avg_acc = avg_acc_val
-                best_epoch = i
-                self.save_to_disk()
-                if verbose:
-                    print(f'Model saved at path: {self.model_save_path}')
-
-            if verbose:
-                logger.info(
-                    f'Training loss (epoch level): {np.mean(losses):.4f} | Train accuracy: {np.mean(accuracies) * 100:.2f}')
-                logger.info(
-                    f'Validation accuracy: {avg_acc_val * 100:.2f} | The best validation accuracy: {best_avg_acc * 100:.2f} at epoch: {best_epoch}')
-
     def fit(self, train_data_producer, validation_data_producer, attack, attack_param,
             epochs=100, lr=0.005, weight_decay=0., verbose=True):
         """
@@ -298,7 +231,7 @@ class AdvMalwareDetectorDLA(nn.Module, DetectorTemplate):
         """
         # training the malware detector
         if self.is_fitting_md_model:
-            self._fit_md(train_data_producer, validation_data_producer, epochs, lr, weight_decay)
+            self.md_nn_model.fit(train_data_producer, validation_data_producer, epochs, lr, weight_decay)
 
         if attack is not None:
             assert isinstance(attack, (Max, StepwiseMax))
@@ -306,10 +239,12 @@ class AdvMalwareDetectorDLA(nn.Module, DetectorTemplate):
                 assert not attack.is_attacker
 
         logger.info("Training alarm ...")
-        optimizer = optim.Adam(self.parameters(), lr=lr, weight_decay=weight_decay)
+        optimizer = optim.Adam(self.alarm_nn_model.parameters(), lr=lr, weight_decay=weight_decay)
         best_avg_acc = 0.
         best_epoch = 0
         total_time = 0.
+        pertb_train_data_list = []
+        pertb_val_data_list = []
         nbatches = len(train_data_producer)
         self.md_nn_model.eval()
         for i in range(epochs):
@@ -320,10 +255,14 @@ class AdvMalwareDetectorDLA(nn.Module, DetectorTemplate):
                 batch_size = x_train.shape[0]
                 # make anomaly data
                 start_time = time.time()
-                pertb_x = attack.perturb(self.md_nn_model, x_train, y_train,
-                                         **attack_param
-                                         )
-                pertb_x = utils.round_x(pertb_x, alpha=0.5)
+                if idx_batch >= len(pertb_train_data_list):
+                    pertb_x = attack.perturb(self.md_nn_model, x_train, y_train,
+                                             **attack_param
+                                             )
+                    pertb_x = utils.round_x(pertb_x, alpha=0.5)
+                    pertb_train_data_list.append(pertb_x.detach().cpu().numpy())  # not scalable enough
+                else:
+                    pertb_x = torch.from_numpy(pertb_train_data_list[idx_batch]).to(self.device)
                 x_train = torch.cat([x_train, pertb_x], dim=0)
                 y_train = torch.zeros((2 * batch_size), device=self.device)
                 y_train[batch_size:] = 1
@@ -346,13 +285,17 @@ class AdvMalwareDetectorDLA(nn.Module, DetectorTemplate):
 
             self.alarm_nn_model.eval()
             avg_acc_val = []
-            for x_val, y_val in validation_data_producer:
+            for idx, (x_val, y_val) in enumerate(validation_data_producer):
                 x_val, y_val = utils.to_device(x_val.double(), y_val.long(), self.device)
                 batch_size_val = x_val.shape[0]
-                pertb_x = attack.perturb(self.md_nn_model, x_val, y_val,
-                                         **attack_param
-                                         )
-                pertb_x = utils.round_x(pertb_x, alpha=0.5)
+                if idx >= len(pertb_val_data_list):
+                    pertb_x = attack.perturb(self.md_nn_model, x_val, y_val,
+                                             **attack_param
+                                             )
+                    pertb_x = utils.round_x(pertb_x, alpha=0.5)
+                    pertb_val_data_list.append(pertb_x.detach().cpu().numpy())  # not scalable enough
+                else:
+                    pertb_x = torch.from_numpy(pertb_val_data_list[idx]).to(self.device)
                 x_val = torch.cat([x_val, pertb_x], dim=0)
                 y_val = torch.zeros((2 * batch_size_val), device=self.device)
                 y_val[batch_size_val:] = 1

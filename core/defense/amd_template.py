@@ -6,9 +6,10 @@ abstract class of detecting adversarial malware
 class DetectorTemplate(object):
     def __init__(self):
         self.tau = None
+        self.is_detector_enabled = True
 
-    def forward_g(self, x):
-        """density estimation"""
+    def forward(self, x):
+        """class prediction & density estimation"""
         raise NotImplementedError
 
     def get_threshold(self):
