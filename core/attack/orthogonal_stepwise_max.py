@@ -137,6 +137,7 @@ class OrthogonalStepwiseMax(StepwiseMax):
 
             var_adv_x.grad = None
             logits_detector = model.forward_g(var_adv_x)
+            # todo:change it to logits
             loss_detector = F.binary_cross_entropy_with_logits(logits_detector, label_adv)
             loss_detector.backward()
             grad_detector = var_adv_x.grad.detach().data

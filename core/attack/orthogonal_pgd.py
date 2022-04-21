@@ -81,7 +81,7 @@ class OrthogonalPGD(PGD):
 
             var_adv_x.grad = None
             logits_detector = model.forward_g(var_adv_x)
-            # loss_detector = -torch.mean(logits_detector)
+            # todo: loss_detector = -torch.mean(logits_detector)
             loss_detector = F.binary_cross_entropy_with_logits(logits_detector, label_adv)
             loss_detector.backward()
             grad_detector = var_adv_x.grad.detach().data
