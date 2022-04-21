@@ -45,6 +45,7 @@ class Max(BaseAttack):
         model.eval()
         with torch.no_grad():
             loss, done = self.get_scores(model, x, label)
+            print('strat: {}%', done.sum().item() / x.size()[0] * 100)
         pre_loss = loss
         n, red_n = x.size()[0], x.size()[1:]
         red_ind = list(range(2, len(x.size()) + 1))
