@@ -28,7 +28,7 @@ class Mimicry(BaseAttack):
 
     def perturb(self, model, x, trials=10, seed=0, is_apk=False, verbose=False):
         """
-        inject the graph of benign file into malicious ones
+        modify feature vectors of malicious apps
 
         Parameters
         -----------

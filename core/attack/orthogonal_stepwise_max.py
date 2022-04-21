@@ -234,8 +234,8 @@ class OrthogonalStepwiseMax(StepwiseMax):
         if 'forward_g' in type(model).__dict__.keys() and (not self.oblivion):
             logits_g = model.forward_g(pertb_x)
             loss_no_reduction = ce - torch.sigmoid(logits_g)
-            done = (y_pred == 0.) & (logits_g <= model.tau)
+            done = (y_pred != label) & (logits_g <= model.tau)
         else:
             loss_no_reduction = ce
-            done = y_pred == 0.
+            done = y_pred != label
         return loss_no_reduction, done

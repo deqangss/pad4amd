@@ -45,7 +45,6 @@ class Max(BaseAttack):
         model.eval()
         with torch.no_grad():
             loss, done = self.get_scores(model, x, label)
-            print('strat: {}%', done.sum().item() / x.size()[0] * 100)
         pre_loss = loss
         n, red_n = x.size()[0], x.size()[1:]
         red_ind = list(range(2, len(x.size()) + 1))
@@ -102,9 +101,9 @@ class Max(BaseAttack):
             logits_g = model.forward_g(pertb_x)
             tau = model.get_tau_sample_wise()
             loss_no_reduction = ce - torch.sigmoid(logits_g)
-            done = (y_pred == 0.) & (logits_g <= tau)
+            done = (y_pred != label) & (logits_g <= tau)
         else:
             loss_no_reduction = ce
-            done = y_pred == 0.
+            done = y_pred != label
         return loss_no_reduction, done
 

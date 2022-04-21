@@ -63,7 +63,6 @@ class OrthogonalPGD(PGD):
             return []
         adv_x = x.clone().detach()
         batch_size = x.shape[0]
-        label_adv = torch.ones_like(label).to(model.device).double()
 
         assert hasattr(model, 'forward_g'), 'Expected an adversary detector'
         model.eval()
@@ -82,6 +81,7 @@ class OrthogonalPGD(PGD):
 
             var_adv_x.grad = None
             logits_detector = model.forward_g(var_adv_x)
+            # loss_detector = -torch.mean(logits_detector)
             loss_detector = F.binary_cross_entropy_with_logits(logits_detector, label_adv)
             loss_detector.backward()
             grad_detector = var_adv_x.grad.detach().data

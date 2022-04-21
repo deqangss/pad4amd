@@ -65,7 +65,7 @@ class Groose(BaseAttack):
         model.eval()
         for t in range(m):
             var_adv_x = torch.autograd.Variable(adv_x, requires_grad=True)
-            loss, _1 = self.get_loss(model, var_adv_x, torch.zeros_like(label, device=self.device))
+            loss, _1 = self.get_loss(model, var_adv_x, 1 - label)
 
             grad = torch.autograd.grad(torch.mean(loss), var_adv_x)[0].data
             grad4insertion = (grad > 0) * grad * (adv_x <= 0.5)
@@ -101,7 +101,7 @@ class Groose(BaseAttack):
             self.lambda_ = max_lambda_
         adv_x = x.detach().clone().to(torch.double)
         while self.lambda_ <= max_lambda_:
-            _, done = self.get_loss(model, adv_x, label)
+            _, done = self.get_loss(model, adv_x, 1 - label)
             score = self.get_scores(model, adv_x, label)
             if torch.all(done):
                 break
@@ -114,7 +114,7 @@ class Groose(BaseAttack):
             adv_x[~done] = pert_x
             self.lambda_ *= base
         with torch.no_grad():
-            _, done = self.get_loss(model, adv_x, torch.zeros_like(label, device=self.device))
+            _, done = self.get_loss(model, adv_x, 1 - label)
             if verbose:
                 logger.info(f"grosse: attack effectiveness {done.sum().item() / x.size()[0] * 100}%.")
 
@@ -131,8 +131,8 @@ class Groose(BaseAttack):
             else:
                 loss_no_reduction = softmax_loss + self.lambda_ * (model.tau - logits_g)
 
-            done = (y_pred == 0.) & (logits_g <= model.tau)
+            done = (y_pred == tar_label) & (logits_g <= model.tau)
         else:
             loss_no_reduction = softmax_loss
-            done = y_pred == 0.
+            done = y_pred == tar_label
         return loss_no_reduction, done

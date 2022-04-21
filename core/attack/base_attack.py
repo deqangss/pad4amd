@@ -132,10 +132,10 @@ class BaseAttack(Module):
                                                     )
             else:
                 loss_no_reduction = ce + lambda_ * (tau - logits_g)
-            done = (y_pred == 0.) & (logits_g <= tau)
+            done = (y_pred != label) & (logits_g <= tau)
         else:
             loss_no_reduction = ce
-            done = y_pred == 0.
+            done = y_pred != label
         return loss_no_reduction, done
 
     def get_scores(self, model, pertb_x, label):

@@ -175,7 +175,7 @@ class GDKDEl1(BaseAttack):
                 loss_no_reduction += self.lambda_ * (torch.clamp(model.tau - logits_g, max=self.kappa))
             else:
                 loss_no_reduction += self.lambda_ * (model.tau - logits_g)
-            done = (y_pred == 0.) & (logits_g <= model.tau)
+            done = (y_pred != label) & (logits_g <= model.tau)
         else:
-            done = y_pred == 0.
+            done = y_pred != label
         return loss_no_reduction, done
