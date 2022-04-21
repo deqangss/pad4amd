@@ -34,7 +34,7 @@ class PrincipledAdvDet(object):
         self.model = model
         assert hasattr(self.model, 'forward_g')
         if attack is not None:
-            assert isinstance(attack, (Max,StepwiseMax))
+            assert isinstance(attack, (Max, StepwiseMax))
             if 'is_attacker' in attack.__dict__.keys():
                 assert not attack.is_attacker
         self.attack = attack

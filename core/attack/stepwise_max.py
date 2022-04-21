@@ -162,7 +162,7 @@ class StepwiseMax(BaseAttack):
                 perturbation = torch.sign(grad)
                 if self.is_attacker:
                     perturbation += (torch.any(perturbation[:, self.api_flag] < 0, dim=-1,
-                                                    keepdim=True) * checking_nonexist_api)
+                                               keepdim=True) * checking_nonexist_api)
                 return torch.clamp(_adv_x + step_length_linf * perturbation, min=0., max=1.)
             elif norm_type == 'l2':
                 l2norm = torch.linalg.norm(grad, dim=-1, keepdim=True)
@@ -174,7 +174,7 @@ class StepwiseMax(BaseAttack):
                 if self.is_attacker:
                     min_val = torch.amin(perturbation, dim=-1, keepdim=True).clamp_(max=0.)
                     perturbation += (torch.any(perturbation[:, self.api_flag] < 0, dim=-1,
-                                                  keepdim=True) * torch.abs(min_val) * checking_nonexist_api)
+                                               keepdim=True) * torch.abs(min_val) * checking_nonexist_api)
                 return torch.clamp(_adv_x + step_length_l2 * perturbation, min=0., max=1.)
             elif norm_type == 'l1':
                 # l1
