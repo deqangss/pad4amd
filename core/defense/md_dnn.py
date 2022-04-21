@@ -100,9 +100,6 @@ class DNNMalwareDetector(nn.Module):
         logits = self.dense_layers[-1](latent_representation)
         return logits
 
-    def forward_f(self, x):
-        return self.forward(x)
-
     def inference(self, test_data_producer):
         confidences = []
         gt_labels = []
