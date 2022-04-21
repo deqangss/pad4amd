@@ -360,7 +360,7 @@ class AdvMalwareDetectorDLA(nn.Module, DetectorTemplate):
                 acc_val = ((torch.sigmoid(logits_g) >= 0.5) == y_val).sum().item()
                 acc_val = acc_val / (2 * batch_size_val)
                 avg_acc_val.append(acc_val)
-                avg_acc_val = np.mean(avg_acc_val)
+            avg_acc_val = np.mean(avg_acc_val)
 
             if avg_acc_val >= best_avg_acc:
                 best_avg_acc = avg_acc_val
