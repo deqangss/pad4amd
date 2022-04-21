@@ -252,6 +252,7 @@ class AdvMalwareDetectorDLA(nn.Module, DetectorTemplate):
                 start_time = time.time()
                 if idx_batch >= len(pertb_train_data_list):
                     pertb_x = attack.perturb(self.md_nn_model, x_train, y_train,
+                                             verbose=True,
                                              **attack_param
                                              )
                     pertb_x = utils.round_x(pertb_x, alpha=0.5)
