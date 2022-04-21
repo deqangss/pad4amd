@@ -91,19 +91,15 @@ class AdvMalwareDetectorDLA(nn.Module, DetectorTemplate):
         if len(kwargs) > 0:
             logger.warning("Unknown hyper-parameters {}".format(str(kwargs)))
 
-    def forward_f(self, x):
-        return self.md_nn_model(x)
-
-    def forward_g(self, x):
+    def forward(self, x):
         extra = []
         for dense_layer in self.md_nn_model.dense_layers[:-1]:
             x = self.md_nn_model.activation_func(dense_layer(x))
             extra.append(x)
+        logits = self.md_nn_model.dense_layers[-1](x)
         extra = torch.cat(extra, dim=-1)
-        return self.alarm_nn_model(extra).reshape(-1)
-
-    def forward(self, x):
-        raise NotImplementedError("Use forward_f and forward_g instead.")
+        x_prob = self.alarm_nn_model(extra).reshape(-1)
+        return logits, x_prob
 
     def predict(self, test_data_producer, indicator_masking=False):
         """
@@ -162,9 +158,9 @@ class AdvMalwareDetectorDLA(nn.Module, DetectorTemplate):
         with torch.no_grad():
             for x, y in test_data_producer:
                 x, y = utils.to_device(x.double(), y.long(), self.device)
-                logits_f = self.forward_f(x)
-                y_cent.append(F.softmax(logits_f, dim=-1))
-                x_prob.append(self.forward_g(x))
+                logits, x_logits = self.forward(x)
+                y_cent.append(F.softmax(logits, dim=-1))
+                x_prob.append(x_logits)
                 gt_labels.append(y)
 
         gt_labels = torch.cat(gt_labels, dim=0)
@@ -175,9 +171,8 @@ class AdvMalwareDetectorDLA(nn.Module, DetectorTemplate):
     def inference_batch_wise(self, x, y):
         assert isinstance(x, torch.Tensor) and isinstance(y, torch.Tensor)
         self.eval()
-        logits_f = self.forward_f(x)
-        logits_g = self.forward_g(x)
-        return torch.softmax(logits_f, dim=-1).detach().cpu().numpy(), logits_g.detach().cpu().numpy()
+        logits, x_prob = self.forward(x)
+        return torch.softmax(logits, dim=-1).detach().cpu().numpy(), x_prob.detach().cpu().numpy()
 
     def get_tau_sample_wise(self):
         return self.tau
@@ -206,8 +201,8 @@ class AdvMalwareDetectorDLA(nn.Module, DetectorTemplate):
         with torch.no_grad():
             for x_val, y_val in validation_data_producer:
                 x_val, y_val = utils.to_tensor(x_val.double(), y_val.long(), self.device)
-                x_logits = self.forward_g(x_val)
-                probabilities.append(x_logits)
+                _1, x_prob = self.forward(x_val)
+                probabilities.append(x_prob)
             s, _ = torch.sort(torch.cat(probabilities, dim=0))
             i = int((s.shape[0] - 1) * ratio)
             assert i >= 0
@@ -266,13 +261,18 @@ class AdvMalwareDetectorDLA(nn.Module, DetectorTemplate):
                 x_train = torch.cat([x_train, pertb_x], dim=0)
                 y_train = torch.zeros((2 * batch_size), device=self.device)
                 y_train[batch_size:] = 1
+                idx = torch.randperm(y_train.shape[0])
+                x_train = x_train[idx]
+                y_train = y_train[idx]
                 optimizer.zero_grad()
-                logits_g = self.forward_g(x_train)
-                loss_train = F.binary_cross_entropy_with_logits(logits_g, y_train)
+                logits, x_logits = self.forward(x_train)
+                loss_train = F.binary_cross_entropy_with_logits(x_logits, y_train)
                 loss_train.backward()
                 optimizer.step()
                 total_time = total_time + time.time() - start_time
-                acc_g_train = ((torch.sigmoid(logits_g) >= 0.5) == y_train).sum().item()
+                acc_g_train = ((torch.sigmoid(x_logits) >= 0.5) == y_train).sum().item()
+                print(acc_g_train)
+                print(batch_size)
                 acc_g_train = acc_g_train / (2 * batch_size)
                 mins, secs = int(total_time / 60), int(total_time % 60)
                 losses.append(loss_train.item())
@@ -299,8 +299,8 @@ class AdvMalwareDetectorDLA(nn.Module, DetectorTemplate):
                 x_val = torch.cat([x_val, pertb_x], dim=0)
                 y_val = torch.zeros((2 * batch_size_val), device=self.device)
                 y_val[batch_size_val:] = 1
-                logits_g = self.forward_g(x_val)
-                acc_val = ((torch.sigmoid(logits_g) >= 0.5) == y_val).sum().item()
+                _1, x_logits = self.forward(x_val)
+                acc_val = ((torch.sigmoid(x_logits) >= 0.5) == y_val).sum().item()
                 acc_val = acc_val / (2 * batch_size_val)
                 avg_acc_val.append(acc_val)
             avg_acc_val = np.mean(avg_acc_val)
