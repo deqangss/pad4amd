@@ -258,14 +258,15 @@ class AdvMalwareDetectorDLA(nn.Module, DetectorTemplate):
                     pertb_train_data_list.append(pertb_x.detach().cpu().numpy())  # not scalable enough
                 else:
                     pertb_x = torch.from_numpy(pertb_train_data_list[idx_batch]).to(self.device)
+                print(torch.sum(torch.abs(x_train - pertb_x), dim=-1))
                 x_train = torch.cat([x_train, pertb_x], dim=0)
                 y_train = torch.zeros((2 * batch_size), device=self.device)
                 y_train[batch_size:] = 1
                 idx = torch.randperm(y_train.shape[0])
-                x_train = x_train[idx]
-                y_train = y_train[idx]
+                # x_train = x_train[idx]
+                # y_train = y_train[idx]
                 optimizer.zero_grad()
-                logits, x_logits = self.forward(x_train)
+                _1, x_logits = self.forward(x_train)
                 loss_train = F.binary_cross_entropy_with_logits(x_logits, y_train)
                 loss_train.backward()
                 optimizer.step()
