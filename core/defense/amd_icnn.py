@@ -123,7 +123,7 @@ class AdvMalwareDetectorICNN(nn.Module, DetectorTemplate):
         return prev_x.reshape(-1)
 
     def forward(self, x):
-        raise NotImplementedError("Use forward_f and forward_g instead.")
+        return self.forward_f(x), self.forward_g(x)
 
     def predict(self, test_data_producer, indicator_masking=False):
         """
@@ -182,9 +182,9 @@ class AdvMalwareDetectorICNN(nn.Module, DetectorTemplate):
         with torch.no_grad():
             for x, y in test_data_producer:
                 x, y = utils.to_device(x.double(), y.long(), self.device)
-                logits_f = self.forward_f(x)
+                logits_f, logits_g = self.forward(x)
                 y_cent.append(torch.softmax(logits_f, dim=-1))
-                x_prob.append(self.forward_g(x))
+                x_prob.append(logits_g)
                 gt_labels.append(y)
 
         gt_labels = torch.cat(gt_labels, dim=0)
@@ -231,8 +231,7 @@ class AdvMalwareDetectorICNN(nn.Module, DetectorTemplate):
     def inference_batch_wise(self, x, y):
         assert isinstance(x, torch.Tensor) and isinstance(y, torch.Tensor)
         self.eval()
-        logits_f = self.forward_f(x)
-        logits_g = self.forward_g(x)
+        logits_f, logits_g = self.forward(x)
         return torch.softmax(logits_f, dim=-1).detach().cpu().numpy(), logits_g.detach().cpu().numpy()
 
     def get_tau_sample_wise(self):
