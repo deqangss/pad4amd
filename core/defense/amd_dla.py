@@ -271,7 +271,7 @@ class AdvMalwareDetectorDLA(nn.Module, DetectorTemplate):
                 optimizer.step()
                 total_time = total_time + time.time() - start_time
                 acc_g_train = ((torch.sigmoid(x_logits) >= 0.5) == y_train).sum().item()
-                print(acc_g_train)
+                print(torch.sigmoid(x_logits))
                 print(batch_size)
                 acc_g_train = acc_g_train / (2 * batch_size)
                 mins, secs = int(total_time / 60), int(total_time % 60)
