@@ -68,6 +68,7 @@ class AdvMalwareDetectorDLA(nn.Module, DetectorTemplate):
 
         self.model_save_path = path.join(config.get('experiments', 'amd_dla') + '_' + self.name,
                                          'model.pth')
+        self.md_nn_model.model_save_path = self.model_save_path
         logger.info('========================================DLA model architecture==============================')
         logger.info(self)
         logger.info('===============================================end==========================================')
