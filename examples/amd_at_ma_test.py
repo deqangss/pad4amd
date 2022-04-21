@@ -30,7 +30,7 @@ max_adv_argparse.add_argument('--step_length_linf', type=float, default=0.01,
                               help='step length in each step.')
 max_adv_argparse.add_argument('--random_start', action='store_true', default=False,
                               help='randomly initialize the start points.')
-max_adv_argparse.add_argument('--round_threshold', type=float, default=0.98,
+max_adv_argparse.add_argument('--round_threshold', type=float, default=0.5,
                               help='threshold for rounding real scalars at the initialization step.')
 
 

@@ -183,7 +183,7 @@ class AdvMalwareDetectorICNN(nn.Module, DetectorTemplate):
             for x, y in test_data_producer:
                 x, y = utils.to_device(x.double(), y.long(), self.device)
                 logits_f = self.forward_f(x)
-                y_cent.append(F.softmax(logits_f, dim=-1))
+                y_cent.append(torch.softmax(logits_f, dim=-1))
                 x_prob.append(self.forward_g(x))
                 gt_labels.append(y)
 
@@ -250,12 +250,14 @@ class AdvMalwareDetectorICNN(nn.Module, DetectorTemplate):
         else:
             raise TypeError("Tensor or numpy.ndarray are expected.")
 
-    def get_threshold(self, validation_data_producer):
+    def get_threshold(self, validation_data_producer, ratio=None):
         """
         get the threshold for adversary detection
         :@param validation_data_producer: Object, an iterator for producing validation dataset
         """
         self.eval()
+        if ratio is None:
+            ratio = self.ratio
         probabilities = []
         with torch.no_grad():
             for x_val, y_val in validation_data_producer:
@@ -263,7 +265,7 @@ class AdvMalwareDetectorICNN(nn.Module, DetectorTemplate):
                 x_logits = self.forward_g(x_val)
                 probabilities.append(x_logits)
             s, _ = torch.sort(torch.cat(probabilities, dim=0))
-            i = int((s.shape[0] - 1) * self.ratio)
+            i = int((s.shape[0] - 1) * ratio)
             assert i >= 0
             self.tau[0] = s[i]
 
