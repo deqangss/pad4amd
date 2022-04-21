@@ -255,16 +255,18 @@ class AdvMalwareDetectorDLA(nn.Module, DetectorTemplate):
                                              **attack_param
                                              )
                     pertb_x = utils.round_x(pertb_x, alpha=0.5)
+                    trivial_flag = torch.sum(torch.abs(x_train - pertb_x), dim=-1) == 0.
+                    pertb_x = pertb_x[~trivial_flag]
                     pertb_train_data_list.append(pertb_x.detach().cpu().numpy())  # not scalable enough
                 else:
                     pertb_x = torch.from_numpy(pertb_train_data_list[idx_batch]).to(self.device)
-                print(torch.sum(torch.abs(x_train - pertb_x), dim=-1))
                 x_train = torch.cat([x_train, pertb_x], dim=0)
-                y_train = torch.zeros((2 * batch_size), device=self.device)
+                batch_size_ext = x_train.shape[0]
+                y_train = torch.zeros((batch_size_ext, ), device=self.device)
                 y_train[batch_size:] = 1
                 idx = torch.randperm(y_train.shape[0])
-                # x_train = x_train[idx]
-                # y_train = y_train[idx]
+                x_train = x_train[idx]
+                y_train = y_train[idx]
                 optimizer.zero_grad()
                 _1, x_logits = self.forward(x_train)
                 loss_train = F.binary_cross_entropy_with_logits(x_logits, y_train)
@@ -272,9 +274,7 @@ class AdvMalwareDetectorDLA(nn.Module, DetectorTemplate):
                 optimizer.step()
                 total_time = total_time + time.time() - start_time
                 acc_g_train = ((torch.sigmoid(x_logits) >= 0.5) == y_train).sum().item()
-                print(torch.sigmoid(x_logits))
-                print(batch_size)
-                acc_g_train = acc_g_train / (2 * batch_size)
+                acc_g_train = acc_g_train / batch_size_ext
                 mins, secs = int(total_time / 60), int(total_time % 60)
                 losses.append(loss_train.item())
                 accuracies.append(acc_g_train)
@@ -294,11 +294,14 @@ class AdvMalwareDetectorDLA(nn.Module, DetectorTemplate):
                                              **attack_param
                                              )
                     pertb_x = utils.round_x(pertb_x, alpha=0.5)
+                    trivial_flag = torch.sum(torch.abs(x_val - pertb_x), dim=-1) == 0.
+                    pertb_x = pertb_x[~trivial_flag]
                     pertb_val_data_list.append(pertb_x.detach().cpu().numpy())  # not scalable enough
                 else:
                     pertb_x = torch.from_numpy(pertb_val_data_list[idx]).to(self.device)
                 x_val = torch.cat([x_val, pertb_x], dim=0)
-                y_val = torch.zeros((2 * batch_size_val), device=self.device)
+                batch_size_val_ext = x_val.shape[0]
+                y_val = torch.zeros((batch_size_val_ext,), device=self.device)
                 y_val[batch_size_val:] = 1
                 _1, x_logits = self.forward(x_val)
                 acc_val = ((torch.sigmoid(x_logits) >= 0.5) == y_val).sum().item()
