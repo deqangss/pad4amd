@@ -119,14 +119,14 @@ class BaseAttack(Module):
             return False
 
     def get_loss(self, model, adv_x, label, lambda_=None):
-        if hasattr('model', 'is_detector_enabled'):
+        if hasattr(model, 'is_detector_enabled'):
             logits_f, prob_g = model.forward(adv_x)
         else:
             logits_f = model.forward(adv_x)
 
         ce = F.cross_entropy(logits_f, label, reduction='none')
         y_pred = logits_f.argmax(1)
-        if hasattr('model', 'is_detector_enabled') and (not self.oblivion):
+        if hasattr(model, 'is_detector_enabled') and (not self.oblivion):
             assert lambda_ is not None
             tau = model.get_tau_sample_wise()
             if self.is_attacker:
@@ -142,12 +142,12 @@ class BaseAttack(Module):
         return loss_no_reduction, done
 
     def get_scores(self, model, pertb_x, label):
-        if hasattr('model', 'is_detector_enabled'):
+        if hasattr(model, 'is_detector_enabled'):
             logits_f, prob_g = model.forward(pertb_x)
         else:
             logits_f = model.forward(pertb_x)
         ce = F.cross_entropy(logits_f, label, reduction='none')
-        if hasattr('model', 'is_detector_enabled') and (not self.oblivion):
+        if hasattr(model, 'is_detector_enabled') and (not self.oblivion):
             loss_no_reduction = ce - prob_g
         else:
             loss_no_reduction = ce
