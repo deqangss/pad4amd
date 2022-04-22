@@ -126,7 +126,7 @@ class BaseAttack(Module):
 
         ce = F.cross_entropy(logits_f, label, reduction='none')
         y_pred = logits_f.argmax(1)
-        if model.is_detector_enabled and (not self.oblivion):
+        if hasattr('model', 'is_detector_enabled') and (not self.oblivion):
             assert lambda_ is not None
             tau = model.get_tau_sample_wise()
             if self.is_attacker:
@@ -147,7 +147,7 @@ class BaseAttack(Module):
         else:
             logits_f = model.forward(pertb_x)
         ce = F.cross_entropy(logits_f, label, reduction='none')
-        if model.is_detector_enabled and (not self.oblivion):
+        if hasattr('model', 'is_detector_enabled') and (not self.oblivion):
             loss_no_reduction = ce - prob_g
         else:
             loss_no_reduction = ce
