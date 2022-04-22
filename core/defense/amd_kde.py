@@ -10,7 +10,7 @@ from core.defense.amd_template import DetectorTemplate
 from config import config, logging, ErrorHandler
 from tools import utils
 
-logger = logging.getLogger('core.defense.advdet_kde')
+logger = logging.getLogger('core.defense.amd_kde')
 logger.addHandler(ErrorHandler)
 
 
@@ -28,6 +28,7 @@ class KernelDensityEstimation(DetectorTemplate):
 
     def __init__(self, model, n_centers=1000, bandwidth=20., n_classes=2, ratio=0.9):
         super(KernelDensityEstimation, self).__init__()
+        assert isinstance(model, torch.nn.Module)
         self.model = model
         self.device = model.device
         self.n_centers = n_centers
@@ -42,8 +43,18 @@ class KernelDensityEstimation(DetectorTemplate):
         self.model_save_path = path.join(config.get('experiments', 'kde').rstrip('/') + '_' + self.name, 'model.pth')
         self.model.model_save_path = self.model_save_path
 
-    def forward(self, x_, adj=None):
-        return self.model.forward(x_, adj)
+    def forward(self, x):
+        for dense_layer in self.model.dense_layers[:-1]:
+            x = self.model.activation_func(dense_layer(x))
+        logits = self.model.dense_layers[-1](x)
+        x_prob = self.forward_g(x, logits.argmax(1))
+        return logits, x_prob
+
+    def forward_f(self, x):
+        for dense_layer in self.model.dense_layers[:-1]:
+            x = self.model.activation_func(dense_layer(x))
+        logits = self.model.dense_layers[-1](x)
+        return logits, x
 
     def forward_g(self, x_hidden, y_pred):
         """
@@ -59,32 +70,29 @@ class KernelDensityEstimation(DetectorTemplate):
                 self.gaussian_means]
         kd = torch.stack([torch.mean(torch.exp(-d / self.bandwidth), dim=-1) for d in dist], dim=1)
         # return p(x|y=y_pred)
-        return kd[torch.arange(size), y_pred]
+        return -1 * kd[torch.arange(size), y_pred]
 
-    def get_threshold(self, validation_data_producer):
+    def get_threshold(self, validation_data_producer, ratio=None):
         """
         get the threshold for density estimation
         :@param validation_data_producer: Object, an iterator for producing validation dataset
         """
+        ratio = ratio if ratio is not None else self.ratio
         self.eval()
         probabilities = []
+        gt_labels = []
         with torch.no_grad():
-            for _ in tqdm(range(self.model.n_sample_times)):
-                prob_, Y = [], []
-                for x_val, adj_val, y_val, _1 in validation_data_producer:
-                    x_val, adj_val, y_val = utils.to_tensor(x_val, adj_val, y_val, self.device)
-                    x_hidden, logits = self.forward(x_val, adj_val)
-                    x_prob = self.forward_g(x_hidden, y_val)
-                    prob_.append(x_prob)
-                    Y.append(y_val)
-                prob_ = torch.cat(prob_)
-                probabilities.append(prob_)
-            prob = torch.mean(torch.stack(probabilities), dim=0)
-            Y = torch.cat(Y)
+            for x_val, y_val in validation_data_producer:
+                x_val, y_val = utils.to_tensor(x_val.double(), y_val.long(), self.device)
+                logits, x_prob = self.forward(x_val)
+                probabilities.append(x_prob)
+                gt_labels.append(y_val)
+            prob = torch.cat(probabilities, dim=0)
+            gt_labels = torch.cat(gt_labels)
             for i in range(self.n_classes):
-                prob_x_y = prob[Y == i]
-                s, _ = torch.sort(prob_x_y, descending=True)
-                self.tau[i] = s[int((s.shape[0] - 1) * self.ratio)]
+                prob_x_y = prob[gt_labels == i]
+                s, _ = torch.sort(prob_x_y)
+                self.tau[i] = s[int((s.shape[0] - 1) * ratio)]
 
     def predict(self, test_data_producer, indicator_masking=False):
         # evaluation on detector & indicator
@@ -132,35 +140,23 @@ class KernelDensityEstimation(DetectorTemplate):
         gt_labels = []
         self.eval()
         with torch.no_grad():
-            for ith in tqdm(range(self.model.n_sample_times)):
-                y_conf_batches = []
-                x_prob_batches = []
-                for x, adj, y, _1 in test_data_producer:
-                    x, adj, y = utils.to_tensor(x.double(), adj, y, self.device)
-                    x_hidden, logit = self.forward(x, adj)
-                    y_conf_batches.append(F.softmax(logit, dim=-1))
-                    x_prob_batches.append(self.forward_g(x_hidden, logit.argmax(dim=1)))
-                    if ith == 0:
-                        gt_labels.append(y)
-                y_conf_batches = torch.vstack(y_conf_batches)
-                y_cent.append(y_conf_batches)
-                x_prob.append(torch.hstack(x_prob_batches))
+            for x, y in test_data_producer:
+                x, y = utils.to_tensor(x.double(), y.long(), self.device)
+                logits_f, logits_g = self.forward(x)
+                y_cent.append(F.softmax(logits_f, dim=-1))
+                x_prob.append(logits_g)
+                gt_labels.append(y)
+
         gt_labels = torch.cat(gt_labels, dim=0)
-        y_cent = torch.mean(torch.stack(y_cent).permute([1, 0, 2]), dim=1)
-        x_prob = torch.mean(torch.stack(x_prob), dim=0)
+        y_cent = torch.cat(y_cent, dim=0)
+        x_prob = torch.cat(x_prob, dim=0)
         return y_cent, x_prob, gt_labels
 
-    def inference_batch_wise(self, x, a, y, use_indicator=True):
+    def inference_batch_wise(self, x, y):
         assert isinstance(x, torch.Tensor) and isinstance(y, torch.Tensor)
-        if a is not None:
-            assert isinstance(a, torch.Tensor)
-        x_hidden, logit = self.forward(x, a)
-        y_pred = logit.argmax(1)
-        x_prob = self.forward_g(x_hidden, y_pred)
-        if use_indicator:
-            return torch.softmax(logit, dim=-1).detach().cpu().numpy(), x_prob.detach().cpu().numpy()
-        else:
-            return torch.softmax(logit, dim=-1).detach().cpu().numpy(), np.ones((logit.shape[0], ))
+
+        logits, x_prob = self.forward(x)
+        return torch.softmax(logits, dim=-1).detach().cpu().numpy(), x_prob.detach().cpu().numpy()
 
     def get_tau_sample_wise(self, y_pred):
         return self.tau[y_pred]
@@ -169,29 +165,29 @@ class KernelDensityEstimation(DetectorTemplate):
         assert y_pred is not None
         if isinstance(x_prob, np.ndarray):
             x_prob = torch.tensor(x_prob, device=self.device)
-            return (x_prob >= self.get_tau_sample_wise(y_pred)).cpu().numpy()
+            return (x_prob <= self.get_tau_sample_wise(y_pred)).cpu().numpy()
         elif isinstance(x_prob, torch.Tensor):
-            return x_prob >= self.get_tau_sample_wise(y_pred)
+            return x_prob <= self.get_tau_sample_wise(y_pred)
         else:
             raise TypeError("Tensor or numpy.ndarray are expected.")
         # res = probability.reshape(-1, 1).repeat_interleave(2, dim=1) >= self.tau
         # return res[torch.arange(res.size()[0]), y_pred]
 
     def fit(self, train_dataset_producer, val_dataet_producer):
-        X_hidden, Y = [], []
+        X_hidden, gt_labels = [], []
         self.eval()
         with torch.no_grad():
-            for x, a, y, _1 in train_dataset_producer:
-                x, a, y = utils.to_tensor(x, a, y, self.device)
-                x_hidden, _ = self.forward(x, a)
+            for x, y in train_dataset_producer:
+                x, y = utils.to_tensor(x.double(), y.long(), self.device)
+                logits, x_hidden = self.forward_f(x)
                 X_hidden.append(x_hidden)
-                Y.append(y)
-                _, count = torch.unique(torch.cat(Y), return_counts=True)
+                gt_labels.append(y)
+                _, count = torch.unique(torch.cat(gt_labels), return_counts=True)
                 if torch.min(count) >= self.n_centers:
                     break
             X_hidden = torch.vstack(X_hidden)
-            Y = torch.cat(Y)
-            self.gaussian_means = [X_hidden[Y == i][:self.n_centers] for i in range(self.n_classes)]
+            gt_labels = torch.cat(gt_labels)
+            self.gaussian_means = [X_hidden[gt_labels == i][:self.n_centers] for i in range(self.n_classes)]
 
         self.get_threshold(val_dataet_producer)
 
