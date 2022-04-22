@@ -77,6 +77,7 @@ class AdvMalwareDetectorClsPlus(nn.Module, DetectorTemplate):
 
         self.model_save_path = path.join(config.get('experiments', 'amd_nn_plus') + '_' + self.name,
                                          'model.pth')
+        self.md_nn_model.model_save_path = self.model_save_path
         logger.info('========================================NN_PLUS model architecture==============================')
         logger.info(self)
         logger.info('===============================================end==========================================')
