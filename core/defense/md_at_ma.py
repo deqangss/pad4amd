@@ -147,6 +147,7 @@ class MaxAdvTraining(object):
                 pertb_mal_x = self.attack.perturb(self.model, mal_x_batch, mal_y_batch,
                                                   **self.attack_param
                                                   )
+                pertb_mal_x = utils.round_x(pertb_mal_x, 0.5)
                 y_cent_batch, x_density_batch = self.model.inference_batch_wise(pertb_mal_x,
                                                                                 mal_y_batch
                                                                                 )
