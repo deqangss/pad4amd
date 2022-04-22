@@ -119,7 +119,7 @@ class BaseAttack(Module):
             return False
 
     def get_loss(self, model, adv_x, label, lambda_=None):
-        if model.is_detector_enabled:
+        if hasattr('model', 'is_detector_enabled'):
             logits_f, prob_g = model.forward(adv_x)
         else:
             logits_f = model.forward(adv_x)
@@ -142,7 +142,7 @@ class BaseAttack(Module):
         return loss_no_reduction, done
 
     def get_scores(self, model, pertb_x, label):
-        if model.is_detector_enabled:
+        if hasattr('model', 'is_detector_enabled'):
             logits_f, prob_g = model.forward(pertb_x)
         else:
             logits_f = model.forward(pertb_x)
