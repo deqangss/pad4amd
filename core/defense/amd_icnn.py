@@ -234,10 +234,10 @@ class AdvMalwareDetectorICNN(nn.Module, DetectorTemplate):
         logits_f, logits_g = self.forward(x)
         return torch.softmax(logits_f, dim=-1).detach().cpu().numpy(), logits_g.detach().cpu().numpy()
 
-    def get_tau_sample_wise(self):
+    def get_tau_sample_wise(self, y_pred=None):
         return self.tau
 
-    def indicator(self, x_prob):
+    def indicator(self, x_prob, y_pred=None):
         """
         Return 'True' if a sample is original, and otherwise 'False' is returned.
         """
@@ -255,8 +255,7 @@ class AdvMalwareDetectorICNN(nn.Module, DetectorTemplate):
         :@param validation_data_producer: Object, an iterator for producing validation dataset
         """
         self.eval()
-        if ratio is None:
-            ratio = self.ratio
+        ratio = ratio if ratio is not None else self.ratio
         probabilities = []
         with torch.no_grad():
             for x_val, y_val in validation_data_producer:

@@ -7,7 +7,7 @@ import time
 from core.defense import Dataset
 from core.defense import AdvMalwareDetectorICNN, DNNMalwareDetector
 from tools.utils import save_args, get_group_args, dump_pickle
-from examples.nn_dnn_test import cmd_md
+from examples.md_nn_test import cmd_md
 
 indicator_argparse = cmd_md.add_argument_group(title='adv indicator')
 indicator_argparse.add_argument('--ratio', type=float, default=0.95,
