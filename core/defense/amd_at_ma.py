@@ -118,10 +118,10 @@ class PrincipledAdvDet(object):
                 start_time = time.time()
                 # the attack perturbs feature vectors using various hyper-parameter lambda, aiming to obtain
                 # adversarial examples as much as possible
-                lambda_ = np.random.choice(lambda_space)
+                lmda = np.random.choice(lambda_space)
                 self.model.eval()
                 pertb_mal_x = self.attack.perturb(self.model, mal_x_batch, mal_y_batch,
-                                                  min_lambda_=lambda_,
+                                                  min_lambda_=lmda,
                                                   # when lambda is small, we cannot get effective attacks
                                                   max_lambda_=lambda_upper_bound,
                                                   **self.attack_param
