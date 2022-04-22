@@ -94,14 +94,16 @@ class Max(BaseAttack):
         return adv_x
 
     def get_scores(self, model, pertb_x, label):
-        logits_f = model.forward_f(pertb_x)
+        if hasattr(model, 'is_detector_enabled'):
+            logits_f, prob_g = model.forward(pertb_x)
+        else:
+            logits_f = model.forward(pertb_x)
         ce = F.cross_entropy(logits_f, label, reduction='none')
         y_pred = logits_f.argmax(1)
-        if 'forward_g' in type(model).__dict__.keys() and (not self.oblivion):
-            logits_g = model.forward_g(pertb_x)
+        if hasattr(model, 'is_detector_enabled') and (not self.oblivion):
             tau = model.get_tau_sample_wise()
-            loss_no_reduction = ce - torch.sigmoid(logits_g)
-            done = (y_pred != label) & (logits_g <= tau)
+            loss_no_reduction = ce - torch.sigmoid(prob_g)
+            done = (y_pred != label) & (prob_g <= tau)
         else:
             loss_no_reduction = ce
             done = y_pred != label

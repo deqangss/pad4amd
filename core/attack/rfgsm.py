@@ -107,7 +107,7 @@ class RFGSM(BaseAttack):
         """
         assert 0 < min_lambda_ <= max_lambda_
         model.eval()
-        if hasattr(model, 'forward_g'):
+        if hasattr(model, 'is_detector_enabled'):
             self.lmba = min_lambda_
         else:
             self.lmba = max_lambda_

@@ -106,7 +106,7 @@ class PGDAdam(BaseAttack):
             logger.warning("The attack leads to dense graph and trigger the issue of out of memory.")
         assert steps >= 0 and step_check > 0 and lr >= 0
         model.eval()
-        if hasattr(model, 'forward_g'):
+        if hasattr(model, 'is_detector_enabled'):
             self.lambda_ = min_lambda_
         else:
             self.lambda_ = max_lambda_

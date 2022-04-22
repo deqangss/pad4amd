@@ -95,7 +95,7 @@ class Groose(BaseAttack):
         assert 0 < min_lambda_ <= max_lambda_
         model.eval()
 
-        if hasattr(model, 'forward_g'):
+        if hasattr(model, 'is_detector_enabled'):
             self.lambda_ = min_lambda_
         else:
             self.lambda_ = max_lambda_
@@ -121,17 +121,19 @@ class Groose(BaseAttack):
         return adv_x
 
     def get_loss(self, model, adv_x, tar_label):
-        logits_f = model.forward_f(adv_x)
+        if hasattr(model, 'is_detector_enabled'):
+            logits_f, prob_g = model.forward(adv_x)
+        else:
+            logits_f = model.forward(adv_x)
         softmax_loss = torch.softmax(logits_f, dim=-1)[torch.arange(tar_label.size()[0]), tar_label]
         y_pred = logits_f.argmax(1)
-        if hasattr(model, 'forward_g') and (not self.oblivion):
-            logits_g = model.forward_g(adv_x)
+        if hasattr(model, 'is_detector_enabled') and (not self.oblivion):
             if self.is_attacker:
-                loss_no_reduction = softmax_loss + self.lambda_ * (torch.clamp(model.tau - logits_g, max=self.kappa))
+                loss_no_reduction = softmax_loss + self.lambda_ * (torch.clamp(model.tau - prob_g, max=self.kappa))
             else:
-                loss_no_reduction = softmax_loss + self.lambda_ * (model.tau - logits_g)
+                loss_no_reduction = softmax_loss + self.lambda_ * (model.tau - prob_g)
 
-            done = (y_pred == tar_label) & (logits_g <= model.tau)
+            done = (y_pred == tar_label) & (prob_g <= model.tau)
         else:
             loss_no_reduction = softmax_loss
             done = y_pred == tar_label

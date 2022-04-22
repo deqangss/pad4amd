@@ -81,7 +81,7 @@ class PGDl1(BaseAttack):
         """
         assert 0 < min_lambda_ <= max_lambda_
         model.eval()
-        if hasattr(model, 'forward_g'):
+        if hasattr(model, 'is_detector_enabled'):
             self.lambda_ = min_lambda_
         else:
             self.lambda_ = max_lambda_

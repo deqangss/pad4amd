@@ -113,36 +113,42 @@ class BaseAttack(Module):
         # pool.join()
 
     def check_lambda(self, model):
-        if 'forward_g' in type(model).__dict__.keys() and (not self.oblivion):
+        if hasattr(model, 'is_detector_enabled') and (not self.oblivion):
             return True
         else:
             return False
 
     def get_loss(self, model, adv_x, label, lambda_=None):
-        logits_f = model.forward_f(adv_x)
+        if model.is_detector_enabled:
+            logits_f, prob_g = model.forward(adv_x)
+        else:
+            logits_f = model.forward(adv_x)
+
         ce = F.cross_entropy(logits_f, label, reduction='none')
         y_pred = logits_f.argmax(1)
-        if 'forward_g' in type(model).__dict__.keys() and (not self.oblivion):
+        if model.is_detector_enabled and (not self.oblivion):
             assert lambda_ is not None
-            logits_g = model.forward_g(adv_x)
             tau = model.get_tau_sample_wise()
             if self.is_attacker:
-                loss_no_reduction = ce + lambda_ * (torch.clamp(tau - logits_g,
+                loss_no_reduction = ce + lambda_ * (torch.clamp(tau - prob_g,
                                                                 max=self.kappa)
                                                     )
             else:
-                loss_no_reduction = ce + lambda_ * (tau - logits_g)
-            done = (y_pred != label) & (logits_g <= tau)
+                loss_no_reduction = ce + lambda_ * (tau - prob_g)
+            done = (y_pred != label) & (prob_g <= tau)
         else:
             loss_no_reduction = ce
             done = y_pred != label
         return loss_no_reduction, done
 
     def get_scores(self, model, pertb_x, label):
-        ce = F.cross_entropy(model.forward_f(pertb_x), label, reduction='none')
-        if 'forward_g' in type(model).__dict__.keys() and (not self.oblivion):
-            logits_g = model.forward_g(pertb_x)
-            loss_no_reduction = ce - torch.sigmoid(logits_g)
+        if model.is_detector_enabled:
+            logits_f, prob_g = model.forward(pertb_x)
+        else:
+            logits_f = model.forward(pertb_x)
+        ce = F.cross_entropy(logits_f, label, reduction='none')
+        if model.is_detector_enabled and (not self.oblivion):
+            loss_no_reduction = ce - prob_g
         else:
             loss_no_reduction = ce
         return loss_no_reduction

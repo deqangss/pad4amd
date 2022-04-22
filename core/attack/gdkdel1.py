@@ -162,20 +162,22 @@ class GDKDEl1(BaseAttack):
         return perturbations, directions
 
     def get_loss(self, model, adv_x, label):
-        logits_f = model.forward_f(adv_x)
+        if hasattr(model, 'is_detector_enabled'):
+            logits_f, prob_g = model.forward(adv_x)
+        else:
+            logits_f = model.forward(adv_x)
         ce = F.cross_entropy(logits_f, label, reduction='none')
         y_pred = logits_f.argmax(1)
         square = torch.sum(torch.square(self.benign_feat.unsqueeze(dim=0) - adv_x.unsqueeze(dim=1)),
                            dim=-1)
         kde = torch.mean(torch.exp(-square / self.bandwidth), dim=-1)
         loss_no_reduction = ce + self.penalty_factor * kde
-        if hasattr(model, 'forward_g') and (not self.oblivion):
-            logits_g = model.forward_g(adv_x)
+        if hasattr(model, 'is_detector_enabled') and (not self.oblivion):
             if self.is_attacker:
-                loss_no_reduction += self.lambda_ * (torch.clamp(model.tau - logits_g, max=self.kappa))
+                loss_no_reduction += self.lambda_ * (torch.clamp(model.tau - prob_g, max=self.kappa))
             else:
-                loss_no_reduction += self.lambda_ * (model.tau - logits_g)
-            done = (y_pred != label) & (logits_g <= model.tau)
+                loss_no_reduction += self.lambda_ * (model.tau - prob_g)
+            done = (y_pred != label) & (prob_g <= model.tau)
         else:
             done = y_pred != label
         return loss_no_reduction, done

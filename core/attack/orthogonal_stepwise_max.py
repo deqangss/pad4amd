@@ -123,20 +123,19 @@ class OrthogonalStepwiseMax(StepwiseMax):
         batch_size = x.shape[0]
         label_adv = torch.ones_like(label).to(model.device).double()
 
-        assert hasattr(model, 'forward_g'), 'Expected an adversary detector'
+        assert hasattr(model, 'is_detector_enabled'), 'Expected an adversary detector'
         model.eval()
 
         def one_iteration(_adv_x, norm_type, iteration_idx):
             var_adv_x = torch.autograd.Variable(_adv_x, requires_grad=True)
             # calculating gradient of classifier w.r.t. images
-            logits_classifier = model.forward_f(var_adv_x)
+            logits_classifier, logits_detector = model.forward(var_adv_x)
             ce = torch.mean(F.cross_entropy(logits_classifier, label, reduction='none'))
             ce.backward()
             grad_classifier = var_adv_x.grad.detach().data  # we do not put it on cpu
             grad_classifier = self.trans_grads(grad_classifier, _adv_x)
 
             var_adv_x.grad = None
-            logits_detector = model.forward_g(var_adv_x)
             # todo:change it to logits
             loss_detector = F.binary_cross_entropy_with_logits(logits_detector, label_adv)
             loss_detector.backward()
@@ -229,13 +228,12 @@ class OrthogonalStepwiseMax(StepwiseMax):
         return grad4removal + grad4insertion
 
     def get_scores(self, model, pertb_x, label):
-        logits_f = model.forward_f(pertb_x)
+        logits_f, prob_g = model.forward(pertb_x)
         ce = F.cross_entropy(logits_f, label, reduction='none')
         y_pred = logits_f.argmax(1)
-        if 'forward_g' in type(model).__dict__.keys() and (not self.oblivion):
-            logits_g = model.forward_g(pertb_x)
-            loss_no_reduction = ce - torch.sigmoid(logits_g)
-            done = (y_pred != label) & (logits_g <= model.tau)
+        if not self.oblivion:
+            loss_no_reduction = ce - torch.sigmoid(prob_g)
+            done = (y_pred != label) & (prob_g <= model.tau)
         else:
             loss_no_reduction = ce
             done = y_pred != label

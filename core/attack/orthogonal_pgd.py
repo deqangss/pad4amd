@@ -64,7 +64,7 @@ class OrthogonalPGD(PGD):
         adv_x = x.clone().detach()
         batch_size = x.shape[0]
 
-        assert hasattr(model, 'forward_g'), 'Expected an adversary detector'
+        assert hasattr(model, 'is_detector_enabled'), 'Expected an adversary detector'
         model.eval()
 
         for t in range(steps):
@@ -73,14 +73,13 @@ class OrthogonalPGD(PGD):
 
             var_adv_x = torch.autograd.Variable(adv_x, requires_grad=True)
             # calculating gradient of classifier w.r.t. images
-            logits_classifier = model.forward_f(var_adv_x)
+            logits_classifier, logits_detector = model.forward(var_adv_x)
             ce = torch.mean(F.cross_entropy(logits_classifier, label, reduction='none'))
             ce.backward()
             grad_classifier = var_adv_x.grad.detach().data  # we do not put it on cpu
             grad_classifier = self.trans_grads(grad_classifier, adv_x)
 
             var_adv_x.grad = None
-            logits_detector = model.forward_g(var_adv_x)
             # todo: loss_detector = -torch.mean(logits_detector)
             loss_detector = F.binary_cross_entropy_with_logits(logits_detector, label_adv)
             loss_detector.backward()
