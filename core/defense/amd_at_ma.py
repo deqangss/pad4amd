@@ -121,7 +121,7 @@ class PrincipledAdvDet(object):
                 lambda_ = np.random.choice(lambda_space)
                 self.model.eval()
                 pertb_mal_x = self.attack.perturb(self.model, mal_x_batch, mal_y_batch,
-                                                  min_lambda_=lambda_lower_bound,
+                                                  min_lambda_=lambda_,
                                                   # when lambda is small, we cannot get effective attacks
                                                   max_lambda_=lambda_upper_bound,
                                                   **self.attack_param
