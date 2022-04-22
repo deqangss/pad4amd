@@ -154,11 +154,12 @@ class GDKDE(BaseAttack):
         loss_no_reduction = ce + self.penalty_factor * kde
 
         if hasattr(model, 'is_detector_enabled') and (not self.oblivion):
+            tau = model.get_tau_sample_wise(y_pred)
             if self.is_attacker:
-                loss_no_reduction += self.lambda_ * (torch.clamp(model.tau - prob_g, max=self.kappa))
+                loss_no_reduction += self.lambda_ * (torch.clamp(tau - prob_g, max=self.kappa))
             else:
-                loss_no_reduction += self.lambda_ * (model.tau - prob_g)
-            done = (y_pred != label) & (prob_g <= model.tau)
+                loss_no_reduction += self.lambda_ * (tau - prob_g)
+            done = (y_pred != label) & (prob_g <= tau)
         else:
             done = y_pred != label
         return loss_no_reduction, done

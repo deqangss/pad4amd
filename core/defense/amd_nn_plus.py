@@ -180,10 +180,10 @@ class AdvMalwareDetectorClsPlus(nn.Module, DetectorTemplate):
         x_cent = torch.softmax(logits, dim=-1).detach().cpu().numpy()[:, :2]
         return x_cent, g
 
-    def get_tau_sample_wise(self):
+    def get_tau_sample_wise(self, y_pred=None):
         return self.tau
 
-    def indicator(self, x_prob):
+    def indicator(self, x_prob, y_pred=None):
         """
         Return 'True' if a sample is original, and otherwise 'False' is returned.
         """

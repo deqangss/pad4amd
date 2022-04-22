@@ -158,7 +158,7 @@ class KernelDensityEstimation(DetectorTemplate):
         logits, x_prob = self.forward(x)
         return torch.softmax(logits, dim=-1).detach().cpu().numpy(), x_prob.detach().cpu().numpy()
 
-    def get_tau_sample_wise(self, y_pred):
+    def get_tau_sample_wise(self, y_pred=None):
         return self.tau[y_pred]
 
     def indicator(self, x_prob, y_pred=None):
