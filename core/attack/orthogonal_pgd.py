@@ -76,7 +76,7 @@ class OrthogonalPGD(PGD):
             # calculating gradient of classifier w.r.t. images
             logits_classifier, logits_detector = model.forward(var_adv_x)
             ce = torch.mean(F.cross_entropy(logits_classifier, label, reduction='none'))
-            ce.backward()
+            ce.backward(retain_graph=True)
             grad_classifier = var_adv_x.grad.detach().data  # we do not put it on cpu
             grad_classifier = self.trans_grads(grad_classifier, adv_x)
 
