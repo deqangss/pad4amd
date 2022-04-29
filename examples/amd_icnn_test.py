@@ -5,7 +5,7 @@ import os.path as path
 import time
 
 from core.defense import Dataset
-from core.defense import AdvMalwareDetectorICNN, DNNMalwareDetector
+from core.defense import AdvMalwareDetectorICNN, MalwareDetectionDNN
 from tools.utils import save_args, get_group_args, dump_pickle
 from examples.md_nn_test import cmd_md
 
@@ -31,12 +31,12 @@ def _main():
         dv = 'cuda'
 
     model_name = args.model_name if args.mode == 'test' else time.strftime("%Y%m%d-%H%M%S")
-    md_model = DNNMalwareDetector(dataset.vocab_size,
-                                  dataset.n_classes,
-                                  device=dv,
-                                  name=model_name,
-                                  **vars(args)
-                                  )
+    md_model = MalwareDetectionDNN(dataset.vocab_size,
+                                   dataset.n_classes,
+                                   device=dv,
+                                   name=model_name,
+                                   **vars(args)
+                                   )
     model = AdvMalwareDetectorICNN(md_model,
                                    input_size=dataset.vocab_size,
                                    n_classes=dataset.n_classes,

@@ -20,7 +20,7 @@ logger = logging.getLogger('core.defense.dnn')
 logger.addHandler(ErrorHandler)
 
 
-class DNNMalwareDetector(nn.Module):
+class MalwareDetectionDNN(nn.Module):
     def __init__(self, input_size, n_classes, device='cpu', name='DNN', **kwargs):
         """
         Construct malware detector
@@ -32,7 +32,7 @@ class DNNMalwareDetector(nn.Module):
         @param device: String, 'cpu' or 'cuda'
         @param name: String, model name
         """
-        super(DNNMalwareDetector, self).__init__()
+        super(MalwareDetectionDNN, self).__init__()
         self.input_size = input_size
         self.n_classes = n_classes
         self.device = device

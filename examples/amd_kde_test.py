@@ -4,7 +4,7 @@ from __future__ import print_function
 import os.path as path
 
 from core.defense import Dataset
-from core.defense import DNNMalwareDetector, KernelDensityEstimation
+from core.defense import MalwareDetectionDNN, KernelDensityEstimation
 from tools.utils import save_args, dump_pickle
 from config import config
 from tools import utils
@@ -42,12 +42,12 @@ def _main():
     else:
         dv = 'cuda'
 
-    model = DNNMalwareDetector(dataset.vocab_size,
-                               dataset.n_classes,
-                               device=dv,
-                               name=args.model_name,
-                               **hp_params
-                               )
+    model = MalwareDetectionDNN(dataset.vocab_size,
+                                dataset.n_classes,
+                                device=dv,
+                                name=args.model_name,
+                                **hp_params
+                                )
     model = model.to(dv).double()
     model.load()
 

@@ -8,7 +8,7 @@ import torch
 import numpy as np
 
 from core.defense import Dataset
-from core.defense import DNNMalwareDetector, KernelDensityEstimation, AdvMalwareDetectorICNN, MaxAdvTraining
+from core.defense import MalwareDetectionDNN, KernelDensityEstimation, AdvMalwareDetectorICNN, MaxAdvTraining
 from core.attack import OMPA
 from tools import utils
 from config import config, logging, ErrorHandler
@@ -79,12 +79,12 @@ def _main():
     else:
         dv = 'cuda'
     # initial model
-    model = DNNMalwareDetector(dataset.vocab_size,
-                               dataset.n_classes,
-                               device=dv,
-                               name=args.model_name,
-                               **hp_params
-                               )
+    model = MalwareDetectionDNN(dataset.vocab_size,
+                                dataset.n_classes,
+                                device=dv,
+                                name=args.model_name,
+                                **hp_params
+                                )
     if not (args.model == 'md_dnn' or args.model == 'kde'):
         if args.model == 'at_amd_pad' and hp_params['detector'] == 'none':
             pass

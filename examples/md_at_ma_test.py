@@ -6,7 +6,7 @@ import time
 from functools import partial
 
 from core.defense import Dataset
-from core.defense import DNNMalwareDetector, MaxAdvTraining
+from core.defense import MalwareDetectionDNN, MaxAdvTraining
 from core.attack import Max, PGD, PGDl1, StepwiseMax
 from tools.utils import save_args, get_group_args, dump_pickle
 from examples.amd_icnn_test import cmd_md
@@ -49,12 +49,12 @@ def _main():
         dv = 'cuda'
 
     model_name = args.model_name if args.mode == 'test' else time.strftime("%Y%m%d-%H%M%S")
-    model = DNNMalwareDetector(dataset.vocab_size,
-                               dataset.n_classes,
-                               device=dv,
-                               name=model_name,
-                               **vars(args)
-                               )
+    model = MalwareDetectionDNN(dataset.vocab_size,
+                                dataset.n_classes,
+                                device=dv,
+                                name=model_name,
+                                **vars(args)
+                                )
     model = model.to(dv).double()
 
     pgdlinf = PGD(norm='linf', use_random=False,

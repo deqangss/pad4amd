@@ -22,9 +22,7 @@ from __future__ import division
 from __future__ import print_function
 
 import time
-import warnings
 import os.path as path
-from tqdm import tqdm
 
 import torch
 import torch.nn as nn
@@ -34,16 +32,16 @@ import torch.nn.functional as F
 import numpy as np
 from core.attack.max import Max
 from core.attack.stepwise_max import StepwiseMax
-from core.defense.md_dnn import DNNMalwareDetector
+from core.defense.md_dnn import MalwareDetectionDNN
 from core.defense.amd_template import DetectorTemplate
 from config import config, logging, ErrorHandler
 from tools import utils
 
-logger = logging.getLogger('core.defense.amd_nn_plus')
+logger = logging.getLogger('core.defense.amd_dnn_plus')
 logger.addHandler(ErrorHandler)
 
 
-class AdvMalwareDetectorClsPlus(nn.Module, DetectorTemplate):
+class AMalwareDetectionDNNPlus(nn.Module, DetectorTemplate):
     def __init__(self, md_nn_model, input_size, n_classes, ratio=0.95,
                  device='cpu', name='', **kwargs):
         nn.Module.__init__(self)
@@ -58,20 +56,20 @@ class AdvMalwareDetectorClsPlus(nn.Module, DetectorTemplate):
         # malware detector
         if md_nn_model is not None and isinstance(md_nn_model, nn.Module):
             self.md_nn_model = md_nn_model
-            self.is_fitting_md_model = False
+            self.is_fitting_md_model = False  # the model is trained by default
         else:
-            self.md_nn_model = DNNMalwareDetector(self.input_size,
-                                                  self.n_classes,
-                                                  self.device,
-                                                  name,
-                                                  **kwargs)
+            self.md_nn_model = MalwareDetectionDNN(self.input_size,
+                                                   self.n_classes,
+                                                   self.device,
+                                                   name,
+                                                   **kwargs)
             self.is_fitting_md_model = True
 
-        self.amd_nn_plus = DNNMalwareDetector(self.input_size,
-                                              self.n_classes + 1,
-                                              self.device,
-                                              name,
-                                              **kwargs)
+        self.amd_nn_plus = MalwareDetectionDNN(self.input_size,
+                                               self.n_classes + 1,
+                                               self.device,
+                                               name,
+                                               **kwargs)
 
         self.tau = nn.Parameter(torch.zeros([1, ], device=self.device), requires_grad=False)
 
@@ -80,7 +78,7 @@ class AdvMalwareDetectorClsPlus(nn.Module, DetectorTemplate):
         self.md_nn_model.model_save_path = self.model_save_path
         logger.info('========================================NN_PLUS model architecture==============================')
         logger.info(self)
-        logger.info('===============================================end==========================================')
+        logger.info('===============================================end==============================================')
 
     def parse_args(self,
                    dense_hidden_units=None,
@@ -103,10 +101,10 @@ class AdvMalwareDetectorClsPlus(nn.Module, DetectorTemplate):
 
     def forward(self, x):
         logits = self.amd_nn_plus(x)
-        logits -= torch.amax(logits, dim=-1, keepdim=True).detach()
+        logits -= torch.amax(logits, dim=-1, keepdim=True).detach()  # increasing the stability, which might be helpful
         return logits, torch.softmax(logits, dim=-1)[:, -1]
 
-    def predict(self, test_data_producer, indicator_masking=False):
+    def predict(self, test_data_producer, indicator_masking=True):
         """
         predict labels and conduct evaluation on detector & indicator
 
@@ -260,12 +258,12 @@ class AdvMalwareDetectorClsPlus(nn.Module, DetectorTemplate):
                     pertb_x = attack.perturb(self.md_nn_model, x_train, y_train,
                                              **attack_param
                                              )
-                    pertb_x = utils.round_x(pertb_x, alpha=0.5)
-                    trivial_flag = torch.sum(torch.abs(x_train - pertb_x), dim=-1)[:] == 0.
-                    if torch.all(trivial_flag):
+                    pertb_x = utils.round_x(pertb_x, alpha=0.5)  # stepwise-max returns continuous examples
+                    trivial_atta_flag = torch.sum(torch.abs(x_train - pertb_x), dim=-1)[:] == 0.
+                    if torch.all(trivial_atta_flag):
                         pertb_train_data_list.append([])
                         continue
-                    pertb_x = pertb_x[~trivial_flag]
+                    pertb_x = pertb_x[~trivial_atta_flag]
                     pertb_train_data_list.append(pertb_x.detach().cpu().numpy())  # not scalable enough
                 else:
                     pertb_x = pertb_train_data_list[idx_batch]
@@ -305,9 +303,9 @@ class AdvMalwareDetectorClsPlus(nn.Module, DetectorTemplate):
                                              **attack_param
                                              )
                     pertb_x = utils.round_x(pertb_x, alpha=0.5)
-                    trivial_flag = torch.sum(torch.abs(x_val - pertb_x), dim=-1)[:] == 0.
-                    assert (not torch.all(trivial_flag)), 'No modifications.'
-                    pertb_x = pertb_x[~trivial_flag]
+                    trivial_atta_flag = torch.sum(torch.abs(x_val - pertb_x), dim=-1)[:] == 0.
+                    assert (not torch.all(trivial_atta_flag)), 'No modifications.'
+                    pertb_x = pertb_x[~trivial_atta_flag]
                     pertb_val_data_list.append(pertb_x.detach().cpu().numpy())  # not scalable enough
                 else:
                     pertb_x = torch.from_numpy(pertb_val_data_list[idx]).to(self.device)

@@ -28,7 +28,7 @@ import torch.nn.functional as F
 import numpy as np
 from core.attack.max import Max
 from core.attack.stepwise_max import StepwiseMax
-from core.defense.md_dnn import DNNMalwareDetector
+from core.defense.md_dnn import MalwareDetectionDNN
 from core.defense.amd_template import DetectorTemplate
 from config import config, logging, ErrorHandler
 from tools import utils
@@ -54,11 +54,11 @@ class AdvMalwareDetectorDLA(nn.Module, DetectorTemplate):
             self.md_nn_model = md_nn_model
             self.is_fitting_md_model = False
         else:
-            self.md_nn_model = DNNMalwareDetector(self.input_size,
-                                                  n_classes,
-                                                  self.device,
-                                                  name,
-                                                  **kwargs)
+            self.md_nn_model = MalwareDetectionDNN(self.input_size,
+                                                   n_classes,
+                                                   self.device,
+                                                   name,
+                                                   **kwargs)
             self.is_fitting_md_model = True
 
         assert len(self.dense_hidden_units) >= 1, "Expected at least one hidden layer."

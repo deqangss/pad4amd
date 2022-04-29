@@ -15,7 +15,7 @@ from captum.attr import IntegratedGradients
 
 import numpy as np
 
-from core.defense.md_dnn import DNNMalwareDetector
+from core.defense.md_dnn import MalwareDetectionDNN
 from core.defense.amd_template import DetectorTemplate
 from config import config, logging, ErrorHandler
 from tools import utils
@@ -39,11 +39,11 @@ class AdvMalwareDetectorICNN(nn.Module, DetectorTemplate):
             self.md_nn_model = md_nn_model
         else:
             kwargs['smooth'] = True
-            self.md_nn_model = DNNMalwareDetector(self.input_size,
-                                                  n_classes,
-                                                  self.device,
-                                                  name,
-                                                  **kwargs)
+            self.md_nn_model = MalwareDetectionDNN(self.input_size,
+                                                   n_classes,
+                                                   self.device,
+                                                   name,
+                                                   **kwargs)
             warnings.warn("Use a self-defined NN-based malware detector")
         if hasattr(self.md_nn_model, 'smooth'):
             if not self.md_nn_model.smooth:  # non-smooth, exchange it

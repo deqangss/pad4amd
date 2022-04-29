@@ -7,7 +7,7 @@ import argparse
 import numpy as np
 
 from core.defense import Dataset
-from core.defense import DNNMalwareDetector, KernelDensityEstimation, AdvMalwareDetectorICNN, MaxAdvTraining
+from core.defense import MalwareDetectionDNN, KernelDensityEstimation, AdvMalwareDetectorICNN, MaxAdvTraining
 from core.attack import OrthogonalPGD
 from tools import utils
 from config import config, logging, ErrorHandler
@@ -78,12 +78,12 @@ def _main():
     else:
         dv = 'cuda'
     # initial model
-    model = DNNMalwareDetector(dataset.vocab_size,
-                               dataset.n_classes,
-                               device=dv,
-                               name=args.model_name,
-                               **hp_params
-                               )
+    model = MalwareDetectionDNN(dataset.vocab_size,
+                                dataset.n_classes,
+                                device=dv,
+                                name=args.model_name,
+                                **hp_params
+                                )
     if not (args.model == 'md_dnn' or args.model == 'kde' or args.model == 'md_at_ma'):
         model = AdvMalwareDetectorICNN(model,
                                        input_size=dataset.vocab_size,
