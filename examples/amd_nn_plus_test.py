@@ -55,22 +55,22 @@ def _main():
                                               name=model_name,
                                               **vars(args)
                                               )
-    dla_model = cls_plus_model.to(dv).double()
+    cls_plus_model = cls_plus_model.to(dv).double()
     pgdlinf = PGD(norm='linf', use_random=False,
                   is_attacker=False,
-                  device=dla_model.device)
+                  device=cls_plus_model.device)
     pgdlinf.perturb = partial(pgdlinf.perturb,
                               steps=args.steps_linf,
                               step_length=args.step_length_linf,
                               verbose=False
                               )
-    pgdl2 = PGD(norm='l2', use_random=False, is_attacker=False, device=dla_model.device)
+    pgdl2 = PGD(norm='l2', use_random=False, is_attacker=False, device=cls_plus_model.device)
     pgdl2.perturb = partial(pgdl2.perturb,
                             steps=args.steps_l2,
                             step_length=args.step_length_l2,
                             verbose=False
                             )
-    pgdl1 = PGDl1(is_attacker=False, device=dla_model.device)
+    pgdl1 = PGDl1(is_attacker=False, device=cls_plus_model.device)
     pgdl1.perturb = partial(pgdl1.perturb,
                             m=args.m,
                             verbose=False)
@@ -79,7 +79,7 @@ def _main():
         attack = Max(attack_list=[pgdlinf, pgdl2, pgdl1],
                      varepsilon=1e-9,
                      is_attacker=False,
-                     device=dla_model.device
+                     device=cls_plus_model.device
                      )
         attack_param = {
             'steps_max': 1,  # steps for max attack
@@ -87,7 +87,7 @@ def _main():
         }
 
     elif args.ma == 'stepwise_max':
-        attack = StepwiseMax(is_attacker=False, device=dla_model.device)
+        attack = StepwiseMax(is_attacker=False, device=cls_plus_model.device)
         attack_param = {
             'steps': max(max(args.m, args.steps_linf), args.steps_l2),
             'sl_l1': 1.,
@@ -108,17 +108,12 @@ def _main():
                            weight_decay=args.weight_decay
                            )
         # human readable parameters
-        save_args(path.join(path.dirname(dla_model.model_save_path), "hparam"), vars(args))
+        save_args(path.join(path.dirname(cls_plus_model.model_save_path), "hparam"), vars(args))
         # save parameters for rebuilding the neural nets
-        dump_pickle(vars(args), path.join(path.dirname(dla_model.model_save_path), "hparam.pkl"))
+        dump_pickle(vars(args), path.join(path.dirname(cls_plus_model.model_save_path), "hparam.pkl"))
     # test: accuracy
-    dla_model.load()
-    dla_model.predict(test_dataset_producer)
-
-    # attr_cls, attr_de = max_adv_training_model.model.get_important_attributes(test_dataset_producer)
-    # import numpy as np
-    # np.save("./attributions-mad-cls", attr_cls)
-    # np.save("./attributions-mad-de", attr_de)
+    cls_plus_model.load()
+    cls_plus_model.predict(test_dataset_producer)
 
 
 if __name__ == '__main__':
