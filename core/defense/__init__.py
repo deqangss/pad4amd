@@ -5,5 +5,5 @@ from core.defense.md_at_pgd import PGDAdvTraining
 from core.defense.amd_icnn import AdvMalwareDetectorICNN
 from core.defense.amd_kde import KernelDensityEstimation
 from core.defense.amd_dnn_plus import AMalwareDetectionDNNPlus
-from core.defense.amd_dla import AdvMalwareDetectorDLA
+from core.defense.amd_dla import AMalwareDetectionDLA
 from core.defense.amd_at_ma import PrincipledAdvDet

@@ -16,9 +16,7 @@ from __future__ import division
 from __future__ import print_function
 
 import time
-import warnings
 import os.path as path
-from tqdm import tqdm
 
 import torch
 import torch.nn as nn
@@ -37,7 +35,7 @@ logger = logging.getLogger('core.defense.amd_dla')
 logger.addHandler(ErrorHandler)
 
 
-class AdvMalwareDetectorDLA(nn.Module, DetectorTemplate):
+class AMalwareDetectionDLA(nn.Module, DetectorTemplate):
     def __init__(self, md_nn_model, input_size, n_classes, ratio=0.95,
                  device='cpu', name='', **kwargs):
         nn.Module.__init__(self)
@@ -52,7 +50,7 @@ class AdvMalwareDetectorDLA(nn.Module, DetectorTemplate):
         # malware detector
         if md_nn_model is not None and isinstance(md_nn_model, nn.Module):
             self.md_nn_model = md_nn_model
-            self.is_fitting_md_model = False
+            self.is_fitting_md_model = False  # the model is trained by default
         else:
             self.md_nn_model = MalwareDetectionDNN(self.input_size,
                                                    n_classes,

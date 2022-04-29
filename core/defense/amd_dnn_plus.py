@@ -245,7 +245,7 @@ class AMalwareDetectionDNNPlus(nn.Module, DetectorTemplate):
         pertb_train_data_list = []
         pertb_val_data_list = []
         nbatches = len(train_data_producer)
-        logger.info("Training alarm ...")
+        logger.info("Training model with extra class ...")
         self.md_nn_model.eval()
         for i in range(epochs):
             self.amd_nn_plus.train()
