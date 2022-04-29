@@ -91,16 +91,16 @@ class AMalwareDetectionDLA(nn.Module, DetectorTemplate):
             logger.warning("Unknown hyper-parameters {}".format(str(kwargs)))
 
     def forward(self, x):
-        extra = []
+        hidden_activations = []
         for dense_layer in self.md_nn_model.dense_layers[:-1]:
             x = self.md_nn_model.activation_func(dense_layer(x))
-            extra.append(x)
+            hidden_activations.append(x)
         logits = self.md_nn_model.dense_layers[-1](x)
-        extra = torch.cat(extra, dim=-1)
-        x_prob = self.alarm_nn_model(extra).reshape(-1)
+        hidden_activations = torch.cat(hidden_activations, dim=-1)
+        x_prob = self.alarm_nn_model(hidden_activations).reshape(-1)
         return logits, x_prob
 
-    def predict(self, test_data_producer, indicator_masking=False):
+    def predict(self, test_data_producer, indicator_masking=True):
         """
         predict labels and conduct evaluation on detector & indicator
 
@@ -254,16 +254,18 @@ class AMalwareDetectionDLA(nn.Module, DetectorTemplate):
                                              **attack_param
                                              )
                     pertb_x = utils.round_x(pertb_x, alpha=0.5)
-                    trivial_flag = torch.sum(torch.abs(x_train - pertb_x), dim=-1)[:] == 0.
-                    assert (not torch.all(trivial_flag)), 'No modifications.'
-                    pertb_x = pertb_x[~trivial_flag]
+                    trivial_atta_flag = torch.sum(torch.abs(x_train - pertb_x), dim=-1)[:] == 0.
+                    assert (not torch.all(trivial_atta_flag)), 'No modifications.'
+                    pertb_x = pertb_x[~trivial_atta_flag]
                     pertb_train_data_list.append(pertb_x.detach().cpu().numpy())  # not scalable enough
                 else:
                     pertb_x = torch.from_numpy(pertb_train_data_list[idx_batch]).to(self.device)
                 x_train = torch.cat([x_train, pertb_x], dim=0)
                 batch_size_ext = x_train.shape[0]
+                # make labels
                 y_train = torch.zeros((batch_size_ext, ), device=self.device)
                 y_train[batch_size:] = 1
+
                 idx = torch.randperm(y_train.shape[0])
                 x_train = x_train[idx]
                 y_train = y_train[idx]
@@ -280,7 +282,8 @@ class AMalwareDetectionDLA(nn.Module, DetectorTemplate):
                 accuracies.append(acc_g_train)
                 if verbose:
                     print(
-                        f'Mini batch: {i * nbatches + idx_batch + 1}/{epochs * nbatches} | training time in {mins:.0f} minutes, {secs} seconds.')
+                        f'Mini batch: {i * nbatches + idx_batch + 1}/{epochs * nbatches}'
+                        f'| training time in {mins:.0f} minutes, {secs} seconds.')
                     logger.info(
                         f'Training loss (batch level): {losses[-1]:.4f} | Train accuracy: {acc_g_train * 100:.2f}%.')
 
@@ -294,9 +297,9 @@ class AMalwareDetectionDLA(nn.Module, DetectorTemplate):
                                              **attack_param
                                              )
                     pertb_x = utils.round_x(pertb_x, alpha=0.5)
-                    trivial_flag = torch.sum(torch.abs(x_val - pertb_x), dim=-1)[:] == 0.
-                    assert (not torch.all(trivial_flag)), 'No modifications.'
-                    pertb_x = pertb_x[~trivial_flag]
+                    trivial_atta_flag = torch.sum(torch.abs(x_val - pertb_x), dim=-1)[:] == 0.
+                    assert (not torch.all(trivial_atta_flag)), 'No modifications.'
+                    pertb_x = pertb_x[~trivial_atta_flag]
                     pertb_val_data_list.append(pertb_x.detach().cpu().numpy())  # not scalable enough
                 else:
                     pertb_x = torch.from_numpy(pertb_val_data_list[idx]).to(self.device)

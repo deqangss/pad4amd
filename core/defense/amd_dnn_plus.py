@@ -213,7 +213,7 @@ class AMalwareDetectionDNNPlus(nn.Module, DetectorTemplate):
             self.tau[0] = s[i]
 
     def fit(self, train_data_producer, validation_data_producer, attack, attack_param,
-            epochs=100, lr=0.005, weight_decay=0., verbose=True):
+            epochs=50, lr=0.005, weight_decay=0., verbose=True):
         """
         Train the alarm, pick the best model according to the validation results
 
