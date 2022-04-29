@@ -73,7 +73,7 @@ class AMalwareDetectionDNNPlus(nn.Module, DetectorTemplate):
 
         self.tau = nn.Parameter(torch.zeros([1, ], device=self.device), requires_grad=False)
 
-        self.model_save_path = path.join(config.get('experiments', 'amd_nn_plus') + '_' + self.name,
+        self.model_save_path = path.join(config.get('experiments', 'amd_dnn_plus') + '_' + self.name,
                                          'model.pth')
         self.md_nn_model.model_save_path = self.model_save_path
         logger.info('========================================NN_PLUS model architecture==============================')
