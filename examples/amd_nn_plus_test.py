@@ -113,7 +113,7 @@ def _main():
         dump_pickle(vars(args), path.join(path.dirname(cls_plus_model.model_save_path), "hparam.pkl"))
     # test: accuracy
     cls_plus_model.load()
-    cls_plus_model.predict(test_dataset_producer, indicator_masking=False)
+    cls_plus_model.predict(test_dataset_producer, indicator_masking=True)
 
 
 if __name__ == '__main__':
