@@ -48,7 +48,7 @@ class AMalwareDetectionPAD(object):
     def fit(self, train_data_producer, validation_data_producer=None, epochs=5, adv_epochs=20,
             beta=0.001,
             lambda_lower_bound=1e-3,
-            lambda_upper_bound=1e3,
+            lmda_upper_bound=1e3,
             granularity=1,
             lr=0.005,
             weight_decay=5e-0, verbose=True):
@@ -63,7 +63,7 @@ class AMalwareDetectionPAD(object):
         @param adv_epochs: Integer, epochs for adversarial training
         @param beta: Float, penalty factor for adversarial loss
         @param lambda_lower_bound: Float, lower boundary of penalty factor
-        @param lambda_upper_bound: Float, upper boundary of penalty factor
+        @param lmda_upper_bound: Float, upper boundary of penalty factor
         @param granularity: Integer, 10^base exp-space between penalty factors
         @param lr: Float, learning rate of Adam optimizer
         @param weight_decay: Float, penalty factor, default value 5e-4 in Graph ATtention layer (GAT)
@@ -85,9 +85,9 @@ class AMalwareDetectionPAD(object):
         optimizer = optim.Adam(self.model.parameters(), lr=lr, weight_decay=weight_decay)
         total_time = 0.
         nbatches = len(train_data_producer)
-        lambda_space = np.logspace(np.log10(lambda_lower_bound),
-                                   np.log10(lambda_upper_bound),
-                                   num=int(np.log10(lambda_upper_bound / lambda_lower_bound) // granularity) + 1)
+        lmda_space = np.logspace(np.log10(lambda_lower_bound),
+                                 np.log10(lmda_upper_bound),
+                                 num=int(np.log10(lmda_upper_bound / lambda_lower_bound) // granularity) + 1)
         logger.info("Max adversarial training is starting ...")
         best_acc_val = 0.
         acc_val_adv_be = 0.
@@ -118,20 +118,20 @@ class AMalwareDetectionPAD(object):
                 start_time = time.time()
                 # the attack perturbs feature vectors using various hyper-parameter lambda, aiming to obtain
                 # adversarial examples as much as possible
-                lmda = np.random.choice(lambda_space)
+                lmda = np.random.choice(lmda_space)
                 self.model.eval()
                 pertb_mal_x = self.attack.perturb(self.model, mal_x_batch, mal_y_batch,
                                                   min_lambda_=lmda,
                                                   # when lambda is small, we cannot get effective attacks
-                                                  max_lambda_=lambda_upper_bound,
+                                                  max_lambda_=lmda_upper_bound,
                                                   **self.attack_param
                                                   )
-                disc_pertb_mal_x_ = utils.round_x(pertb_mal_x, 0.5)
+                # disc_pertb_mal_x_ = utils.round_x(pertb_mal_x, 0.5)
                 total_time += time.time() - start_time
                 x_batch_ = torch.cat([x_batch_, pertb_mal_x], dim=0).double()
                 y_batch_ = torch.cat([y_batch_, torch.ones(pertb_mal_x.shape[:1]).to(
                     self.model.device)]).double()
-                x_batch = torch.cat([x_batch, ben_batch_noises, disc_pertb_mal_x_], dim=0)
+                x_batch = torch.cat([x_batch, ben_batch_noises, pertb_mal_x], dim=0)
                 y_batch = torch.cat([y_batch, ben_y_batch, mal_y_batch])
                 start_time = time.time()
                 self.model.train()
@@ -208,7 +208,7 @@ class AMalwareDetectionPAD(object):
                     continue
                 pertb_mal_x = self.attack.perturb(self.model, mal_x_batch, mal_y_batch,
                                                   min_lambda_=lambda_lower_bound,
-                                                  max_lambda_=lambda_upper_bound,
+                                                  max_lambda_=lmda_upper_bound,
                                                   **self.attack_param
                                                   )
                 pertb_mal_x = utils.round_x(pertb_mal_x, alpha=0.5)
