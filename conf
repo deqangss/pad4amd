@@ -1,5 +1,5 @@
 [DEFAULT]
-project_root = /mnt/c/Users/lideq/projects/pad4mal
+project_root = /mnt/c/Users/lideq/projects/pad4amd
 database_dir = /mnt/c/Users/lideq/datasets
 dataset_name = drebin
 
@@ -14,14 +14,24 @@ naive_data_pool = %(database_dir)s/naive_data/
 
 [experiments]
 md_dnn = %(project_root)s/save/%(dataset_name)s/md_dnn
-amd_icnn = %(project_root)s/save/%(dataset_name)s/amd_icnn
+md_at_ma = %(project_root)s/save/%(dataset_name)s/md_at_ma
+md_at_pgd = %(project_root)s/save/%(dataset_name)s/md_at_pgd
 kde = %(project_root)s/save/%(dataset_name)s/kde
-p_adv_training = %(project_root)s/save/%(dataset_name)s/principled_adv_training
-m_adv_training = %(project_root)s/save/%(dataset_name)s/max_adv_training
-malgan =  %(database_dir)s/%(dataset_name)s/attack/malgan
+amd_icnn = %(project_root)s/save/%(dataset_name)s/amd_icnn
+amd_nn_plus = %(project_root)s/save/%(dataset_name)s/amd_nn_plus
+amd_dla =  %(project_root)s/save/%(dataset_name)s/amd_dla
+amd_at_ma = %(project_root)s/save/%(dataset_name)s/amd_at_ma
+stepwise_max=%(database_dir)s/%(dataset_name)s/attack/stepwise_max
+orthogonal_pgdlinf=%(database_dir)s/%(dataset_name)s/attack/orthogonal_pgdlinf
+orthogonal_pgdl2=%(database_dir)s/%(dataset_name)s/attack/orthogonal_pgdl2
+orthogonal_pgdl1=%(database_dir)s/%(dataset_name)s/attack/orthogonal_pgdl1
+orthogonal_max=%(database_dir)s/%(dataset_name)s/attack/orthogonal_max
+orthogonal_stepwise_max=%(database_dir)s/%(dataset_name)s/attack/orthogonal_stepwise_max
 ompap = %(database_dir)s/%(dataset_name)s/attack/ompap
 ompa = %(database_dir)s/%(dataset_name)s/attack/ompa
 bca = %(database_dir)s/%(dataset_name)s/attack/bca
+bga = %(database_dir)s/%(dataset_name)s/attack/bga
+rfgsm = %(database_dir)s/%(dataset_name)s/attack/rfgsm
 gdkde = %(database_dir)s/%(dataset_name)s/attack/gdkde
 gdkdel1 = %(database_dir)s/%(dataset_name)s/attack/gdkdel1
 grosse = %(database_dir)s/%(dataset_name)s/attack/grosse
