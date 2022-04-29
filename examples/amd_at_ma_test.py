@@ -6,7 +6,7 @@ import time
 from functools import partial
 
 from core.defense import Dataset
-from core.defense import MalwareDetectionDNN, AdvMalwareDetectorICNN, PrincipledAdvDet
+from core.defense import MalwareDetectionDNN, AdvMalwareDetectorICNN, AMalwareDetectionPAD
 from core.attack import Max, PGD, PGDl1, StepwiseMax
 from tools.utils import save_args, get_group_args, dump_pickle
 from examples.amd_icnn_test import cmd_md
@@ -112,7 +112,7 @@ def _main():
     else:
         raise NotImplementedError("Expected 'max' and 'stepwise_max'.")
 
-    max_adv_training_model = PrincipledAdvDet(model, attack, attack_param)
+    max_adv_training_model = AMalwareDetectionPAD(model, attack, attack_param)
     if args.mode == 'train':
         max_adv_training_model.fit(train_dataset_producer,
                                    val_dataset_producer,

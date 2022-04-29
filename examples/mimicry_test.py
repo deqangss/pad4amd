@@ -8,7 +8,8 @@ import torch
 import numpy as np
 
 from core.defense import Dataset
-from core.defense import MalwareDetectionDNN, KernelDensityEstimation, AdvMalwareDetectorICNN, MaxAdvTraining
+from core.defense import MalwareDetectionDNN, PGDAdvTraining, MaxAdvTraining, KernelDensityEstimation, \
+    AdvMalwareDetectorICNN, AMalwareDetectionPAD, AMalwareDetectionDLA, AMalwareDetectionDNNPlus
 from core.attack import Mimicry
 from tools import utils
 from config import config, logging, ErrorHandler
@@ -26,8 +27,10 @@ atta_argparse.add_argument('--oblivion', action='store_true', default=False,
 atta_argparse.add_argument('--real', action='store_true', default=False,
                            help='whether produce the perturbed apks.')
 atta_argparse.add_argument('--model', type=str, default='maldet',
-                           choices=['md_dnn', 'kde', 'amd_icnn', 'md_at_ma', 'mad'],
-                           help="model type, either of 'md_dnn', 'kde', 'amd_icnn', 'md_at_ma', and 'padvtrain'.")
+                           choices=['md_dnn', 'md_at_pgd', 'md_at_ma',
+                                    'amd_kde', 'amd_icnn', 'amd_dla', 'amd_dnn_plus', 'amd_at_ma'],
+                           help="model type, either of 'md_dnn', 'md_at_pgd', 'md_at_ma', 'amd_kde', 'amd_icnn', "
+                                "'amd_dla', 'amd_dnn_plus', 'amd_at_ma'.")
 atta_argparse.add_argument('--model_name', type=str, default='xxxxxxxx-xxxxxx', help='model timestamp.')
 
 
@@ -35,16 +38,23 @@ def _main():
     args = atta_argparse.parse_args()
     if args.model == 'md_dnn':
         save_dir = config.get('experiments', 'md_dnn') + '_' + args.model_name
-    elif args.model == 'kde':
+    elif args.model == 'md_at_pgd':
+        save_dir = config.get('experiments', 'md_at_pgd') + '_' + args.model_name
+    elif args.model == 'md_at_ma':
+        save_dir = config.get('experiments', 'md_at_ma') + '_' + args.model_name
+    elif args.model == 'amd_kde':
         save_dir = config.get('experiments', 'kde') + '_' + args.model_name
     elif args.model == 'amd_icnn':
         save_dir = config.get('experiments', 'amd_icnn') + '_' + args.model_name
-    elif args.model == 'md_at_ma':
-        save_dir = config.get('experiments', 'md_at_ma') + '_' + args.model_name
-    elif args.model == 'padvtrain':
-        save_dir = config.get('experiments', 'p_adv_training') + '_' + args.model_name
+    elif args.model == 'amd_dla':
+        save_dir = config.get('experiments', 'amd_dla') + '_' + args.model_name
+    elif args.model == 'amd_dnn_plus':
+        save_dir = config.get('experiments', 'amd_dnn_plus') + '_' + args.model_name
+    elif args.model == 'amd_at_ma':
+        save_dir = config.get('experiments', 'amd_at_ma') + '_' + args.model_name
     else:
-        raise TypeError("Expected 'md_dnn', 'kde', 'amd_icnn', 'md_at_ma', and 'padvtrain'.")
+        raise TypeError("Expected 'md_dnn', 'md_at_pgd', 'md_at_ma', 'amd_kde', 'amd_icnn',"
+                        "'amd_dla', 'amd_dnn_plus', and 'amd_at_ma'.")
 
     hp_params = utils.read_pickle(os.path.join(save_dir, 'hparam.pkl'))
     dataset = Dataset(use_cache=hp_params['cache'],
@@ -79,7 +89,7 @@ def _main():
                                 name=args.model_name,
                                 **hp_params
                                 )
-    if not (args.model == 'md_dnn' or args.model == 'kde' or args.model == 'md_at_ma'):
+    if args.model == 'amd_icnn' or args.model == 'amd_at_ma':
         model = AdvMalwareDetectorICNN(model,
                                        input_size=dataset.vocab_size,
                                        n_classes=dataset.n_classes,
@@ -89,7 +99,15 @@ def _main():
                                        **hp_params
                                        )
     model = model.to(dv).double()
-    if args.model == 'kde':
+    if args.model == 'md_at_pgd':
+        at_wrapper = PGDAdvTraining(model)
+        at_wrapper.load()
+        model = at_wrapper.model
+    elif args.model == 'md_at_ma':
+        at_wrapper = MaxAdvTraining(model)
+        at_wrapper.load()
+        model = at_wrapper.model
+    elif args.model == 'amd_kde':
         model = KernelDensityEstimation(model,
                                         n_centers=hp_params['n_centers'],
                                         bandwidth=hp_params['bandwidth'],
@@ -97,8 +115,28 @@ def _main():
                                         ratio=hp_params['ratio']
                                         )
         model.load()
-    elif args.model == 'md_at_ma':
-        adv_model = MaxAdvTraining(model)
+    elif args.model == 'amd_dla':
+        model = AMalwareDetectionDLA(md_nn_model=None,
+                                     input_size=dataset.vocab_size,
+                                     n_classes=dataset.n_classes,
+                                     device=dv,
+                                     name=args.model_name,
+                                     **hp_params
+                                     )
+        model = model.to(dv).double()
+        model.load()
+    elif args.model == 'amd_dnn_plus':
+        model = AMalwareDetectionDNNPlus(md_nn_model=None,
+                                         input_size=dataset.vocab_size,
+                                         n_classes=dataset.n_classes,
+                                         device=dv,
+                                         name=args.model_name,
+                                         **hp_params
+                                         )
+        model = model.to(dv).double()
+        model.load()
+    elif args.model == 'amd_at_ma':
+        adv_model = AMalwareDetectionPAD(model)
         adv_model.load()
         model = adv_model.model
     else:

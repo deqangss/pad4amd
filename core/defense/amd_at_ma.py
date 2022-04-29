@@ -21,8 +21,8 @@ logger = logging.getLogger('core.defense.max_adv_training')
 logger.addHandler(ErrorHandler)
 
 
-class PrincipledAdvDet(object):
-    """max adversarial training
+class AMalwareDetectionPAD(object):
+    """adversarial training incorporating ``max'' or step-wise ``max'' attack
 
     Parameters
     -------

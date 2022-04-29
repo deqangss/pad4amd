@@ -32,7 +32,7 @@ class PGDAdvTraining(object):
     def __init__(self, model, attack=None, attack_param=None):
         self.model = model
         if attack is not None:
-            assert isinstance(attack, (PGD))
+            assert isinstance(attack, PGD)
             if 'is_attacker' in attack.__dict__.keys():
                 assert not attack.is_attacker
         self.attack = attack

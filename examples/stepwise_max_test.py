@@ -7,7 +7,7 @@ import argparse
 import numpy as np
 
 from core.defense import Dataset
-from core.defense import MalwareDetectionDNN, KernelDensityEstimation, AdvMalwareDetectorICNN, MaxAdvTraining, PrincipledAdvDet
+from core.defense import MalwareDetectionDNN, KernelDensityEstimation, AdvMalwareDetectorICNN, MaxAdvTraining, AMalwareDetectionPAD
 from core.attack import StepwiseMax
 from tools import utils
 from config import config, logging, ErrorHandler
@@ -113,7 +113,7 @@ def _main():
         adv_model.load()
         model = adv_model.model
     elif args.model == 'amd_at_ma':
-        adv_model = PrincipledAdvDet(model)
+        adv_model = AMalwareDetectionPAD(model)
         adv_model.load()
         model = adv_model.model
     else:
