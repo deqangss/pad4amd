@@ -176,7 +176,7 @@ class AMalwareDetectionDNNPlus(nn.Module, DetectorTemplate):
         self.eval()
         logits, g = self.forward(x)
         x_cent = torch.softmax(logits, dim=-1).detach().cpu().numpy()[:, :2]
-        return x_cent, g
+        return x_cent.detach().cpu().numpy(), g.detach().cpu().numpy()
 
     def get_tau_sample_wise(self, y_pred=None):
         return self.tau
