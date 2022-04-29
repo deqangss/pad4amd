@@ -121,7 +121,6 @@ class OrthogonalStepwiseMax(StepwiseMax):
             return []
         adv_x = x.clone().detach()
         batch_size = x.shape[0]
-        label_adv = torch.ones_like(label).to(model.device).double()
 
         assert hasattr(model, 'is_detector_enabled'), 'Expected an adversary detector'
         model.eval()
@@ -136,8 +135,7 @@ class OrthogonalStepwiseMax(StepwiseMax):
             grad_classifier = self.trans_grads(grad_classifier, _adv_x)
 
             var_adv_x.grad = None
-            # todo:change it to logits
-            loss_detector = F.binary_cross_entropy_with_logits(logits_detector, label_adv)
+            loss_detector = -torch.mean(logits_detector)
             loss_detector.backward()
             grad_detector = var_adv_x.grad.detach().data
             grad_detector = self.trans_grads(grad_detector, _adv_x)
