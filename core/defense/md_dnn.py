@@ -147,7 +147,7 @@ class MalwareDetectionDNN(nn.Module):
         logit = self.forward(x)
         return torch.softmax(logit, dim=-1).detach().cpu().numpy(), np.ones((logit.size()[0],))
 
-    def predict(self, test_data_producer, indicator_masking=None):
+    def predict(self, test_data_producer, indicator_masking=True):
         """
         predict labels and conduct evaluation
 

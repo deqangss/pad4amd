@@ -125,7 +125,7 @@ class AdvMalwareDetectorICNN(nn.Module, DetectorTemplate):
     def forward(self, x):
         return self.forward_f(x), self.forward_g(x)
 
-    def predict(self, test_data_producer, indicator_masking=False):
+    def predict(self, test_data_producer, indicator_masking=True):
         """
         predict labels and conduct evaluation on detector & indicator
 

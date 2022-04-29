@@ -94,7 +94,7 @@ class KernelDensityEstimation(DetectorTemplate):
                 s, _ = torch.sort(prob_x_y)
                 self.tau[i] = s[int((s.shape[0] - 1) * ratio)]
 
-    def predict(self, test_data_producer, indicator_masking=False):
+    def predict(self, test_data_producer, indicator_masking=True):
         # evaluation on detector & indicator
         y_cent, x_prob, y_true = self.inference(test_data_producer)
         y_pred = y_cent.argmax(1).cpu().numpy()
