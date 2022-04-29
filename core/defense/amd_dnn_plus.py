@@ -209,7 +209,7 @@ class AMalwareDetectionDNNPlus(nn.Module, DetectorTemplate):
                 probabilities.append(x_cent)
             s, _ = torch.sort(torch.cat(probabilities, dim=0))
             i = int((s.shape[0] - 1) * ratio)
-            print(s[-3:], i)
+            print(s[-3:], i, s.shape)
             assert i >= 0
             self.tau[0] = s[i]
 
