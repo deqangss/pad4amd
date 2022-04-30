@@ -232,7 +232,9 @@ class OrthogonalStepwiseMax(StepwiseMax):
         y_pred = logits_f.argmax(1)
         if not self.oblivion:
             loss_no_reduction = ce - torch.sigmoid(prob_g)
-            done = (y_pred != label) & (prob_g <= model.tau)
+            print(model.get_tau_sample_wise(y_pred))
+            print(model.tau)
+            done = (y_pred != label) & (prob_g <= model.get_tau_sample_wise(y_pred))
         else:
             loss_no_reduction = ce
             done = y_pred != label
