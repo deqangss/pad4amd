@@ -7,7 +7,8 @@ import argparse
 import numpy as np
 
 from core.defense import Dataset
-from core.defense import MalwareDetectionDNN, KernelDensityEstimation, AdvMalwareDetectorICNN, MaxAdvTraining
+from core.defense import MalwareDetectionDNN, PGDAdvTraining, MaxAdvTraining, KernelDensityEstimation, \
+    AdvMalwareDetectorICNN, AMalwareDetectionPAD, AMalwareDetectionDLA, AMalwareDetectionDNNPlus
 from core.attack import PGDAdam
 from tools import utils
 from config import config, logging, ErrorHandler
