@@ -70,7 +70,7 @@ class KernelDensityEstimation(DetectorTemplate):
                 self.gaussian_means]
         kd = torch.stack([torch.mean(torch.exp(-d / self.bandwidth), dim=-1) for d in dist], dim=1)
         # return p(x|y=y_pred)
-        return kd[torch.arange(size), y_pred]
+        return -1 * kd[torch.arange(size), y_pred]
 
     def get_threshold(self, validation_data_producer, ratio=None):
         """
