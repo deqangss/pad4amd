@@ -174,6 +174,7 @@ def _main():
         model = adv_model.model
     else:
         model.load()
+        model = model.to(dv).double()
     logger.info("Load model parameters from {}.".format(model.model_save_path))
     model.predict(mal_test_dataset_producer)
 
@@ -248,7 +249,7 @@ def _main():
     x_mod_integrated = []
     for x, y in mal_test_dataset_producer:
         x, y = utils.to_tensor(x, y.long(), model.device)
-        adv_x_batch = attack.perturb(model.double(), x.double(), y,
+        adv_x_batch = attack.perturb(model, x.double(), y,
                                      steps_max=args.steps_max,
                                      min_lambda_=1e-5,
                                      max_lambda_=1e5,
