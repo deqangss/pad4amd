@@ -66,7 +66,6 @@ class OrthogonalPGD(PGD):
 
         assert hasattr(model, 'is_detector_enabled'), 'Expected an adversary detector'
         model.eval()
-        label_adv = torch.ones_like(label).to(model.device).double()
 
         for t in range(steps):
             if t == 0 and self.use_random:
@@ -159,7 +158,8 @@ class OrthogonalPGD(PGD):
         # round
         if self.norm == 'linf':
             # see paper: Adversarial Deep Learning for Robust Detection of Binary Encoded Malware
-            round_threshold = torch.rand(x.size()).to(self.device)
+            # round_threshold = torch.rand(x.size()).to(self.device)
+            round_threshold = 0.5
         else:
             round_threshold = 0.5
 
