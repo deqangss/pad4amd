@@ -28,7 +28,7 @@ atta_argparse.add_argument('--varepsilon', type=float, default=1e-9,
 
 atta_argparse.add_argument('--lmda', type=float, default=1.,
                            help='balance factor for waging attack.')
-atta_argparse.add_argument('--m', type=int, default=100,
+atta_argparse.add_argument('--steps_l1', type=int, default=100,
                            help='maximum number of perturbations.')
 
 atta_argparse.add_argument('--steps_l2', type=int, default=100,
@@ -181,7 +181,7 @@ def _main():
     if not args.orthogonal_v:
         pgdl1 = PGDl1(oblivion=args.oblivion, kappa=args.kappa, device=model.device)
         pgdl1.perturb = partial(pgdl1.perturb,
-                                m=args.m,
+                                steps=args.steps_l1,
                                 base=args.base,
                                 verbose=False
                                 )
@@ -192,7 +192,7 @@ def _main():
                               device=model.device)
 
         pgdl1.perturb = partial(pgdl1.perturb,
-                                steps=args.m,
+                                steps=args.steps_l1,
                                 step_length=1.0,
                                 verbose=False
                                 )

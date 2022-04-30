@@ -14,7 +14,7 @@ from examples.amd_icnn_test import cmd_md
 dla_argparse = cmd_md.add_argument_group(title='amd dla')
 dla_argparse.add_argument('--ma', type=str, default='max', choices=['max', 'stepwise_max'],
                           help="Type of mixture of attack: 'max' or 'stepwise_max' strategy.")
-dla_argparse.add_argument('--m', type=int, default=20,
+dla_argparse.add_argument('--steps_l1', type=int, default=20,
                           help='maximum number of perturbations.')
 dla_argparse.add_argument('--steps_l2', type=int, default=50,
                           help='maximum number of steps for base attacks.')
@@ -72,7 +72,7 @@ def _main():
                             )
     pgdl1 = PGDl1(is_attacker=False, device=cls_plus_model.device)
     pgdl1.perturb = partial(pgdl1.perturb,
-                            m=args.m,
+                            steps=args.steps_l1,
                             verbose=False)
 
     if args.ma == 'max':
@@ -89,7 +89,7 @@ def _main():
     elif args.ma == 'stepwise_max':
         attack = StepwiseMax(is_attacker=False, device=cls_plus_model.device)
         attack_param = {
-            'steps': max(max(args.m, args.steps_linf), args.steps_l2),
+            'steps': max(max(args.steps_l1, args.steps_linf), args.steps_l2),
             'sl_l1': 1.,
             'sl_l2': args.step_length_l2,
             'sl_linf': args.step_length_linf,

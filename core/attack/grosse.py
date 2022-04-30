@@ -43,7 +43,7 @@ class Groose(BaseAttack):
 
     def _perturb(self, model, x, label=None,
                  highest_score=None,
-                 m=10,
+                 steps=10,
                  lambda_=1.):
         """
         perturb node feature vectors
@@ -63,7 +63,7 @@ class Groose(BaseAttack):
         if highest_score is None:
             highest_score = self.get_scores(model, adv_x, label).data
         model.eval()
-        for t in range(m):
+        for t in range(steps):
             var_adv_x = torch.autograd.Variable(adv_x, requires_grad=True)
             loss, _1 = self.get_loss(model, var_adv_x, 1 - label)
 
@@ -84,7 +84,7 @@ class Groose(BaseAttack):
         return worst_x
 
     def perturb(self, model, x, label=None,
-                m=10,
+                steps=50,
                 min_lambda_=1e-5,
                 max_lambda_=1e5,
                 base=10.,
@@ -108,7 +108,7 @@ class Groose(BaseAttack):
             adv_x[~done] = x[~done]  # recompute the perturbation under other penalty factors
             pert_x = self._perturb(model, adv_x[~done], label[~done],
                                    score[~done],
-                                   m,
+                                   steps,
                                    lambda_=self.lambda_
                                    )
             adv_x[~done] = pert_x

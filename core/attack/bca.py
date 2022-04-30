@@ -44,7 +44,7 @@ class BCA(BaseAttack):
 
     def _perturb(self, model, x, label=None,
                  highest_score=None,
-                 m=10,
+                 steps=10,
                  lmda=1.,
                  use_sample=False):
         """
@@ -55,7 +55,7 @@ class BCA(BaseAttack):
         @param model, a victim model
         @param x: torch.FloatTensor, feature vectors with shape [batch_size, vocab_dim]
         @param label: torch.LongTensor, ground truth labels
-        @param m: Integer, maximum number of perturbations, namely the hp k in the paper
+        @param steps: Integer, maximum number of perturbations, namely the hp k in the paper
         @param lmda, float, penalty factor for balancing the importance of adversary detector
         @param use_sample, Boolean, whether use random start point
         """
@@ -67,7 +67,7 @@ class BCA(BaseAttack):
             highest_score = self.get_scores(model, adv_x, label).data
         model.eval()
         adv_x = get_x0(adv_x, rounding_threshold=0.5, is_sample=use_sample)
-        for t in range(m):
+        for t in range(steps):
             var_adv_x = torch.autograd.Variable(adv_x, requires_grad=True)
             loss, _1 = self.get_loss(model, var_adv_x, label, lmda)
             grad = torch.autograd.grad(loss.mean(), var_adv_x)[0].data
@@ -87,7 +87,7 @@ class BCA(BaseAttack):
         return worst_x
 
     def perturb(self, model, x, label=None,
-                m=10,
+                steps=10,
                 min_lambda_=1e-5,
                 max_lambda_=1e5,
                 use_sample=False,
@@ -111,7 +111,7 @@ class BCA(BaseAttack):
                 break
             pert_x = self._perturb(model, adv_x[~done], label[~done],
                                    score[~done],
-                                   m,
+                                   steps,
                                    lmda=self.lambda_,
                                    use_sample=use_sample
                                    )

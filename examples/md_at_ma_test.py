@@ -15,7 +15,7 @@ max_adv_argparse = cmd_md.add_argument_group(title='max adv training')
 max_adv_argparse.add_argument('--beta', type=float, default=0.1, help='penalty factor on adversarial loss.')
 max_adv_argparse.add_argument('--ma', type=str, default='max', choices=['max', 'stepwise_max'],
                               help="Type of mixture of attack: 'max' or 'stepwise_max' strategy.")
-max_adv_argparse.add_argument('--m', type=int, default=20,
+max_adv_argparse.add_argument('--steps_l1', type=int, default=50,
                               help='maximum number of perturbations.')
 max_adv_argparse.add_argument('--steps_l2', type=int, default=50,
                               help='maximum number of steps for base attacks.')
@@ -73,7 +73,7 @@ def _main():
                             )
     pgdl1 = PGDl1(is_attacker=False, device=model.device)
     pgdl1.perturb = partial(pgdl1.perturb,
-                            m=args.m,
+                            steps=args.steps_l1,
                             verbose=False)
 
     if args.ma == 'max':
@@ -90,7 +90,7 @@ def _main():
     elif args.ma == 'stepwise_max':
         attack = StepwiseMax(is_attacker=False, device=model.device)
         attack_param = {
-            'steps': max(max(args.m, args.steps_linf), args.steps_l2),
+            'steps': max(max(args.steps_l1, args.steps_linf), args.steps_l2),
             'sl_l1': 1.,
             'sl_l2': args.step_length_l2,
             'sl_linf': args.step_length_linf,

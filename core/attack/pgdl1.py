@@ -71,7 +71,7 @@ class PGDl1(BaseAttack):
         return adv_x
 
     def perturb(self, model, x, label=None,
-                m=10,
+                steps=10,
                 min_lambda_=1e-5,
                 max_lambda_=1e5,
                 base=10.,
@@ -91,7 +91,7 @@ class PGDl1(BaseAttack):
             if torch.all(done):
                 break
             pert_x = self._perturb(model, adv_x[~done], label[~done],
-                                   m,
+                                   steps,
                                    lambda_=self.lambda_
                                    )
             adv_x[~done] = pert_x

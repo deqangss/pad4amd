@@ -17,7 +17,7 @@ logger = logging.getLogger('examples.bca_test')
 logger.addHandler(ErrorHandler)
 
 atta_argparse = argparse.ArgumentParser(description='arguments for bca')
-atta_argparse.add_argument('--m', type=int, default=100,
+atta_argparse.add_argument('--steps', type=int, default=100,
                            help='maximum number of perturbations.')
 atta_argparse.add_argument('--oblivion', action='store_true', default=False,
                            help='whether know the adversary indicator or not.')
@@ -146,14 +146,14 @@ def _main():
                  kappa=args.kappa,
                  device=model.device)
 
-    logger.info("\nThe maximum number of perturbations for each example is {}:".format(args.m))
+    logger.info("\nThe maximum number of perturbations for each example is {}:".format(args.steps))
     y_cent_list, x_density_list = [], []
     x_mod_integrated = []
     model.eval()
     for x, y in mal_test_dataset_producer:
         x, y = utils.to_tensor(x.double(), y.long(), model.device)
         adv_x_batch = attack.perturb(model, x, y,
-                                     args.m,
+                                     args.steps,
                                      min_lambda_=1e-5,
                                      max_lambda_=1e5,
                                      use_sample=False,

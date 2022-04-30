@@ -63,7 +63,7 @@ class GDKDEl1(BaseAttack):
             raise TypeError
 
     def _perturb(self, model, x, label=None,
-                 m=10,
+                 steps=50,
                  lambda_=1.):
         """
         perturb node feature vectors
@@ -82,7 +82,7 @@ class GDKDEl1(BaseAttack):
         adv_x = x
         self.lambda_ = lambda_
         model.eval()
-        for t in range(m):
+        for t in range(steps):
             var_adv_x = torch.autograd.Variable(adv_x, requires_grad=True)
             loss, done = self.get_loss(model, var_adv_x, label)
             if torch.all(done):
@@ -95,7 +95,7 @@ class GDKDEl1(BaseAttack):
         return adv_x
 
     def perturb(self, model, x, label=None,
-                m=10,
+                steps=50,
                 min_lambda_=1e-5,
                 max_lambda_=1e5,
                 base=10.,
@@ -117,7 +117,7 @@ class GDKDEl1(BaseAttack):
                 break
             adv_x[~done] = x[~done]  # recompute the perturbation under other penalty factors
             pert_x = self._perturb(model, adv_x[~done], label[~done],
-                                   m,
+                                   steps,
                                    lambda_=self.lambda_
                                    )
             adv_x[~done] = pert_x

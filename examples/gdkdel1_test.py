@@ -19,7 +19,7 @@ logger = logging.getLogger('examples.gdkdel1_test')
 logger.addHandler(ErrorHandler)
 
 atta_argparse = argparse.ArgumentParser(description='arguments for l1 norm based projected gradient descent attack')
-atta_argparse.add_argument('--m', type=int, default=100,
+atta_argparse.add_argument('--steps', type=int, default=100,
                            help='maximum number of perturbations.')
 atta_argparse.add_argument('--bandwidth', type=float, default=20.,
                            help='variance of Gaussian distribution.')
@@ -182,7 +182,7 @@ def _main():
     for x, y in mal_test_dataset_producer:
         x, y = utils.to_tensor(x.double(), y.long(), model.device)
         adv_x_batch = attack.perturb(model, x, y,
-                                     args.m,
+                                     args.steps,
                                      min_lambda_=1e-5,
                                      max_lambda_=1e5,
                                      verbose=True)
