@@ -158,8 +158,7 @@ class OrthogonalPGD(PGD):
         # round
         if self.norm == 'linf':
             # see paper: Adversarial Deep Learning for Robust Detection of Binary Encoded Malware
-            # round_threshold = torch.rand(x.size()).to(self.device)
-            round_threshold = 0.5
+            round_threshold = torch.rand(x.size()).to(self.device)
         else:
             round_threshold = 0.5
 
