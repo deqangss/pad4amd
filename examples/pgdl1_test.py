@@ -167,7 +167,7 @@ def _main():
         f'The mean accuracy on perturbed malware is {sum(y_pred == 1.) / mal_count * 100:.3f}%')
 
     if 'indicator' in type(model).__dict__.keys():
-        indicator_flag = model.indicator(np.concatenate(x_density_list))
+        indicator_flag = model.indicator(np.concatenate(x_density_list), y_pred)
         logger.info(f"The effectiveness of indicator is {sum(~indicator_flag) / mal_count * 100:.3f}%")
         acc_w_indicator = (sum(~indicator_flag) + sum((y_pred == 1.) & indicator_flag)) / mal_count * 100
         logger.info(f'The mean accuracy on adversarial malware (w/ indicator) is {acc_w_indicator:.3f}%.')
