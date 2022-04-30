@@ -164,7 +164,7 @@ def _main():
     model.eval()
     for x, y in mal_test_dataset_producer:
         x, y = utils.to_tensor(x.double(), y.long(), model.device)
-        adv_x_batch = attack.perturb(model.double(), x, y,
+        adv_x_batch = attack.perturb(model, x, y,
                                      args.steps,
                                      args.step_length,
                                      min_lambda_=1e-5,
