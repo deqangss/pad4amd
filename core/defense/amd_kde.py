@@ -47,7 +47,7 @@ class KernelDensityEstimation(DetectorTemplate):
         for dense_layer in self.model.dense_layers[:-1]:
             x = self.model.activation_func(dense_layer(x))
         logits = self.model.dense_layers[-1](x)
-        x_prob = self.forward_g(x, logits.argmax(1))
+        x_prob = self.forward_g(x, logits.argmax(1).detach())
         return logits, x_prob
 
     def forward_f(self, x):
