@@ -168,7 +168,7 @@ class OrthogonalStepwiseMax(StepwiseMax):
                 logits_classifier[range(batch_size), 0] = logits_classifier[range(batch_size), 0] - 10.
                 has_attack_succeeded = (logits_classifier.argmax(1) == 0.)[:, None].float()
             else:
-                has_attack_succeeded = (logits_detector <= model.tau)[:, None].float()
+                has_attack_succeeded = (logits_detector + 1.0 <= model.get_tau_sample_wise(logits_classifier.argmax(1)))[:, None].float()
 
             if self.k:
                 # take gradients of g onto f every kth step
