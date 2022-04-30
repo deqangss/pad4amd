@@ -165,7 +165,7 @@ class OrthogonalStepwiseMax(StepwiseMax):
                 grad_classifier_proj = grad_classifier
 
             if self.project_detector:
-                logits_classifier[range(batch_size), 0] = logits_classifier[range(batch_size), 0] - 10.
+                logits_classifier[range(batch_size), 0] = logits_classifier[range(batch_size), 0] - 20.
                 has_attack_succeeded = (logits_classifier.argmax(1) == 0.)[:, None].float()
             else:
                 tau = model.get_tau_sample_wise(logits_classifier.argmax(1))
