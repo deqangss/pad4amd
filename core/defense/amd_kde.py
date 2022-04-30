@@ -40,7 +40,7 @@ class KernelDensityEstimation(DetectorTemplate):
         self.tau = nn.Parameter(torch.zeros([self.n_classes, ], device=self.device), requires_grad=False)
         self.name = self.model.name
         self.model.load()
-        self.model_save_path = path.join(config.get('experiments', 'kde').rstrip('/') + '_' + self.name, 'model.pth')
+        self.model_save_path = path.join(config.get('experiments', 'amd_kde').rstrip('/') + '_' + self.name, 'model.pth')
         self.model.model_save_path = self.model_save_path
 
     def forward(self, x):
