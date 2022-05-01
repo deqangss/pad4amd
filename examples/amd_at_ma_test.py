@@ -99,7 +99,6 @@ def _main():
             'steps_max': 1,  # steps for max attack
             'verbose': True
         }
-
     elif args.ma == 'stepwise_max':
         attack = StepwiseMax(is_attacker=False, device=model.device)
         attack_param = {
