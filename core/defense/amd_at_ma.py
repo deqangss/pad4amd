@@ -126,12 +126,12 @@ class AMalwareDetectionPAD(object):
                                                   max_lambda_=lmda_upper_bound,
                                                   **self.attack_param
                                                   )
-                # disc_pertb_mal_x_ = utils.round_x(pertb_mal_x, 0.5)
+                disc_pertb_mal_x_ = utils.round_x(pertb_mal_x, 0.5)
                 total_time += time.time() - start_time
                 x_batch_ = torch.cat([x_batch_, pertb_mal_x], dim=0).double()
                 y_batch_ = torch.cat([y_batch_, torch.ones(pertb_mal_x.shape[:1]).to(
                     self.model.device)]).double()
-                x_batch = torch.cat([x_batch, ben_batch_noises, pertb_mal_x], dim=0)
+                x_batch = torch.cat([x_batch, ben_batch_noises, disc_pertb_mal_x_], dim=0)
                 y_batch = torch.cat([y_batch, ben_y_batch, mal_y_batch])
                 start_time = time.time()
                 self.model.train()
