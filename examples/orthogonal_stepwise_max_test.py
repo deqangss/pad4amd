@@ -172,7 +172,7 @@ def _main():
                                      args.step_length_l2,
                                      args.step_length_linf,
                                      verbose=True)
-        y_cent_batch, x_density_batch = model.inference_batch_wise(adv_x_batch, y)
+        y_cent_batch, x_density_batch = model.inference_batch_wise(adv_x_batch)
         y_cent_list.append(y_cent_batch)
         x_density_list.append(x_density_batch)
         x_mod_integrated.append((adv_x_batch - x).detach().cpu().numpy())
