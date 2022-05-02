@@ -145,9 +145,7 @@ class PGDAdvTraining(object):
                 pertb_mal_x = self.attack.perturb(self.model, mal_x_batch, mal_y_batch,
                                                   **self.attack_param
                                                   )
-                y_cent_batch, x_density_batch = self.model.inference_batch_wise(pertb_mal_x,
-                                                                                mal_y_batch
-                                                                                )
+                y_cent_batch, x_density_batch = self.model.inference_batch_wise(pertb_mal_x)
                 y_pred = np.argmax(y_cent_batch, axis=-1)
                 res_val.append(y_pred == 1.)
             assert len(res_val) > 0

@@ -148,9 +148,7 @@ class MaxAdvTraining(object):
                                                   **self.attack_param
                                                   )
                 pertb_mal_x = utils.round_x(pertb_mal_x, 0.5)
-                y_cent_batch, x_density_batch = self.model.inference_batch_wise(pertb_mal_x,
-                                                                                mal_y_batch
-                                                                                )
+                y_cent_batch, x_density_batch = self.model.inference_batch_wise(pertb_mal_x)
                 y_pred = np.argmax(y_cent_batch, axis=-1)
                 res_val.append(y_pred == 1.)
             assert len(res_val) > 0

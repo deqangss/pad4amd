@@ -212,9 +212,7 @@ class AMalwareDetectionPAD(object):
                                                   **self.attack_param
                                                   )
                 pertb_mal_x = utils.round_x(pertb_mal_x, alpha=0.5)
-                y_cent_batch, x_density_batch = self.model.inference_batch_wise(pertb_mal_x,
-                                                                                mal_y_batch
-                                                                                )
+                y_cent_batch, x_density_batch = self.model.inference_batch_wise(pertb_mal_x)
                 if hasattr(self.model, 'indicator'):
                     indicator_flag = self.model.indicator(x_density_batch)
                 else:
