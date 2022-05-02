@@ -101,6 +101,7 @@ class StepwiseMax(BaseAttack):
                     _, s_idx = scores.max(dim=-1)
                     pert_x_cont = pertbx[torch.arange(num_sample_red), s_idx]
                     if self.is_attacker:
+                        self.round_threshold = torch.rand(x.size()).to(self.device)
                         adv_x[~done] = round_x(pert_x_cont, self.round_threshold)
                     else:
                         adv_x[~done] = pert_x_cont
