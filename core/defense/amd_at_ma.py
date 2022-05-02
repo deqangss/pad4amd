@@ -47,7 +47,7 @@ class AMalwareDetectionPAD(object):
 
     def fit(self, train_data_producer, validation_data_producer=None, epochs=5, adv_epochs=20,
             beta=0.001,
-            lambda_lower_bound=1e-3,
+            lmda_lower_bound=1e-3,
             lmda_upper_bound=1e3,
             granularity=1,
             lr=0.005,
@@ -62,7 +62,7 @@ class AMalwareDetectionPAD(object):
         @param epochs: Integer, epochs for adversarial training
         @param adv_epochs: Integer, epochs for adversarial training
         @param beta: Float, penalty factor for adversarial loss
-        @param lambda_lower_bound: Float, lower boundary of penalty factor
+        @param lmda_lower_bound: Float, lower boundary of penalty factor
         @param lmda_upper_bound: Float, upper boundary of penalty factor
         @param granularity: Integer, 10^base exp-space between penalty factors
         @param lr: Float, learning rate of Adam optimizer
@@ -85,9 +85,9 @@ class AMalwareDetectionPAD(object):
         optimizer = optim.Adam(self.model.parameters(), lr=lr, weight_decay=weight_decay)
         total_time = 0.
         nbatches = len(train_data_producer)
-        lmda_space = np.logspace(np.log10(lambda_lower_bound),
+        lmda_space = np.logspace(np.log10(lmda_lower_bound),
                                  np.log10(lmda_upper_bound),
-                                 num=int(np.log10(lmda_upper_bound / lambda_lower_bound) // granularity) + 1)
+                                 num=int(np.log10(lmda_upper_bound / lmda_lower_bound) // granularity) + 1)
         logger.info("Max adversarial training is starting ...")
         best_acc_val = 0.
         acc_val_adv_be = 0.
@@ -121,7 +121,7 @@ class AMalwareDetectionPAD(object):
                 lmda = np.random.choice(lmda_space)
                 self.model.eval()
                 pertb_mal_x = self.attack.perturb(self.model, mal_x_batch, mal_y_batch,
-                                                  min_lambda_=lmda,
+                                                  min_lambda_=lmda_lower_bound,
                                                   # when lambda is small, we cannot get effective attacks
                                                   max_lambda_=lmda_upper_bound,
                                                   **self.attack_param
@@ -207,7 +207,7 @@ class AMalwareDetectionPAD(object):
                 if null_flag:
                     continue
                 pertb_mal_x = self.attack.perturb(self.model, mal_x_batch, mal_y_batch,
-                                                  min_lambda_=lambda_lower_bound,
+                                                  min_lambda_=lmda_lower_bound,
                                                   max_lambda_=lmda_upper_bound,
                                                   **self.attack_param
                                                   )
