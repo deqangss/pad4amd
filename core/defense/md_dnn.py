@@ -139,11 +139,11 @@ class MalwareDetectionDNN(nn.Module):
             np.save('./labels', np.concatenate(gt_labels))
         return np.vstack(attributions)
 
-    def inference_batch_wise(self, x, y):
+    def inference_batch_wise(self, x):
         """
         support malware samples solely
         """
-        assert isinstance(x, torch.Tensor) and isinstance(y, torch.Tensor)
+        assert isinstance(x, torch.Tensor)
         logit = self.forward(x)
         return torch.softmax(logit, dim=-1).detach().cpu().numpy(), np.ones((logit.size()[0],))
 

@@ -228,8 +228,8 @@ class AdvMalwareDetectorICNN(nn.Module, DetectorTemplate):
             attributions_de.append(attribution_bs.clone().detach().cpu().numpy())
         return np.vstack(attributions_cls), np.vstack(attributions_de)
 
-    def inference_batch_wise(self, x, y):
-        assert isinstance(x, torch.Tensor) and isinstance(y, torch.Tensor)
+    def inference_batch_wise(self, x):
+        assert isinstance(x, torch.Tensor)
         self.eval()
         logits_f, logits_g = self.forward(x)
         return torch.softmax(logits_f, dim=-1).detach().cpu().numpy(), logits_g.detach().cpu().numpy()

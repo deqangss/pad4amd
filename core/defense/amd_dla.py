@@ -167,8 +167,8 @@ class AMalwareDetectionDLA(nn.Module, DetectorTemplate):
         x_prob = torch.cat(x_prob, dim=0)
         return y_cent, x_prob, gt_labels
 
-    def inference_batch_wise(self, x, y):
-        assert isinstance(x, torch.Tensor) and isinstance(y, torch.Tensor)
+    def inference_batch_wise(self, x):
+        assert isinstance(x, torch.Tensor)
         self.eval()
         logits, x_prob = self.forward(x)
         return torch.softmax(logits, dim=-1).detach().cpu().numpy(), x_prob.detach().cpu().numpy()
