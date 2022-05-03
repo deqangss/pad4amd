@@ -54,7 +54,7 @@ class Mimicry(BaseAttack):
                 _x_fixed_one = ((1. - self.manipulation_x).float() * _x)[None, :]
                 modified_x = torch.clamp(_x_fixed_one + trial_vectors, min=0., max=1.)
                 modified_x, y = utils.to_tensor(modified_x.double(), torch.ones(trials,).long(), model.device)
-                y_cent, x_density = model.inference_batch_wise(modified_x, y)
+                y_cent, x_density = model.inference_batch_wise(modified_x)
                 y_pred = np.argmax(y_cent, axis=-1)
                 if hasattr(model, 'indicator') and (not self.oblivion):
                     attack_flag = (y_pred == 0) & (model.indicator(x_density, y_pred))
