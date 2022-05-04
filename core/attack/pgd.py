@@ -78,7 +78,8 @@ class PGD(BaseAttack):
             adv_x = torch.clamp(adv_x + perturbation * step_length, min=0., max=1.)
         # round
         if self.norm == 'linf':
-            round_threshold = torch.rand(x.size()).to(self.device)
+            # round_threshold = torch.rand(x.size()).to(self.device)
+            round_threshold = self.round_threshold
         else:
             round_threshold = self.round_threshold
         return round_x(adv_x, round_threshold)
