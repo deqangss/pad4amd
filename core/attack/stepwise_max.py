@@ -49,7 +49,7 @@ class StepwiseMax(BaseAttack):
         enhance attack
         """
         assert 0 < min_lambda_ <= max_lambda_
-        assert steps >= 0 and (step_check >= 1) and 1 >= sl_l1 > 0 and sl_l2 >= 0 and sl_linf >= 0
+        assert steps >= 0 and (step_check >= 1) and 1 >= sl_l1 >= 0 and sl_l2 >= 0 and sl_linf >= 0
         model.eval()
         if hasattr(model, 'is_detector_enabled'):
             self.lambda_ = min_lambda_
