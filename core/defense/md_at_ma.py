@@ -86,7 +86,7 @@ class MaxAdvTraining(object):
                 mal_x_batch, ben_x_batch, mal_y_batch, ben_y_batch, null_flag = \
                     utils.get_mal_ben_data(x_batch, y_batch)
                 ben_batch_noises = torch.clamp(
-                    ben_x_batch + utils.psn(ben_x_batch, np.maximum(np.random.uniform(0.9995, 1.), 0.9995)),
+                    ben_x_batch + utils.psn(ben_x_batch, np.maximum(np.random.uniform(0.9996, 1.), 0.9996)),
                     min=0., max=1.)
                 if null_flag:
                     continue
