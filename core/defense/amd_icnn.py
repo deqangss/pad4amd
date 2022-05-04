@@ -297,7 +297,7 @@ class AdvMalwareDetectorICNN(nn.Module, DetectorTemplate):
                 x_train, y_train = utils.to_device(x_train.double(), y_train.long(), self.device)
                 # make data for training g
                 # 1. add pepper and salt noises
-                x_train_noises = torch.clamp(x_train + utils.psn(x_train, np.minimum(np.random.uniform(0, 1), 0.05)),
+                x_train_noises = torch.clamp(x_train + utils.psn(x_train, np.minimum(np.random.uniform(0, 0.95), 0.95)),
                                              min=0., max=1.)
                 x_train_ = torch.cat([x_train, x_train_noises], dim=0)
                 y_train_ = torch.cat([torch.zeros(x_train.shape[:1]), torch.ones(x_train.shape[:1])]).double().to(
@@ -339,7 +339,7 @@ class AdvMalwareDetectorICNN(nn.Module, DetectorTemplate):
             with torch.no_grad():
                 for x_val, y_val in validation_data_producer:
                     x_val, y_val = utils.to_device(x_val.double(), y_val.long(), self.device)
-                    x_val_noises = torch.clamp(x_val + utils.psn(x_val, np.minimum(np.random.uniform(0, 1), 0.05)),
+                    x_val_noises = torch.clamp(x_val + utils.psn(x_val, np.minimum(np.random.uniform(0, 0.95), 0.95)),
                                                min=0., max=1.)
                     x_val_ = torch.cat([x_val, x_val_noises], dim=0)
                     y_val_ = torch.cat([torch.zeros(x_val.shape[:1]), torch.ones(x_val.shape[:1])]).long().to(
