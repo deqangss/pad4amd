@@ -324,7 +324,7 @@ def get_intent_actions(app):
 
 def get_hardwares(app):
     hardwares_rtn = []
-    for hardware in hardwares_rtn:
+    for hardware in app.get_features():
         hardwares_rtn.append(hardware + TAG_SPLITTER + HARDWARE)
     return hardwares_rtn
 
