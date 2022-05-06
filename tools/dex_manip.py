@@ -260,6 +260,37 @@ def abs_path_comp(path, pkg_path):
     return abs_path
 
 
+def change_source_name(smali_paths, act_source_name, act_dst_name):
+    """
+    change .source "XXXX.java"
+    :param smali_paths: .samli files
+    :param act_source_name: XXXX
+    :param act_dst_name: targeted name
+    :return:
+    """
+    src_subnames = act_source_name.split('.')
+    dst_subnames = act_dst_name.split('.')
+    try:
+        assert len(src_subnames) == len(dst_subnames)
+    except Exception:
+        raise AssertionError("Alignment error: source name does not align with destination name.")
+
+    for sf in smali_paths:
+        for smali_line in read_file_by_fileinput(sf, inplace=True):
+            source_match = re.search(r'^([ ]*?)\.source(.*?)\"(?P<source_name>([^\"]*?))\"', smali_line)
+
+            if source_match is not None:
+                naive_source_name = source_match.group('source_name')
+                niv_src_subnames = naive_source_name.split('.')
+                new_name = naive_source_name
+                for _, niv_name in enumerate(niv_src_subnames):
+                    for i, src_name in enumerate(src_subnames):
+                        if niv_name in src_name:
+                            new_name = new_name.replace(niv_name, dst_subnames[i])
+                smali_line = smali_line.replace(naive_source_name, new_name)
+            print(smali_line.rstrip())
+
+
 def find_smali_w_name(smali_paths, source_name):
     path_ext = name2path(source_name)
     for smali_file_path in smali_paths:
@@ -508,6 +539,13 @@ def change_invoke_by_ref(new_class_name, method_fh, ivk_type, ivk_param, ivk_obj
     return method_fh
 
 
+def get_smali_paths(directory):
+    try:
+        return retrive_files_set(directory, "", ".smali")
+    except IOError as ex:
+        raise IOError("Failed to load all smali files.")
+
+
 def retrieve_smali_dirs(disassembly_dir):
     smali_dirs = []
     if not os.path.exists(disassembly_dir):
@@ -603,6 +641,153 @@ def get_super_class_name(smali_path):
             if class_match is not None:
                 super_class.append(class_match['className'])
     return super_class
+
+
+def fix_invalid_id(comp_name, spec_chr = '@&'):
+    comp_name = comp_name.replace('$;', spec_chr+';')
+    comp_name = comp_name.replace('$/', spec_chr+'/')
+    if comp_name[-1] == '$':
+        comp_name = comp_name[:-1] + spec_chr
+    while comp_name.find('$'+spec_chr) != -1:
+        comp_name = comp_name.replace('$'+spec_chr, spec_chr+spec_chr)
+    return comp_name
+
+
+def path_split(path):
+    dir_name = os.path.dirname(path)
+    base_name = os.path.basename(path)
+    file_name, ext_name = os.path.splitext(base_name)
+    return dir_name, file_name, ext_name
+
+
+def rename_file(src,dst):
+    try:
+        os.rename(src,dst)
+    except IOError as ex:
+        raise IOError("Cannot rename the file '{}' to '{}'".format(src, dst))
+
+
+def rename_smali_file(smali_path, activity_name, new_activity_name):
+    dir_name, file_name, ext_name = path_split(smali_path)
+    act_name = activity_name.split('.')[-1]
+    new_act_name = new_activity_name.split('.')[-1]
+
+    if not os.path.exists(smali_path) or (act_name not in smali_path):
+        return
+    #try:
+    #    assert(act_name in file_name)
+    #except AssertionError:
+    #    raise AssertionError("assert error:{}".format(smali_path))
+
+    src = os.path.join(dir_name, file_name + ext_name)
+    if act_name == file_name:
+        dst = os.path.join(dir_name, new_act_name + ext_name)
+    else:
+        file_name = fix_invalid_id(file_name)
+        inner_names = file_name.split('$')
+        for idx, name in enumerate(inner_names):
+            if act_name == name:
+                inner_names[idx] = new_act_name
+        new_file_name = '$'.join(inner_names)
+        dst = os.path.join(dir_name, new_file_name + ext_name)
+
+    rename_file(src,dst)
+
+
+def rename_dir(old, new):
+    try:
+        os.renames(old, new)
+    except IOError as ex:
+        raise IOError("Cannot rename the folder '{}' to '{}'".format(old, new))
+
+
+def rename_tree_dir(old_name, new_name):
+    old_folder_names = re.findall(r'[^\/]*?\/', (old_name + '/').replace('//', '/'))
+    new_folder_names = re.findall(r'[^\/]*?\/', (new_name + '/').replace('//', '/'))
+
+    assert len(old_folder_names) == len(new_folder_names)
+
+    for i in range(len(old_folder_names)):
+        src_dir = ''.join(new_folder_names[:i]) + old_folder_names[i]
+        dst_dir = ''.join(new_folder_names[:i+1])
+        if os.path.exists(src_dir) and src_dir != dst_dir:
+            rename_dir(src_dir, dst_dir)
+
+
+def rename_smali_dir(smali_dir, activity_name, new_activity_name):
+    # type: (string, string, string) -> void
+    if not os.path.exists(smali_dir):
+        return
+
+    def rename(src_path, new_path):
+        if src_path != '' and src_path in smali_dir:
+            new_smali_dir = smali_dir.replace(src_path, new_path)
+            rename_tree_dir(smali_dir, new_smali_dir)
+            return True
+        else:
+            return False
+
+    act_path1 = os.path.dirname(name2path(activity_name))
+    new_act_path = os.path.dirname(name2path(new_activity_name))
+    rename(act_path1, new_act_path)
+
+    act_path2 = name2path(activity_name)
+    new_act_path = name2path(new_activity_name)
+    rename(act_path2, new_act_path)
+
+
+def change_class_name(smali_paths, source_name, dst_name, pkg_name):
+    """
+    change class name of definition
+    :param smali_paths: set of smali paths
+    :param source_name: original class name
+    :param dst_name: modified class name
+    :return: class name found based on the original class name
+    """
+    # related_smali = set(find_smali_w_name(smali_paths, source_name))
+    pkg_path = name2path(pkg_name)
+    act_src_path = abs_path_comp(name2path(source_name), pkg_path)
+    act_dst_path = abs_path_comp(name2path(dst_name), pkg_path)
+    for sf in smali_paths:
+        fi_sf = read_file_by_fileinput(sf, inplace=True)
+        for smali_line in fi_sf:
+            class_match = re.search(r'^([ ]*?)\.class(.*?)(?P<class_name>L([^;\(\) ]*?);)', smali_line)
+            if class_match is not None:
+                class_name = class_match.group('class_name')
+                if act_src_path in class_name:
+                    smali_line = smali_line.replace(act_src_path, act_dst_path)
+                    yield class_name
+                print(smali_line.rstrip())  # append and write the smali line
+            else:
+                print(smali_line.rstrip())
+        fi_sf.close()
+
+def change_instantition_name(smali_paths, related_class, source_name, dst_name, pkg_name):
+    """
+    change instantiated class name (e.g., new-instance, invoke-type, arguments, etc)
+    :param smali_paths: set of smali paths
+    :param related_class: class names based on the source name
+    :param source_name: original class name
+    :param dst_name: modified class name
+    """
+    pkg_path = name2path(pkg_name)
+    src_path = abs_path_comp(name2path(source_name), pkg_path)
+    dst_path = abs_path_comp(name2path(dst_name), pkg_path)
+
+    for smali_path in smali_paths:
+        for smali_line in read_file_by_fileinput(smali_path, inplace=True):
+            if re.search(r'L([^;\(\) ]*?);', smali_line) is None:
+                print(smali_line.rstrip())
+            else:
+                for class_name in related_class:
+                    if class_name in smali_line:
+                        smali_line = smali_line.replace(
+                            src_path,
+                            dst_path
+                        )
+                        # break
+                print(smali_line.rstrip())
+
 
 def _main():
     plain_text = 'ui.finishscreen.buttons.exit.caption'

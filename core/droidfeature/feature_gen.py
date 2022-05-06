@@ -28,7 +28,6 @@ PROVIDER = 'provider'
 HARDWARE = 'hardware'
 SYS_API = 'api'
 
-
 DANGEROUS_PERMISSION_TAGS = [
     'android.permission.WRITE_CONTACTS',
     'android.permission.GET_ACCOUNTS',
@@ -100,7 +99,7 @@ DANGEROUS_API_SIMLI_TAGS = [
     'Ljava/net/HttpURLconnection;->setRequestMethod',
     'Landroid/telephony/SmsMessage;->getMessageBody',
     'Ljava/io/IOException;->printStackTrace',
-    'system/bin/su'   # non-alike an api but emerging in Drebin paper
+    'system/bin/su'  # non-alike an api but emerging in Drebin paper
 ]
 
 # handle the restricted APIs
@@ -242,12 +241,24 @@ def get_components(app):
     :param app: androidguard.core.bytecodes.apk
     """
     component_names = []
-    for activity in app.get_activities():
-        component_names.append(activity + TAG_SPLITTER + ACTIVITY)
-    for service in app.get_services():
-        component_names.append(service + TAG_SPLITTER + SERVICE)
-    for receiver in app.get_receivers():
-        component_names.append(receiver + TAG_SPLITTER + RECEIVER)
+    manifest_xml = app.get_android_manifest_xml()
+    xml_dom = minidom.parseString(etree.tostring(manifest_xml, pretty_print=True))
+    activity_elements = xml_dom.getElementsByTagName(ACTIVITY)
+    for activity in activity_elements:
+        if activity.hasAttribute("android:name"):
+            activity_name = activity.getAttribute("android:name")
+            component_names.append(activity_name + TAG_SPLITTER + ACTIVITY)
+    service_elements = xml_dom.getElementsByTagName(SERVICE)
+    for service in service_elements:
+        if service.hasAttribute("android:name"):
+            svc_name = service.getAttribute("android:name")
+            component_names.append(svc_name + TAG_SPLITTER + SERVICE)
+    receive_elements = xml_dom.getElementsByTagName(RECEIVER)
+    for receiver in receive_elements:
+        if receiver.hasAttribute("android:name"):
+            receiver_name = receiver.getAttribute("android:name")
+            component_names.append(receiver_name + TAG_SPLITTER + RECEIVER)
+
     return component_names
 
 
@@ -379,7 +390,7 @@ def get_apis(dexes, max_number_of_smali_files):
                     if check_sensitive_api(class_name + '->' + method_name) or \
                             check_suspicious_api(class_name + '->' + method_name):
                         api_info = invoke_type + ' ' + class_name + '->' + method_name + proto + \
-                                   TAG_SPLITTER + SYS_API +  \
+                                   TAG_SPLITTER + SYS_API + \
                                    TAG_SPLITTER + method_header
                         apis.append(api_info)
             if len(apis) <= 0:

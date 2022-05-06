@@ -26,6 +26,7 @@ TMP_DIR = '/tmp'
 OP_INSERTION = '+'
 OP_REMOVAL = '-'
 
+MANIFEST = "AndroidManifest.xml"
 REFLECTION_TEMPLATE = '''.class public Landroid/content/res/MethodReflection;
 .super Ljava/lang/Object;
 .source "MethodReflection.java"
@@ -106,7 +107,6 @@ INSERTION_TEMPLATE = '''.method public static {newMethodName}()V
 .end method
 '''
 
-MANIFEST = "AndroidManifest.xml"
 ENTRY_METHOD_STATEMENT = 'public onBind(Landroid/content/Intent;)Landroid/os/IBinder;'
 EMPTY_SERVICE_BODY = '''.class public L{fullClassName}
 .super Landroid/app/Service;
@@ -196,8 +196,9 @@ class InverseDroidFeature(object):
         assert isinstance(word, str) and isinstance(word_info, set)
         # see: https://docs.oracle.com/javase/specs/jvms/se10/html/jvms-2.html#jvms-2.12, we do not hide reflection-related API again
         if re.search(r'\<init\>|\<clinit\>', word) is None and \
-                re.search(r'Ljava\/lang\/reflect\/Method;->invoke|Ljava\/lang\/Object;->getClass|Ljava\/lang\/Class;->getMethod',
-                          word) is None and \
+                re.search(
+                    r'Ljava\/lang\/reflect\/Method;->invoke|Ljava\/lang\/Object;->getClass|Ljava\/lang\/Class;->getMethod',
+                    word) is None and \
                 all(
                     [re.search(r'invoke\-virtual|invoke\-static|invoke\-interface', info) for info in word_info]):
             return True
@@ -258,8 +259,10 @@ class InverseDroidFeature(object):
             if cmd_response != 0:
                 logger.error("Unable to disassemble app {}".format(app_path))
                 return
-            manifest_tree = xml_manip.get_xmltree_by_ET(os.path.join(dst_file, "AndroidManifest.xml"))
             methods = dex_manip.retrieve_methods(dst_file)
+            component_modif = DroidCompModification(dst_file)
+            permission_modif = DroidPermModification(dst_file)
+            intent_modif = DroidIntentModification(dst_file)
             for instruction in x_mod_instr:
                 for feature, op in instruction:
                     idx = InverseDroidFeature.vocab.index(feature)
@@ -269,26 +272,31 @@ class InverseDroidFeature(object):
                         assert feature in feature_list
                         if feature_type in [feature_gen.ACTIVITY, feature_gen.SERVICE, feature_gen.RECEIVER,
                                             feature_gen.PROVIDER]:
-                            pass # raise NotImplementedError # todo
+                            component_modif.remove(feature, feature_type)
                         elif feature_type == feature_gen.SYS_API:
                             remove_api(feature, dst_file)
                         else:
-                            raise ValueError("{} may be un-removed".format(feature_type))
+                            raise ValueError("{} is not permitted to be removed".format(feature_type))
                     else:
-                        # A large scale of insertion operations will trigger unexpected issues, such as method limitation in a class
-                        if feature_type in [feature_gen.ACTIVITY, feature_gen.SERVICE, feature_gen.RECEIVER,
-                                            feature_gen.PROVIDER]:
-                            pass # raise NotImplementedError  # todo
+                        # A large scale of insertion operations will trigger unexpected issues, such as method
+                        # limitation in a class
+                        if feature_type in [feature_gen.ACTIVITY, feature_gen.SERVICE, feature_gen.RECEIVER]:
+                            component_modif.insert(feature, feature_type)
+                        elif feature_type == feature_gen.PROVIDER:
+                            feature_info_list = [i for i in list(feature_info) if i]
+                            assert len(feature_info_list) > 0
+                            provider_cont = random.choice(feature_info_list)
+                            component_modif.insert(provider_cont, feature_type)
                         elif feature_type == feature_gen.PERMISSION:
-                            new_manifest_tree = xml_manip.insert_elem_manifest(manifest_tree, "uses-permission",
-                                                                               feature)
-                            xml_manip.dump_xml(os.path.join(dst_file, "AndroidManifest.xml"),
-                                               new_manifest_tree)
+                            permission_modif.insert(feature, feature_gen.PERMISSION)
                         elif feature_type == feature_gen.HARDWARE:
-                            new_manifest_tree = xml_manip.insert_elem_manifest(manifest_tree, "uses-feature",
-                                                                               feature)
-                            xml_manip.dump_xml(os.path.join(dst_file, "AndroidManifest.xml"),
-                                               new_manifest_tree)
+                            permission_modif.insert(feature, feature_gen.HARDWARE)
+                        elif feature_type == feature_gen.INTENT:
+                            component_type = 'activity'
+                            feature_info_list = [i for i in list(feature_info) if i]
+                            if len(feature_info_list) > 0:
+                                component_type = feature_info_list[0].split(feature_gen.TAG_SPLITTER)[0]
+                            intent_modif.insert(feature, component_type)
                         elif feature_type == feature_gen.SYS_API:
                             if len(methods) <= 0:
                                 warnings.warn("No space for method injection.")
@@ -623,3 +631,205 @@ def insert_api(api_name, method_location):
                 print(
                     '    ' + invoke_static + ' {}, ' + class_name + '->' + new_method_name + '()V' + '\n')
     fh.close()
+
+
+class DroidCompModification:
+    """Modification for components"""
+
+    def __init__(self, disassembly_root):
+        self.disassembly_root = disassembly_root
+
+    def insert(self, specific_name, component_type):
+        """
+        Insert an component based on 'specfic_name' into manifest.xml file
+        """
+        if not isinstance(specific_name, str) and not os.path.isdir(self.disassembly_root):
+            raise TypeError("Type error: expect string but got {}.".format(type(specific_name)))
+
+        if '..' in specific_name:
+            specific_name = specific_name.split('..')[-1]
+            specific_name = '.' + specific_name
+        else:
+            specific_name = specific_name
+
+        manifest_tree = xml_manip.get_xmltree_by_ET(os.path.join(self.disassembly_root, MANIFEST))
+
+        if component_type != feature_gen.PROVIDER:
+            info, flag, new_manifest_tree = xml_manip.insert_comp_manifest(manifest_tree,
+                                                                           component_type,
+                                                                           specific_name,
+                                                                           mod_count=1)
+        else:
+            info, flag, new_manifest_tree = xml_manip.insert_provider_manifest(manifest_tree,
+                                                                               specific_name,
+                                                                               mod_count=1)
+
+        xml_manip.dump_xml(os.path.join(self.disassembly_root, MANIFEST), new_manifest_tree)
+        if flag:
+            logger.info(
+                "Component insertion: Successfully insert {} '{}' into '{}'/androidmanifest.xml".format(
+                    component_type,
+                    specific_name,
+                    os.path.basename(self.disassembly_root)))
+        else:
+            logger.warning(info)
+
+    def _rename_files(self, smali_paths, activity_name, new_activity_name):
+        for smali_path in smali_paths:
+            orginal_name = activity_name.split('.')[-1]
+            modified_name = new_activity_name.split('.')[-1]
+            if orginal_name in smali_path and \
+                    modified_name not in smali_path:
+                dex_manip.rename_smali_file(smali_path,
+                                            activity_name,
+                                            new_activity_name)
+
+    def _rename_folders(self, smali_dirs, activity_name, new_activity_name):
+        for smali_dir in smali_dirs:
+            if dex_manip.name2path(activity_name) in smali_dir or \
+                    os.path.dirname(dex_manip.name2path(activity_name)) in smali_dir:
+                dex_manip.rename_smali_dir(smali_dir,
+                                           activity_name,
+                                           new_activity_name)
+
+    def remove(self, specific_name, component_type):
+        """
+        change the denoted component name to a random string
+        mod_count = -1 indicates that all the corresponding elements will be changed
+        """
+
+        # step 1: modify the corresponding name in AndroidManifest.xml
+        if not isinstance(specific_name, str) and not os.path.exists(self.disassembly_root):
+            raise ValueError("Value error:")
+
+        # mod_count = -1 change name of all the specified components
+        manifest_tree = xml_manip.get_xmltree_by_ET(os.path.join(self.disassembly_root, MANIFEST))
+        if '..' in specific_name:
+            specific_name = specific_name.split('..')[-1]
+            specific_name = '.' + specific_name
+        elif '.' in specific_name:
+            name_rear = specific_name.rsplit('.', 1)[-1]
+            if xml_manip.check_comp_name(manifest_tree, component_type, specific_name):
+                specific_name = specific_name
+            elif xml_manip.check_comp_name(manifest_tree, component_type, name_rear):
+                specific_name = name_rear
+            else:
+                pass
+        else:
+            pass
+
+        info, flag, new_comp_name, new_manifest_tree = xml_manip.rename_comp_manifest(manifest_tree,
+                                                                                      component_type,
+                                                                                      specific_name)
+        xml_manip.dump_xml(os.path.join(self.disassembly_root, MANIFEST), new_manifest_tree)
+
+        if flag:
+            logger.info(
+                "'{}' name changing: Successfully change name '{}' to '{}' of '{}'/androidmanifest.xml".format(
+                    component_type,
+                    specific_name,
+                    new_comp_name,
+                    os.path.basename(self.disassembly_root)
+                ))
+        else:
+            logger.warning(info + ": {}/androidmanifest.xml".format(os.path.basename(self.disassembly_root)))
+
+        # step 2: modify .smali files accordingly
+        package_name = manifest_tree.getroot().get('package')
+        smali_paths = dex_manip.get_smali_paths(self.disassembly_root)
+        related_smali_paths = set(dex_manip.find_smali_w_name(smali_paths, specific_name))
+        dex_manip.change_source_name(related_smali_paths, specific_name, new_comp_name)
+        changed_class_names = set(dex_manip.change_class_name(related_smali_paths,
+                                                              specific_name,
+                                                              new_comp_name,
+                                                              package_name))
+
+        # Change class instantiation
+        if len(changed_class_names) > 0:
+            dex_manip.change_instantition_name(smali_paths,
+                                               changed_class_names,
+                                               specific_name,
+                                               new_comp_name,
+                                               package_name)
+
+        # step 3: modify all .xml files accordingly
+        # if len(changed_class_names) > 0:
+        #     xml_paths = xml_manip.get_xml_paths(self.disassembly_root)
+        #     xml_manip.change_xml(xml_paths, changed_class_names,
+        #                          specific_name, new_comp_name, package_name)
+
+        # step 3: modify folder and file names
+        self._rename_files(smali_paths, specific_name, new_comp_name)
+
+        logger.info("'{}' name changing: Successfully done '{}'".format(
+            component_type,
+            specific_name))
+
+
+class DroidPermModification(object):
+    """Modification for permission and hardware"""
+
+    def __init__(self, disassembly_root):
+        self.disassembly_root = disassembly_root
+
+    def insert(self, specific_name, feature_type):
+        '''Insert a permission of 'specfic_name' into manifest.xml file'''
+        if feature_type == feature_gen.PERMISSION:
+            feature_type = 'uses-permission'
+        elif feature_type == feature_gen.HARDWARE:
+            feature_type = 'uses-feature'
+        else:
+            raise ValueError("Expected '{}' \& '{}', but got '{}'".format(feature_gen.PERMISSION,
+                                                                          feature_gen.HARDWARE,
+                                                                          feature_type))
+
+        manifest_tree = xml_manip.get_xmltree_by_ET(os.path.join(self.disassembly_root, MANIFEST))
+
+        info, flag, new_manifest_tree = xml_manip.insert_perm_manifest(manifest_tree,
+                                                                       feature_type,
+                                                                       specific_name,
+                                                                       mod_count=1)
+
+        xml_manip.dump_xml(os.path.join(self.disassembly_root, MANIFEST), new_manifest_tree)
+
+        if flag:
+            logger.info(
+                'Permission insertion: Successfully insert \'{}\' into \'{}/androidmanifest.xml\''.format(
+                    specific_name,
+                    os.path.basename(self.disassembly_root)))
+        else:
+            logger.warning(info)
+
+    def remove(self, elem_name):
+        raise NotImplementedError("Risk the functionality.")
+
+
+class DroidIntentModification(object):
+    def __init__(self, disassembly_root):
+        self.disassembly_root = disassembly_root
+
+    def insert(self, specific_name, component_type='activity'):
+        """
+        Insert an intent-filter of 'specfic_name' into AndroidManifest.xml file
+        """
+        if not isinstance(specific_name, str) and not os.path.isdir(self.disassembly_root):
+            raise ValueError("Value error: require str type of variables.")
+
+        manifest_tree = xml_manip.get_xmltree_by_ET(os.path.join(self.disassembly_root, MANIFEST))
+
+        info, flag, new_manifest_tree = xml_manip.insert_intent_manifest(manifest_tree,
+                                                                         component_type,
+                                                                         specific_name,
+                                                                         mod_count=1)
+        xml_manip.dump_xml(os.path.join(self.disassembly_root, MANIFEST), new_manifest_tree)
+
+        if flag:
+            logger.info(
+                "intent-filter insertion: Successfully insert intent-filter '{}' into '{}'/androidmanifest.xml".format(
+                    specific_name,
+                    os.path.basename(self.disassembly_root)))
+        else:
+            logger.error(info)
+
+    def remove(self, elem_name, mod_count=1):
+        raise NotImplementedError
