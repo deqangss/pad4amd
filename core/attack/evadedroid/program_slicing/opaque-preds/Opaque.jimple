@@ -1,0 +1,98 @@
+public class Opaque
+{
+    public void <init>()
+    {
+        Opaque r0;
+
+        r0 := @this: Opaque;
+
+        specialinvoke r0.<java.lang.Object: void <init>()>();
+
+        return;
+    }
+
+    static void opaque()
+    {
+        java.util.Random $r0, r1;
+        boolean[] r2;
+        int $i0, $i2, i3, i4, i5, i6;
+        double $d0;
+        byte $b1;
+        java.io.PrintStream $r3;
+        boolean $z0, $z1, z2, z3;
+
+        $r0 = new java.util.Random;
+
+        specialinvoke $r0.<java.util.Random: void <init>()>();
+
+        r1 = $r0;
+
+        r2 = newarray (boolean)[40];
+
+        i4 = 0;
+
+     label1:
+        $i0 = lengthof r2;
+
+        if i4 >= $i0 goto label2;
+
+        $z1 = virtualinvoke r1.<java.util.Random: boolean nextBoolean()>();
+
+        r2[i4] = $z1;
+
+        i4 = i4 + 1;
+
+        goto label1;
+
+     label2:
+        z2 = 1;
+
+        i5 = 0;
+
+     label3:
+        $d0 = (double) i5;
+
+        $b1 = $d0 cmpg 184.0;
+
+        if $b1 >= 0 goto label7;
+
+        z3 = 0;
+
+        i6 = 0;
+
+     label4:
+        if i6 >= 3 goto label5;
+
+        $i2 = lengthof r2;
+
+        i3 = virtualinvoke r1.<java.util.Random: int nextInt(int)>($i2);
+
+        $z0 = r2[i3];
+
+        z3 = z3 | $z0;
+
+        i6 = i6 + 1;
+
+        goto label4;
+
+     label5:
+        if z3 != 0 goto label6;
+
+        z2 = 0;
+
+     label6:
+        i5 = i5 + 1;
+
+        goto label3;
+
+     label7:
+        if z2 == 0 goto label8;
+
+        $r3 = <java.lang.System: java.io.PrintStream out>;
+
+        virtualinvoke $r3.<java.io.PrintStream: void println(java.lang.String)>("opaque");
+
+     label8:
+        return;
+    }
+}
