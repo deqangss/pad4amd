@@ -19,8 +19,8 @@ import os
 import shutil
 import tempfile
 from tqdm import tqdm
-import core.attack.evadedroid.utils as utils
-import core.attack.evadedroid.drebin.drebin as drebin
+from core.attack.evadedroid import utils as utils
+from core.attack.evadedroid.drebin import drebin as drebin
 from core.attack.evadedroid.settings import config as evadedroid_config
 from core.attack.evadedroid.utils import blue, green, cyan, magenta, yellow
 
