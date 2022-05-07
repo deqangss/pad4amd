@@ -145,6 +145,11 @@ def insert_elem_manifest(manifest_ET_tree, elem_type, elem_spec_name, mod_count=
     return manifest_ET_tree
 
 
+def get_package_name(manifest_path):
+    manifest_tree = get_xmltree_by_ET(manifest_path)
+    return manifest_tree.getroot().get('package')
+
+
 def dump_xml(save_path, et_tree):
     try:
         if os.path.isfile(save_path):

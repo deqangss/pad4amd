@@ -117,7 +117,7 @@ EMPTY_SERVICE_BODY = '''.class public L{fullClassName}
     .locals 0
 
     .line 8
-    invoke-direct {p0}, Landroid/app/Service;-><init>()V
+    invoke-direct {{p0}}, Landroid/app/Service;-><init>()V
 
     .line 9
     return-void
@@ -138,6 +138,23 @@ EMPTY_SERVICE_BODY = '''.class public L{fullClassName}
     throw v0
 .end method
 
+'''
+
+PROVIDER_TEMPLATE = '''.class public {ProviderCLS}
+.super Landroid/content/ContentProvider;
+.source "{CLSName}.java"
+
+
+# direct methods
+.method public constructor <init>()V
+    .locals 1
+
+    .prologue
+    .line 3
+    invoke-direct {{p0}}, Ljava/lang/Object;-><init>()V
+
+    return-void
+.end method
 '''
 
 
@@ -287,6 +304,25 @@ class InverseDroidFeature(object):
                             assert len(feature_info_list) > 0
                             provider_cont = random.choice(feature_info_list)
                             component_modif.insert(provider_cont, feature_type)
+                            # get full name and source file name
+                            if feature.startswith('.'):
+                                cls_full_name = xml_manip.get_package_name(os.path.join(dst_file, MANIFEST)) + feature
+                                jv_src_name = feature.rstrip('.')
+                            elif '.' not in feature:
+                                cls_full_name = xml_manip.get_package_name(
+                                    os.path.join(dst_file, MANIFEST)) + '.' + feature
+                                jv_src_name = feature
+                            elif '.' in feature.rstrip('.'):
+                                cls_full_name = feature
+                                jv_src_name = feature.rsplit('.', 1)[-1]
+                            else:
+                                raise ValueError("Un-support the provider '{}'".format(feature))
+                            obs_path = dst_file + '/smali/' + dex_manip.name2path(cls_full_name) + '.smali'
+                            os.makedirs(os.path.dirname(obs_path), exist_ok=True)
+                            provider_cls = PROVIDER_TEMPLATE.format(
+                                ProviderCLS=xml_manip.java_class_name2smali_name(cls_full_name),
+                                CLSName=jv_src_name)
+                            dex_manip.write_whole_file(provider_cls, obs_path)
                         elif feature_type == feature_gen.PERMISSION:
                             permission_modif.insert(feature, feature_gen.PERMISSION)
                         elif feature_type == feature_gen.HARDWARE:
@@ -361,7 +397,6 @@ def remove_api(api_name, disassemble_dir):
                                                                  caller_class_name.lstrip('L').rstrip(';') + '.smali'))
             continue
         method_finder_flag = False
-        # note: owing to the inplace 'print', do not use std.out operation again until the following file is closed
         fh = dex_manip.read_file_by_fileinput(smali_path_of_class, inplace=True)
         for line in fh:
             if line.strip() == caller_method_statement:
@@ -381,8 +416,14 @@ def remove_api(api_name, disassemble_dir):
                     invoked_mth_name = invoke_match.group('invokeMethod')
                     invoked_cls_name = invoke_match.group('invokeObject')
                     if (invoked_mth_name == api_name.split('->')[1]) and (invoked_cls_name in api_class_set):
+                        # ivk_type + ivk_object + ivk_method + ivk_argument + ivk_return
                         cur_api_name = invoke_match.group('invokeObject') + '->' + invoke_match.group('invokeMethod')
-                        new_file_name = 'Ref' + dex_manip.random_name(seed=int(time.time()), code=cur_api_name)
+                        new_file_name = 'Ref' + dex_manip.random_name(seed=int(time.time()),
+                                                                      code=invoke_match.group(
+                                                                          'invokeType') + cur_api_name + \
+                                                                           invoke_match.group(
+                                                                               'invokeArgument') + invoke_match.group(
+                                                                          'invokeReturn'))
                         new_class_name = 'L' + DEFAULT_SMALI_DIR + new_file_name + ';'
                         ref_class_body = REFLECTION_TEMPLATE.replace('MethodReflection', new_file_name)
                         ref_class_body = dex_manip.change_invoke_by_ref(new_class_name,
