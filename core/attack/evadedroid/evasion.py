@@ -9,10 +9,10 @@ import glob
 import random
 import pickle
 
-import core.attack.evadedroid.evadedroid_sample as Sample
-import core.attack.evadedroid.program_slicing.transformation.inpatients as inpatients
-import core.attack.evadedroid.program_slicing.transformation.injection as injection
-import core.attack.evadedroid.drebin.drebin as drebin
+from core.attack.evadedroid import evadedroid_sample as Sample
+from core.attack.evadedroid.program_slicing.transformation import inpatients as inpatients
+from core.attack.evadedroid.program_slicing.transformation import injection as injection
+from core.attack.evadedroid.drebin import drebin as drebin
 from core.attack.evadedroid import utils
 from core.attack.evadedroid.utils import green, blue
 from core.attack.evadedroid.settings import config as evadedroid_config

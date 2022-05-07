@@ -12,7 +12,7 @@ import logging
 import pickle
 from core.attack.evadedroid.settings import config as evadedroid_config
 import os
-import core.attack.evadedroid.utils as utils
+from core.attack.evadedroid import utils as utils
 from core.attack.evadedroid.utils import yellow, green, blue
 from pprint import pformat
 

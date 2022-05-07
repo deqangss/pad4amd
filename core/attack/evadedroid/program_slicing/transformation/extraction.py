@@ -13,9 +13,9 @@ from timeit import default_timer as timer
 import os
 import shutil
 import tempfile
-import core.attack.evadedroid.program_slicing.transformation.inpatients as inpatients
-import core.attack.evadedroid.drebin.drebin as drebin
-import core.attack.evadedroid.utils as utils
+from core.attack.evadedroid.program_slicing.transformation import inpatients as inpatients
+from core.attack.evadedroid.drebin import drebin as drebin
+from core.attack.evadedroid import utils as utils
 from core.attack.evadedroid.settings import config as evadedroid_config
 from core.attack.evadedroid.utils import yellow, blue, green, red
 from itertools import repeat
