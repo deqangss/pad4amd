@@ -81,7 +81,7 @@ class PGD(BaseAttack):
         #     round_threshold = torch.rand(x.size()).to(self.device)
         # else:
         round_threshold = self.round_threshold
-        print(torch.count_nonzero(torch.abs(adv_x - x)))
+        print(lambda_, torch.count_nonzero(torch.abs(adv_x - x), dim=-1))
         return round_x(adv_x, round_threshold)
 
     def perturb(self, model, x, label=None,
