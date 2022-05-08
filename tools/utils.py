@@ -367,7 +367,7 @@ def round_x(x, alpha=0.5):
     :param alpha: threshold parameter
     :return: a double tensor of 0s and 1s.
     """
-    return (x > alpha).double()
+    return (x >= alpha).double()
 
 
 def get_x0(x, rounding_threshold=0.5, is_sample=False):
