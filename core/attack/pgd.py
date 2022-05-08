@@ -116,7 +116,6 @@ class PGD(BaseAttack):
                                    )
             adv_x[~done] = pert_x
             self.lambda_ *= base
-        print(torch.count_nonzero(torch.abs(adv_x - x), dim=-1))
         with torch.no_grad():
             _, done = self.get_loss(model, adv_x, label, self.lambda_)
             if verbose:
