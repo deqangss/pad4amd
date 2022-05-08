@@ -110,9 +110,10 @@ class AMalwareDetectionPAD(object):
                 # 2. data for classifier
                 mal_x_batch, ben_x_batch, mal_y_batch, ben_y_batch, null_flag = \
                     utils.get_mal_ben_data(x_batch, y_batch)
-                ben_batch_noises = torch.clamp(
-                    ben_x_batch + utils.psn(ben_x_batch, np.maximum(np.random.uniform(0.9999, 1.), 0.9999)),
-                    min=0., max=1.)
+                # ben_batch_noises = torch.clamp(
+                #     ben_x_batch + utils.psn(ben_x_batch, np.maximum(np.random.uniform(0.9999, 1.), 0.9999)),
+                #     min=0., max=1.)
+                ben_batch_noises = ben_x_batch
                 if null_flag:
                     continue
                 start_time = time.time()
