@@ -182,6 +182,7 @@ class AMalwareDetectionPAD(object):
                 self.model.get_threshold(validation_data_producer)
             # select model
             self.model.eval()
+            self.attack.is_attacker = True
             # long-time to train (save the model temporally in case of interruption)
             self.save_to_disk(i + 1, optimizer, self.model_save_path + '.tmp')
 
@@ -212,7 +213,7 @@ class AMalwareDetectionPAD(object):
                                                   max_lambda_=lmda_upper_bound,
                                                   **self.attack_param
                                                   )
-                pertb_mal_x = utils.round_x(pertb_mal_x, alpha=0.5)
+                # pertb_mal_x = utils.round_x(pertb_mal_x, alpha=0.5)
                 y_cent_batch, x_density_batch = self.model.inference_batch_wise(pertb_mal_x)
                 if hasattr(self.model, 'indicator'):
                     indicator_flag = self.model.indicator(x_density_batch)
@@ -231,7 +232,7 @@ class AMalwareDetectionPAD(object):
                 acc_val_adv_be = acc_val_adv
                 best_epoch = i + 1
                 self.save_to_disk(best_epoch, optimizer, self.model_save_path)
-
+            self.attack.is_attacker = False
             if verbose:
                 logger.info(
                     f"\tVal accuracy {acc_val * 100:.4}% with accuracy {acc_val_adv * 100:.4}% under attack.")
