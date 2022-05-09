@@ -189,15 +189,13 @@ class StepwiseMax(BaseAttack):
             else:
                 raise NotImplementedError
 
-        adv_x_linf, adv_x_l2, adv_x_l1 = adv_x.clone(), adv_x.clone(), adv_x.clone()
+        adv_x_linf = adv_x.clone()
         for t in range(steps):
             adv_x_linf = one_iteration(adv_x_linf, norm_type='linf')
+        adv_x_l2 = adv_x.clone()
+        for t in range(steps):
             adv_x_l2 = one_iteration(adv_x_l2, norm_type='l2')
+        adv_x_l1 = adv_x.clone()
+        for t in range(steps):
             adv_x_l1 = one_iteration(adv_x_l1, norm_type='l1')
-        # adv_x_l2 = adv_x.clone()
-        # for t in range(steps):
-        #     adv_x_l2 = one_iteration(adv_x_l2, norm_type='l2')
-        # adv_x_l1 = adv_x.clone()
-        # for t in range(steps):
-        #     adv_x_l1 = one_iteration(adv_x_l1, norm_type='l1')
         return adv_x_linf, adv_x_l2, adv_x_l1
