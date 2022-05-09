@@ -77,12 +77,12 @@ class PGD(BaseAttack):
             perturbation = self.get_perturbation(grad, x, adv_x)
             adv_x = torch.clamp(adv_x + perturbation * step_length, min=0., max=1.)
         # round
-        # if self.norm == 'linf' and (not hasattr(model, 'is_detector_enabled')):
-        #     round_threshold = torch.rand(x.size()).to(self.device)
-        # else:
-        #     round_threshold = self.round_threshold
-        # return round_x(adv_x, round_threshold)
-        return adv_x
+        if self.norm == 'linf' and (not hasattr(model, 'is_detector_enabled')):
+            round_threshold = torch.rand(x.size()).to(self.device)
+        else:
+            round_threshold = self.round_threshold
+        return round_x(adv_x, round_threshold)
+
 
     def perturb(self, model, x, label=None,
                 steps=10,
