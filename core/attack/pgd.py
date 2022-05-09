@@ -82,7 +82,6 @@ class PGD(BaseAttack):
         else:
             round_threshold = self.round_threshold
         return round_x(adv_x, round_threshold)
-        return adv_x
 
     def perturb(self, model, x, label=None,
                 steps=10,
