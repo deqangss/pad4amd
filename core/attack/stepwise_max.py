@@ -105,10 +105,10 @@ class StepwiseMax(BaseAttack):
                 break
         if self.is_attacker:
             adv_x = round_x(adv_x, self.round_threshold)
-            with torch.no_grad():
-                _, done = self.get_loss(model, adv_x, label, self.lambda_)
-                if verbose:
-                    logger.info(f"step-wise max: attack effectiveness {done.sum().item() / done.size()[0] * 100:.3f}%.")
+        with torch.no_grad():
+            _, done = self.get_loss(model, adv_x, label, self.lambda_)
+            if verbose:
+                logger.info(f"step-wise max: attack effectiveness {done.sum().item() / done.size()[0] * 100:.3f}%.")
         return adv_x
 
     def _perturb(self, model, x, label=None,
