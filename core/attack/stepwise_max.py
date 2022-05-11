@@ -99,6 +99,7 @@ class StepwiseMax(BaseAttack):
                     pertbx = pertbx.reshape(n_attacks, num_sample_red, *red_n).permute([1, 0, *red_ind])
                     scores = scores.reshape(n_attacks, num_sample_red).permute(1, 0)
                     _, s_idx = scores.max(dim=-1)
+                    print(s_idx)
                     pert_x_cont = pertbx[torch.arange(num_sample_red), s_idx]
                     adv_x[~done] = pert_x_cont
             self.lambda_ *= base
@@ -106,6 +107,7 @@ class StepwiseMax(BaseAttack):
                 break
         if self.is_attacker:
             adv_x = round_x(adv_x, self.round_threshold)
+            print(torch.sum(torch.abs(adv_x - x) > 0, dim=-1))
             with torch.no_grad():
                 _, done = self.get_loss(model, adv_x, label, self.lambda_)
                 if verbose:
