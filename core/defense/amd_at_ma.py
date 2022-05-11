@@ -144,8 +144,8 @@ class AMalwareDetectionPAD(object):
                 correct_clf = logits_f[-n_mal:].argmax(1) == y_batch[-n_mal:]
                 adv_mal = x_batch[-n_mal:][correct_clf]
                 x_batch_ = torch.cat([x_batch_, adv_mal], dim=0)
-                y_batch_ = torch.cat([y_batch_, torch.ones((adv_mal.shape[0],), )]).to(
-                    self.model.device).double()
+                y_batch_ = torch.cat([y_batch_, torch.ones((adv_mal.shape[0],), ).to(
+                    self.model.device)]).double()
                 logits_g = self.model.forward_g(x_batch_)
                 loss_train = self.model.customize_loss(logits_f[:batch_size],
                                                        y_batch[:batch_size],
