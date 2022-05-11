@@ -49,6 +49,7 @@ class AMalwareDetectionPAD(object):
             beta=0.001,
             lmda_lower_bound=1e-3,
             lmda_upper_bound=1e3,
+            use_continuous_pert=True,
             granularity=1,
             lr=0.005,
             weight_decay=5e-0, verbose=True):
@@ -64,6 +65,7 @@ class AMalwareDetectionPAD(object):
         @param beta: Float, penalty factor for adversarial loss
         @param lmda_lower_bound: Float, lower boundary of penalty factor
         @param lmda_upper_bound: Float, upper boundary of penalty factor
+        @param use_continuous_pert: Boolean, whether use continuous perturbations or not
         @param granularity: Integer, 10^base exp-space between penalty factors
         @param lr: Float, learning rate of Adam optimizer
         @param weight_decay: Float, penalty factor, default value 5e-4 in Graph ATtention layer (GAT)
@@ -129,10 +131,16 @@ class AMalwareDetectionPAD(object):
                                                   )
                 disc_pertb_mal_x_ = utils.round_x(pertb_mal_x, 0.5)
                 total_time += time.time() - start_time
-                x_batch_ = torch.cat([x_batch_, pertb_mal_x], dim=0).double()
-                y_batch_ = torch.cat([y_batch_, torch.ones(pertb_mal_x.shape[:1]).to(
-                    self.model.device)]).double()
-                x_batch = torch.cat([x_batch, ben_batch_noises, disc_pertb_mal_x_], dim=0)
+                if use_continuous_pert:
+                    x_batch_ = torch.cat([x_batch_, pertb_mal_x], dim=0).double()
+                    y_batch_ = torch.cat([y_batch_, torch.ones(pertb_mal_x.shape[:1]).to(
+                        self.model.device)]).double()
+                    x_batch = torch.cat([x_batch, ben_batch_noises, pertb_mal_x], dim=0)
+                else:
+                    x_batch_ = torch.cat([x_batch_, disc_pertb_mal_x_], dim=0).double()
+                    y_batch_ = torch.cat([y_batch_, torch.ones(disc_pertb_mal_x_.shape[:1]).to(
+                        self.model.device)]).double()
+                    x_batch = torch.cat([x_batch, ben_batch_noises, disc_pertb_mal_x_], dim=0)
                 y_batch = torch.cat([y_batch, ben_y_batch, mal_y_batch])
                 start_time = time.time()
                 self.model.train()

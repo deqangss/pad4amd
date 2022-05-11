@@ -32,6 +32,8 @@ max_adv_argparse.add_argument('--random_start', action='store_true', default=Fal
                               help='randomly initialize the start points.')
 max_adv_argparse.add_argument('--round_threshold', type=float, default=0.5,
                               help='threshold for rounding real scalars at the initialization step.')
+max_adv_argparse.add_argument('--use_cont_pertb', action='store_true', default=False,
+                              help='whether use the continuous perturbations for adversarial training.')
 
 
 def _main():
@@ -118,6 +120,7 @@ def _main():
                                    epochs=5,
                                    adv_epochs=args.epochs - 5,
                                    beta=args.beta,
+                                   use_continuous_pert=args.use_cont_pertb,
                                    lr=args.lr,
                                    weight_decay=args.weight_decay
                                    )
