@@ -112,12 +112,13 @@ class AMalwareDetectionPAD(object):
                 # 2. data for classifier
                 mal_x_batch, ben_x_batch, mal_y_batch, ben_y_batch, null_flag = \
                     utils.get_mal_ben_data(x_batch, y_batch)
+                if null_flag:
+                    continue
+                n_mal = mal_x_batch.shape[0]
                 # ben_batch_noises = torch.clamp(
                 #     ben_x_batch + utils.psn(ben_x_batch, np.maximum(np.random.uniform(0.9999, 1.), 0.9999)),
                 #     min=0., max=1.)
                 ben_batch_noises = ben_x_batch
-                if null_flag:
-                    continue
                 start_time = time.time()
                 # the attack perturbs feature vectors using various hyper-parameter lambda, aiming to obtain
                 # adversarial examples as much as possible
@@ -132,20 +133,19 @@ class AMalwareDetectionPAD(object):
                 disc_pertb_mal_x_ = utils.round_x(pertb_mal_x, 0.5)
                 total_time += time.time() - start_time
                 if use_continuous_pert:
-                    x_batch_ = torch.cat([x_batch_, pertb_mal_x], dim=0).double()
-                    y_batch_ = torch.cat([y_batch_, torch.ones(pertb_mal_x.shape[:1]).to(
-                        self.model.device)]).double()
                     x_batch = torch.cat([x_batch, ben_batch_noises, pertb_mal_x], dim=0)
                 else:
-                    x_batch_ = torch.cat([x_batch_, disc_pertb_mal_x_], dim=0).double()
-                    y_batch_ = torch.cat([y_batch_, torch.ones(disc_pertb_mal_x_.shape[:1]).to(
-                        self.model.device)]).double()
                     x_batch = torch.cat([x_batch, ben_batch_noises, disc_pertb_mal_x_], dim=0)
                 y_batch = torch.cat([y_batch, ben_y_batch, mal_y_batch])
                 start_time = time.time()
                 self.model.train()
                 optimizer.zero_grad()
                 logits_f = self.model.forward_f(x_batch)
+                correct_clf = logits_f[-n_mal:].argmax(1) == y_batch[-n_mal:]
+                adv_mal = x_batch[-n_mal:][correct_clf]
+                x_batch_ = torch.cat([x_batch_, adv_mal], dim=0)
+                y_batch_ = torch.cat([y_batch_, torch.ones((adv_mal.shape[0],), )]).to(
+                    self.model.device).double()
                 logits_g = self.model.forward_g(x_batch_)
                 loss_train = self.model.customize_loss(logits_f[:batch_size],
                                                        y_batch[:batch_size],
@@ -221,7 +221,6 @@ class AMalwareDetectionPAD(object):
                                                   max_lambda_=lmda_upper_bound,
                                                   **self.attack_param
                                                   )
-                # pertb_mal_x = utils.round_x(pertb_mal_x, alpha=0.5)
                 y_cent_batch, x_density_batch = self.model.inference_batch_wise(pertb_mal_x)
                 if hasattr(self.model, 'indicator'):
                     indicator_flag = self.model.indicator(x_density_batch)
