@@ -141,7 +141,7 @@ class BaseAttack(Module):
             done = y_pred != label
         return loss_no_reduction, done
 
-    def get_scores(self, model, pertb_x, label):
+    def get_scores(self, model, pertb_x, label, lmda=1.):
         if hasattr(model, 'is_detector_enabled'):
             logits_f, prob_g = model.forward(pertb_x)
         else:
@@ -149,7 +149,7 @@ class BaseAttack(Module):
 
         ce = F.cross_entropy(logits_f, label, reduction='none')
         if hasattr(model, 'is_detector_enabled') and (not self.oblivion):
-            loss_no_reduction = ce - prob_g
+            loss_no_reduction = ce - lmda * prob_g
         else:
             loss_no_reduction = ce
         return loss_no_reduction
