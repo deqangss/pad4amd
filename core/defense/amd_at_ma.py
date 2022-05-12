@@ -144,7 +144,7 @@ class AMalwareDetectionPAD(object):
                     x_batch = torch.cat([x_batch, ben_batch_noises, disc_pertb_mal_x_], dim=0)
                     x_batch_ = torch.cat([x_batch_, disc_pertb_mal_x_], dim=0)
                     n_pertb_mal = disc_pertb_mal_x_.shape[0]
-                print('n pertb malware:', n_pertb_mal)
+                print('n pertb malware:', n_pertb_mal, len(mal_y_batch))
                 y_batch = torch.cat([y_batch, ben_y_batch, mal_y_batch[~filter_flag]])
                 y_batch_ = torch.cat([y_batch_, torch.ones((n_pertb_mal,), ).to(
                     self.model.device)]).double()
