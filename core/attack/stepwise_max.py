@@ -103,6 +103,8 @@ class StepwiseMax(BaseAttack):
                     pert_x_cont = pertbx[torch.arange(num_sample_red), s_idx]
                     adv_x[~done] = pert_x_cont
             self.lambda_ *= base
+            import sys
+            sys.exit(1)
             if not self.check_lambda(model):
                 break
         if self.is_attacker:
