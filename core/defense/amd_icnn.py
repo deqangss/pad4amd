@@ -268,8 +268,12 @@ class AdvMalwareDetectorICNN(nn.Module, DetectorTemplate):
             self.tau[0] = s[i]
 
     def customize_loss(self, logits_x, labels, logits_adv_x, labels_adv):
-        G = F.binary_cross_entropy_with_logits(logits_adv_x, labels_adv)
-        F_ = F.cross_entropy(logits_x, labels)
+        G = 0
+        if logits_adv_x is not None and len(logits_adv_x) > 0:
+            G = F.binary_cross_entropy_with_logits(logits_adv_x, labels_adv)
+        F_ = 0
+        if logits_x is not None and len(logits_x) > 0:
+            F_ = F.cross_entropy(logits_x, labels)
         return F_ + G
 
     def fit(self, train_data_producer, validation_data_producer, epochs=100, lr=0.005, weight_decay=0., verbose=True):
