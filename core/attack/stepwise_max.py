@@ -92,22 +92,21 @@ class StepwiseMax(BaseAttack):
                                                                   )
                 with torch.no_grad():
                     pertb_x_list = [pert_x_linf, pert_x_l2, pert_x_l1]
-                    print(torch.sum(torch.abs(pert_x_linf-x[~done]), dim=-1))
-                    print(torch.sum(torch.abs(pert_x_l2 - x[~done]), dim=-1))
-                    print(torch.sum(torch.abs(pert_x_l1 - x[~done]), dim=-1))
+                    # print(torch.sum(torch.abs(pert_x_linf-x[~done]), dim=-1))
+                    # print(torch.sum(torch.abs(pert_x_l2 - x[~done]), dim=-1))
+                    # print(torch.sum(torch.abs(pert_x_l1 - x[~done]), dim=-1))
                     n_attacks = len(pertb_x_list)
                     pertbx = torch.vstack(pertb_x_list)
                     label_ext = torch.cat([label[~done]] * n_attacks)
                     scores = self.get_scores(model, pertbx, label_ext)
                     pertbx = pertbx.reshape(n_attacks, num_sample_red, *red_n).permute([1, 0, *red_ind])
                     scores = scores.reshape(n_attacks, num_sample_red).permute(1, 0)
-                    print(scores)
+                    print(self.lambda_, scores)
                     _, s_idx = scores.max(dim=-1)
                     pert_x_cont = pertbx[torch.arange(num_sample_red), s_idx]
                     adv_x[~done] = pert_x_cont
             self.lambda_ *= base
-            import sys
-            sys.exit(1)
+
             if not self.check_lambda(model):
                 break
         if self.is_attacker:
