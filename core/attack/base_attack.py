@@ -147,12 +147,9 @@ class BaseAttack(Module):
         else:
             logits_f = model.forward(pertb_x)
 
-        # n_mal = label.shape[0] // 3
-        # print("logits: ", logits_f[:n_mal], logits_f[n_mal:2 * n_mal], logits_f[-n_mal:])
-        # print('prob_g: ', prob_g[:n_mal], prob_g[n_mal: 2 * n_mal], prob_g[-n_mal:])
         ce = F.cross_entropy(logits_f, label, reduction='none')
         if hasattr(model, 'is_detector_enabled') and (not self.oblivion):
-            loss_no_reduction = ce
+            loss_no_reduction = ce - prob_g
         else:
             loss_no_reduction = ce
         return loss_no_reduction
