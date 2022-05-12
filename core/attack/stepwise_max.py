@@ -163,11 +163,8 @@ class StepwiseMax(BaseAttack):
                 grad4removal[:, self.api_flag] += torch.sum(grad * checking_nonexist_api, dim=-1, keepdim=True)
             grad = grad4removal + grad4insertion
 
-            print('grad:', norm_type, torch.sum(grad, dim=-1))
-
             if norm_type == 'linf':
                 perturbation = torch.sign(grad)
-                print('sign grad:', norm_type, torch.sum(perturbation, dim=-1))
                 if self.is_attacker:
                     perturbation += (torch.any(perturbation[:, self.api_flag] < 0, dim=-1,
                                                keepdim=True) * checking_nonexist_api)
