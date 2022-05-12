@@ -231,7 +231,7 @@ class OrthogonalStepwiseMax(StepwiseMax):
         ce = F.cross_entropy(logits_f, label, reduction='none')
         y_pred = logits_f.argmax(1)
         if not self.oblivion:
-            loss_no_reduction = ce - torch.sigmoid(prob_g)
+            loss_no_reduction = ce - prob_g
             done = (y_pred != label) & (prob_g <= model.get_tau_sample_wise(y_pred))
         else:
             loss_no_reduction = ce
