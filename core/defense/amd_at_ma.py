@@ -132,20 +132,18 @@ class AMalwareDetectionPAD(object):
                                                   )
                 disc_pertb_mal_x_ = utils.round_x(pertb_mal_x, 0.5)
                 total_time += time.time() - start_time
+                x_batch = torch.cat([x_batch, ben_batch_noises, disc_pertb_mal_x_], dim=0)
+                y_batch = torch.cat([y_batch, ben_y_batch, mal_y_batch])
                 if use_continuous_pert:
                     filter_flag = torch.sum(torch.abs(pertb_mal_x - mal_x_batch), dim=-1) <= 1e-6
                     pertb_mal_x = pertb_mal_x[~filter_flag]
-                    x_batch = torch.cat([x_batch, ben_batch_noises, pertb_mal_x], dim=0)
                     x_batch_ = torch.cat([x_batch_, pertb_mal_x], dim=0)
                     n_pertb_mal = pertb_mal_x.shape[0]
                 else:
                     filter_flag = torch.sum(torch.abs(disc_pertb_mal_x_ - mal_x_batch), dim=-1) == 0
                     disc_pertb_mal_x_ = disc_pertb_mal_x_[~filter_flag]
-                    x_batch = torch.cat([x_batch, ben_batch_noises, disc_pertb_mal_x_], dim=0)
                     x_batch_ = torch.cat([x_batch_, disc_pertb_mal_x_], dim=0)
                     n_pertb_mal = disc_pertb_mal_x_.shape[0]
-                print('n pertb malware:', n_pertb_mal, len(mal_y_batch))
-                y_batch = torch.cat([y_batch, ben_y_batch, mal_y_batch[~filter_flag]])
                 y_batch_ = torch.cat([y_batch_, torch.ones((n_pertb_mal,), ).to(
                     self.model.device)]).double()
                 start_time = time.time()
