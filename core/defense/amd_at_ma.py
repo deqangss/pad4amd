@@ -72,12 +72,12 @@ class AMalwareDetectionPAD(object):
         @param verbose: Boolean, whether to show verbose info
         """
         # normal training is used for obtaining the initial indicator g
-        logger.info("Normal training is starting...")
-        self.model.fit(train_data_producer,
-                       validation_data_producer,
-                       epochs=epochs,
-                       lr=lr,
-                       weight_decay=weight_decay)
+        # logger.info("Normal training is starting...")
+        # self.model.fit(train_data_producer,
+        #                validation_data_producer,
+        #                epochs=epochs,
+        #                lr=lr,
+        #                weight_decay=weight_decay)
         # get threshold tau
         if hasattr(self.model, 'tau'):
             self.model.get_threshold(validation_data_producer)
@@ -114,7 +114,6 @@ class AMalwareDetectionPAD(object):
                     utils.get_mal_ben_data(x_batch, y_batch)
                 if null_flag:
                     continue
-                n_mal = mal_x_batch.shape[0]
                 # ben_batch_noises = torch.clamp(
                 #     ben_x_batch + utils.psn(ben_x_batch, np.maximum(np.random.uniform(0.9999, 1.), 0.9999)),
                 #     min=0., max=1.)
