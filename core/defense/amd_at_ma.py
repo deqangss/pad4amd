@@ -72,12 +72,12 @@ class AMalwareDetectionPAD(object):
         @param verbose: Boolean, whether to show verbose info
         """
         # normal training is used for obtaining the initial indicator g
-        logger.info("Normal training is starting...")
-        self.model.fit(train_data_producer,
-                       validation_data_producer,
-                       epochs=epochs,
-                       lr=lr,
-                       weight_decay=weight_decay)
+        # logger.info("Normal training is starting...")
+        # self.model.fit(train_data_producer,
+        #                validation_data_producer,
+        #                epochs=epochs,
+        #                lr=lr,
+        #                weight_decay=weight_decay)
         # get threshold tau
         if hasattr(self.model, 'tau'):
             self.model.get_threshold(validation_data_producer)
@@ -106,9 +106,6 @@ class AMalwareDetectionPAD(object):
                 x_batch_ = torch.cat([x_batch, x_batch_noises], dim=0)
                 y_batch_ = torch.cat([torch.zeros(batch_size, ), torch.ones(batch_size, )]).long().to(
                     self.model.device)
-                idx = torch.randperm(y_batch_.shape[0])
-                x_batch_ = x_batch_[idx]
-                y_batch_ = y_batch_[idx]
                 # 2. data for classifier
                 mal_x_batch, ben_x_batch, mal_y_batch, ben_y_batch, null_flag = \
                     utils.get_mal_ben_data(x_batch, y_batch)
@@ -145,6 +142,9 @@ class AMalwareDetectionPAD(object):
                     n_pertb_mal = disc_pertb_mal_x_.shape[0]
                 y_batch_ = torch.cat([y_batch_, torch.ones((n_pertb_mal,), ).to(
                     self.model.device)]).double()
+                idx = torch.randperm(y_batch_.shape[0])
+                x_batch_ = x_batch_[idx]
+                y_batch_ = y_batch_[idx]
                 start_time = time.time()
                 self.model.train()
                 optimizer.zero_grad()
@@ -188,11 +188,11 @@ class AMalwareDetectionPAD(object):
                 logger.info(
                     f'Training loss (epoch level): {np.mean(losses):.4f} | Train accuracy: {np.mean(accuracies) * 100:.2f}')
 
+            # select model
+            self.model.eval()
             # get threshold tau
             if hasattr(self.model, 'tau'):
                 self.model.get_threshold(validation_data_producer)
-            # select model
-            self.model.eval()
             self.attack.is_attacker = True
             # long-time to train (save the model temporally in case of interruption)
             self.save_to_disk(i + 1, optimizer, self.model_save_path + '.tmp')
