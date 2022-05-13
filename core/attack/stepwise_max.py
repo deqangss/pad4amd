@@ -83,7 +83,7 @@ class StepwiseMax(BaseAttack):
                     prev_done = done
 
                 num_sample_red = torch.sum(~done).item()
-                pert_x_linf, pert_x_l2, pert_x_l1 = self._perturb(model, adv_x[~done], label[~done],
+                pert_x_l1, pert_x_l2, pert_x_linf = self._perturb(model, adv_x[~done], label[~done],
                                                                   mini_step,
                                                                   sl_l1,
                                                                   sl_l2,
@@ -91,7 +91,7 @@ class StepwiseMax(BaseAttack):
                                                                   lambda_=self.lambda_
                                                                   )
                 with torch.no_grad():
-                    pertb_x_list = [pert_x_linf, pert_x_l2, pert_x_l1]
+                    pertb_x_list = [pert_x_l1, pert_x_l2, pert_x_linf]
                     n_attacks = len(pertb_x_list)
                     pertbx = torch.vstack(pertb_x_list)
                     label_ext = torch.cat([label[~done]] * n_attacks)
@@ -189,13 +189,13 @@ class StepwiseMax(BaseAttack):
             else:
                 raise NotImplementedError
 
-        adv_x_linf = adv_x.clone()
-        for t in range(steps):
-            adv_x_linf = one_iteration(adv_x_linf, norm_type='linf')
-        adv_x_l2 = adv_x.clone()
-        for t in range(steps):
-            adv_x_l2 = one_iteration(adv_x_l2, norm_type='l2')
         adv_x_l1 = adv_x.clone()
         for t in range(steps):
             adv_x_l1 = one_iteration(adv_x_l1, norm_type='l1')
-        return adv_x_linf, adv_x_l2, adv_x_l1
+        adv_x_l2 = adv_x.clone()
+        for t in range(steps):
+            adv_x_l2 = one_iteration(adv_x_l2, norm_type='l2')
+        adv_x_linf = adv_x.clone()
+        for t in range(steps):
+            adv_x_linf = one_iteration(adv_x_linf, norm_type='linf')
+        return adv_x_l1, adv_x_l2, adv_x_linf
