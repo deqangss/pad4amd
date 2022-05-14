@@ -101,7 +101,7 @@ class AMalwareDetectionPAD(object):
                 batch_size = x_batch.shape[0]
                 # make data
                 # 1. add pepper and salt noises for adversary detector
-                x_batch_noises = torch.clamp(x_batch + utils.psn(x_batch, np.minimum(np.random.uniform(0, 0.5), 0.5)),
+                x_batch_noises = torch.clamp(x_batch + utils.psn(x_batch, np.minimum(np.random.uniform(0, 1.0), 0.5)),
                                              min=0., max=1.)
                 x_batch_ = torch.cat([x_batch, x_batch_noises], dim=0)
                 y_batch_ = torch.cat([torch.zeros(batch_size, ), torch.ones(batch_size, )]).long().to(
@@ -202,7 +202,7 @@ class AMalwareDetectionPAD(object):
             avg_acc_val = []
             for x_val, y_val in validation_data_producer:
                 x_val, y_val = utils.to_tensor(x_val.double(), y_val.long(), self.model.device)
-                x_val_noises = torch.clamp(x_val + utils.psn(x_val, np.minimum(np.random.uniform(0, 0.5), 0.5)),
+                x_val_noises = torch.clamp(x_val + utils.psn(x_val, np.minimum(np.random.uniform(0, 1.0), 0.5)),
                                            min=0., max=1.)
                 x_val_ = torch.cat([x_val, x_val_noises], dim=0)
                 y_val_ = torch.cat([torch.zeros(x_val.shape[:1]), torch.ones(x_val.shape[:1])]).long().to(
