@@ -114,6 +114,7 @@ def _main():
         raise NotImplementedError("Expected 'max' and 'stepwise_max'.")
 
     max_adv_training_model = AMalwareDetectionPAD(model, attack, attack_param)
+    max_adv_training_model.load()
     if args.mode == 'train':
         max_adv_training_model.fit(train_dataset_producer,
                                    val_dataset_producer,
