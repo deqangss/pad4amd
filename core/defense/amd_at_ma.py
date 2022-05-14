@@ -146,7 +146,7 @@ class AMalwareDetectionPAD(object):
                 y_batch_ = y_batch_[idx]
                 start_time = time.time()
                 self.model.train()
-                optimizer.zero_grad()
+                # optimizer.zero_grad()
                 logits_f = self.model.forward_f(x_batch)
                 logits_g = self.model.forward_g(x_batch_)
                 loss_train = self.model.customize_loss(logits_f[:batch_size],
@@ -158,8 +158,8 @@ class AMalwareDetectionPAD(object):
                                                                logits_g[2 * batch_size:],
                                                                y_batch_[2 * batch_size:])
 
-                loss_train.backward()
-                optimizer.step()
+                # loss_train.backward()
+                # optimizer.step()
                 # clamp
                 for name, module in self.model.named_modules():
                     if 'non_neg_layer' in name:
@@ -178,6 +178,7 @@ class AMalwareDetectionPAD(object):
                     acc_g_train = ((torch.sigmoid(logits_g) >= 0.5) == y_batch_).sum().item()
                     acc_g_train /= x_batch_.size()[0]
                     accuracies.append(acc_g_train)
+                    print('train acc:', acc_f_train, acc_g_train)
                     logger.info(
                         f'Training loss (batch level): {losses[-1]:.4f} | Train accuracy: {acc_f_train * 100:.2f}% & {acc_g_train * 100:.2f}%.')
                 else:
@@ -190,12 +191,11 @@ class AMalwareDetectionPAD(object):
             # get threshold tau
             if hasattr(self.model, 'tau'):
                 self.model.get_threshold(validation_data_producer)
+            # long-time to train (save the model temporally in case of interruption)
+            self.save_to_disk(i + 1, optimizer, self.model_save_path + '.tmp')
             # select model
             self.model.eval()
             self.attack.is_attacker = True
-            # long-time to train (save the model temporally in case of interruption)
-            self.save_to_disk(i + 1, optimizer, self.model_save_path + '.tmp')
-
             res_val = []
             avg_acc_val = []
             for x_val, y_val in validation_data_producer:
