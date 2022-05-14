@@ -114,7 +114,6 @@ def _main():
         raise NotImplementedError("Expected 'max' and 'stepwise_max'.")
 
     max_adv_training_model = AMalwareDetectionPAD(model, attack, attack_param)
-    max_adv_training_model.load()
     if args.mode == 'train':
         max_adv_training_model.fit(train_dataset_producer,
                                    val_dataset_producer,
@@ -131,6 +130,15 @@ def _main():
         dump_pickle(vars(args), path.join(path.dirname(max_adv_training_model.model_save_path), "hparam.pkl"))
     # test: accuracy
     max_adv_training_model.load()
+    max_adv_training_model.fit(train_dataset_producer,
+                               val_dataset_producer,
+                               epochs=5,
+                               adv_epochs=args.epochs - 5,
+                               beta=args.beta,
+                               use_continuous_pert=args.use_cont_pertb,
+                               lr=args.lr,
+                               weight_decay=args.weight_decay
+                               )
     max_adv_training_model.model.predict(test_dataset_producer)
 
     # attr_cls, attr_de = max_adv_training_model.model.get_important_attributes(test_dataset_producer)
