@@ -216,7 +216,6 @@ class AMalwareDetectionPAD(object):
                     acc_val_g = ((logits_g >= self.model.tau) == y_val_).sum().item()
                     acc_val_g /= x_val_.size()[0]
                     avg_acc_val.append(acc_val_g)
-                    print('acc:', acc_val, acc_val_g)
 
                 mal_x_batch, mal_y_batch, null_flag = utils.get_mal_data(x_val, y_val)
                 if null_flag:
