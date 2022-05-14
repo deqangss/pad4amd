@@ -105,6 +105,9 @@ class AMalwareDetectionPAD(object):
                 x_batch_ = torch.cat([x_batch, x_batch_noises], dim=0)
                 y_batch_ = torch.cat([torch.zeros(batch_size, ), torch.ones(batch_size, )]).long().to(
                     self.model.device)
+                idx = torch.randperm(y_batch_.shape[0])
+                x_batch_ = x_batch_[idx]
+                y_batch_ = y_batch_[idx]
                 # 2. data for classifier
                 mal_x_batch, ben_x_batch, mal_y_batch, ben_y_batch, null_flag = \
                     utils.get_mal_ben_data(x_batch, y_batch)
@@ -141,9 +144,6 @@ class AMalwareDetectionPAD(object):
                     n_pertb_mal = disc_pertb_mal_x_.shape[0]
                 y_batch_ = torch.cat([y_batch_, torch.ones((n_pertb_mal,), ).to(
                     self.model.device)]).double()
-                idx = torch.randperm(y_batch_.shape[0])
-                x_batch_ = x_batch_[idx]
-                y_batch_ = y_batch_[idx]
                 start_time = time.time()
                 self.model.train()
                 optimizer.zero_grad()
