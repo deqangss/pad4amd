@@ -103,6 +103,7 @@ class StepwiseMax(BaseAttack):
                     scores = scores.reshape(n_attacks, num_sample_red).permute(1, 0)
                     _, s_idx = scores.max(dim=-1)
                     pert_x_cont = pertbx[torch.arange(num_sample_red), s_idx]
+                    print('s2 cont:', torch.sum(torch.abs(pert_x_cont - x[~done]), dim=-1))
                     adv_x[~done] = pert_x_cont if not self.is_attacker else round_x(pert_x_cont, self.round_threshold)
                     print('s2:', torch.sum(torch.abs(adv_x - x), dim=-1))
             self.lambda_ *= base
