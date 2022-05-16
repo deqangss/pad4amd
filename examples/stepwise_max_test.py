@@ -193,7 +193,7 @@ def _main():
     if not os.path.exists(save_dir):
         utils.mkdir(save_dir)
     x_mod_integrated = np.concatenate(x_mod_integrated, axis=0)
-    success_flag = (y_pred == 1.) & indicator_flag
+    success_flag = (y_pred == 0.) & indicator_flag
     print(success_flag)
     print(np.sum(success_flag))
     print(np.sum(np.abs(x_mod_integrated[success_flag]), axis=-1))
