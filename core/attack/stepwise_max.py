@@ -177,7 +177,8 @@ class StepwiseMax(BaseAttack):
                     grad / l2norm
                 )
                 flag = torch.isinf(perturbation)
-                print('flag-pert', perturbation[flag], grad[flag], l2norm[flag])
+                print(l2norm)
+                print('flag-pert', perturbation[flag], grad[flag])
 
                 perturbation = torch.where(torch.isnan(perturbation), 0., perturbation)
                 perturbation = torch.where(torch.isinf(perturbation), 1., perturbation)
