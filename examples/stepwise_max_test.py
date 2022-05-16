@@ -195,7 +195,8 @@ def _main():
     x_mod_integrated = np.concatenate(x_mod_integrated, axis=0)
     success_flag = (y_pred == 1.) & indicator_flag
     print(success_flag)
-    print(np.sum(x_mod_integrated[success_flag], axis=-1))
+    print(np.sum(success_flag))
+    print(np.sum(np.abs(x_mod_integrated[success_flag]), axis=-1))
     utils.dump_pickle_frd_space(x_mod_integrated,
                                 os.path.join(save_dir, 'x_mod.list'))
 
