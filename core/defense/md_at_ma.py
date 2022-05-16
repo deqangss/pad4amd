@@ -88,7 +88,7 @@ class MaxAdvTraining(object):
                 # ben_batch_noises = torch.clamp(
                 #     ben_x_batch + utils.psn(ben_x_batch, np.maximum(np.random.uniform(0.9996, 1.), 0.9996)),
                 #     min=0., max=1.)
-                ben_batch_noises = ben_x_batch
+                # ben_batch_noises = ben_x_batch
                 if null_flag:
                     continue
                 start_time = time.time()
@@ -98,8 +98,10 @@ class MaxAdvTraining(object):
                                                   )
                 pertb_mal_x = utils.round_x(pertb_mal_x, 0.5)
                 total_time += time.time() - start_time
-                x_batch = torch.cat([x_batch, ben_batch_noises, pertb_mal_x], dim=0)
-                y_batch = torch.cat([y_batch, ben_y_batch, mal_y_batch])
+                # x_batch = torch.cat([x_batch, ben_batch_noises, pertb_mal_x], dim=0)
+                # y_batch = torch.cat([y_batch, ben_y_batch, mal_y_batch])
+                x_batch = torch.cat([x_batch, pertb_mal_x], dim=0)
+                y_batch = torch.cat([y_batch, mal_y_batch])
                 start_time = time.time()
                 self.model.train()
                 optimizer.zero_grad()
