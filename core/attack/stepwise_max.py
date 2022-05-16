@@ -177,10 +177,11 @@ class StepwiseMax(BaseAttack):
                     grad / l2norm
                 )
                 perturbation = torch.where(torch.isnan(perturbation), 0., perturbation)
-                # if self.is_attacker:
-                #     min_val = torch.amin(perturbation, dim=-1, keepdim=True).clamp_(max=0.)
-                #     perturbation += (torch.any(perturbation[:, self.api_flag] < 0, dim=-1,
-                #                                keepdim=True) * torch.abs(min_val) * checking_nonexist_api)
+                print('pertu:', torch.sum(torch.abs(perturbation), dim=-1))
+                if self.is_attacker:
+                    min_val = torch.amin(perturbation, dim=-1, keepdim=True).clamp_(max=0.)
+                    perturbation += (torch.any(perturbation[:, self.api_flag] < 0, dim=-1,
+                                               keepdim=True) * torch.abs(min_val) * checking_nonexist_api)
                 return torch.clamp(_adv_x + step_length_l2 * perturbation, min=0., max=1.)
             elif norm_type == 'l1':
                 # l1
