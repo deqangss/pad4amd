@@ -19,8 +19,8 @@ logger.addHandler(ErrorHandler)
 atta_argparse = argparse.ArgumentParser(description='arguments for step-wise max attack')
 atta_argparse.add_argument('--steps', type=int, default=50,
                            help='maximum number of steps.')
-atta_argparse.add_argument('--step_check', type=int, default=5,
-                           help='check the maximum at $step_check$th step.')
+atta_argparse.add_argument('--step_check', type=int, default=10,
+                           help='check the discrete maximum at $step_check$th step.')
 atta_argparse.add_argument('--step_length_l1', type=float, default=1.,
                            help='step length in each step of pgd l1.')
 atta_argparse.add_argument('--step_length_l2', type=float, default=0.5,

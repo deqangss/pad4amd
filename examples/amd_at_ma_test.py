@@ -28,6 +28,8 @@ max_adv_argparse.add_argument('--steps_linf', type=int, default=100,
                               help='maximum number of steps for base attacks.')
 max_adv_argparse.add_argument('--step_length_linf', type=float, default=0.01,
                               help='step length in each step.')
+max_adv_argparse.add_argument('--step_check', type=int, default=10,
+                              help='check the discrete maximum at $step_check$th step.')
 max_adv_argparse.add_argument('--random_start', action='store_true', default=False,
                               help='randomly initialize the start points.')
 max_adv_argparse.add_argument('--round_threshold', type=float, default=0.5,
@@ -105,6 +107,7 @@ def _main():
         attack = StepwiseMax(is_attacker=False, device=model.device)
         attack_param = {
             'steps': max(max(args.steps_l1, args.steps_linf), args.steps_l2),
+            'step_check': args.step_check,
             'sl_l1': 1.,
             'sl_l2': args.step_length_l2,
             'sl_linf': args.step_length_linf,
