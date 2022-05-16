@@ -94,7 +94,7 @@ class StepwiseMax(BaseAttack):
                     print('s1 l1:', torch.sum(torch.abs(pert_x_l1 - x[~done]), dim=-1))
                     print('s1 l2:', torch.sum(torch.abs(pert_x_l2 - x[~done]), dim=-1))
                     print('s1 linf:', torch.sum(torch.abs(pert_x_linf - x[~done]), dim=-1))
-                    pertb_x_list = [pert_x_l1, pert_x_linf]
+                    pertb_x_list = [pert_x_l2]
                     n_attacks = len(pertb_x_list)
                     pertbx = torch.vstack(pertb_x_list)
                     label_ext = torch.cat([label[~done]] * n_attacks)
