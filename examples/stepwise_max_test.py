@@ -25,7 +25,7 @@ atta_argparse.add_argument('--step_length_l1', type=float, default=1.,
                            help='step length in each step of pgd l1.')
 atta_argparse.add_argument('--step_length_l2', type=float, default=0.5,
                            help='step length in each step of pgd l2.')
-atta_argparse.add_argument('--step_length_linf', type=float, default=0.005,
+atta_argparse.add_argument('--step_length_linf', type=float, default=0.02,
                            help='step length in each step of pgd linf.')
 atta_argparse.add_argument('--random_start', action='store_true', default=False,
                            help='randomly initialize the start points.')

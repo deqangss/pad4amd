@@ -90,6 +90,7 @@ class StepwiseMax(BaseAttack):
                                                                   sl_linf,
                                                                   lambda_=self.lambda_
                                                                   )
+                print(torch.sum(torch.abs(pert_x_l1 - adv_x[~done]), dim=-1))
                 with torch.no_grad():
                     pertb_x_list = [pert_x_l1, pert_x_l2, pert_x_linf]
                     n_attacks = len(pertb_x_list)
