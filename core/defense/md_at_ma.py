@@ -93,10 +93,6 @@ class MaxAdvTraining(object):
                                                   **self.attack_param
                                                   )
                 pertb_mal_x = utils.round_x(pertb_mal_x, 0.5)
-                total_time += time.time() - start_time
-                idx_selected = torch.randperm(len(ben_x_batch), device=self.model.device)[:len(mal_x_batch)]
-                ben_x_batch = ben_x_batch[idx_selected]
-                ben_y_batch = ben_y_batch[:len(mal_x_batch)]
                 x_batch = torch.cat([x_batch, ben_x_batch, pertb_mal_x], dim=0)
                 y_batch = torch.cat([y_batch, ben_y_batch, mal_y_batch])
                 start_time = time.time()
