@@ -195,19 +195,10 @@ class AMalwareDetectionPAD(object):
             avg_acc_val = []
             for x_val, y_val in validation_data_producer:
                 x_val, y_val = utils.to_tensor(x_val.double(), y_val.long(), self.model.device)
-                x_val_noises = torch.clamp(x_val + utils.psn(x_val, np.random.uniform(0, 0.5)), min=0., max=1.)
-                x_val_ = torch.cat([x_val, x_val_noises], dim=0)
-                y_val_ = torch.cat([torch.zeros(x_val.shape[:1]), torch.ones(x_val.shape[:1])]).long().to(
-                    self.model.device)
                 logits_f = self.model.forward_f(x_val)
                 acc_val = (logits_f.argmax(1) == y_val).sum().item()
                 acc_val /= x_val.size()[0]
                 avg_acc_val.append(acc_val)
-                if hasattr(self.model, 'forward_g'):
-                    logits_g = self.model.forward_g(x_val_)
-                    acc_val_g = ((logits_g >= self.model.tau) == y_val_).sum().item()
-                    acc_val_g /= x_val_.size()[0]
-                    avg_acc_val.append(acc_val_g)
 
                 mal_x_batch, mal_y_batch, null_flag = utils.get_mal_data(x_val, y_val)
                 if null_flag:
