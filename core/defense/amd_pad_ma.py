@@ -113,10 +113,6 @@ class AMalwareDetectionPAD(object):
                     utils.get_mal_ben_data(x_batch, y_batch)
                 if null_flag:
                     continue
-                # ben_batch_noises = torch.clamp(
-                #     ben_x_batch + utils.psn(ben_x_batch, np.maximum(np.random.uniform(0.9999, 1.), 0.9999)),
-                #     min=0., max=1.)
-                ben_batch_noises = ben_x_batch
                 start_time = time.time()
                 # the attack perturbs feature vectors using various hyper-parameter lambda, aiming to obtain
                 # adversarial examples as much as possible
@@ -130,7 +126,7 @@ class AMalwareDetectionPAD(object):
                                                   )
                 disc_pertb_mal_x_ = utils.round_x(pertb_mal_x, 0.5)
                 total_time += time.time() - start_time
-                x_batch = torch.cat([x_batch, ben_batch_noises, disc_pertb_mal_x_], dim=0)
+                x_batch = torch.cat([x_batch, ben_x_batch, disc_pertb_mal_x_], dim=0)
                 y_batch = torch.cat([y_batch, ben_y_batch, mal_y_batch])
                 if use_continuous_pert:
                     filter_flag = torch.sum(torch.abs(pertb_mal_x - mal_x_batch), dim=-1) <= 1e-6
