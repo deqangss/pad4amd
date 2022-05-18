@@ -98,7 +98,7 @@ def _main():
                                        name=args.model_name,
                                        **hp_params
                                        )
-    model = model.to(dv).double()
+    model = model.to(dv)
     if args.model == 'md_at_pgd':
         at_wrapper = PGDAdvTraining(model)
         at_wrapper.load()
@@ -123,7 +123,7 @@ def _main():
                                      name=args.model_name,
                                      **hp_params
                                      )
-        model = model.to(dv).double()
+        model = model.to(dv)
         model.load()
     elif args.model == 'amd_dnn_plus':
         model = AMalwareDetectionDNNPlus(md_nn_model=None,
@@ -133,7 +133,7 @@ def _main():
                                          name=args.model_name,
                                          **hp_params
                                          )
-        model = model.to(dv).double()
+        model = model.to(dv)
         model.load()
     elif args.model == 'amd_pad_ma':
         adv_model = AMalwareDetectionPAD(model)
@@ -148,7 +148,7 @@ def _main():
     with torch.no_grad():
         c = args.n_ben if args.n_ben < ben_count else ben_count
         for ben_x, ben_y in ben_test_dataset_producer:
-            ben_x, ben_y = utils.to_tensor(ben_x.double(), ben_y.long(), device=dv)
+            ben_x, ben_y = utils.to_tensor(ben_x, ben_y.long(), device=dv)
             ben_feature_vectors.append(ben_x)
             if len(ben_feature_vectors) * hp_params['batch_size'] >= c:
                 break
@@ -158,7 +158,7 @@ def _main():
     success_flag_list = []
     x_mod_list = []
     for x, y in mal_test_dataset_producer:
-        x, y = utils.to_tensor(x.double(), y.long(), model.device)
+        x, y = utils.to_tensor(x, y.long(), model.device)
         _flag, x_mod = attack.perturb(model,
                                       x,
                                       trials=args.trials,

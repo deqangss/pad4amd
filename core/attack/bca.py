@@ -102,7 +102,7 @@ class BCA(BaseAttack):
             self.lambda_ = min_lambda_
         else:
             self.lambda_ = max_lambda_
-        adv_x = x.detach().clone().to(torch.double)
+        adv_x = x.detach().clone()
         while self.lambda_ <= max_lambda_:
             with torch.no_grad():
                 _, done = self.get_loss(model, adv_x, label, self.lambda_)

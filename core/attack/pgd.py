@@ -83,7 +83,6 @@ class PGD(BaseAttack):
             round_threshold = self.round_threshold
         return round_x(adv_x, round_threshold)
 
-
     def perturb(self, model, x, label=None,
                 steps=10,
                 step_length=1.,
@@ -104,7 +103,7 @@ class PGD(BaseAttack):
         else:
             self.lambda_ = max_lambda_
 
-        adv_x = x.detach().clone().to(torch.double)
+        adv_x = x.detach().clone()
         while self.lambda_ <= max_lambda_:
             with torch.no_grad():
                 _, done = self.get_loss(model, adv_x, label, self.lambda_)
@@ -147,8 +146,10 @@ class PGD(BaseAttack):
                 torch.tensor(1., dtype=features.dtype, device=features.device),
                 gradients / l2norm
             )
-            perturbation = torch.where(torch.isnan(perturbation), 0., perturbation)
-            perturbation = torch.where(torch.isinf(perturbation), 0., perturbation)
+            filter = torch.where(torch.isnan(perturbation), 0., 1.)
+            perturbation *= filter
+            filter = torch.where(torch.isinf(perturbation), 0., 1.)
+            perturbation *= filter
         else:
             raise ValueError("Expect 'l2' or 'linf' norm.")
 
