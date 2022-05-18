@@ -169,6 +169,7 @@ class Apk2features(object):
         posi_selected = np.argsort(feature_freq_diff)[::-1]
         ordered_words = selected_words + [all_words[p] for p in posi_selected]
         selected_words = ordered_words[:maximum_vocab_size]
+        print(len(selected_words))
         print(selected_words)
         import sys
         sys.exit(1)
