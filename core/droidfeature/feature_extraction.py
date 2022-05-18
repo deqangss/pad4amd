@@ -163,6 +163,7 @@ class Apk2features(object):
         ben_feature_frequency[ben_feature_frequency == None] = 0
         ben_feature_frequency /= float(len(gt_labels) - np.sum(gt_labels))
         feature_freq_diff = mal_feature_frequency - ben_feature_frequency
+        feature_freq_diff = feature_freq_diff[feature_freq_diff > 0]  # select the features that benefit to classifying malicious samples
         posi_selected = np.argsort(feature_freq_diff)[::-1]
         ordered_words = selected_words + [all_words[p] for p in posi_selected]
         selected_words = ordered_words[:maximum_vocab_size]
