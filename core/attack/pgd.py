@@ -147,7 +147,7 @@ class PGD(BaseAttack):
                 gradients / l2norm
             )
             perturbation = torch.where(torch.isnan(perturbation), 0., perturbation.double()).float()
-            perturbation = torch.where(torch.isinf(perturbation), -1, perturbation.double()).float()
+            perturbation = torch.where(torch.isinf(perturbation), -1., perturbation.double()).float()
         else:
             raise ValueError("Expect 'l2' or 'linf' norm.")
 
