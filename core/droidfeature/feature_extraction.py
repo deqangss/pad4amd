@@ -123,9 +123,6 @@ class Apk2features(object):
             raise ValueError("No features exist on this dataset.")
 
         maximum_vocab_size = self.maximum_vocab_size
-        if not self.use_feature_selection:  # no feature selection applied
-            maximum_vocab_size = len(all_words) + 1
-
         selected_words = []
         # dangerous permission
         all_words_type = list(map(feat_type_dict.get, all_words))
@@ -165,10 +162,8 @@ class Apk2features(object):
         feature_freq_diff = mal_feature_frequency - ben_feature_frequency
         # select the features that benefit to classifying malicious samples
         # note: this increases FPR
-        print(len(feature_freq_diff))
-        feature_freq_diff = feature_freq_diff[feature_freq_diff > 0]
-        print(len(feature_freq_diff))
-
+        if self.use_feature_selection:
+            feature_freq_diff = feature_freq_diff[feature_freq_diff > 0]
         posi_selected = np.argsort(feature_freq_diff)[::-1]
         ordered_words = selected_words + [all_words[p] for p in posi_selected]
         selected_words = ordered_words[:maximum_vocab_size]
