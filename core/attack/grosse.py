@@ -51,7 +51,7 @@ class Groose(BaseAttack):
         Parameters
         -----------
         @param model, a victim model
-        @param x: torch.FloatTensor, feature vectors with shape [batch_size, vocab_dim]
+        @param x: torch.DoubleTensor, feature vectors with shape [batch_size, vocab_dim]
         @param label: torch.LongTensor, ground truth labels
         @param m: Integer, maximum number of perturbations
         @param lambda_, float, penalty factor
@@ -99,7 +99,7 @@ class Groose(BaseAttack):
             self.lambda_ = min_lambda_
         else:
             self.lambda_ = max_lambda_
-        adv_x = x.detach().clone()
+        adv_x = x.detach().clone().to(torch.double)
         while self.lambda_ <= max_lambda_:
             _, done = self.get_loss(model, adv_x, 1 - label)
             score = self.get_scores(model, adv_x, label)

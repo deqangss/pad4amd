@@ -29,9 +29,9 @@ atta_argparse.add_argument('--real', action='store_true', default=False,
                            help='whether produce the perturbed apks.')
 atta_argparse.add_argument('--model', type=str, default='maldet',
                            choices=['md_dnn', 'md_at_pgd', 'md_at_ma',
-                                    'amd_kde', 'amd_icnn', 'amd_dla', 'amd_dnn_plus', 'amd_pad_ma'],
+                                    'amd_kde', 'amd_icnn', 'amd_dla', 'amd_dnn_plus', 'amd_at_ma'],
                            help="model type, either of 'md_dnn', 'md_at_pgd', 'md_at_ma', 'amd_kde', 'amd_icnn', "
-                                "'amd_dla', 'amd_dnn_plus', 'amd_pad_ma'.")
+                                "'amd_dla', 'amd_dnn_plus', 'amd_at_ma'.")
 atta_argparse.add_argument('--model_name', type=str, default='xxxxxxxx-xxxxxx', help='model timestamp.')
 
 
@@ -51,11 +51,11 @@ def _main():
         save_dir = config.get('experiments', 'amd_dla') + '_' + args.model_name
     elif args.model == 'amd_dnn_plus':
         save_dir = config.get('experiments', 'amd_dnn_plus') + '_' + args.model_name
-    elif args.model == 'amd_pad_ma':
-        save_dir = config.get('experiments', 'amd_pad_ma') + '_' + args.model_name
+    elif args.model == 'amd_at_ma':
+        save_dir = config.get('experiments', 'amd_at_ma') + '_' + args.model_name
     else:
         raise TypeError("Expected 'md_dnn', 'md_at_pgd', 'md_at_ma', 'amd_kde', 'amd_icnn',"
-                        "'amd_dla', 'amd_dnn_plus', and 'amd_pad_ma'.")
+                        "'amd_dla', 'amd_dnn_plus', and 'amd_at_ma'.")
 
     hp_params = utils.read_pickle(os.path.join(save_dir, 'hparam.pkl'))
     dataset = Dataset(use_cache=hp_params['cache'],
@@ -86,7 +86,7 @@ def _main():
                                 name=args.model_name,
                                 **hp_params
                                 )
-    if args.model == 'amd_icnn' or args.model == 'amd_pad_ma':
+    if args.model == 'amd_icnn' or args.model == 'amd_at_ma':
         model = AdvMalwareDetectorICNN(model,
                                        input_size=dataset.vocab_size,
                                        n_classes=dataset.n_classes,
@@ -95,7 +95,7 @@ def _main():
                                        name=args.model_name,
                                        **hp_params
                                        )
-    model = model.to(dv)
+    model = model.to(dv).double()
     if args.model == 'md_at_pgd':
         at_wrapper = PGDAdvTraining(model)
         at_wrapper.load()
@@ -120,7 +120,7 @@ def _main():
                                      name=args.model_name,
                                      **hp_params
                                      )
-        model = model.to(dv)
+        model = model.to(dv).double()
         model.load()
     elif args.model == 'amd_dnn_plus':
         model = AMalwareDetectionDNNPlus(md_nn_model=None,
@@ -130,9 +130,9 @@ def _main():
                                          name=args.model_name,
                                          **hp_params
                                          )
-        model = model.to(dv)
+        model = model.to(dv).double()
         model.load()
-    elif args.model == 'amd_pad_ma':
+    elif args.model == 'amd_at_ma':
         adv_model = AMalwareDetectionPAD(model)
         adv_model.load()
         model = adv_model.model
@@ -150,7 +150,7 @@ def _main():
     x_mod_integrated = []
     model.eval()
     for x, y in mal_test_dataset_producer:
-        x, y = utils.to_tensor(x, y.long(), model.device)
+        x, y = utils.to_tensor(x.double(), y.long(), model.device)
         adv_x_batch = attack.perturb(model, x, y,
                                      args.steps,
                                      min_lambda_=1e-5,

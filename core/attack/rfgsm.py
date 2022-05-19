@@ -111,7 +111,7 @@ class RFGSM(BaseAttack):
             self.lmba = min_lambda_
         else:
             self.lmba = max_lambda_
-        adv_x = x.detach().clone()
+        adv_x = x.detach().clone().to(torch.double)
         while self.lmba <= max_lambda_:
             with torch.no_grad():
                 _, done = self.get_loss(model, adv_x, label, self.lmba)

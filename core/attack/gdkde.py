@@ -40,7 +40,7 @@ class GDKDE(BaseAttack):
         if isinstance(self.benign_feat, torch.Tensor):
             pass
         elif isinstance(self.benign_feat, np.ndarray):
-            self.benign_feat = torch.tensor(self.benign_feat, device=device).double()
+            self.benign_feat = torch.tensor(self.benign_feat, device=device)
         else:
             raise TypeError
 
@@ -54,7 +54,7 @@ class GDKDE(BaseAttack):
         Parameters
         -----------
         @param model, a victim model
-        @param x: torch.DoubleTensor, feature vectors with shape [batch_size, vocab_dim]
+        @param x: torch.FloatTensor, feature vectors with shape [batch_size, vocab_dim]
         @param label: torch.LongTensor, ground truth labels
         @param steps: Integer, maximum number of iterations
         @param step_length: float, the step length in each iteration
@@ -95,7 +95,7 @@ class GDKDE(BaseAttack):
         else:
             self.lambda_ = max_lambda_
 
-        adv_x = x.detach().clone().to(torch.double)
+        adv_x = x.detach().clone()
         while self.lambda_ <= max_lambda_:
             _, done = self.get_loss(model, adv_x, label)
             if torch.all(done):

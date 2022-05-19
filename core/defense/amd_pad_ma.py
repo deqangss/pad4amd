@@ -97,7 +97,7 @@ class AMalwareDetectionPAD(object):
         for i in range(adv_epochs):
             losses, accuracies = [], []
             for idx_batch, (x_batch, y_batch) in enumerate(train_data_producer):
-                x_batch, y_batch = utils.to_tensor(x_batch, y_batch.long(), self.model.device)
+                x_batch, y_batch = utils.to_tensor(x_batch.double(), y_batch.long(), self.model.device)
                 batch_size = x_batch.shape[0]
                 # make data
                 # 1. add pepper and salt noises for adversary detector
@@ -139,7 +139,7 @@ class AMalwareDetectionPAD(object):
                     x_batch_ = torch.cat([x_batch_, disc_pertb_mal_x_], dim=0)
                     n_pertb_mal = disc_pertb_mal_x_.shape[0]
                 y_batch_ = torch.cat([y_batch_, torch.ones((n_pertb_mal,), ).to(
-                    self.model.device)])
+                    self.model.device)]).double()
                 start_time = time.time()
                 self.model.train()
                 optimizer.zero_grad()
@@ -153,9 +153,6 @@ class AMalwareDetectionPAD(object):
                                                                y_batch[batch_size:],
                                                                logits_g[2 * batch_size:],
                                                                y_batch_[2 * batch_size:])
-                if torch.all(torch.isnan(loss_train)):
-                    import sys
-                    sys.exit(1)
 
                 loss_train.backward()
                 optimizer.step()
@@ -197,7 +194,7 @@ class AMalwareDetectionPAD(object):
             res_val = []
             avg_acc_val = []
             for x_val, y_val in validation_data_producer:
-                x_val, y_val = utils.to_tensor(x_val, y_val.long(), self.model.device)
+                x_val, y_val = utils.to_tensor(x_val.double(), y_val.long(), self.model.device)
                 logits_f = self.model.forward_f(x_val)
                 acc_val = (logits_f.argmax(1) == y_val).sum().item()
                 acc_val /= x_val.size()[0]

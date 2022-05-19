@@ -55,7 +55,7 @@ def _main():
                                      name=model_name,
                                      **vars(args)
                                      )
-    dla_model = dla_model.to(dv)
+    dla_model = dla_model.to(dv).double()
     pgdlinf = PGD(norm='linf', use_random=False,
                   is_attacker=False,
                   device=dla_model.device)

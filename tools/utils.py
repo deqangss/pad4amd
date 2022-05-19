@@ -290,8 +290,8 @@ def sparse_mx_to_torch_sparse_tensor(sparse_mx):
     sparserow = torch.LongTensor(sparse_mx.row).unsqueeze(1)
     sparsecol = torch.LongTensor(sparse_mx.col).unsqueeze(1)
     sparseconcat = torch.cat((sparserow, sparsecol), 1)
-    sparsedata = torch.FloatTensor(sparse_mx.data)
-    return torch.sparse.FloatTensor(sparseconcat.t(), sparsedata, torch.Size(sparse_mx.shape))
+    sparsedata = torch.DoubleTensor(sparse_mx.data)
+    return torch.sparse.DoubleTensor(sparseconcat.t(), sparsedata, torch.Size(sparse_mx.shape))
 
 
 def to_tensor(feature_x=None, labels=None, device='cpu'):
@@ -316,7 +316,7 @@ def to_tensor(feature_x=None, labels=None, device='cpu'):
         elif isinstance(mat, torch.Tensor):
             pass
         else:
-            mat = torch.FloatTensor(mat)
+            mat = torch.DoubleTensor(mat)
         return mat
 
     feature_x = _to_torch_tensor(feature_x).to(device)
@@ -339,7 +339,7 @@ def to_device(feature_x=None, labels=None, device='cpu'):
 
 def psn(x_tensor, prob, lower_value=0., upper_value=1.):
     assert 1. >= prob >= 0.
-    uni_noises = torch.FloatTensor(x_tensor.shape).uniform_()
+    uni_noises = torch.DoubleTensor(x_tensor.shape).uniform_()
     salt_pos = uni_noises >= prob
     uni_noises[salt_pos] = upper_value
     uni_noises[~salt_pos] = lower_value
@@ -367,7 +367,7 @@ def round_x(x, alpha=0.5):
     :param alpha: threshold parameter
     :return: a double tensor of 0s and 1s.
     """
-    return (x >= alpha).float()
+    return (x >= alpha).double()
 
 
 def get_x0(x, rounding_threshold=0.5, is_sample=False):
@@ -386,7 +386,7 @@ def get_x0(x, rounding_threshold=0.5, is_sample=False):
         rand_x = round_x(torch.rand(x.size()), alpha=rounding_threshold)
         if x.is_cuda:
             rand_x = rand_x.cuda()
-        return (rand_x.byte() | x.byte()).float()
+        return (rand_x.byte() | x.byte()).double()
     else:
         return x
 
@@ -406,7 +406,7 @@ def or_tensors(x_1, x_2):
     :param x_2: tensor two
     :return: float tensor of 0s and 1s.
     """
-    return (x_1.byte() | x_2.byte()).float()
+    return (x_1.byte() | x_2.byte()).double()
 
 
 def xor_tensors(x_1, x_2):
@@ -424,7 +424,7 @@ def xor_tensors(x_1, x_2):
     :param x_2: tensor two
     :return: float tensor of 0s and 1s.
     """
-    return (x_1.byte() ^ x_2.byte()).float()
+    return (x_1.byte() ^ x_2.byte()).double()
 
 
 def get_mal_data(x_batch, y_batch):

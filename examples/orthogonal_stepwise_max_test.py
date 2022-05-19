@@ -107,7 +107,7 @@ def _main():
                                        name=args.model_name,
                                        **hp_params
                                        )
-    model = model.to(dv)
+    model = model.to(dv).double()
     if args.model == 'md_at_pgd':
         at_wrapper = PGDAdvTraining(model)
         at_wrapper.load()
@@ -132,7 +132,7 @@ def _main():
                                      name=args.model_name,
                                      **hp_params
                                      )
-        model = model.to(dv)
+        model = model.to(dv).double()
         model.load()
     elif args.model == 'amd_dnn_plus':
         model = AMalwareDetectionDNNPlus(md_nn_model=None,
@@ -142,7 +142,7 @@ def _main():
                                          name=args.model_name,
                                          **hp_params
                                          )
-        model = model.to(dv)
+        model = model.to(dv).double()
         model.load()
     elif args.model == 'amd_pad_ma':
         adv_model = AMalwareDetectionPAD(model)
@@ -164,7 +164,7 @@ def _main():
     x_mod_integrated = []
     model.eval()
     for x, y in mal_test_dataset_producer:
-        x, y = utils.to_tensor(x, y.long(), model.device)
+        x, y = utils.to_tensor(x.double(), y.long(), model.device)
         adv_x_batch = attack.perturb(model, x, y,
                                      args.steps,
                                      args.step_check,

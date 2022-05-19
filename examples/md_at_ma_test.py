@@ -55,7 +55,7 @@ def _main():
                                 name=model_name,
                                 **vars(args)
                                 )
-    model = model.to(dv)
+    model = model.to(dv).double()
 
     pgdlinf = PGD(norm='linf', use_random=False,
                   is_attacker=False,

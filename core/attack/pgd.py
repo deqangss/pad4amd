@@ -83,7 +83,6 @@ class PGD(BaseAttack):
             round_threshold = self.round_threshold
         return round_x(adv_x, round_threshold)
 
-
     def perturb(self, model, x, label=None,
                 steps=10,
                 step_length=1.,
@@ -148,7 +147,7 @@ class PGD(BaseAttack):
                 gradients / l2norm
             )
             perturbation = torch.where(torch.isnan(perturbation), 0., perturbation)
-            perturbation = torch.where(torch.isinf(perturbation), 0., perturbation)
+            perturbation = torch.where(torch.isinf(perturbation), 1., perturbation)
         else:
             raise ValueError("Expect 'l2' or 'linf' norm.")
 

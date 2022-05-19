@@ -104,7 +104,7 @@ def _main():
                                        name=args.model_name,
                                        **hp_params
                                        )
-    model = model.to(dv)
+    model = model.to(dv).double()
     if args.model == 'md_at_pgd':
         at_wrapper = PGDAdvTraining(model)
         at_wrapper.load()
@@ -129,7 +129,7 @@ def _main():
                                      name=args.model_name,
                                      **hp_params
                                      )
-        model = model.to(dv)
+        model = model.to(dv).double()
         model.load()
     elif args.model == 'amd_dnn_plus':
         model = AMalwareDetectionDNNPlus(md_nn_model=None,
@@ -139,7 +139,7 @@ def _main():
                                          name=args.model_name,
                                          **hp_params
                                          )
-        model = model.to(dv)
+        model = model.to(dv).double()
         model.load()
     elif args.model == 'amd_pad_ma':
         adv_model = AMalwareDetectionPAD(model)

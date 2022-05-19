@@ -160,7 +160,7 @@ class AMalwareDetectionDNNPlus(nn.Module, DetectorTemplate):
         self.eval()
         with torch.no_grad():
             for x, y in test_data_producer:
-                x, y = utils.to_device(x, y.long(), self.device)
+                x, y = utils.to_device(x.double(), y.long(), self.device)
                 logits, x_cent = self.forward(x)
                 y_cent.append(F.softmax(logits, dim=-1)[:, :2])
                 x_prob.append(x_cent)
@@ -204,7 +204,7 @@ class AMalwareDetectionDNNPlus(nn.Module, DetectorTemplate):
         probabilities = []
         with torch.no_grad():
             for x_val, y_val in validation_data_producer:
-                x_val, y_val = utils.to_tensor(x_val, y_val.long(), self.device)
+                x_val, y_val = utils.to_tensor(x_val.double(), y_val.long(), self.device)
                 _1, x_cent = self.forward(x_val)
                 probabilities.append(x_cent)
             s, _ = torch.sort(torch.cat(probabilities, dim=0))
@@ -251,7 +251,7 @@ class AMalwareDetectionDNNPlus(nn.Module, DetectorTemplate):
             self.amd_nn_plus.train()
             losses, accuracies = [], []
             for idx_batch, (x_train, y_train) in enumerate(train_data_producer):
-                x_train, y_train = utils.to_device(x_train, y_train.long(), self.device)
+                x_train, y_train = utils.to_device(x_train.double(), y_train.long(), self.device)
                 # make anomaly data
                 start_time = time.time()
                 if idx_batch >= len(pertb_train_data_list):
@@ -297,7 +297,7 @@ class AMalwareDetectionDNNPlus(nn.Module, DetectorTemplate):
             self.amd_nn_plus.eval()
             avg_acc_val = []
             for idx, (x_val, y_val) in enumerate(validation_data_producer):
-                x_val, y_val = utils.to_device(x_val, y_val.long(), self.device)
+                x_val, y_val = utils.to_device(x_val.double(), y_val.long(), self.device)
                 if idx >= len(pertb_val_data_list):
                     pertb_x = attack.perturb(self.md_nn_model, x_val, y_val,
                                              **attack_param

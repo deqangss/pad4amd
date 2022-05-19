@@ -35,10 +35,14 @@ atta_argparse.add_argument('--steps_l2', type=int, default=100,
                            help='maximum number of steps.')
 atta_argparse.add_argument('--step_length_l2', type=float, default=0.5,
                            help='step length in each step.')
+atta_argparse.add_argument('--random_start', action='store_true', default=False,
+                           help='randomly initialize the start points.')
 atta_argparse.add_argument('--steps_linf', type=int, default=100,
                            help='maximum number of steps.')
 atta_argparse.add_argument('--step_length_linf', type=float, default=0.01,
                            help='step length in each step.')
+atta_argparse.add_argument('--round_threshold', type=float, default=0.5,
+                           help='threshold for rounding real scalars.')
 
 atta_argparse.add_argument('--orthogonal_v', action='store_true', default=False,
                            help='use the orthogonal version of pgd.')
@@ -46,11 +50,6 @@ atta_argparse.add_argument('--project_detector', action='store_true', default=Fa
                            help='whether know the adversary indicator or not.')
 atta_argparse.add_argument('--project_classifier', action='store_true', default=False,
                            help='whether know the adversary indicator or not.')
-
-atta_argparse.add_argument('--random_start', action='store_true', default=False,
-                           help='randomly initialize the start points.')
-atta_argparse.add_argument('--round_threshold', type=float, default=0.5,
-                           help='threshold for rounding real scalars.')
 
 atta_argparse.add_argument('--base', type=float, default=10.,
                            help='base of a logarithm function.')
@@ -131,7 +130,7 @@ def _main():
                                        name=args.model_name,
                                        **hp_params
                                        )
-    model = model.to(dv)
+    model = model.to(dv).double()
     if args.model == 'md_at_pgd':
         at_wrapper = PGDAdvTraining(model)
         at_wrapper.load()
@@ -156,7 +155,7 @@ def _main():
                                      name=args.model_name,
                                      **hp_params
                                      )
-        model = model.to(dv)
+        model = model.to(dv).double()
         model.load()
     elif args.model == 'amd_dnn_plus':
         model = AMalwareDetectionDNNPlus(md_nn_model=None,
@@ -166,7 +165,7 @@ def _main():
                                          name=args.model_name,
                                          **hp_params
                                          )
-        model = model.to(dv)
+        model = model.to(dv).double()
         model.load()
     elif args.model == 'amd_pad_ma':
         adv_model = AMalwareDetectionPAD(model)
@@ -174,7 +173,7 @@ def _main():
         model = adv_model.model
     else:
         model.load()
-        model = model.to(dv)
+        model = model.to(dv).double()
     logger.info("Load model parameters from {}.".format(model.model_save_path))
     model.predict(mal_test_dataset_producer)
 
@@ -249,7 +248,7 @@ def _main():
     x_mod_integrated = []
     for x, y in mal_test_dataset_producer:
         x, y = utils.to_tensor(x, y.long(), model.device)
-        adv_x_batch = attack.perturb(model, x, y,
+        adv_x_batch = attack.perturb(model, x.double(), y,
                                      steps_max=args.steps_max,
                                      min_lambda_=1e-5,
                                      max_lambda_=1e5,
