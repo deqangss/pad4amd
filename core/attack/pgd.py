@@ -74,7 +74,6 @@ class PGD(BaseAttack):
             var_adv_x = torch.autograd.Variable(adv_x, requires_grad=True)
             loss, done = self.get_loss(model, var_adv_x, label, self.lambda_)
             grad = torch.autograd.grad(torch.mean(loss), var_adv_x)[0].detach().data
-            # print(torch.sum(torch.abs(grad), dim=-1))
             perturbation = self.get_perturbation(grad, x, adv_x)
             adv_x = torch.clamp(adv_x + perturbation * step_length, min=0., max=1.)
         # round
@@ -83,6 +82,7 @@ class PGD(BaseAttack):
         else:
             round_threshold = self.round_threshold
         return round_x(adv_x, round_threshold)
+
 
     def perturb(self, model, x, label=None,
                 steps=10,
@@ -104,7 +104,7 @@ class PGD(BaseAttack):
         else:
             self.lambda_ = max_lambda_
 
-        adv_x = x.detach().clone()
+        adv_x = x.detach().clone().to(torch.double)
         while self.lambda_ <= max_lambda_:
             with torch.no_grad():
                 _, done = self.get_loss(model, adv_x, label, self.lambda_)
@@ -147,8 +147,8 @@ class PGD(BaseAttack):
                 torch.tensor(1., dtype=features.dtype, device=features.device),
                 gradients / l2norm
             )
-            perturbation = torch.where(torch.isnan(perturbation), 0., perturbation.double()).float()
-            perturbation = torch.where(torch.isinf(perturbation), -1., perturbation.double()).float()
+            perturbation = torch.where(torch.isnan(perturbation), 0., perturbation)
+            perturbation = torch.where(torch.isinf(perturbation), 0., perturbation)
         else:
             raise ValueError("Expect 'l2' or 'linf' norm.")
 

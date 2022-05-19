@@ -142,8 +142,8 @@ class OrthogonalPGD(PGD):
                     torch.tensor(1., dtype=x.dtype, device=x.device),
                     grad / l2norm
                 )
-                perturbation = torch.where(torch.isnan(perturbation), 0., perturbation.double()).float()
-                perturbation = torch.where(torch.isinf(perturbation), -1., perturbation.double()).float()
+                perturbation = torch.where(torch.isnan(perturbation), 0., perturbation)
+                perturbation = torch.where(torch.isinf(perturbation), -1., perturbation)
             elif self.norm == 'l1':
                 val, idx = torch.abs(grad).topk(int(1. / step_length), dim=-1)
                 perturbation = F.one_hot(idx, num_classes=adv_x.shape[-1]).sum(dim=1)
