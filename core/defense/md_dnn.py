@@ -106,7 +106,7 @@ class MalwareDetectionDNN(nn.Module):
         self.eval()
         with torch.no_grad():
             for x, y in test_data_producer:
-                x, y = utils.to_device(x.double(), y.long(), self.device)
+                x, y = utils.to_device(x, y.long(), self.device)
                 logits = self.forward(x)
                 confidences.append(F.softmax(logits, dim=-1))
                 gt_labels.append(y)
@@ -127,9 +127,9 @@ class MalwareDetectionDNN(nn.Module):
         ig = IntegratedGradients(_ig_wrapper)
 
         for i, (x, y) in enumerate(test_data_producer):
-            x, y = utils.to_device(x.double(), y.long(), self.device)
+            x, y = utils.to_device(x, y.long(), self.device)
             x.requires_grad = True
-            baseline = torch.zeros_like(x, dtype=torch.double, device=self.device)
+            baseline = torch.zeros_like(x, dtype=torch.float, device=self.device)
             attribution_bs = ig.attribute(x,
                                           baselines=baseline,
                                           target=target_label)
@@ -205,7 +205,7 @@ class MalwareDetectionDNN(nn.Module):
             self.train()
             losses, accuracies = [], []
             for idx_batch, (x_train, y_train) in enumerate(train_data_producer):
-                x_train, y_train = utils.to_device(x_train.double(), y_train.long(), self.device)
+                x_train, y_train = utils.to_device(x_train, y_train.long(), self.device)
                 start_time = time.time()
                 optimizer.zero_grad()
                 logits = self.forward(x_train)
@@ -228,7 +228,7 @@ class MalwareDetectionDNN(nn.Module):
             avg_acc_val = []
             with torch.no_grad():
                 for x_val, y_val in validation_data_producer:
-                    x_val, y_val = utils.to_device(x_val.double(), y_val.long(), self.device)
+                    x_val, y_val = utils.to_device(x_val, y_val.long(), self.device)
                     logits = self.forward(x_val)
                     acc_val = (logits.argmax(1) == y_val).sum().item()
                     acc_val /= x_val.size()[0]

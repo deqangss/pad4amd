@@ -71,7 +71,7 @@ def _main():
 
     else:
         raise NotImplementedError
-    model = model.to(dv).double()
+    model = model.to(dv)
     pgdlinf = PGD(norm='linf', use_random=False,
                   is_attacker=False,
                   device=model.device)

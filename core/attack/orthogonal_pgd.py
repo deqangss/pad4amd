@@ -146,7 +146,7 @@ class OrthogonalPGD(PGD):
                 perturbation = torch.where(torch.isinf(perturbation), -1., perturbation)
             elif self.norm == 'l1':
                 val, idx = torch.abs(grad).topk(int(1. / step_length), dim=-1)
-                perturbation = F.one_hot(idx, num_classes=adv_x.shape[-1]).sum(dim=1).double()
+                perturbation = F.one_hot(idx, num_classes=adv_x.shape[-1]).sum(dim=1)
                 perturbation = torch.sign(grad) * perturbation
                 # if self.is_attacker:
                 #     perturbation += (
@@ -168,7 +168,7 @@ class OrthogonalPGD(PGD):
         """
         assert steps >= 0 and step_length >= 0
         model.eval()
-        adv_x = x.detach().clone().to(torch.double)
+        adv_x = x.detach().clone()
         with torch.no_grad():
             _, done = self.get_loss(model, adv_x, label, self.lambda_)
         if torch.all(done):
