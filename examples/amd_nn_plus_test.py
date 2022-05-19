@@ -55,7 +55,7 @@ def _main():
                                               name=model_name,
                                               **vars(args)
                                               )
-    cls_plus_model = cls_plus_model.to(dv).double()
+    cls_plus_model = cls_plus_model.to(dv)
     pgdlinf = PGD(norm='linf', use_random=False,
                   is_attacker=False,
                   device=cls_plus_model.device)

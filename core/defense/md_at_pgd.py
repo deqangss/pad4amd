@@ -79,7 +79,7 @@ class PGDAdvTraining(object):
         for i in range(adv_epochs):
             losses, accuracies = [], []
             for idx_batch, (x_batch, y_batch) in enumerate(train_data_producer):
-                x_batch, y_batch = utils.to_tensor(x_batch.double(), y_batch.long(), self.model.device)
+                x_batch, y_batch = utils.to_tensor(x_batch, y_batch.long(), self.model.device)
                 batch_size = x_batch.shape[0]
                 # make data
                 mal_x_batch, ben_x_batch, mal_y_batch, ben_y_batch, null_flag = \
@@ -133,7 +133,7 @@ class PGDAdvTraining(object):
             res_val = []
             avg_acc_val = []
             for x_val, y_val in validation_data_producer:
-                x_val, y_val = utils.to_tensor(x_val.double(), y_val.long(), self.model.device)
+                x_val, y_val = utils.to_tensor(x_val, y_val.long(), self.model.device)
                 logits = self.model.forward(x_val)
                 acc_val = (logits.argmax(1) == y_val).sum().item()
                 acc_val /= x_val.size()[0]

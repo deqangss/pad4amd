@@ -48,7 +48,7 @@ def _main():
                                 name=args.model_name,
                                 **hp_params
                                 )
-    model = model.to(dv).double()
+    model = model.to(dv)
     model.load()
 
     kde = KernelDensityEstimation(model,

@@ -83,7 +83,7 @@ class KernelDensityEstimation(DetectorTemplate):
         gt_labels = []
         with torch.no_grad():
             for x_val, y_val in validation_data_producer:
-                x_val, y_val = utils.to_tensor(x_val.double(), y_val.long(), self.device)
+                x_val, y_val = utils.to_tensor(x_val, y_val.long(), self.device)
                 logits, x_prob = self.forward(x_val)
                 probabilities.append(x_prob)
                 gt_labels.append(y_val)
@@ -141,7 +141,7 @@ class KernelDensityEstimation(DetectorTemplate):
         self.eval()
         with torch.no_grad():
             for x, y in test_data_producer:
-                x, y = utils.to_tensor(x.double(), y.long(), self.device)
+                x, y = utils.to_tensor(x, y.long(), self.device)
                 logits_f, logits_g = self.forward(x)
                 y_cent.append(F.softmax(logits_f, dim=-1))
                 x_prob.append(logits_g)
@@ -178,7 +178,7 @@ class KernelDensityEstimation(DetectorTemplate):
         self.eval()
         with torch.no_grad():
             for x, y in train_dataset_producer:
-                x, y = utils.to_tensor(x.double(), y.long(), self.device)
+                x, y = utils.to_tensor(x, y.long(), self.device)
                 logits, x_hidden = self.forward_f(x)
                 X_hidden.append(x_hidden)
                 gt_labels.append(y)
