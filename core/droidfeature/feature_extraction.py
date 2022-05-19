@@ -168,13 +168,15 @@ class Apk2features(object):
         print(len(feature_freq_diff))
         feature_freq_diff = feature_freq_diff[feature_freq_diff >= 0]
         print(len(feature_freq_diff))
-        import sys
-        sys.exit(1)
+
         posi_selected = np.argsort(feature_freq_diff)[::-1]
         ordered_words = selected_words + [all_words[p] for p in posi_selected]
         selected_words = ordered_words[:maximum_vocab_size]
         selected_word_type = list(map(feat_type_dict.get, selected_words))
         corresponding_word_info = list(map(feat_info_dict.get, selected_words))
+        print(len(selected_words))
+        import sys
+        sys.exit(1)
         # saving
         if len(selected_words) > 0:
             utils.dump_pickle(selected_words, vocab_saving_path)
