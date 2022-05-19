@@ -166,7 +166,7 @@ class Apk2features(object):
         # select the features that benefit to classifying malicious samples
         # this increases the FPR
         print(len(feature_freq_diff))
-        feature_freq_diff = feature_freq_diff[feature_freq_diff >= 0]
+        feature_freq_diff = feature_freq_diff[feature_freq_diff > 0]
         print(len(feature_freq_diff))
 
         posi_selected = np.argsort(feature_freq_diff)[::-1]
