@@ -21,7 +21,7 @@ class Apk2features(object):
                  intermediate_save_dir,
                  number_of_smali_files=1000000,
                  max_vocab_size=10000,
-                 use_top_disc_features=True,
+                 use_top_disc_features=False,
                  file_ext='.feat',
                  update=False,
                  proc_number=2,
