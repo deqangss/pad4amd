@@ -16,7 +16,7 @@ feature_argparse.add_argument('--proc_number', type=int, default=2,
                               help='The number of threads for features extraction.')
 feature_argparse.add_argument('--number_of_smali_files', type=int, default=1000000,
                               help='The maximum number of smali files to represent each app')
-feature_argparse.add_argument('--use_top_disc_features', action='store_true',
+feature_argparse.add_argument('--use_top_disc_features', action='store_true', default=False,
                               help='Whether use feature selection or not.')
 feature_argparse.add_argument('--max_vocab_size', type=int, default=10000,
                               help='The maximum number of vocabulary size')
