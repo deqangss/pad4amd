@@ -170,10 +170,8 @@ class StepwiseMax(BaseAttack):
                     torch.tensor(1., dtype=_adv_x.dtype, device=_adv_x.device),
                     grad / l2norm
                 )
-                filter = torch.where(torch.isnan(perturbation), 0., 1.)
-                perturbation *= filter
-                filter = torch.where(torch.isinf(perturbation), 0., 1.)
-                perturbation *= filter
+                perturbation = torch.where(torch.isnan(perturbation), 0., perturbation.double()).float()
+                perturbation = torch.where(torch.isinf(perturbation), 0., perturbation.double()).float()
                 if self.is_attacker:
                     min_val = torch.amin(perturbation, dim=-1, keepdim=True).clamp_(max=0.)
                     perturbation += (torch.any(perturbation[:, self.api_flag] < 0, dim=-1,

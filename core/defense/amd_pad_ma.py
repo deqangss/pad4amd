@@ -124,6 +124,7 @@ class AMalwareDetectionPAD(object):
                                                   max_lambda_=lmda_upper_bound,
                                                   **self.attack_param
                                                   )
+                print('elem_x:', torch.isnan(pertb_mal_x))
                 disc_pertb_mal_x_ = utils.round_x(pertb_mal_x, 0.5)
                 total_time += time.time() - start_time
                 x_batch = torch.cat([x_batch, ben_x_batch, disc_pertb_mal_x_], dim=0)
@@ -153,6 +154,9 @@ class AMalwareDetectionPAD(object):
                                                                y_batch[batch_size:],
                                                                logits_g[2 * batch_size:],
                                                                y_batch_[2 * batch_size:])
+                if torch.isnan(loss_train):
+                    import sys
+                    sys.exit(1)
 
                 loss_train.backward()
                 optimizer.step()
