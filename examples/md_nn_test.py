@@ -29,18 +29,18 @@ detector_argparse.add_argument('--cuda', action='store_true', default=False,
 detector_argparse.add_argument('--seed', type=int, default=0,
                                help='random seed.')
 detector_argparse.add_argument('--dense_hidden_units', type=lambda s: [int(u) for u in s.split(',')], default='200,200',
-                               help='delimited list input, e.g., "32,32"', )
+                               help='delimited list input, e.g., "200,200"', )
 detector_argparse.add_argument('--dropout', type=float, default=0.6,
                                help='dropout rate')
 detector_argparse.add_argument('--alpha_', type=float, default=0.2,
                                help='slope coefficient of leaky-relu or elu')
 detector_argparse.add_argument('--smooth', action='store_true', default=False,
                                help='use smooth activation elu (rather than leaky-relu) in the GAT layer.')
-detector_argparse.add_argument('--batch_size', type=int, default=64,
+detector_argparse.add_argument('--batch_size', type=int, default=128,
                                help='mini-batch size')
-detector_argparse.add_argument('--epochs', type=int, default=50,
+detector_argparse.add_argument('--epochs', type=int, default=100,
                                help='number of epochs to train.')
-detector_argparse.add_argument('--lr', type=float, default=0.005,
+detector_argparse.add_argument('--lr', type=float, default=0.001,
                                help='initial learning rate.')
 detector_argparse.add_argument('--weight_decay', type=float, default=0e-4,
                                help='coefficient of weight decay')
