@@ -33,7 +33,7 @@ class Apk2features(object):
         :param intermediate_save_dir: a directory for saving feature pickle files
         :param number_of_smali_files: the maximum number of smali files processed
         :param max_vocab_size: the maximum number of words
-        :param use_top_disc_features: use feature selection to filtering out entities with low discriminant
+        :param use_top_disc_features: select features that benefiting to classifying malicious samples
         :param file_ext: file extension
         :param update: boolean indicator for recomputing the naive features
         :param proc_number: process number
