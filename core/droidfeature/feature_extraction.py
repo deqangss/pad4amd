@@ -164,7 +164,7 @@ class Apk2features(object):
         ben_feature_frequency /= float(len(gt_labels) - np.sum(gt_labels))
         feature_freq_diff = mal_feature_frequency - ben_feature_frequency
         # select the features that benefit to classifying malicious samples
-        # this increases the FPR
+        # note: this increases FPR
         print(len(feature_freq_diff))
         feature_freq_diff = feature_freq_diff[feature_freq_diff > 0]
         print(len(feature_freq_diff))
