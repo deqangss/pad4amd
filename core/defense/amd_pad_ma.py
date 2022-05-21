@@ -178,7 +178,7 @@ class AMalwareDetectionPAD(object):
                     print(
                         f'Mini batch: {i * nbatches + idx_batch + 1}/{adv_epochs * nbatches} | training time in {mins:.0f} minutes, {secs} seconds.')
                 if hasattr(self.model, 'forward_g'):
-                    acc_g_train = ((torch.sigmoid(logits_g) >= 0.5) == y_batch_).sum().item()
+                    acc_g_train = ((torch.sigmoid(logits_g) >= 0.5) == y_batch_)[2 * batch_size:].sum().item()
                     acc_g_train /= x_batch_.size()[0]
                     accuracies.append(acc_g_train)
                     logger.info(
@@ -247,21 +247,11 @@ class AMalwareDetectionPAD(object):
     def load(self):
         assert path.exists(self.model_save_path), 'train model first'
         ckpt = torch.load(self.model_save_path)
-        # self.model.tau = ckpt['tau']
-        # self.model.md_nn_model.load_state_dict(ckpt['md_model'])
-        # self.model.load_state_dict(ckpt['amd_model'])
         self.model.load_state_dict(ckpt['model'])
 
     def save_to_disk(self, epoch, optimizer, save_path=None):
         if not path.exists(save_path):
             utils.mkdir(path.dirname(save_path))
-        # torch.save({'tau': self.model.tau,
-        #             'md_model': self.model.md_nn_model.state_dict(),
-        #             'amd_model': self.model.state_dict(),
-        #             'epoch': epoch,
-        #             'optimizer_state_dict': optimizer.state_dict()
-        #             },
-        #            save_path)
         torch.save({'model': self.model.state_dict(),
                     'epoch': epoch,
                     'optimizer_state_dict': optimizer.state_dict()
