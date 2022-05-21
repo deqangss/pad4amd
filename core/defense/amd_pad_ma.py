@@ -80,7 +80,6 @@ class AMalwareDetectionPAD(object):
                        weight_decay=weight_decay)
         # get threshold tau
         if hasattr(self.model, 'tau'):
-            # self.model.get_threshold(validation_data_producer)
             self.model.reset_threshold()
             logger.info(f"The threshold is {self.model.tau.item():.3f}.")
         constraint = utils.NonnegWeightConstraint()
@@ -178,7 +177,7 @@ class AMalwareDetectionPAD(object):
                     print(
                         f'Mini batch: {i * nbatches + idx_batch + 1}/{adv_epochs * nbatches} | training time in {mins:.0f} minutes, {secs} seconds.')
                 if hasattr(self.model, 'forward_g'):
-                    acc_g_train = ((torch.sigmoid(logits_g) >= 0.5) == y_batch_)[2 * batch_size:].sum().item()
+                    acc_g_train = ((torch.sigmoid(logits_g) >= 0.5) == y_batch_).sum().item()
                     acc_g_train /= x_batch_.size()[0]
                     accuracies.append(acc_g_train)
                     logger.info(
@@ -190,10 +189,9 @@ class AMalwareDetectionPAD(object):
                 logger.info(
                     f'Training loss (epoch level): {np.mean(losses):.4f} | Train accuracy: {np.mean(accuracies) * 100:.2f}')
 
-            # # get threshold tau
-            # if hasattr(self.model, 'tau'):
-            #     self.model.get_threshold(validation_data_producer)
-            # long-time to train (save the model temporally in case of interruption)
+            # get threshold tau
+            if hasattr(self.model, 'tau'):
+                self.model.get_threshold(validation_data_producer)
             self.save_to_disk(i + 1, optimizer, self.model_save_path + '.tmp')
             # select model
             self.model.eval()
@@ -233,7 +231,6 @@ class AMalwareDetectionPAD(object):
                 acc_val_adv_be = acc_val_adv
                 best_epoch = i + 1
                 self.save_to_disk(best_epoch, optimizer, self.model_save_path)
-            self.attack.is_attacker = False
             if verbose:
                 logger.info(
                     f"\tVal accuracy {acc_val * 100:.4}% with accuracy {acc_val_adv * 100:.4}% under attack.")
@@ -243,6 +240,8 @@ class AMalwareDetectionPAD(object):
                     logger.info(
                         f'The threshold is {self.model.tau}.'
                     )
+            self.attack.is_attacker = False
+            self.model.reset_threshold()
 
     def load(self):
         assert path.exists(self.model_save_path), 'train model first'

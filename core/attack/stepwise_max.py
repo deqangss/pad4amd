@@ -37,7 +37,7 @@ class StepwiseMax(BaseAttack):
 
     def perturb(self, model, x, label=None,
                 steps=100,
-                step_check=10,
+                step_check=1,
                 sl_l1=1.,
                 sl_l2=1.,
                 sl_linf=0.01,
@@ -114,7 +114,7 @@ class StepwiseMax(BaseAttack):
         return adv_x
 
     def _perturb(self, model, x, label=None,
-                 steps=10,
+                 steps=1,
                  step_length_l1=1.,
                  step_length_l2=0.5,
                  step_length_linf=0.01,
