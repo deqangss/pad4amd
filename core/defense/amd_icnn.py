@@ -267,6 +267,9 @@ class AdvMalwareDetectorICNN(nn.Module, DetectorTemplate):
             assert i >= 0
             self.tau[0] = s[i]
 
+    def reset_threshold(self):
+        self.tau[0] = 0.
+
     def customize_loss(self, logits_x, labels, logits_adv_x, labels_adv):
         G = 0
         if logits_adv_x is not None and len(logits_adv_x) > 0:

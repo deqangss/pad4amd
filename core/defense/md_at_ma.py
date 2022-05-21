@@ -101,7 +101,7 @@ class MaxAdvTraining(object):
                 logits = self.model.forward(x_batch)
                 loss_train = self.model.customize_loss(logits[:batch_size],
                                                        y_batch[:batch_size])
-                # if len(adv_mal_x) > 0:
+
                 loss_train += beta * self.model.customize_loss(logits[batch_size:],
                                                                y_batch[batch_size:])
 

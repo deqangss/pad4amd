@@ -80,7 +80,8 @@ class AMalwareDetectionPAD(object):
                        weight_decay=weight_decay)
         # get threshold tau
         if hasattr(self.model, 'tau'):
-            self.model.get_threshold(validation_data_producer)
+            # self.model.get_threshold(validation_data_producer)
+            self.model.reset_threshold()
             logger.info(f"The threshold is {self.model.tau.item():.3f}.")
         constraint = utils.NonnegWeightConstraint()
 
@@ -129,7 +130,7 @@ class AMalwareDetectionPAD(object):
                 x_batch = torch.cat([x_batch, ben_x_batch, disc_pertb_mal_x_], dim=0)
                 y_batch = torch.cat([y_batch, ben_y_batch, mal_y_batch])
                 if use_continuous_pert:
-                    filter_flag = torch.sum(torch.abs(pertb_mal_x - mal_x_batch), dim=-1) <= 1e-6
+                    filter_flag = torch.amax(torch.abs(pertb_mal_x - mal_x_batch), dim=-1) <= 1e-1
                     pertb_mal_x = pertb_mal_x[~filter_flag]
                     x_batch_ = torch.cat([x_batch_, pertb_mal_x], dim=0)
                     n_pertb_mal = pertb_mal_x.shape[0]
@@ -149,10 +150,16 @@ class AMalwareDetectionPAD(object):
                                                        y_batch[:batch_size],
                                                        logits_g[:2 * batch_size],
                                                        y_batch_[:2 * batch_size])
-                loss_train += beta * self.model.customize_loss(logits_f[batch_size:],
-                                                               y_batch[batch_size:],
-                                                               logits_g[2 * batch_size:],
-                                                               y_batch_[2 * batch_size:])
+                if i + 1 <= 5:
+                    loss_train += beta * self.model.customize_loss(None,
+                                                                   None,
+                                                                   logits_g[2 * batch_size:],
+                                                                   y_batch_[2 * batch_size:])
+                else:
+                    loss_train += beta * self.model.customize_loss(logits_f[batch_size:],
+                                                                   y_batch[batch_size:],
+                                                                   logits_g[2 * batch_size:],
+                                                                   y_batch_[2 * batch_size:])
 
                 loss_train.backward()
                 optimizer.step()
@@ -183,9 +190,9 @@ class AMalwareDetectionPAD(object):
                 logger.info(
                     f'Training loss (epoch level): {np.mean(losses):.4f} | Train accuracy: {np.mean(accuracies) * 100:.2f}')
 
-            # get threshold tau
-            if hasattr(self.model, 'tau'):
-                self.model.get_threshold(validation_data_producer)
+            # # get threshold tau
+            # if hasattr(self.model, 'tau'):
+            #     self.model.get_threshold(validation_data_producer)
             # long-time to train (save the model temporally in case of interruption)
             self.save_to_disk(i + 1, optimizer, self.model_save_path + '.tmp')
             # select model
