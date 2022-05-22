@@ -63,13 +63,6 @@ class MaxAdvTraining(object):
         @param weight_decay: Float, penalty factor, default value 5e-4
         @param verbose: Boolean, whether to show verbose info
         """
-        # normal training is used for obtaining the initial indicator g
-        logger.info("Normal training is starting...")
-        self.model.fit(train_data_producer,
-                       validation_data_producer,
-                       epochs=epochs,
-                       lr=lr,
-                       weight_decay=weight_decay)
         optimizer = optim.Adam(self.model.parameters(), lr=lr, weight_decay=weight_decay)
         total_time = 0.
         nbatches = len(train_data_producer)
