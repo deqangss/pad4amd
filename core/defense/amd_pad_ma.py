@@ -129,15 +129,18 @@ class AMalwareDetectionPAD(object):
                 if use_continuous_pert:
                     filter_flag = torch.amax(torch.abs(pertb_mal_x - mal_x_batch), dim=-1) <= 1e-6
                     pertb_mal_x = pertb_mal_x[~filter_flag]
+                    orgin_mal_x = mal_x_batch[~filter_flag]
                     x_batch_ = torch.cat([x_batch_, pertb_mal_x], dim=0)
                     n_pertb_mal = pertb_mal_x.shape[0]
                 else:
                     filter_flag = torch.sum(torch.abs(disc_pertb_mal_x_ - mal_x_batch), dim=-1) == 0
                     disc_pertb_mal_x_ = disc_pertb_mal_x_[~filter_flag]
+                    orgin_mal_x = mal_x_batch[~filter_flag]
                     x_batch_ = torch.cat([x_batch_, disc_pertb_mal_x_], dim=0)
                     n_pertb_mal = disc_pertb_mal_x_.shape[0]
-                y_batch_ = torch.cat([y_batch_, torch.ones((n_pertb_mal,), ).to(
+                y_batch_ = torch.cat([y_batch_, torch.zeros((n_pertb_mal,), ).to(
                     self.model.device)]).double()
+                y_batch_[-n_pertb_mal:] = 1.
                 start_time = time.time()
                 self.model.train()
                 optimizer.zero_grad()
@@ -172,8 +175,9 @@ class AMalwareDetectionPAD(object):
                     acc_g_train = ((torch.sigmoid(logits_g) >= 0.5) == y_batch_).sum().item()
                     acc_g_train /= x_batch_.size()[0]
 
-                    acc_g_train2 = ((torch.sigmoid(logits_g) >= 0.5) == y_batch_)[-n_pertb_mal:].sum().item()
-                    print('acc of g: ', acc_g_train2 / n_pertb_mal)
+                    flag = y_batch_ == 0.
+                    acc_g_train2 = ((torch.sigmoid(logits_g) >= 0.5) == y_batch_)[flag].sum().item()
+                    print('acc of g: ', acc_g_train2 / torch.sum(flag))
                     accuracies.append(acc_g_train)
                     logger.info(
                         f'Training loss (batch level): {losses[-1]:.4f} | Train accuracy: {acc_f_train * 100:.2f}% & {acc_g_train * 100:.2f}%.')
