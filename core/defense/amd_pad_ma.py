@@ -171,6 +171,9 @@ class AMalwareDetectionPAD(object):
                 if hasattr(self.model, 'forward_g'):
                     acc_g_train = ((torch.sigmoid(logits_g) >= 0.5) == y_batch_).sum().item()
                     acc_g_train /= x_batch_.size()[0]
+
+                    acc_g_train2 = ((torch.sigmoid(logits_g) >= 0.5) == y_batch_)[-n_pertb_mal:].sum().item()
+                    print('acc of g: ', acc_g_train2 / n_pertb_mal)
                     accuracies.append(acc_g_train)
                     logger.info(
                         f'Training loss (batch level): {losses[-1]:.4f} | Train accuracy: {acc_f_train * 100:.2f}% & {acc_g_train * 100:.2f}%.')

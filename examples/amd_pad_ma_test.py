@@ -132,6 +132,16 @@ def _main():
     max_adv_training_model.load()
     max_adv_training_model.model.predict(test_dataset_producer)
 
+    max_adv_training_model.fit(train_dataset_producer,
+                               val_dataset_producer,
+                               epochs=5,
+                               adv_epochs=args.epochs - 5,
+                               beta=args.beta,
+                               use_continuous_pert=args.use_cont_pertb,
+                               lr=args.lr,
+                               weight_decay=args.weight_decay
+                               )
+
     # attr_cls, attr_de = max_adv_training_model.model.get_important_attributes(test_dataset_producer)
     # import numpy as np
     # np.save("./attributions-mad-cls", attr_cls)
