@@ -118,7 +118,7 @@ class AMalwareDetectionPAD(object):
                 x_batch = torch.cat([x_batch, disc_pertb_mal_x_], dim=0)
                 y_batch = torch.cat([y_batch, mal_y_batch])
                 if use_continuous_pert:
-                    filter_flag = torch.amax(torch.abs(pertb_mal_x - mal_x_batch), dim=-1) <= 1e-1
+                    filter_flag = torch.amax(torch.abs(pertb_mal_x - mal_x_batch), dim=-1) <= 1e-6
                     pertb_mal_x = pertb_mal_x[~filter_flag]
                     x_batch_ = torch.cat([x_batch_, pertb_mal_x], dim=0)
                     n_pertb_mal = pertb_mal_x.shape[0]
@@ -160,6 +160,8 @@ class AMalwareDetectionPAD(object):
                 mins, secs = int(total_time / 60), int(total_time % 60)
                 acc_f_train = (logits_f.argmax(1) == y_batch).sum().item()
                 acc_f_train /= x_batch.size()[0]
+                accf_2 = (logits_f.argmax(1) == y_batch)[batch_size:].sum().item()
+                accf_2 /= disc_pertb_mal_x_.shape[0]
                 accuracies.append(acc_f_train)
                 losses.append(loss_train.item())
                 if verbose:
@@ -170,7 +172,7 @@ class AMalwareDetectionPAD(object):
                     acc_g_train /= x_batch_.size()[0]
                     accuracies.append(acc_g_train)
                     logger.info(
-                        f'Training loss (batch level): {losses[-1]:.4f} | Train accuracy: {acc_f_train * 100:.2f}% & {acc_g_train * 100:.2f}%.')
+                        f'Training loss (batch level): {losses[-1]:.4f} | Train accuracy: {acc_f_train * 100:.2f}% {accf_2 * 100:.2f}% & {acc_g_train * 100:.2f}%.')
                 else:
                     logger.info(
                         f'Training loss (batch level): {losses[-1]:.4f} | Train accuracy: {acc_f_train * 100:.2f}%.')
