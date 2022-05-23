@@ -71,6 +71,7 @@ class AMalwareDetectionPAD(object):
         @param weight_decay: Float, penalty factor, default value 5e-4 in Graph ATtention layer (GAT)
         @param verbose: Boolean, whether to show verbose info
         """
+
         constraint = utils.NonnegWeightConstraint()
 
         optimizer = optim.Adam(self.model.parameters(), lr=lr, weight_decay=weight_decay)
