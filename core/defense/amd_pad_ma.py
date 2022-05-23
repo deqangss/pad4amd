@@ -160,8 +160,10 @@ class AMalwareDetectionPAD(object):
                 mins, secs = int(total_time / 60), int(total_time % 60)
                 acc_f_train = (logits_f.argmax(1) == y_batch).sum().item()
                 acc_f_train /= x_batch.size()[0]
+
                 accf_2 = (logits_f.argmax(1) == y_batch)[batch_size:].sum().item()
                 accf_2 /= disc_pertb_mal_x_.shape[0]
+
                 accuracies.append(acc_f_train)
                 losses.append(loss_train.item())
                 if verbose:
@@ -170,9 +172,12 @@ class AMalwareDetectionPAD(object):
                 if hasattr(self.model, 'forward_g'):
                     acc_g_train = ((torch.sigmoid(logits_g) >= 0.5) == y_batch_).sum().item()
                     acc_g_train /= x_batch_.size()[0]
+                    print('num adv mal:', n_pertb_mal)
+                    acc_g_train2 = ((torch.sigmoid(logits_g) >= 0.5) == y_batch_)[-n_pertb_mal:].sum().item()
+                    acc_g_train2 /= n_pertb_mal
                     accuracies.append(acc_g_train)
                     logger.info(
-                        f'Training loss (batch level): {losses[-1]:.4f} | Train accuracy: {acc_f_train * 100:.2f}% {accf_2 * 100:.2f}% & {acc_g_train * 100:.2f}%.')
+                        f'Training loss (batch level): {losses[-1]:.4f} | Train accuracy: {acc_f_train * 100:.2f}% {accf_2 * 100:.2f}% & {acc_g_train * 100:.2f}% {acc_g_train2 * 100:.2f}%.')
                 else:
                     logger.info(
                         f'Training loss (batch level): {losses[-1]:.4f} | Train accuracy: {acc_f_train * 100:.2f}%.')
