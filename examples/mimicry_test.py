@@ -20,7 +20,7 @@ logger.addHandler(ErrorHandler)
 atta_argparse = argparse.ArgumentParser(description='arguments for mimicry attack')
 atta_argparse.add_argument('--trials', type=int, default=5,
                            help='number of benign samples for perturbing one malicious file.')
-atta_argparse.add_argument('--n_ben', type=int, default=1000,
+atta_argparse.add_argument('--n_ben', type=int, default=5000,
                            help='number of benign samples.')
 atta_argparse.add_argument('--oblivion', action='store_true', default=False,
                            help='whether know the adversary indicator or not.')
