@@ -74,7 +74,6 @@ class Mimicry(BaseAttack):
                     success_flag = np.append(success_flag, [False])
                 else:
                     success_flag = np.append(success_flag, [True])
-            print(cls, ing, len(x))
             if is_apk:
                 return success_flag, np.concatenate(x_mod_list)
             else:
