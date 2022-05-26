@@ -66,9 +66,9 @@ class Mimicry(BaseAttack):
 
                 if hasattr(model, 'indicator'):
                     use_flag = (y_pred == 0) & (model.indicator(x_density, y_pred))
-                    if (y_pred == 0)[ben_id_sel]:
+                    if not (y_pred == 0)[ben_id_sel]:
                         cls += 1
-                    if (model.indicator(x_density, y_pred))[ben_id_sel]:
+                    if not (model.indicator(x_density, y_pred))[ben_id_sel]:
                         ing += 1
                 else:
                     use_flag = attack_flag
@@ -80,7 +80,7 @@ class Mimicry(BaseAttack):
                     success_flag = np.append(success_flag, [False])
                 else:
                     success_flag = np.append(success_flag, [True])
-            print(cls, ing)
+            print(cls, ing, len(x))
             if is_apk:
                 return success_flag, np.concatenate(x_mod_list)
             else:
