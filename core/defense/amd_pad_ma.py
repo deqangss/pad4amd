@@ -71,6 +71,16 @@ class AMalwareDetectionPAD(object):
         @param weight_decay: Float, penalty factor, default value 5e-4 in Graph ATtention layer (GAT)
         @param verbose: Boolean, whether to show verbose info
         """
+        # normal training is used for obtaining the initial indicator g
+        logger.info("Normal training is starting...")
+        self.model.fit(train_data_producer,
+                       validation_data_producer,
+                       epochs=epochs,
+                       lr=lr,
+                       weight_decay=weight_decay)
+        if hasattr(self.model, 'tau'):
+            self.model.reset_threshold()
+
         constraint = utils.NonnegWeightConstraint()
         optimizer = optim.Adam(self.model.parameters(), lr=lr, weight_decay=weight_decay)
         total_time = 0.

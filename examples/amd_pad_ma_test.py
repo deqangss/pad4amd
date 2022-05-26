@@ -117,7 +117,8 @@ def _main():
     if args.mode == 'train':
         max_adv_training_model.fit(train_dataset_producer,
                                    val_dataset_producer,
-                                   adv_epochs=args.epochs,
+                                   epochs=5,
+                                   adv_epochs=args.epochs - 5,
                                    beta=args.beta,
                                    use_continuous_pert=args.use_cont_pertb,
                                    lr=args.lr,

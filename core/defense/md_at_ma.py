@@ -80,12 +80,14 @@ class MaxAdvTraining(object):
                     utils.get_mal_ben_data(x_batch, y_batch)
                 if null_flag:
                     continue
-                start_time = time.time()
+                total_time += time.time() - start_time
                 self.model.eval()
                 pertb_mal_x = self.attack.perturb(self.model, mal_x_batch, mal_y_batch,
                                                   **self.attack_param
                                                   )
                 pertb_mal_x = utils.round_x(pertb_mal_x, 0.5)
+                # add benign samples into dataset in case of the FPR increased notably, see
+                # the repository https://github.com/deqangss/adv-dnn-ens-malware
                 x_batch = torch.cat([x_batch, ben_x_batch, pertb_mal_x], dim=0)
                 y_batch = torch.cat([y_batch, ben_y_batch, mal_y_batch])
                 start_time = time.time()
@@ -100,7 +102,6 @@ class MaxAdvTraining(object):
 
                 loss_train.backward()
                 optimizer.step()
-
                 total_time += time.time() - start_time
                 mins, secs = int(total_time / 60), int(total_time % 60)
                 acc_train = (logits.argmax(1) == y_batch).sum().item()
