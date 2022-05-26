@@ -48,6 +48,8 @@ class Mimicry(BaseAttack):
         success_flag = np.array([])
         with torch.no_grad():
             x_mod_list = []
+            cls = 0
+            ing = 0
             for _x in x:
                 indices = torch.randperm(len(self.ben_x))[:trials]
                 trial_vectors = self.ben_x[indices]
@@ -64,6 +66,10 @@ class Mimicry(BaseAttack):
 
                 if hasattr(model, 'indicator'):
                     use_flag = (y_pred == 0) & (model.indicator(x_density, y_pred))
+                    if (y_pred == 0)[ben_id_sel]:
+                        cls += 1
+                    if (model.indicator(x_density, y_pred))[ben_id_sel]:
+                        ing += 1
                 else:
                     use_flag = attack_flag
 
@@ -74,6 +80,7 @@ class Mimicry(BaseAttack):
                     success_flag = np.append(success_flag, [False])
                 else:
                     success_flag = np.append(success_flag, [True])
+            print(cls, ing)
             if is_apk:
                 return success_flag, np.concatenate(x_mod_list)
             else:
