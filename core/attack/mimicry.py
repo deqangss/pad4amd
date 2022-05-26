@@ -48,8 +48,6 @@ class Mimicry(BaseAttack):
         success_flag = np.array([])
         with torch.no_grad():
             x_mod_list = []
-            cls = 0
-            ing = 0
             for _x in x:
                 indices = torch.randperm(len(self.ben_x))[:trials]
                 trial_vectors = self.ben_x[indices]
@@ -59,17 +57,13 @@ class Mimicry(BaseAttack):
                 y_cent, x_density = model.inference_batch_wise(modified_x)
                 y_pred = np.argmax(y_cent, axis=-1)
                 if hasattr(model, 'indicator') and (not self.oblivion):
-                    attack_flag = (y_pred == 0) & (model.indicator(x_density, y_pred))
+                    attack_flag = (y_pred == 0)
                 else:
                     attack_flag = (y_pred == 0)
                 ben_id_sel = np.argmax(attack_flag)
 
                 if hasattr(model, 'indicator'):
-                    use_flag = (y_pred == 0) & (model.indicator(x_density, y_pred))
-                    if ~(y_pred == 0)[ben_id_sel]:
-                        cls += 1
-                    if ~(model.indicator(x_density, y_pred))[ben_id_sel]:
-                        ing += 1
+                    use_flag = (y_pred == 0)
                 else:
                     use_flag = attack_flag
 
