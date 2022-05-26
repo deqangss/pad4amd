@@ -66,9 +66,9 @@ class Mimicry(BaseAttack):
 
                 if hasattr(model, 'indicator'):
                     use_flag = (y_pred == 0) & (model.indicator(x_density, y_pred))
-                    if not (y_pred == 0)[ben_id_sel]:
+                    if ~(y_pred == 0)[ben_id_sel]:
                         cls += 1
-                    if not (model.indicator(x_density, y_pred))[ben_id_sel]:
+                    if ~(model.indicator(x_density, y_pred))[ben_id_sel]:
                         ing += 1
                 else:
                     use_flag = attack_flag
