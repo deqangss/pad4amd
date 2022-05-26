@@ -128,6 +128,9 @@ def _main():
         save_args(path.join(path.dirname(max_adv_training_model.model_save_path), "hparam"), vars(args))
         # save parameters for rebuilding the neural nets
         dump_pickle(vars(args), path.join(path.dirname(max_adv_training_model.model_save_path), "hparam.pkl"))
+    # test: accuracy
+    max_adv_training_model.load()
+
     max_adv_training_model.fit(train_dataset_producer,
                                val_dataset_producer,
                                epochs=5,
@@ -137,8 +140,7 @@ def _main():
                                lr=args.lr,
                                weight_decay=args.weight_decay
                                )
-    # test: accuracy
-    max_adv_training_model.load()
+
     max_adv_training_model.model.predict(test_dataset_producer)
 
     # attr_cls, attr_de = max_adv_training_model.model.get_important_attributes(test_dataset_producer)
