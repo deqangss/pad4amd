@@ -63,6 +63,15 @@ class MaxAdvTraining(object):
         @param weight_decay: Float, penalty factor, default value 5e-4
         @param verbose: Boolean, whether to show verbose info
         """
+        # normal training is used for obtaining the initial indicator g
+        logger.info("Normal training is starting...")
+        self.model.fit(train_data_producer,
+                       validation_data_producer,
+                       epochs=epochs,
+                       lr=lr,
+                       weight_decay=weight_decay)
+        if hasattr(self.model, 'tau'):
+            self.model.reset_threshold()
         optimizer = optim.Adam(self.model.parameters(), lr=lr, weight_decay=weight_decay)
         total_time = 0.
         nbatches = len(train_data_producer)
@@ -84,9 +93,8 @@ class MaxAdvTraining(object):
                 if ben_x_batch.shape[0] > mal_x_batch.shape[0]:
                     p = torch.ones(ben_x_batch.shape[0], device=self.model.device) / ben_x_batch.shape[0]
                     idx = p.multinomial(num_samples=mal_x_batch.shape[0], replacement=False)
-                    print(idx)
                     ben_x_batch = ben_x_batch[idx]
-                    ben_x_batch = torch.clamp(ben_x_batch + utils.psn(ben_x_batch, np.random.uniform(0.999, 1.)),
+                    ben_x_batch = torch.clamp(ben_x_batch + utils.psn(ben_x_batch, np.random.uniform(0.995, 1.)),
                                               min=0.,
                                               max=1.)
                     ben_y_batch = ben_y_batch[idx]
