@@ -80,14 +80,22 @@ class MaxAdvTraining(object):
                     utils.get_mal_ben_data(x_batch, y_batch)
                 if null_flag:
                     continue
+                # balance the dataset for the part of adversarial training
+                if ben_x_batch.shape[0] > mal_x_batch.shape[0]:
+                    p = torch.ones(ben_x_batch.shape[0], device=self.model.device) / ben_x_batch.shape[0]
+                    idx = p.multinomial(num_samples=mal_x_batch.shape[0], replacement=False)
+                    ben_x_batch = ben_x_batch[idx]
+                    ben_x_batch = torch.clamp(ben_x_batch + utils.psn(ben_x_batch, np.random.uniform(0.999, 1.)),
+                                              min=0.,
+                                              max=1.)
+                    ben_y_batch = ben_y_batch[idx]
                 total_time += time.time() - start_time
                 self.model.eval()
                 pertb_mal_x = self.attack.perturb(self.model, mal_x_batch, mal_y_batch,
                                                   **self.attack_param
                                                   )
                 pertb_mal_x = utils.round_x(pertb_mal_x, 0.5)
-                # add benign samples into dataset in case of the FPR increased notably, see
-                # the repository https://github.com/deqangss/adv-dnn-ens-malware
+                # add benign samples into dataset in case of the FPR increased notably
                 x_batch = torch.cat([x_batch, ben_x_batch, pertb_mal_x], dim=0)
                 y_batch = torch.cat([y_batch, ben_y_batch, mal_y_batch])
                 start_time = time.time()

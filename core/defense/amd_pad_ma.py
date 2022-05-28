@@ -111,6 +111,14 @@ class AMalwareDetectionPAD(object):
                     utils.get_mal_ben_data(x_batch, y_batch)
                 if null_flag:
                     continue
+                # balance the dataset for the part of adversarial training
+                if ben_x_batch.shape[0] > mal_x_batch.shape[0]:
+                    p = torch.ones(ben_x_batch.shape[0], device=self.model.device) / ben_x_batch.shape[0]
+                    idx = p.multinomial(num_samples=mal_x_batch.shape[0], replacement=False)
+                    ben_x_batch = ben_x_batch[idx]
+                    ben_x_batch = torch.clamp(ben_x_batch + utils.psn(ben_x_batch, np.random.uniform(0.999, 1.)), min=0.,
+                                              max=1.)
+                    ben_y_batch = ben_y_batch[idx]
                 start_time = time.time()
                 # the attack perturbs feature vectors using various hyper-parameter lambda, aiming to obtain
                 # adversarial examples as much as possible
