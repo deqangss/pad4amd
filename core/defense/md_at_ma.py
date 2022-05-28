@@ -89,6 +89,7 @@ class MaxAdvTraining(object):
                                               min=0.,
                                               max=1.)
                     ben_y_batch = ben_y_batch[idx]
+                start_time = time.time()
                 total_time += time.time() - start_time
                 self.model.eval()
                 pertb_mal_x = self.attack.perturb(self.model, mal_x_batch, mal_y_batch,
