@@ -84,6 +84,7 @@ class MaxAdvTraining(object):
                 if ben_x_batch.shape[0] > mal_x_batch.shape[0]:
                     p = torch.ones(ben_x_batch.shape[0], device=self.model.device) / ben_x_batch.shape[0]
                     idx = p.multinomial(num_samples=mal_x_batch.shape[0], replacement=False)
+                    print(idx)
                     ben_x_batch = ben_x_batch[idx]
                     ben_x_batch = torch.clamp(ben_x_batch + utils.psn(ben_x_batch, np.random.uniform(0.999, 1.)),
                                               min=0.,
