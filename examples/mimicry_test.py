@@ -60,6 +60,8 @@ def _main():
     dataset = Dataset(use_cache=hp_params['cache'],
                       feature_ext_args={'proc_number': hp_params['proc_number']})
     test_x, testy = dataset.test_dataset
+    val_dataset_producer = dataset.get_input_producer(*dataset.validation_dataset, batch_size=hp_params['batch_size'],
+                                                      name='val')
     mal_save_path = os.path.join(config.get('dataset', 'dataset_dir'), 'attack.idx')
     if not os.path.exists(mal_save_path):
         mal_test_x, mal_testy = test_x[testy == 1], testy[testy == 1]
@@ -138,6 +140,7 @@ def _main():
     elif args.model == 'amd_pad_ma':
         adv_model = AMalwareDetectionPAD(model)
         adv_model.load()
+        adv_model.model.get_threshold(val_dataset_producer, ratio=hp_params['ratio'])
         model = adv_model.model
     else:
         model.load()
