@@ -140,7 +140,6 @@ def _main():
     elif args.model == 'amd_pad_ma':
         adv_model = AMalwareDetectionPAD(model)
         adv_model.load()
-        adv_model.model.get_threshold(val_dataset_producer, ratio=0.1)
         model = adv_model.model
     else:
         model.load()
@@ -172,7 +171,6 @@ def _main():
         logger.info(
             f"The attack effectiveness under mimicry attack is {np.sum(_flag) / float(len(_flag)) * 100}%.")
         x_mod_list.append(x_mod)
-        break
     success_flag = np.concatenate(success_flag_list)
     logger.info(f"The mean accuracy on perturbed malware is {(1. - np.sum(success_flag) / float(mal_count)) * 100}%.")
 
