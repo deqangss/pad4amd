@@ -113,7 +113,7 @@ class AMalwareDetectionPAD(object):
                 lmda = np.random.choice(lmda_space)
                 self.model.eval()
                 pertb_mal_x = self.attack.perturb(self.model, mal_x_batch, mal_y_batch,
-                                                  min_lambda_=lmda_lower_bound,
+                                                  min_lambda_=lmda,
                                                   # when lambda is small, we cannot get effective attacks
                                                   max_lambda_=lmda_upper_bound,
                                                   **self.attack_param
