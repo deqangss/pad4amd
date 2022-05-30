@@ -49,7 +49,7 @@ class Mimicry(BaseAttack):
         with torch.no_grad():
             torch.manual_seed(seed)
             x_mod_list = []
-            for _x in x[:2]:
+            for _x in x:
                 indices = torch.randperm(len(self.ben_x))[:trials]
                 trial_vectors = self.ben_x[indices]
                 _x_fixed_one = ((1. - self.manipulation_x).float() * _x)[None, :]
