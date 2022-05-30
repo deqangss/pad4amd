@@ -47,6 +47,7 @@ class Mimicry(BaseAttack):
         trials = trials if trials < len(self.ben_x) else len(self.ben_x)
         success_flag = np.array([])
         with torch.no_grad():
+            torch.manual_seed(seed)
             x_mod_list = []
             for _x in x[:2]:
                 indices = torch.randperm(len(self.ben_x))[:trials]
