@@ -57,18 +57,18 @@ class Mimicry(BaseAttack):
                 y_cent, x_density = model.inference_batch_wise(modified_x)
                 y_pred = np.argmax(y_cent, axis=-1)
                 if hasattr(model, 'indicator') and (not self.oblivion):
-                    attack_flag = (y_pred == 0) & (model.indicator(x_density, y_pred))
-                else:
-                    attack_flag = (y_pred == 0)
-                ben_id_sel = np.argmax(attack_flag)
-
-                if hasattr(model, 'indicator'):
                     use_flag = (y_pred == 0) & (model.indicator(x_density, y_pred))
                 else:
-                    use_flag = attack_flag
+                    use_flag = (y_pred == 0)
+                ben_id_sel = np.argmax(use_flag)
 
-                    x_mod = (modified_x[ben_id_sel] - _x).detach().cpu().numpy()
-                    x_mod_list.append(x_mod)
+                # if hasattr(model, 'indicator'):
+                #     use_flag = (y_pred == 0) & (model.indicator(x_density, y_pred))
+                # else:
+                #     use_flag = attack_flag
+
+                x_mod = (modified_x[ben_id_sel] - _x).detach().cpu().numpy()
+                x_mod_list.append(x_mod)
 
                 if not use_flag[ben_id_sel]:
                     success_flag = np.append(success_flag, [False])
