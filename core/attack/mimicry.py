@@ -58,6 +58,7 @@ class Mimicry(BaseAttack):
                 y_pred = np.argmax(y_cent, axis=-1)
                 if hasattr(model, 'indicator') and (not self.oblivion):
                     use_flag = (y_pred == 0) & (model.indicator(x_density, y_pred))
+                    print(np.sum(y_pred == 0), np.sum(model.indicator(x_density, y_pred)))
                 else:
                     use_flag = (y_pred == 0)
                 ben_id_sel = np.argmax(use_flag)
