@@ -140,7 +140,6 @@ def _main():
     elif args.model == 'amd_pad_ma':
         adv_model = AMalwareDetectionPAD(model)
         adv_model.load()
-        adv_model.model.get_threshold(val_dataset_producer, ratio=hp_params['ratio'])
         model = adv_model.model
     else:
         model.load()
