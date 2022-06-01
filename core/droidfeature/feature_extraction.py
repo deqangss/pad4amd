@@ -153,7 +153,7 @@ class Apk2features(object):
         # all_words = list(np.array(all_words)[~api_comps])
         for s_word in selected_words:
             all_words.remove(s_word)
-        logger.info("The total number of words: {}.".format(len(all_words)))
+        logger.info("The total number of words: {}-{}.".format(len(selected_words), len(all_words)))
         mal_feature_frequency = np.array(list(map(counter_mal.get, all_words)))
         mal_feature_frequency[mal_feature_frequency == None] = 0
         mal_feature_frequency /= float(np.sum(gt_labels))
