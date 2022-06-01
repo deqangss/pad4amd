@@ -119,7 +119,6 @@ class Apk2features(object):
             else:
                 counter_ben.update(list(feature_occurrence))
         all_words = list(dict.fromkeys(list(counter_ben.keys()) + list(counter_mal.keys())))
-        logger.info("The total number of words: {}.".format(len(all_words)))
         if len(all_words) <= 0:
             raise ValueError("No features exist on this dataset.")
 
@@ -151,9 +150,10 @@ class Apk2features(object):
         # api_comps = api_comps | (np.array(all_words_type)[...] == feature_gen.SERVICE)
         # api_comps = api_comps | (np.array(all_words_type)[...] == feature_gen.RECEIVER)
         # api_comps = api_comps | (np.array(all_words_type)[...] == feature_gen.PROVIDER)
-        all_words = list(np.array(all_words)[~api_comps])
+        # all_words = list(np.array(all_words)[~api_comps])
         for s_word in selected_words:
             all_words.remove(s_word)
+        logger.info("The total number of words: {}.".format(len(all_words)))
         mal_feature_frequency = np.array(list(map(counter_mal.get, all_words)))
         mal_feature_frequency[mal_feature_frequency == None] = 0
         mal_feature_frequency /= float(np.sum(gt_labels))
