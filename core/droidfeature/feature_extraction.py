@@ -119,6 +119,7 @@ class Apk2features(object):
             else:
                 counter_ben.update(list(feature_occurrence))
         all_words = list(dict.fromkeys(list(counter_ben.keys()) + list(counter_mal.keys())))
+        logger.info("The total number of words: ", len(all_words))
         if len(all_words) <= 0:
             raise ValueError("No features exist on this dataset.")
 
