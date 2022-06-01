@@ -140,19 +140,11 @@ class AMalwareDetectionPAD(object):
                                                        y_batch[:batch_size],
                                                        logits_g[:2 * batch_size],
                                                        y_batch_[:2 * batch_size])
-                if np.random.uniform(0, 1, (1,))[0] > 0.5:
-                    loss_train += beta * self.model.customize_loss(logits_f[batch_size:],
-                                                                   y_batch[batch_size:],
-                                                                   None,
-                                                                   None
-                                                                   )
-                else:
-                    loss_train += beta * self.model.customize_loss(None,
-                                                                   None,
-                                                                   logits_g[2 * batch_size:],
-                                                                   y_batch_[2 * batch_size:]
-                                                                   )
-
+                loss_train += beta * self.model.customize_loss(logits_f[batch_size:],
+                                                               y_batch[batch_size:],
+                                                               logits_g[2 * batch_size:],
+                                                               y_batch_[2 * batch_size:]
+                                                               )
 
                 loss_train.backward()
                 optimizer.step()
