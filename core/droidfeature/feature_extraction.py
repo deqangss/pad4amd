@@ -146,11 +146,11 @@ class Apk2features(object):
         for api in susp_apis:
             if feature_gen.check_suspicious_api(api) or feature_gen.check_sensitive_api(api):
                 selected_words.append(api)
-        # remove components
-        api_comps = np.array(all_words_type)[...] == feature_gen.ACTIVITY
-        api_comps = api_comps | (np.array(all_words_type)[...] == feature_gen.SERVICE)
-        api_comps = api_comps | (np.array(all_words_type)[...] == feature_gen.RECEIVER)
-        api_comps = api_comps | (np.array(all_words_type)[...] == feature_gen.PROVIDER)
+        # # remove components
+        # api_comps = np.array(all_words_type)[...] == feature_gen.ACTIVITY
+        # api_comps = api_comps | (np.array(all_words_type)[...] == feature_gen.SERVICE)
+        # api_comps = api_comps | (np.array(all_words_type)[...] == feature_gen.RECEIVER)
+        # api_comps = api_comps | (np.array(all_words_type)[...] == feature_gen.PROVIDER)
         all_words = list(np.array(all_words)[~api_comps])
         for s_word in selected_words:
             all_words.remove(s_word)
@@ -160,7 +160,7 @@ class Apk2features(object):
         ben_feature_frequency = np.array(list(map(counter_ben.get, all_words)))
         ben_feature_frequency[ben_feature_frequency == None] = 0
         ben_feature_frequency /= float(len(gt_labels) - np.sum(gt_labels))
-        feature_freq_diff = mal_feature_frequency - ben_feature_frequency
+        feature_freq_diff = abs(mal_feature_frequency - ben_feature_frequency)
         if self.use_feature_selection:
             # select the features that benefit to classifying malicious samples
             # note: increase the FPR
