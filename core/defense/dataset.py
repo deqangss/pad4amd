@@ -208,9 +208,9 @@ class Dataset(torch.utils.data.Dataset):
         if not isinstance(under_sampling, float):
             raise TypeError("{}".format(type(under_sampling)))
         if under_sampling > 1.:
-            ratio = 1.
+            under_sampling = 1.
         if under_sampling < 0.:
-            ratio = 0.
+            under_sampling = 0.
 
         if not isinstance(X, np.ndarray) and not isinstance(y, np.ndarray):
             raise TypeError
@@ -224,12 +224,12 @@ class Dataset(torch.utils.data.Dataset):
 
         _ben_count = int(_mal_count / under_sampling)
         random_indices = np.random.choice(
-            np.where(y == 1)[0], _ben_count, replace=False
+            np.where(y == 0)[0], _ben_count, replace=False
         )
         ben_x = X[random_indices]
         ben_y = y[random_indices]
-        mal_x = X[y==0]
-        mal_y = y[y==0]
+        mal_x = X[y==1]
+        mal_y = y[y==1]
         X = np.vstack([mal_x, ben_x])
         y = np.vstack([mal_y, ben_y])
         np.random.seed(0)
