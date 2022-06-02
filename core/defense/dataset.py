@@ -6,6 +6,7 @@ import numpy as np
 import torch
 from scipy.sparse.csr import csr_matrix
 from sklearn.model_selection import train_test_split
+from imblearn.under_sampling import RandomUnderSampler
 
 from config import config
 from core.droidfeature.feature_extraction import Apk2features
@@ -13,11 +14,12 @@ from tools import utils
 
 
 class Dataset(torch.utils.data.Dataset):
-    def __init__(self, seed=0, use_cache=False, device='cuda', feature_ext_args=None):
+    def __init__(self, seed=0, use_cache=False, under_sampling=None, device='cuda', feature_ext_args=None):
         """
         build dataset for ml model learning
         :param seed: Integer, the random seed
         :param use_cache: Boolean, cache the representations
+        :param under_sampling, Float or None, a positive real-value represents the ratio of benign samples: number_of_mal / under_sampling
         :param device: String, 'cuda' or 'cpu'
         :param feature_ext_args: Dict, arguments for feature extraction
         """
@@ -69,12 +71,16 @@ class Dataset(torch.utils.data.Dataset):
             self.train_dataset, self.validation_dataset, self.test_dataset = self.data_split(feature_paths, gt_labels)
             utils.dump_pickle((self.train_dataset, self.validation_dataset, self.test_dataset), data_saving_path)
 
-        # calculate the ratio between benign samples and malware samples
-        _labels, counts = np.unique(self.train_dataset[1], return_counts=True)
-        self.sample_weights = np.ones_like(_labels).astype(np.float32)
-        _weights = float(np.max(counts)) / counts
-        for i in range(_labels.shape[0]):
-            self.sample_weights[_labels[i]] = _weights[i]
+        # # calculate the ratio between benign samples and malware samples
+        # _labels, counts = np.unique(self.train_dataset[1], return_counts=True)
+        # self.sample_weights = np.ones_like(_labels).astype(np.float32)
+        # _weights = float(np.max(counts)) / counts
+        # for i in range(_labels.shape[0]):
+        #     self.sample_weights[_labels[i]] = _weights[i]
+        rus = RandomUnderSampler(random_state=seed)
+        print(np.unique(self.train_dataset[1], return_counts=True))
+        x_over, y_over = rus.fit(*self.train_dataset)
+        print(np.unique(x_over, return_counts=True))
 
         self.vocab, _1, _2 = self.feature_extractor.get_vocab(*self.train_dataset)
         self.vocab_size = len(self.vocab)
