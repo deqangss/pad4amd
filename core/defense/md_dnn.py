@@ -10,7 +10,6 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 from captum.attr import IntegratedGradients
-
 import numpy as np
 
 from config import config, logging, ErrorHandler
@@ -183,7 +182,7 @@ class MalwareDetectionDNN(nn.Module):
     def customize_loss(self, logits, gt_labels, representation = None, mini_batch_idx=None):
         return F.cross_entropy(logits, gt_labels)
 
-    def fit(self, train_data_producer, validation_data_producer, epochs=100, lr=0.005, weight_decay=0., verbose=True):
+    def fit(self, train_data_producer, validation_data_producer, epochs=100, lr=0.005, weight_decay=0., weight_sampling=0.5, verbose=True):
         """
         Train the malware detector, pick the best model according to the cross-entropy loss on validation set
 
