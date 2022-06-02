@@ -228,10 +228,10 @@ class Dataset(torch.utils.data.Dataset):
         )
         ben_x = X[random_indices]
         ben_y = y[random_indices]
-        mal_x = X[y==1]
-        mal_y = y[y==1]
-        X = np.vstack([mal_x, ben_x])
-        y = np.vstack([mal_y, ben_y])
+        mal_x = X[y == 1]
+        mal_y = y[y == 1]
+        X = np.concatenate([mal_x, ben_x])
+        y = np.concatenate([mal_y, ben_y])
         np.random.seed(0)
         np.random.shuffle(X)
         np.random.seed(0)
