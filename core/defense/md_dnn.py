@@ -205,6 +205,7 @@ class MalwareDetectionDNN(nn.Module):
             losses, accuracies = [], []
             for idx_batch, (x_train, y_train) in enumerate(train_data_producer):
                 x_train, y_train = utils.to_device(x_train.double(), y_train.long(), self.device)
+                print(np.unique(y_train, return_counts=True))
                 start_time = time.time()
                 optimizer.zero_grad()
                 logits = self.forward(x_train)
