@@ -48,6 +48,8 @@ detector_argparse.add_argument('--weight_decay', type=float, default=0e-4,
 dataset_argparse = cmd_md.add_argument_group(title='data_producer')
 detector_argparse.add_argument('--cache', action='store_true', default=False,
                                help='use cache data or not.')
+detector_argparse.add_argument('--under_sampling', type=float, default=0.1,
+                               help='# of malware / # of benware')
 
 mode_argparse = cmd_md.add_argument_group(title='mode')
 mode_argparse.add_argument('--mode', type=str, default='train', choices=['train', 'test'], required=False,
@@ -58,7 +60,8 @@ mode_argparse.add_argument('--model_name', type=str, default='xxxxxxxx-xxxxxx', 
 
 def _main():
     args = cmd_md.parse_args()
-    dataset = Dataset(use_cache=args.cache, feature_ext_args=get_group_args(args, cmd_md, 'feature'))
+    dataset = Dataset(use_cache=args.cache, under_sampling=args.under_sampling,
+                      feature_ext_args=get_group_args(args, cmd_md, 'feature'))
     train_dataset_producer = dataset.get_input_producer(*dataset.train_dataset, batch_size=args.batch_size, name='train')
     val_dataset_producer = dataset.get_input_producer(*dataset.validation_dataset, batch_size=args.batch_size, name='val')
     test_dataset_producer = dataset.get_input_producer(*dataset.test_dataset, batch_size=args.batch_size, name='test')

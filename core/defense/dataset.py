@@ -14,7 +14,7 @@ from tools import utils
 
 
 class Dataset(torch.utils.data.Dataset):
-    def __init__(self, seed=0, use_cache=False, under_sampling=None, device='cuda', feature_ext_args=None):
+    def __init__(self, seed=0, use_cache=False, under_sampling=0.1, device='cuda', feature_ext_args=None):
         """
         build dataset for ml model learning
         :param seed: Integer, the random seed
@@ -71,16 +71,13 @@ class Dataset(torch.utils.data.Dataset):
             self.train_dataset, self.validation_dataset, self.test_dataset = self.data_split(feature_paths, gt_labels)
             utils.dump_pickle((self.train_dataset, self.validation_dataset, self.test_dataset), data_saving_path)
 
-        # # calculate the ratio between benign samples and malware samples
-        # _labels, counts = np.unique(self.train_dataset[1], return_counts=True)
-        # self.sample_weights = np.ones_like(_labels).astype(np.float32)
-        # _weights = float(np.max(counts)) / counts
-        # for i in range(_labels.shape[0]):
-        #     self.sample_weights[_labels[i]] = _weights[i]
-        rus = RandomUnderSampler(random_state=seed)
         print(np.unique(self.train_dataset[1], return_counts=True))
-        x_over, y_over = rus.fit(*self.train_dataset)
-        print(np.unique(x_over, return_counts=True))
+        print(type(self.train_dataset[0]), type(self.train_dataset[1]))
+        x_over, y_over = self.random_under_sampling(self.train_dataset[0], self.train_dataset[1], under_sampling=under_sampling)
+        print(np.unique(y_over, return_counts=True))
+        self.train_dataset = (x_over, y_over)
+        import sys
+        sys.exit(1)
 
         self.vocab, _1, _2 = self.feature_extractor.get_vocab(*self.train_dataset)
         self.vocab_size = len(self.vocab)
@@ -194,6 +191,53 @@ class Dataset(torch.utils.data.Dataset):
                                            worker_init_fn=lambda x: np.random.seed(
                                                torch.randint(0, 2 ^ 31, [1, ])[0] + x),
                                            **params)
+
+    @staticmethod
+    def random_under_sampling(X, y, under_sampling=None):
+        """
+        under sampling
+        :param X: data
+        :type 1D numpy array
+        :param y: label
+        :type 1D numpy.ndarray
+        :param ratio: proportion
+        :type float
+        :return: X, y
+        """
+        if under_sampling is None:
+            return X, y
+        if not isinstance(under_sampling, float):
+            raise TypeError("{}".format(type(under_sampling)))
+        if under_sampling > 1.:
+            ratio = 1.
+        if under_sampling < 0.:
+            ratio = 0.
+
+        if not isinstance(X, np.ndarray) and not isinstance(y, np.ndarray):
+            raise TypeError
+
+        _labels, _counts = np.unique(y, return_counts=True)
+        _label_count = dict(zip(_labels, _counts))
+        _mal_count, _ben_count = _label_count[1], _label_count[0]
+        _ratio = _mal_count / float(_ben_count)
+        if _ratio >= under_sampling:
+            return X, y
+
+        _ben_count = int(_mal_count / under_sampling)
+        random_indices = np.random.choice(
+            np.where(y == 1)[0], _ben_count, replace=False
+        )
+        ben_x = X[random_indices]
+        ben_y = y[random_indices]
+        mal_x = X[y==0]
+        mal_y = y[y==0]
+        X = np.vstack([mal_x, ben_x])
+        y = np.vstack([mal_y, ben_y])
+        np.random.seed(0)
+        np.random.shuffle(X)
+        np.random.seed(0)
+        np.random.shuffle(y)
+        return X, y
 
     def clear_up(self):
         self.temp_data.cleanup()

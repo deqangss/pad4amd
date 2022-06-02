@@ -6,7 +6,6 @@ import argparse
 
 from core.defense import Dataset
 
-
 cmd_md = argparse.ArgumentParser(description='arguments for feature extraction')
 cmd_md.add_argument('--proc_number', type=int, default=6,
                     help='The number of threads for features extraction.')
@@ -16,6 +15,8 @@ cmd_md.add_argument('--max_vocab_size', type=int, default=10000,
                     help='The maximum number of vocabulary size')
 cmd_md.add_argument('--use_top_disc_features', action='store_true', default=True,
                     help='Whether use feature selection or not.')
+cmd_md.add_argument('--under_sampling', type=float, default=0.1,
+                    help='# of malware / # of benware')
 cmd_md.add_argument('--update', action='store_true', default=False,
                     help='Whether update the existed features.')
 args = cmd_md.parse_args()
@@ -23,7 +24,7 @@ args_dict = vars(args)
 
 
 def main_():
-    dataset = Dataset(use_cache=True, feature_ext_args=args_dict)
+    dataset = Dataset(use_cache=True, under_sampling=args.under_sampling, feature_ext_args=args_dict)
     validation_data, valy = dataset.validation_dataset
     # validation_x1, validation_x2, valy = dataset.get_numerical_input_batch(validation_data, valy)
     val_dataset_producer = dataset.get_input_producer(validation_data, valy, batch_size=2, name='val')
@@ -37,6 +38,7 @@ def main_():
             print(x.shape)
         print('cost time:', time.time() - start_time)
     dataset.clear_up()
+
 
 if __name__ == '__main__':
     main_()
