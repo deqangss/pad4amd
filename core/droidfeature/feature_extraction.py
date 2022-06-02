@@ -160,7 +160,7 @@ class Apk2features(object):
         ben_feature_frequency = np.array(list(map(counter_ben.get, all_words)))
         ben_feature_frequency[ben_feature_frequency == None] = 0
         ben_feature_frequency /= float(len(gt_labels) - np.sum(gt_labels))
-        feature_freq_diff = abs(mal_feature_frequency - ben_feature_frequency)
+        feature_freq_diff = mal_feature_frequency - ben_feature_frequency
         if self.use_feature_selection:
             # select the features that benefit to classifying malicious samples
             # note: increase the FPR
