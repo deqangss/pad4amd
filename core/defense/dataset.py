@@ -70,14 +70,7 @@ class Dataset(torch.utils.data.Dataset):
             self.train_dataset, self.validation_dataset, self.test_dataset = self.data_split(feature_paths, gt_labels)
             utils.dump_pickle((self.train_dataset, self.validation_dataset, self.test_dataset), data_saving_path)
 
-        print(np.unique(self.train_dataset[1], return_counts=True))
-        print(type(self.train_dataset[0]), type(self.train_dataset[1]))
-        x_over, y_over = self.random_under_sampling(self.train_dataset[0], self.train_dataset[1], under_sampling=under_sampling)
-        print(np.unique(y_over, return_counts=True))
-        self.train_dataset = (x_over, y_over)
-        import sys
-        sys.exit(1)
-
+        self.train_dataset = self.random_under_sampling(self.train_dataset[0], self.train_dataset[1], under_sampling=under_sampling)
         self.vocab, _1, _2 = self.feature_extractor.get_vocab(*self.train_dataset)
         self.vocab_size = len(self.vocab)
         self.non_api_size = self.feature_extractor.get_non_api_size(self.vocab)
