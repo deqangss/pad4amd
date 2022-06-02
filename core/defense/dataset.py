@@ -6,7 +6,6 @@ import numpy as np
 import torch
 from scipy.sparse.csr import csr_matrix
 from sklearn.model_selection import train_test_split
-from imblearn.under_sampling import RandomUnderSampler
 
 from config import config
 from core.droidfeature.feature_extraction import Apk2features
