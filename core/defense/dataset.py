@@ -13,12 +13,11 @@ from tools import utils
 
 
 class Dataset(torch.utils.data.Dataset):
-    def __init__(self, seed=0, use_cache=False, under_sampling=0.1, device='cuda', feature_ext_args=None):
+    def __init__(self, seed=0, use_cache=False, device='cuda', feature_ext_args=None):
         """
         build dataset for ml model learning
         :param seed: Integer, the random seed
         :param use_cache: Boolean, cache the representations
-        :param under_sampling, Float or None, a positive real-value represents the ratio of benign samples: number_of_mal / under_sampling
         :param device: String, 'cuda' or 'cpu'
         :param feature_ext_args: Dict, arguments for feature extraction
         """
@@ -70,7 +69,6 @@ class Dataset(torch.utils.data.Dataset):
             self.train_dataset, self.validation_dataset, self.test_dataset = self.data_split(feature_paths, gt_labels)
             utils.dump_pickle((self.train_dataset, self.validation_dataset, self.test_dataset), data_saving_path)
 
-        self.train_dataset = self.random_under_sampling(self.train_dataset[0], self.train_dataset[1], under_sampling=under_sampling)
         self.vocab, _1, _2 = self.feature_extractor.get_vocab(*self.train_dataset)
         self.vocab_size = len(self.vocab)
         self.non_api_size = self.feature_extractor.get_non_api_size(self.vocab)

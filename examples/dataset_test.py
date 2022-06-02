@@ -24,7 +24,7 @@ args_dict = vars(args)
 
 
 def main_():
-    dataset = Dataset(use_cache=True, under_sampling=args.under_sampling, feature_ext_args=args_dict)
+    dataset = Dataset(use_cache=True, feature_ext_args=args_dict)
     validation_data, valy = dataset.validation_dataset
     # validation_x1, validation_x2, valy = dataset.get_numerical_input_batch(validation_data, valy)
     val_dataset_producer = dataset.get_input_producer(validation_data, valy, batch_size=2, name='val')
