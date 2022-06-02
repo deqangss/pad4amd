@@ -9,7 +9,7 @@ from core.defense import Dataset
 from core.defense import MalwareDetectionDNN, MaxAdvTraining
 from core.attack import Max, PGD, PGDl1, StepwiseMax
 from tools.utils import save_args, get_group_args, dump_pickle
-from examples.amd_icnn_test import cmd_md
+from examples.md_nn_test import cmd_md
 
 max_adv_argparse = cmd_md.add_argument_group(title='max adv training')
 max_adv_argparse.add_argument('--beta', type=float, default=0.1, help='penalty factor on adversarial loss.')
@@ -33,10 +33,9 @@ max_adv_argparse.add_argument('--round_threshold', type=float, default=0.98,
 
 def _main():
     args = cmd_md.parse_args()
-    dataset = Dataset(use_cache=args.cache,
-                      feature_ext_args=get_group_args(args, cmd_md, 'feature'))
+    dataset = Dataset(feature_ext_args=get_group_args(args, cmd_md, 'feature'))
     train_dataset_producer = dataset.get_input_producer(*dataset.train_dataset, batch_size=args.batch_size,
-                                                        name='train')
+                                                        name='train', use_cache=args.cache)
     val_dataset_producer = dataset.get_input_producer(*dataset.validation_dataset, batch_size=args.batch_size,
                                                       name='val')
     test_dataset_producer = dataset.get_input_producer(*dataset.test_dataset, batch_size=args.batch_size, name='test')
