@@ -276,7 +276,6 @@ class DatasetTorch(torch.utils.data.Dataset):
         return self.get_item(index)
 
     def get_item(self, index):
-        print('cache length:', len(self.dataset_obj.temp_data._dict))
         if not self.use_cache:
             return self.dataset_obj.get_numerical_input(self.feature_paths[index], self.datay[index])
         elif self.dataset_obj.temp_data.is_cached(index):
