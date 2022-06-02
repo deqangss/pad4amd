@@ -60,8 +60,7 @@ mode_argparse.add_argument('--model_name', type=str, default='xxxxxxxx-xxxxxx', 
 
 def _main():
     args = cmd_md.parse_args()
-    dataset = Dataset(use_cache=args.cache, under_sampling=args.under_sampling,
-                      feature_ext_args=get_group_args(args, cmd_md, 'feature'))
+    dataset = Dataset(use_cache=args.cache, feature_ext_args=get_group_args(args, cmd_md, 'feature'))
     train_dataset_producer = dataset.get_input_producer(*dataset.train_dataset, batch_size=args.batch_size, name='train')
     val_dataset_producer = dataset.get_input_producer(*dataset.validation_dataset, batch_size=args.batch_size, name='val')
     test_dataset_producer = dataset.get_input_producer(*dataset.test_dataset, batch_size=args.batch_size, name='test')
