@@ -222,12 +222,33 @@ def read_file_by_fileinput(file_path, inplace=True):
 
 
 class SimplifyClass:
-    def __init__(self):
-        self.cache_arr = []
+    def __init__(self, manager, use_cache=True):
+        self.use_cache = use_cache
+        self.manager = manager
+        self._dict = manager.dict()
 
-    def cleanup(self):
-        self.cache_arr.clear()
+    def is_cached(self, key):
+        if not self.use_cache:
+            return False
+        return str(key) in self._dict
+
+    def reset(self):
+        self._dict.clear()
         return
+
+    def get(self, key):
+        if not self.use_cache:
+            raise AttributeError('Data caching is disabled and get funciton is unavailable! Check your config.')
+        return self._dict[str(key)]
+
+    def cache(self, key, img, lbl):
+        # only store if full data in memory is enabled
+        if not self.use_cache:
+            return
+        # only store if not already cached
+        if str(key) in self._dict:
+            return
+        self._dict[str(key)] = (img, lbl)
 
 
 def build_kwargs(keys, arg_dict):
