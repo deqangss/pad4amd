@@ -21,7 +21,6 @@ class Apk2features(object):
                  intermediate_save_dir,
                  number_of_smali_files=1000000,
                  max_vocab_size=10000,
-                 use_top_disc_features=False,
                  file_ext='.feat',
                  update=False,
                  proc_number=2,
@@ -33,14 +32,12 @@ class Apk2features(object):
         :param intermediate_save_dir: a directory for saving feature pickle files
         :param number_of_smali_files: the maximum number of smali files processed
         :param max_vocab_size: the maximum number of words
-        :param use_top_disc_features: whether select the features that benefit to classifying malicious samples
         :param file_ext: file extension
         :param update: boolean indicator for recomputing the naive features
         :param proc_number: process number
         """
         self.naive_data_save_dir = naive_data_save_dir
         self.intermediate_save_dir = intermediate_save_dir
-        self.use_feature_selection = use_top_disc_features
         self.maximum_vocab_size = max_vocab_size
         self.number_of_smali_files = number_of_smali_files
 
@@ -161,10 +158,6 @@ class Apk2features(object):
         ben_feature_frequency[ben_feature_frequency == None] = 0
         ben_feature_frequency /= float(len(gt_labels) - np.sum(gt_labels))
         feature_freq_diff = abs(mal_feature_frequency - ben_feature_frequency)
-        if self.use_feature_selection:
-            # select the features that benefit to classifying malicious samples
-            # note: increase the FPR
-            feature_freq_diff = feature_freq_diff[feature_freq_diff >= 0]
         posi_selected = np.argsort(feature_freq_diff)[::-1]
         ordered_words = selected_words + [all_words[p] for p in posi_selected]
         selected_words = ordered_words[:maximum_vocab_size]
