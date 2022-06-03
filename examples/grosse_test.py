@@ -58,8 +58,7 @@ def _main():
                         "'amd_dla', 'amd_dnn_plus', and 'amd_at_ma'.")
 
     hp_params = utils.read_pickle(os.path.join(save_dir, 'hparam.pkl'))
-    dataset = Dataset(use_cache=hp_params['cache'],
-                      feature_ext_args={'proc_number': hp_params['proc_number']})
+    dataset = Dataset(feature_ext_args={'proc_number': hp_params['proc_number']})
     test_x, testy = dataset.test_dataset
     mal_save_path = os.path.join(config.get('dataset', 'dataset_dir'), 'attack.idx')
     if not os.path.exists(mal_save_path):

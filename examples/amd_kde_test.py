@@ -24,12 +24,9 @@ def _main():
     args = kde_argparse.parse_args()
     save_dir = config.get('experiments', 'md_dnn') + '_' + args.model_name
     hp_params = utils.read_pickle(path.join(save_dir, 'hparam.pkl'))
-
-    dataset = Dataset(use_cache=hp_params['cache'],
-                      feature_ext_args={'proc_number': hp_params['proc_number']}
-                      )
+    dataset = Dataset(feature_ext_args={'proc_number': hp_params['proc_number']})
     train_dataset_producer = dataset.get_input_producer(*dataset.train_dataset, batch_size=hp_params['batch_size'],
-                                                        name='train')
+                                                        name='train', use_cache=args.cache)
     val_dataset_producer = dataset.get_input_producer(*dataset.validation_dataset, batch_size=hp_params['batch_size'],
                                                       name='val')
     test_dataset_producer = dataset.get_input_producer(*dataset.test_dataset, batch_size=hp_params['batch_size'],
