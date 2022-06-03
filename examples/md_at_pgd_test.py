@@ -13,9 +13,9 @@ from examples.amd_icnn_test import cmd_md
 
 max_adv_argparse = cmd_md.add_argument_group(title='max adv training')
 max_adv_argparse.add_argument('--beta', type=float, default=0.1, help='penalty factor on adversarial loss.')
-max_adv_argparse.add_argument('--steps_linf', type=int, default=100,
+max_adv_argparse.add_argument('--steps_linf', type=int, default=50,
                               help='maximum number of steps for base attacks.')
-max_adv_argparse.add_argument('--step_length_linf', type=float, default=0.01,
+max_adv_argparse.add_argument('--step_length_linf', type=float, default=0.02,
                               help='step length in each step.')
 
 
