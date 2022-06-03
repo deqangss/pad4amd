@@ -84,18 +84,19 @@ class PGDAdvTraining(object):
                 # make data
                 mal_x_batch, ben_x_batch, mal_y_batch, ben_y_batch, null_flag = \
                     utils.get_mal_ben_data(x_batch, y_batch)
-                ben_batch_noises = torch.clamp(
-                    ben_x_batch + utils.psn(ben_x_batch, np.maximum(np.random.uniform(0.9995, 1.), 0.9995)),
-                    min=0., max=1.)
                 if null_flag:
                     continue
+                # balance the dataset for the part of adversarial training
+                ben_x_batch = torch.clamp(ben_x_batch + utils.psn(ben_x_batch, np.random.uniform(0.995, 1.)),
+                                          min=0.,
+                                          max=1.)
                 start_time = time.time()
                 self.model.eval()
                 pertb_mal_x = self.attack.perturb(self.model, mal_x_batch, mal_y_batch,
                                                   **self.attack_param
                                                   )
                 total_time += time.time() - start_time
-                x_batch = torch.cat([x_batch, ben_batch_noises, pertb_mal_x], dim=0)
+                x_batch = torch.cat([x_batch, ben_x_batch, pertb_mal_x], dim=0)
                 y_batch = torch.cat([y_batch, ben_y_batch, mal_y_batch])
                 start_time = time.time()
                 self.model.train()
