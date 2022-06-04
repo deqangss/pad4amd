@@ -110,7 +110,6 @@ def _main():
                                        input_size=dataset.vocab_size,
                                        n_classes=dataset.n_classes,
                                        device=dv,
-                                       sample_weights=dataset.sample_weights,
                                        name=args.model_name,
                                        **hp_params
                                        )
