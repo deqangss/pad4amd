@@ -21,13 +21,13 @@ max_adv_argparse.add_argument('--steps_l2', type=int, default=50,
                               help='maximum number of steps for base attacks.')
 max_adv_argparse.add_argument('--step_length_l2', type=float, default=0.5,
                               help='step length in each step.')
-max_adv_argparse.add_argument('--steps_linf', type=int, default=100,
+max_adv_argparse.add_argument('--steps_linf', type=int, default=50,
                               help='maximum number of steps for base attacks.')
-max_adv_argparse.add_argument('--step_length_linf', type=float, default=0.01,
+max_adv_argparse.add_argument('--step_length_linf', type=float, default=0.02,
                               help='step length in each step.')
 max_adv_argparse.add_argument('--random_start', action='store_true', default=False,
                               help='randomly initialize the start points.')
-max_adv_argparse.add_argument('--round_threshold', type=float, default=0.98,
+max_adv_argparse.add_argument('--round_threshold', type=float, default=0.5,
                               help='threshold for rounding real scalars at the initialization step.')
 
 
