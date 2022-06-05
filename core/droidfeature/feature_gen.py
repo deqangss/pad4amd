@@ -188,9 +188,12 @@ def apk2features(apk_path, max_number_of_smali_files=10000, saving_path=None):
         raise ValueError("Fail to extract providers {}:{} ".format(apk_path, str(e)))
 
     # 4. get intent actions
+    import traceback
     try:
         intent_actions = get_intent_actions(a)
     except Exception as e:
+        traceback.print_stack()
+        traceback.print_exc()
         raise ValueError("Fail to extract intents {}:{} ".format(apk_path, str(e)))
 
     # 5. get hardware
@@ -309,7 +312,7 @@ def get_intent_actions(app):
                 for i, action_element in enumerate(action_elements):
                     if action_element.hasAttribute("android:name"):
                         action = action_element.getAttribute("android:name")
-                        action_parent = copy.deepcopy(intent_element)
+                        action_parent = copy.copy(intent_element)
                         if len(action_elements) > 1:
                             action_elements_copy = action_parent.getElementsByTagName('action')
                             for _i in range(len(action_elements_copy)):
@@ -521,7 +524,7 @@ def get_same_class_prefix(entry_node_list):
 
 def _main():
     rtn_str = apk2features(
-        '/mnt/c/Users/lideq/datasets/drebin/malicious_samples/0a7695a7a6c27bdf7e3acd77136642589a28de08b14a81328a39bd3ab5fd095d',
+        '/mnt/c/Users/lideq/datasets/androzoo/178851ecaa7a21145da353489f924277e9f62ac476d3fdce786946ae8c4c9baf',
         200000,
         "./abc.feat")
     print(rtn_str)
