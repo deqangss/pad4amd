@@ -188,12 +188,9 @@ def apk2features(apk_path, max_number_of_smali_files=10000, saving_path=None):
         raise ValueError("Fail to extract providers {}:{} ".format(apk_path, str(e)))
 
     # 4. get intent actions
-    import traceback
     try:
         intent_actions = get_intent_actions(a)
     except Exception as e:
-        traceback.print_stack()
-        traceback.print_exc()
         raise ValueError("Fail to extract intents {}:{} ".format(apk_path, str(e)))
 
     # 5. get hardware
@@ -312,17 +309,16 @@ def get_intent_actions(app):
                 for i, action_element in enumerate(action_elements):
                     if action_element.hasAttribute("android:name"):
                         action = action_element.getAttribute("android:name")
-                        action_parent = copy.copy(intent_element)
-                        if len(action_elements) > 1:
-                            action_elements_copy = action_parent.getElementsByTagName('action')
-                            for _i in range(len(action_elements_copy)):
-                                if _i != i:
-                                    action_parent.removeChild(action_elements_copy[_i])
-                        writer = io.StringIO()
-                        action_parent.writexml(writer)
-                        action_extra_info = writer.getvalue()
-                        actions.append(action + TAG_SPLITTER + INTENT + TAG_SPLITTER + component_name + \
-                                       TAG_SPLITTER + action_extra_info)
+                        # action_parent = copy.copy(intent_element)
+                        # if len(action_elements) > 1:
+                        #     action_elements_copy = action_parent.getElementsByTagName('action')
+                        #     for _i in range(len(action_elements_copy)):
+                        #         if _i != i:
+                        #             action_parent.removeChild(action_elements_copy[_i])
+                        # writer = io.StringIO()
+                        # action_parent.writexml(writer)
+                        # action_extra_info = writer.getvalue()
+                        actions.append(action + TAG_SPLITTER + INTENT + TAG_SPLITTER + component_name)
 
     # 1. activities
     activity_elements = xml_dom.getElementsByTagName('activity')
