@@ -125,7 +125,7 @@ class MaxAdvTraining(object):
             self.model.eval()
             # long-time to train (save the model temporally in case of interruption)
             self.save_to_disk(i + 1, optimizer, self.model_save_path + '.tmp')
-
+            self.attack.is_attacker = True
             res_val = []
             avg_acc_val = []
             for x_val, y_val in validation_data_producer:
@@ -166,6 +166,7 @@ class MaxAdvTraining(object):
                     logger.info(
                         f'The threshold is {self.model.tau}.'
                     )
+            self.attack.is_attacker = False
 
     def load(self):
         assert path.exists(self.model_save_path), 'train model first'
