@@ -80,10 +80,6 @@ class MaxAdvTraining(object):
                     utils.get_mal_ben_data(x_batch, y_batch)
                 if null_flag:
                     continue
-                # balance the dataset for the part of adversarial training
-                ben_x_batch = torch.clamp(ben_x_batch + utils.psn(ben_x_batch, np.random.uniform(0.995, 1.)),
-                                          min=0.,
-                                          max=1.)
                 start_time = time.time()
                 total_time += time.time() - start_time
                 self.model.eval()
