@@ -158,13 +158,7 @@ class Apk2features(object):
         ben_feature_frequency[ben_feature_frequency == None] = 0
         ben_feature_frequency /= float(len(gt_labels) - np.sum(gt_labels))
         feature_freq_diff = (mal_feature_frequency - ben_feature_frequency) >= 0
-        posi_selected = np.argsort(mal_feature_frequency - ben_feature_frequency)[::-1]
-        ordered_words = selected_words + [all_words[p] for p in posi_selected]
-        print(len(ordered_words))
         ordered_words = selected_words + [all_words[p] for p, flag in enumerate(feature_freq_diff) if flag]
-        print(len(ordered_words))
-        import sys
-        sys.exit(1)
         selected_words = ordered_words[:maximum_vocab_size]
         selected_word_type = list(map(feat_type_dict.get, selected_words))
         corresponding_word_info = list(map(feat_info_dict.get, selected_words))
