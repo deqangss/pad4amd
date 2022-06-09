@@ -86,27 +86,20 @@ class PGDAdvTraining(object):
                     utils.get_mal_ben_data(x_batch, y_batch)
                 if null_flag:
                     continue
-                # balance the dataset for the part of adversarial training
-                ben_x_batch = torch.clamp(ben_x_batch + utils.psn(ben_x_batch, np.random.uniform(0.995, 1.)),
-                                          min=0.,
-                                          max=1.)
                 start_time = time.time()
                 self.model.eval()
                 pertb_mal_x = self.attack.perturb(self.model, mal_x_batch, mal_y_batch,
                                                   **self.attack_param
                                                   )
                 total_time += time.time() - start_time
-                x_batch = torch.cat([x_batch, ben_x_batch, pertb_mal_x], dim=0)
-                y_batch = torch.cat([y_batch, ben_y_batch, mal_y_batch])
+                x_batch = torch.cat([ben_x_batch, pertb_mal_x], dim=0)
+                y_batch = torch.cat([ben_y_batch, mal_y_batch])
                 start_time = time.time()
                 self.model.train()
                 optimizer.zero_grad()
                 logits = self.model.forward(x_batch)
-                loss_train = self.model.customize_loss(logits[:batch_size],
-                                                       y_batch[:batch_size])
-                # if len(adv_mal_x) > 0:
-                loss_train += beta * self.model.customize_loss(logits[batch_size:],
-                                                               y_batch[batch_size:])
+                loss_train = self.model.customize_loss(logits,
+                                                       y_batch)
 
                 loss_train.backward()
                 optimizer.step()

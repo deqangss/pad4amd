@@ -88,17 +88,14 @@ class MaxAdvTraining(object):
                                                   )
                 pertb_mal_x = utils.round_x(pertb_mal_x, 0.5)
                 # add benign samples into dataset in case of the FPR increased notably
-                x_batch = torch.cat([x_batch, ben_x_batch, pertb_mal_x], dim=0)
-                y_batch = torch.cat([y_batch, ben_y_batch, mal_y_batch])
+                x_batch = torch.cat([ben_x_batch, pertb_mal_x], dim=0)
+                y_batch = torch.cat([ ben_y_batch, mal_y_batch])
                 start_time = time.time()
                 self.model.train()
                 optimizer.zero_grad()
                 logits = self.model.forward(x_batch)
-                loss_train = self.model.customize_loss(logits[:batch_size],
-                                                       y_batch[:batch_size])
-
-                loss_train += beta * self.model.customize_loss(logits[batch_size:],
-                                                               y_batch[batch_size:])
+                loss_train = self.model.customize_loss(logits,
+                                                       y_batch)
 
                 loss_train.backward()
                 optimizer.step()
