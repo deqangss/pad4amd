@@ -114,8 +114,8 @@ class AMalwareDetectionPAD(object):
                                                   )
                 disc_pertb_mal_x_ = utils.round_x(pertb_mal_x, 0.5)
                 total_time += time.time() - start_time
-                x_batch = torch.cat([x_batch, ben_x_batch[:mal_x_batch.shape[0]], disc_pertb_mal_x_], dim=0)
-                y_batch = torch.cat([y_batch, ben_y_batch[:mal_x_batch.shape[0]], mal_y_batch])
+                x_batch = torch.cat([ben_x_batch, disc_pertb_mal_x_], dim=0)
+                y_batch = torch.cat([ben_y_batch, mal_y_batch])
                 if use_continuous_pert:
                     filter_flag = torch.amax(torch.abs(pertb_mal_x - mal_x_batch), dim=-1) <= 1e-6
                     pertb_mal_x = pertb_mal_x[~filter_flag]
@@ -136,15 +136,10 @@ class AMalwareDetectionPAD(object):
                 optimizer.zero_grad()
                 logits_f = self.model.forward_f(x_batch)
                 logits_g = self.model.forward_g(x_batch_)
-                loss_train = self.model.customize_loss(logits_f[:batch_size],
-                                                       y_batch[:batch_size],
-                                                       logits_g[:2 * batch_size],
-                                                       y_batch_[:2 * batch_size])
-                loss_train += beta * self.model.customize_loss(logits_f[batch_size:],
-                                                               y_batch[batch_size:],
-                                                               logits_g[2 * batch_size:],
-                                                               y_batch_[2 * batch_size:]
-                                                               )
+                loss_train = self.model.customize_loss(logits_f,
+                                                       y_batch,
+                                                       logits_g,
+                                                       y_batch_)
 
                 loss_train.backward()
                 optimizer.step()
