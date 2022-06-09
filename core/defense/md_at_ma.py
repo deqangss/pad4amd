@@ -87,9 +87,12 @@ class MaxAdvTraining(object):
                                                   **self.attack_param
                                                   )
                 pertb_mal_x = utils.round_x(pertb_mal_x, 0.5)
-                # add benign samples into dataset in case of the FPR increased notably
+                # add noises into benign samples in case of the FPR increased notably
+                ben_x_batch = torch.clamp(ben_x_batch + utils.psn(ben_x_batch, np.random.uniform(0.995, 1.)),
+                                          min=0.,
+                                          max=1.)
                 x_batch = torch.cat([ben_x_batch, pertb_mal_x], dim=0)
-                y_batch = torch.cat([ ben_y_batch, mal_y_batch])
+                y_batch = torch.cat([ben_y_batch, mal_y_batch])
                 start_time = time.time()
                 self.model.train()
                 optimizer.zero_grad()
