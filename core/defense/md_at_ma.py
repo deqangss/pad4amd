@@ -92,7 +92,7 @@ class MaxAdvTraining(object):
                                                   )
                 pertb_mal_x = utils.round_x(pertb_mal_x, 0.5)
                 x_batch = torch.cat([x_batch, ben_x_batch, pertb_mal_x], dim=0)
-                y_batch = torch.cat([x_batch, ben_y_batch, mal_y_batch])
+                y_batch = torch.cat([y_batch, ben_y_batch, mal_y_batch])
                 start_time = time.time()
                 self.model.train()
                 optimizer.zero_grad()
