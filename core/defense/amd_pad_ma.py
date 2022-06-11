@@ -71,15 +71,6 @@ class AMalwareDetectionPAD(object):
         @param weight_decay: Float, penalty factor, default value 5e-4 in Graph ATtention layer (GAT)
         @param verbose: Boolean, whether to show verbose info
         """
-        # normal training is used for obtaining the initial indicator g
-        logger.info("Normal training is starting...")
-        self.model.fit(train_data_producer,
-                       validation_data_producer,
-                       epochs=10,
-                       lr=lr,
-                       weight_decay=weight_decay)
-        if hasattr(self.model, 'tau'):
-            self.model.reset_threshold()
         constraint = utils.NonnegWeightConstraint()
         optimizer = optim.Adam(self.model.parameters(), lr=lr, weight_decay=weight_decay)
         total_time = 0.
@@ -123,8 +114,8 @@ class AMalwareDetectionPAD(object):
                                                   )
                 disc_pertb_mal_x_ = utils.round_x(pertb_mal_x, 0.5)
                 total_time += time.time() - start_time
-                x_batch = torch.cat([ben_x_batch, disc_pertb_mal_x_], dim=0)
-                y_batch = torch.cat([ben_y_batch, mal_y_batch])
+                x_batch = torch.cat([x_batch, ben_x_batch, disc_pertb_mal_x_], dim=0)
+                y_batch = torch.cat([y_batch, ben_y_batch, mal_y_batch])
                 if use_continuous_pert:
                     filter_flag = torch.amax(torch.abs(pertb_mal_x - mal_x_batch), dim=-1) <= 1e-6
                     pertb_mal_x = pertb_mal_x[~filter_flag]
@@ -145,10 +136,15 @@ class AMalwareDetectionPAD(object):
                 optimizer.zero_grad()
                 logits_f = self.model.forward_f(x_batch)
                 logits_g = self.model.forward_g(x_batch_)
-                loss_train = self.model.customize_loss(logits_f,
-                                                       y_batch,
-                                                       logits_g,
-                                                       y_batch_)
+                loss_train = self.model.customize_loss(logits_f[:batch_size],
+                                                       y_batch[:batch_size],
+                                                       logits_g[:2 * batch_size],
+                                                       y_batch_[:2 * batch_size])
+                loss_train += beta * self.model.customize_loss(logits_f[batch_size:],
+                                                               y_batch[batch_size:],
+                                                               logits_g[2 * batch_size:],
+                                                               y_batch_[2 * batch_size:]
+                                                               )
 
                 loss_train.backward()
                 optimizer.step()
