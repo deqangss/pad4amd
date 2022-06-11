@@ -71,6 +71,15 @@ class AMalwareDetectionPAD(object):
         @param weight_decay: Float, penalty factor, default value 5e-4 in Graph ATtention layer (GAT)
         @param verbose: Boolean, whether to show verbose info
         """
+        # normal training is used for obtaining the initial indicator g
+        logger.info("Normal training is starting...")
+        self.model.fit(train_data_producer,
+                       validation_data_producer,
+                       epochs=10,
+                       lr=lr,
+                       weight_decay=weight_decay)
+        if hasattr(self.model, 'tau'):
+            self.model.reset_threshold()
         constraint = utils.NonnegWeightConstraint()
         optimizer = optim.Adam(self.model.parameters(), lr=lr, weight_decay=weight_decay)
         total_time = 0.
@@ -214,10 +223,6 @@ class AMalwareDetectionPAD(object):
                     f"\tVal accuracy {acc_val * 100:.4}% with accuracy {acc_val_adv * 100:.4}% under attack.")
                 logger.info(
                     f"\tModel select at epoch {best_epoch} with validation accuracy {best_acc_val * 100:.4}% and accuracy {acc_val_adv_be * 100:.4}% under attack.")
-                if hasattr(self.model, 'tau'):
-                    logger.info(
-                        f'The threshold is {self.model.tau}.'
-                    )
             self.attack.is_attacker = False
 
     def load(self):
