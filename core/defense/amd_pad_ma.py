@@ -114,8 +114,8 @@ class AMalwareDetectionPAD(object):
                                                   )
                 disc_pertb_mal_x_ = utils.round_x(pertb_mal_x, 0.5)
                 total_time += time.time() - start_time
-                x_batch = torch.cat([x_batch, ben_x_batch, disc_pertb_mal_x_], dim=0)
-                y_batch = torch.cat([y_batch, ben_y_batch, mal_y_batch])
+                x_batch = torch.cat([x_batch, ben_x_batch[:mal_x_batch.shape[0]], disc_pertb_mal_x_], dim=0)
+                y_batch = torch.cat([y_batch, ben_y_batch[:mal_x_batch.shape[0]], mal_y_batch])
                 if use_continuous_pert:
                     filter_flag = torch.amax(torch.abs(pertb_mal_x - mal_x_batch), dim=-1) <= 1e-6
                     pertb_mal_x = pertb_mal_x[~filter_flag]
