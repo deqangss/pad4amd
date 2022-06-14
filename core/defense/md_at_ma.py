@@ -80,10 +80,6 @@ class MaxAdvTraining(object):
                     utils.get_mal_ben_data(x_batch, y_batch)
                 if null_flag:
                     continue
-                # balance the dataset for the part of adversarial training
-                ben_x_batch = torch.clamp(ben_x_batch + utils.psn(ben_x_batch, np.random.uniform(0.998, 1.)),
-                                          min=0.,
-                                          max=1.)
                 start_time = time.time()
                 total_time += time.time() - start_time
                 self.model.eval()
@@ -91,8 +87,8 @@ class MaxAdvTraining(object):
                                                   **self.attack_param
                                                   )
                 pertb_mal_x = utils.round_x(pertb_mal_x, 0.5)
-                x_batch = torch.cat([x_batch, ben_x_batch, pertb_mal_x], dim=0)
-                y_batch = torch.cat([y_batch, ben_y_batch, mal_y_batch])
+                x_batch = torch.cat([x_batch, pertb_mal_x], dim=0)
+                y_batch = torch.cat([y_batch, mal_y_batch])
                 start_time = time.time()
                 self.model.train()
                 optimizer.zero_grad()
