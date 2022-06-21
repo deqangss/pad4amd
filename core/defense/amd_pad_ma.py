@@ -139,7 +139,9 @@ class AMalwareDetectionPAD(object):
                 loss_train += beta * self.model.customize_loss(logits_f[batch_size:],
                                                                y_batch[batch_size:],
                                                                logits_g[2 * batch_size:],
-                                                               y_batch_[2 * batch_size:]
+                                                               y_batch_[2 * batch_size:],
+                                                               eta_1=0.1,
+                                                               eta_2=1
                                                                )
 
                 loss_train.backward()
