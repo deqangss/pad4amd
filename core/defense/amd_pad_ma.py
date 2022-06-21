@@ -66,7 +66,7 @@ class AMalwareDetectionPAD(object):
         @param lmda_lower_bound: Float, lower boundary of penalty factor
         @param lmda_upper_bound: Float, upper boundary of penalty factor
         @param use_continuous_pert: Boolean, whether use continuous perturbations or not
-        @param granularity: Integer, 10^base exp-space between penalty factors
+        @param eta:
         @param lr: Float, learning rate of Adam optimizer
         @param weight_decay: Float, penalty factor, default value 5e-4 in Graph ATtention layer (GAT)
         @param verbose: Boolean, whether to show verbose info
