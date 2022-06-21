@@ -13,6 +13,7 @@ from examples.amd_icnn_test import cmd_md
 
 max_adv_argparse = cmd_md.add_argument_group(title='max adv training')
 max_adv_argparse.add_argument('--beta', type=float, default=0.1, help='penalty factor on adversarial loss.')
+max_adv_argparse.add_argument('--eta', type=float, default=1., help='penalty factor on adversary detector.')
 max_adv_argparse.add_argument('--detector', type=str, default='icnn',
                               choices=['none', 'icnn'],
                               help="detector type, either of 'icnn' and 'none'.")
@@ -118,6 +119,7 @@ def _main():
                                    val_dataset_producer,
                                    adv_epochs=args.epochs,
                                    beta=args.beta,
+                                   eta=args.eta,
                                    use_continuous_pert=args.use_cont_pertb,
                                    lr=args.lr,
                                    weight_decay=args.weight_decay

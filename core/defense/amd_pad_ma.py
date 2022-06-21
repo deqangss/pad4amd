@@ -50,7 +50,7 @@ class AMalwareDetectionPAD(object):
             lmda_lower_bound=1e-3,
             lmda_upper_bound=1e3,
             use_continuous_pert=True,
-            granularity=1,
+            eta=1,
             lr=0.005,
             weight_decay=5e-0, verbose=True):
         """
