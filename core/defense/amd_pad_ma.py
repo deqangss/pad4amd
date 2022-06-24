@@ -83,8 +83,8 @@ class AMalwareDetectionPAD(object):
         acc_val_adv_be = 0.
         best_epoch = 0
         for i in range(adv_epochs):
-            losses, accuracies = [], []
             random.seed(0)
+            losses, accuracies = [], []
             for idx_batch, (x_batch, y_batch) in enumerate(train_data_producer):
                 x_batch, y_batch = utils.to_tensor(x_batch.double(), y_batch.long(), self.model.device)
                 batch_size = x_batch.shape[0]
