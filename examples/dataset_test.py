@@ -15,8 +15,6 @@ cmd_md.add_argument('--max_vocab_size', type=int, default=10000,
                     help='The maximum number of vocabulary size')
 cmd_md.add_argument('--use_top_disc_features', action='store_true', default=True,
                     help='Whether use feature selection or not.')
-cmd_md.add_argument('--under_sampling', type=float, default=0.1,
-                    help='# of malware / # of benware')
 cmd_md.add_argument('--update', action='store_true', default=False,
                     help='Whether update the existed features.')
 args = cmd_md.parse_args()

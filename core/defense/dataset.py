@@ -167,53 +167,6 @@ class Dataset(torch.utils.data.Dataset):
                                                torch.randint(0, 2 ^ 31, [1, ])[0] + x),
                                            **params)
 
-    @staticmethod
-    def random_under_sampling(X, y, under_sampling=None):
-        """
-        under sampling
-        :param X: data
-        :type 1D numpy array
-        :param y: label
-        :type 1D numpy.ndarray
-        :param ratio: proportion
-        :type float
-        :return: X, y
-        """
-        if under_sampling is None:
-            return X, y
-        if not isinstance(under_sampling, float):
-            raise TypeError("{}".format(type(under_sampling)))
-        if under_sampling > 1.:
-            under_sampling = 1.
-        if under_sampling < 0.:
-            under_sampling = 0.
-
-        if not isinstance(X, np.ndarray) and not isinstance(y, np.ndarray):
-            raise TypeError
-
-        _labels, _counts = np.unique(y, return_counts=True)
-        _label_count = dict(zip(_labels, _counts))
-        _mal_count, _ben_count = _label_count[1], _label_count[0]
-        _ratio = _mal_count / float(_ben_count)
-        if _ratio >= under_sampling:
-            return X, y
-
-        _ben_count = int(_mal_count / under_sampling)
-        random_indices = np.random.choice(
-            np.where(y == 0)[0], _ben_count, replace=False
-        )
-        ben_x = X[random_indices]
-        ben_y = y[random_indices]
-        mal_x = X[y == 1]
-        mal_y = y[y == 1]
-        X = np.concatenate([mal_x, ben_x])
-        y = np.concatenate([mal_y, ben_y])
-        np.random.seed(0)
-        np.random.shuffle(X)
-        np.random.seed(0)
-        np.random.shuffle(y)
-        return X, y
-
     def clear_up(self):
         self.temp_data.reset()
 

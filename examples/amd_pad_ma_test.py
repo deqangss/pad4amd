@@ -12,11 +12,12 @@ from tools.utils import save_args, get_group_args, dump_pickle
 from examples.amd_icnn_test import cmd_md
 
 max_adv_argparse = cmd_md.add_argument_group(title='max adv training')
-max_adv_argparse.add_argument('--beta', type=float, default=0.1, help='penalty factor on adversarial loss.')
-max_adv_argparse.add_argument('--eta', type=float, default=1., help='penalty factor on adversary detector.')
+max_adv_argparse.add_argument('--beta_1', type=float, default=0.1, help='penalty factor on adversarial loss.')
+max_adv_argparse.add_argument('--beta_2', type=float, default=1., help='penalty factor on adversary detector.')
 max_adv_argparse.add_argument('--detector', type=str, default='icnn',
                               choices=['none', 'icnn'],
                               help="detector type, either of 'icnn' and 'none'.")
+max_adv_argparse.add_argument('--under_sampling', type=float, default=1., help='under-sampling ratio for adversarial training')
 max_adv_argparse.add_argument('--ma', type=str, default='max', choices=['max', 'stepwise_max'],
                               help="Type of mixture of attack: 'max' or 'stepwise_max' strategy.")
 max_adv_argparse.add_argument('--steps_l1', type=int, default=50,
@@ -118,10 +119,11 @@ def _main():
         max_adv_training_model.fit(train_dataset_producer,
                                    val_dataset_producer,
                                    adv_epochs=args.epochs,
-                                   beta=args.beta,
-                                   eta=args.eta,
+                                   beta_1=args.beta_1,
+                                   beta_2=args.beta_2,
                                    use_continuous_pert=args.use_cont_pertb,
                                    lr=args.lr,
+                                   under_sampling_ratio=args.under_sampling,
                                    weight_decay=args.weight_decay
                                    )
         # human readable parameters

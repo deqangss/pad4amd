@@ -46,8 +46,6 @@ detector_argparse.add_argument('--weight_decay', type=float, default=0e-4,
 dataset_argparse = cmd_md.add_argument_group(title='data_producer')
 detector_argparse.add_argument('--cache', action='store_true', default=False,
                                help='use cache data or not.')
-detector_argparse.add_argument('--under_sampling', type=float, default=0.1,
-                               help='# of malware / # of benware')
 
 mode_argparse = cmd_md.add_argument_group(title='mode')
 mode_argparse.add_argument('--mode', type=str, default='train', choices=['train', 'test'], required=False,

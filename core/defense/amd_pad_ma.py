@@ -6,6 +6,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os.path as path
+import random
 import time
 
 import torch
@@ -45,14 +46,16 @@ class AMalwareDetectionPAD(object):
                                          'model.pth')
         self.model.model_save_path = self.model_save_path
 
-    def fit(self, train_data_producer, validation_data_producer=None, adv_epochs=20,
-            beta=0.001,
+    def fit(self, train_data_producer, validation_data_producer=None, adv_epochs=50,
+            beta_1=0.1,
+            beta_2=1,
             lmda_lower_bound=1e-3,
             lmda_upper_bound=1e3,
             use_continuous_pert=True,
-            eta=1,
-            lr=0.005,
-            weight_decay=5e-0, verbose=True):
+            lr=0.001,
+            under_sampling_ratio=1.,
+            weight_decay=5e-0,
+            verbose=True):
         """
         Applying adversarial train to enhance the malware detector.
 
@@ -60,14 +63,14 @@ class AMalwareDetectionPAD(object):
         -------
         @param train_data_producer: Object, an dataloader object for producing a batch of training data
         @param validation_data_producer: Object, an dataloader object for producing validation dataset
-        @param epochs: Integer, epochs for adversarial training
         @param adv_epochs: Integer, epochs for adversarial training
-        @param beta: Float, penalty factor for adversarial loss
+        @param beta_1: Float, penalty factor for adversarial loss
+        @param beta_2: Float, penalty factor for adversarial loss
         @param lmda_lower_bound: Float, lower boundary of penalty factor
         @param lmda_upper_bound: Float, upper boundary of penalty factor
         @param use_continuous_pert: Boolean, whether use continuous perturbations or not
-        @param eta:
         @param lr: Float, learning rate of Adam optimizer
+        @param under_sampling_ratio: [0,1], under-sampling a portion of malware examples for adversarial training
         @param weight_decay: Float, penalty factor, default value 5e-4 in Graph ATtention layer (GAT)
         @param verbose: Boolean, whether to show verbose info
         """
@@ -81,6 +84,7 @@ class AMalwareDetectionPAD(object):
         best_epoch = 0
         for i in range(adv_epochs):
             losses, accuracies = [], []
+            random.seed(0)
             for idx_batch, (x_batch, y_batch) in enumerate(train_data_producer):
                 x_batch, y_batch = utils.to_tensor(x_batch.double(), y_batch.long(), self.model.device)
                 batch_size = x_batch.shape[0]
@@ -96,6 +100,13 @@ class AMalwareDetectionPAD(object):
                 # 2. data for classifier
                 mal_x_batch, ben_x_batch, mal_y_batch, ben_y_batch, null_flag = \
                     utils.get_mal_ben_data(x_batch, y_batch)
+                if 0. < under_sampling_ratio < 1.:
+                    n_mal = mal_x_batch.shape[0]
+                    n_mal_sampling = int(under_sampling_ratio * n_mal) if int(under_sampling_ratio * n_mal) > 1 else 1
+                    idx_sampling = random.sample(range(n_mal), n_mal_sampling)
+                    print(idx_sampling)
+                    mal_x_batch, mal_y_batch = mal_x_batch[idx_sampling], mal_y_batch[idx_sampling]
+                break
                 if null_flag:
                     continue
                 start_time = time.time()
@@ -140,8 +151,8 @@ class AMalwareDetectionPAD(object):
                                                         y_batch[batch_size:],
                                                         logits_g[2 * batch_size:],
                                                         y_batch_[2 * batch_size:],
-                                                        eta_1=beta,
-                                                        eta_2=1
+                                                        beta_1=beta_1,
+                                                        beta_2=beta_2
                                                         )
 
                 loss_train.backward()
