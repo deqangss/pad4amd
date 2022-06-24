@@ -17,7 +17,8 @@ max_adv_argparse.add_argument('--beta_2', type=float, default=1., help='penalty 
 max_adv_argparse.add_argument('--detector', type=str, default='icnn',
                               choices=['none', 'icnn'],
                               help="detector type, either of 'icnn' and 'none'.")
-max_adv_argparse.add_argument('--under_sampling', type=float, default=1., help='under-sampling ratio for adversarial training')
+max_adv_argparse.add_argument('--under_sampling', type=float, default=1.,
+                              help='under-sampling ratio for adversarial training')
 max_adv_argparse.add_argument('--ma', type=str, default='max', choices=['max', 'stepwise_max'],
                               help="Type of mixture of attack: 'max' or 'stepwise_max' strategy.")
 max_adv_argparse.add_argument('--steps_l1', type=int, default=50,

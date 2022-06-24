@@ -6,6 +6,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os.path as path
+import random
 import time
 
 import torch
@@ -45,9 +46,10 @@ class MaxAdvTraining(object):
         self.model.model_save_path = self.model_save_path
         logger.info("Adversarial training incorporating the attack {}".format(type(self.attack).__name__))
 
-    def fit(self, train_data_producer, validation_data_producer=None, epochs=5, adv_epochs=50,
+    def fit(self, train_data_producer, validation_data_producer=None, adv_epochs=50,
             beta=0.01,
-            lr=0.005,
+            lr=0.001,
+            under_sampling_ratio=1.,
             weight_decay=5e-0, verbose=True):
         """
         Applying adversarial train to enhance the malware detector.
@@ -60,6 +62,7 @@ class MaxAdvTraining(object):
         @param adv_epochs: Integer, epochs for adversarial training
         @param beta: Float, penalty factor for adversarial loss
         @param lr: Float, learning rate of Adam optimizer
+        @param under_sampling_ratio: [0,1], under-sampling a portion of malware examples for adversarial training
         @param weight_decay: Float, penalty factor, default value 5e-4
         @param verbose: Boolean, whether to show verbose info
         """
@@ -71,6 +74,7 @@ class MaxAdvTraining(object):
         acc_val_adv_be = 0.
         best_epoch = 0
         for i in range(adv_epochs):
+            random.seed(0)
             losses, accuracies = [], []
             for idx_batch, (x_batch, y_batch) in enumerate(train_data_producer):
                 x_batch, y_batch = utils.to_tensor(x_batch.double(), y_batch.long(), self.model.device)
@@ -78,6 +82,11 @@ class MaxAdvTraining(object):
                 # make data
                 mal_x_batch, ben_x_batch, mal_y_batch, ben_y_batch, null_flag = \
                     utils.get_mal_ben_data(x_batch, y_batch)
+                if 0. < under_sampling_ratio < 1.:
+                    n_mal = mal_x_batch.shape[0]
+                    n_mal_sampling = int(under_sampling_ratio * n_mal) if int(under_sampling_ratio * n_mal) > 1 else 1
+                    idx_sampling = random.sample(range(n_mal), n_mal_sampling)
+                    mal_x_batch, mal_y_batch = mal_x_batch[idx_sampling], mal_y_batch[idx_sampling]
                 if null_flag:
                     continue
                 start_time = time.time()

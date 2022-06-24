@@ -104,9 +104,7 @@ class AMalwareDetectionPAD(object):
                     n_mal = mal_x_batch.shape[0]
                     n_mal_sampling = int(under_sampling_ratio * n_mal) if int(under_sampling_ratio * n_mal) > 1 else 1
                     idx_sampling = random.sample(range(n_mal), n_mal_sampling)
-                    print(idx_sampling)
                     mal_x_batch, mal_y_batch = mal_x_batch[idx_sampling], mal_y_batch[idx_sampling]
-                break
                 if null_flag:
                     continue
                 start_time = time.time()

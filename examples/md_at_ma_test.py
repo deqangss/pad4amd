@@ -12,7 +12,9 @@ from tools.utils import save_args, get_group_args, dump_pickle
 from examples.md_nn_test import cmd_md
 
 max_adv_argparse = cmd_md.add_argument_group(title='max adv training')
-max_adv_argparse.add_argument('--beta', type=float, default=0.1, help='penalty factor on adversarial loss.')
+max_adv_argparse.add_argument('--beta', type=float, default=0.01, help='penalty factor on adversarial loss.')
+max_adv_argparse.add_argument('--under_sampling', type=float, default=1.,
+                              help='under-sampling ratio for adversarial training')
 max_adv_argparse.add_argument('--ma', type=str, default='max', choices=['max', 'stepwise_max'],
                               help="Type of mixture of attack: 'max' or 'stepwise_max' strategy.")
 max_adv_argparse.add_argument('--steps_l1', type=int, default=50,
@@ -106,6 +108,7 @@ def _main():
                                    adv_epochs=args.epochs,
                                    beta=args.beta,
                                    lr=args.lr,
+                                   under_sampling_ratio=args.under_sampling,
                                    weight_decay=args.weight_decay
                                    )
         # human readable parameters
