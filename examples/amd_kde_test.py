@@ -67,6 +67,7 @@ def _main():
         kde.save_to_disk()
 
     kde.load()
+    kde.get_threshold(val_dataset_producer, ratio=args.ratio)
     kde.predict(test_dataset_producer)
 
 
