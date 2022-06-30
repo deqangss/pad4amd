@@ -78,6 +78,7 @@ class KernelDensityEstimation(DetectorTemplate):
         :@param validation_data_producer: Object, an iterator for producing validation dataset
         """
         ratio = ratio if ratio is not None else self.ratio
+        assert 0 <= ratio <= 1
         self.eval()
         probabilities = []
         gt_labels = []
