@@ -15,6 +15,8 @@ kde_argparse = argparse.ArgumentParser(description='arguments for kernel density
 kde_argparse.add_argument('--n_centers', type=int, default=500, help='number of distributions')
 kde_argparse.add_argument('--bandwidth', type=float, default=20., help='variance of Gaussian kernel')
 kde_argparse.add_argument('--ratio', type=float, default=0.95, help='the percentage of reminded validation examples')
+kde_argparse.add_argument('--cache', action='store_true', default=False,
+                          help='use cache data or not.')
 kde_argparse.add_argument('--mode', type=str, default='train', choices=['train', 'test'], required=False,
                           help='learn a model or test it.')
 kde_argparse.add_argument('--model_name', type=str, default='xxxxxxxx-xxxxxx', help='model timestamp.')
