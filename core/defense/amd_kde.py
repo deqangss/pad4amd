@@ -173,7 +173,7 @@ class KernelDensityEstimation(DetectorTemplate):
         # res = probability.reshape(-1, 1).repeat_interleave(2, dim=1) >= self.tau
         # return res[torch.arange(res.size()[0]), y_pred]
 
-    def fit(self, train_dataset_producer, val_dataet_producer):
+    def fit(self, train_dataset_producer, val_dataset_producer):
         X_hidden, gt_labels = [], []
         self.eval()
         with torch.no_grad():
@@ -189,7 +189,7 @@ class KernelDensityEstimation(DetectorTemplate):
             gt_labels = torch.cat(gt_labels)
             self.gaussian_means = [X_hidden[gt_labels == i][:self.n_centers] for i in range(self.n_classes)]
 
-        self.get_threshold(val_dataet_producer)
+        self.get_threshold(val_dataset_producer)
 
         if not path.exists(self.model_save_path):
             utils.mkdir(path.dirname(self.model_save_path))
