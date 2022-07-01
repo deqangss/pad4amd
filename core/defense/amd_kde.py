@@ -68,7 +68,6 @@ class KernelDensityEstimation(DetectorTemplate):
         size = x_hidden.size()[0]
         dist = [torch.sum(torch.square(means.unsqueeze(dim=0) - x_hidden.unsqueeze(dim=1)), dim=-1) for means in
                 self.gaussian_means]
-        print(dist, self.bandwidth ** 2)
         kd = torch.stack([torch.mean(torch.exp(-d / self.bandwidth ** 2), dim=-1) for d in dist], dim=1)
         # return p(x|y=y_pred)
         return -1 * kd[torch.arange(size), y_pred]
