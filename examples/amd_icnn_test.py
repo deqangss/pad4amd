@@ -69,6 +69,7 @@ def _main():
         dump_pickle(vars(args), path.join(path.dirname(model.model_save_path), "hparam.pkl"))
 
     model.load()
+    model.get_threshold(val_dataset_producer, ratio=args.ratio)
     # test: accuracy
     model.predict(test_dataset_producer)
     # attr_cls, attr_de = model.get_important_attributes(test_dataset_producer)

@@ -161,7 +161,7 @@ class AdvMalwareDetectorICNN(nn.Module, DetectorTemplate):
             logger.info(MSG.format(fnr * 100, fpr * 100, f1 * 100))
 
         measurement(y_true, y_pred)
-        if not indicator_masking:
+        if indicator_masking:
             # filter out examples with low likelihood
             # y_pred = y_pred[indicator_flag]
             # y_true = y_true[indicator_flag]
@@ -256,6 +256,7 @@ class AdvMalwareDetectorICNN(nn.Module, DetectorTemplate):
         """
         self.eval()
         ratio = ratio if ratio is not None else self.ratio
+        assert 0 <= ratio <= 1
         probabilities = []
         with torch.no_grad():
             for x_val, y_val in validation_data_producer:
