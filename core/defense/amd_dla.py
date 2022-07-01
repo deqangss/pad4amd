@@ -194,8 +194,8 @@ class AMalwareDetectionDLA(nn.Module, DetectorTemplate):
         :@param validation_data_producer: Object, an iterator for producing validation dataset
         """
         self.eval()
-        if ratio is None:
-            ratio = self.ratio
+        ratio = ratio if ratio is not None else self.ratio
+        assert 0 <= ratio <= 1
         probabilities = []
         with torch.no_grad():
             for x_val, y_val in validation_data_producer:
