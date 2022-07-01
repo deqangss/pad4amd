@@ -101,7 +101,7 @@ class KernelDensityEstimation(DetectorTemplate):
         y_pred = y_cent.argmax(1).cpu().numpy()
         y_true = y_true.cpu().numpy()
         indicator_flag = self.indicator(x_prob, y_pred).cpu().numpy()
-        if not indicator_masking:
+        if indicator_masking:
             flag_of_retaining = indicator_flag | (y_pred == 1.)  # excluding the examples with ``not sure'' response
             y_pred = y_pred[flag_of_retaining]
             y_true = y_true[flag_of_retaining]
