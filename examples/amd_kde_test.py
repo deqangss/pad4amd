@@ -68,7 +68,7 @@ def _main():
 
     kde.load()
     kde.get_threshold(val_dataset_producer, ratio=args.ratio)
-    kde.predict(test_dataset_producer)
+    kde.predict(test_dataset_producer, indicator_masking=False)
 
 
 if __name__ == '__main__':
