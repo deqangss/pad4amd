@@ -112,6 +112,7 @@ def _main():
         dump_pickle(vars(args), path.join(path.dirname(dla_model.model_save_path), "hparam.pkl"))
     # test: accuracy
     dla_model.load()
+    dla_model.get_threshold(val_dataset_producer, ratio=args.ratio)
     dla_model.predict(test_dataset_producer)
 
     # attr_cls, attr_de = max_adv_training_model.model.get_important_attributes(test_dataset_producer)
