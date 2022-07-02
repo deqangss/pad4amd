@@ -172,7 +172,7 @@ def _main():
                      device=model.device
                      )
 
-    logger.info("\nThe maximum number of perturbations for each example is {}:".format(args.m))
+    logger.info("\nThe maximum number of perturbations for each example is {}:".format(args.steps))
     y_cent_list, x_density_list = [], []
     x_mod_integrated = []
     model.eval()
