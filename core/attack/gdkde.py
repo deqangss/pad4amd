@@ -151,7 +151,7 @@ class GDKDE(BaseAttack):
         square = torch.sum(torch.abs(self.benign_feat.float().unsqueeze(dim=0) - adv_x.float().unsqueeze(dim=1)),
                            dim=-1)
         kde = torch.mean(torch.exp(-square / self.bandwidth), dim=-1)
-        loss_no_reduction = ce + self.penalty_factor * kde
+        loss_no_reduction = ce - self.penalty_factor * kde
 
         if hasattr(model, 'is_detector_enabled') and (not self.oblivion):
             tau = model.get_tau_sample_wise(y_pred)
