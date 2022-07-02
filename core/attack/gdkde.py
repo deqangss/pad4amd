@@ -151,7 +151,7 @@ class GDKDE(BaseAttack):
         y_pred = logits_f.argmax(1)
         square = torch.sum(torch.square(self.benign_feat.unsqueeze(dim=0) - adv_x.unsqueeze(dim=1)),
                            dim=-1).float()
-        kde = torch.mean(torch.exp(-square / self.bandwidth), dim=-1)
+        kde = torch.mean(torch.exp(-square / self.bandwidth ** 2), dim=-1)
         loss_no_reduction = ce + self.penalty_factor * kde
 
         if hasattr(model, 'is_detector_enabled') and (not self.oblivion):
