@@ -72,7 +72,7 @@ class GDKDE(BaseAttack):
             grad = torch.autograd.grad(torch.mean(loss), var_adv_x)[0]
             perturbation = self.get_perturbation(grad, x, adv_x)
             # avoid to perturb the examples that are successful to evade the victim
-            adv_x = torch.clamp(adv_x + perturbation * step_length, min=0., max=1.)
+            adv_x = torch.clamp(adv_x - perturbation * step_length, min=0., max=1.)
         return round_x(adv_x)
 
     def perturb(self, model, x, label=None,
@@ -148,10 +148,10 @@ class GDKDE(BaseAttack):
             logits_f = model.forward(adv_x)
         ce = F.cross_entropy(logits_f, label, reduction='none')
         y_pred = logits_f.argmax(1)
-        square = torch.sum(torch.abs(self.benign_feat.float().unsqueeze(dim=0) - adv_x.float().unsqueeze(dim=1)),
-                           dim=-1)
-        kde = torch.mean(torch.exp(-square / self.bandwidth), dim=-1)
-        loss_no_reduction = ce - self.penalty_factor * kde
+        kernel_v = torch.sum(torch.abs(self.benign_feat.float().unsqueeze(dim=0) - adv_x.float().unsqueeze(dim=1)),
+                             dim=-1)
+        kde = self.penalty_factor * torch.mean(torch.exp(-kernel_v / self.bandwidth), dim=-1)
+        loss_no_reduction = -ce - kde
 
         if hasattr(model, 'is_detector_enabled') and (not self.oblivion):
             tau = model.get_tau_sample_wise(y_pred)
