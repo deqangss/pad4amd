@@ -23,8 +23,6 @@ atta_argparse.add_argument('--n_step', type=int, default=50,
                            help='maximum number of steps.')
 atta_argparse.add_argument('--step_length', type=float, default=2.,
                            help='step length in each step.')
-atta_argparse.add_argument('--step_check', type=int, default=10,
-                           help='number of steps when checking the effectiveness of continuous perturbations')
 atta_argparse.add_argument('--bandwidth', type=float, default=20.,
                            help='variance of Gaussian distribution.')
 atta_argparse.add_argument('--penalty_factor', type=float, default=1000.,
@@ -172,7 +170,6 @@ def _main():
     attack = GDKDE(ben_feature_vectors,
                    args.bandwidth,
                    penalty_factor=args.penalty_factor,
-                   oblivion=args.oblivion,
                    kappa=args.kappa,
                    device=model.device
                    )

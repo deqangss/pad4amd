@@ -78,7 +78,6 @@ class GDKDE(BaseAttack):
     def perturb(self, model, x, label=None,
                 steps=10,
                 step_length=1.,
-                step_check=10,
                 min_lambda_=1e-5,
                 max_lambda_=1e5,
                 base=10.,
@@ -87,19 +86,18 @@ class GDKDE(BaseAttack):
         enhance attack
         """
         assert 0 < min_lambda_ <= max_lambda_
-        assert steps >= 0 and step_check > 0 and step_length >= 0
         model.eval()
 
         if hasattr(model, 'forward_g'):
             self.lambda_ = min_lambda_
         else:
             self.lambda_ = max_lambda_
-
         adv_x = x.detach().clone()
         while self.lambda_ <= max_lambda_:
             _, done = self.get_loss(model, adv_x, label)
             if torch.all(done):
                 break
+            adv_x[~done] = x[~done]  # recompute the perturbation under other penalty factors
             pert_x = self._perturb(model, adv_x[~done], label[~done],
                                    steps,
                                    step_length,
@@ -134,7 +132,8 @@ class GDKDE(BaseAttack):
             gradients / l2norm
         )
         perturbation = torch.where(torch.isnan(perturbation), 0., perturbation)
-        perturbation = torch.where(torch.isinf(perturbation), -1., perturbation)
+        perturbation = torch.where(torch.isinf(perturbation), 1., perturbation)
+
         # add the extra perturbation owing to the interdependent apis
         if self.is_attacker:
             min_val = torch.amin(perturbation, dim=-1, keepdim=True).clamp_(max=0.)
@@ -149,8 +148,8 @@ class GDKDE(BaseAttack):
             logits_f = model.forward(adv_x)
         ce = F.cross_entropy(logits_f, label, reduction='none')
         y_pred = logits_f.argmax(1)
-        square = torch.sum(torch.square(self.benign_feat.unsqueeze(dim=0) - adv_x.unsqueeze(dim=1)),
-                           dim=-1).float()
+        square = torch.sum(torch.square(self.benign_feat.float().unsqueeze(dim=0) - adv_x.float().unsqueeze(dim=1)),
+                           dim=-1)
         kde = torch.mean(torch.exp(-square / self.bandwidth ** 2), dim=-1)
         loss_no_reduction = ce + self.penalty_factor * kde
 
