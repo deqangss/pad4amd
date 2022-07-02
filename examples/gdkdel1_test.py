@@ -1,3 +1,7 @@
+"""
+Warning: a large number of samples belonging to negative class will trigger the MOE
+"""
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
