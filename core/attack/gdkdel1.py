@@ -172,7 +172,7 @@ class GDKDEl1(BaseAttack):
                                         adv_x.float().unsqueeze(dim=1)),
                            dim=-1)
         kde = torch.mean(torch.exp(-square / self.bandwidth ** 2), dim=-1)
-        loss_no_reduction = ce + self.penalty_factor * kde
+        loss_no_reduction = ce - self.penalty_factor * kde
         if hasattr(model, 'is_detector_enabled') and (not self.oblivion):
             tau = model.get_tau_sample_wise(y_pred)
             if self.is_attacker:
