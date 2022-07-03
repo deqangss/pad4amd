@@ -148,7 +148,7 @@ def _main():
         model.load()
     logger.info("Load model parameters from {}.".format(model.model_save_path))
 
-    # model.predict(mal_test_dataset_producer, indicator_masking=True)
+    model.predict(mal_test_dataset_producer, indicator_masking=True)
     attack = PGD(norm=args.norm,
                  use_random=args.random_start,
                  rounding_threshold=args.round_threshold,
@@ -157,6 +157,7 @@ def _main():
                  device=model.device
                  )
 
+    logger.info("\nThe maximum number of iterations for each example is {}:".format(args.steps))
     y_cent_list, x_density_list = [], []
     x_mod_integrated = []
     model.eval()
