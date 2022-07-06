@@ -82,7 +82,7 @@ class OrthogonalStepwiseMax(StepwiseMax):
                                                               sl_linf
                                                               )
             with torch.no_grad():
-                pertb_x_list = [pert_x_linf, pert_x_l2, pert_x_l1]
+                pertb_x_list = [pert_x_l1, pert_x_l2, pert_x_linf]
                 n_attacks = len(pertb_x_list)
                 pertbx = torch.vstack(pertb_x_list)
                 label_ext = torch.cat([label[~done]] * n_attacks)
