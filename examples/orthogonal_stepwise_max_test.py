@@ -19,7 +19,7 @@ logger.addHandler(ErrorHandler)
 atta_argparse = argparse.ArgumentParser(description='arguments for step-wise max attack')
 atta_argparse.add_argument('--steps', type=int, default=100,
                            help='maximum number of steps.')
-atta_argparse.add_argument('--step_check', type=int, default=10,
+atta_argparse.add_argument('--step_check', type=int, default=1,
                            help='check the maximum at $step_check$th step..')
 atta_argparse.add_argument('--project_detector', action='store_true', default=False,
                            help='whether know the adversary indicator or not.')
