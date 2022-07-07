@@ -124,7 +124,7 @@ class BaseAttack(Module):
         else:
             logits_f = model.forward(adv_x)
 
-        print(logits_f.shape)
+        print(logits_f[:10], label[:10])
         ce = F.cross_entropy(logits_f, label, reduction='none')
         y_pred = logits_f.argmax(1)
         if hasattr(model, 'is_detector_enabled') and (not self.oblivion):
