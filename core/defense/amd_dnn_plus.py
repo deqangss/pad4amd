@@ -171,7 +171,7 @@ class AMalwareDetectionDNNPlus(nn.Module, DetectorTemplate):
         x_prob = torch.cat(x_prob, dim=0)
 
         y_cent_a = torch.cat(y_cent_a, dim=0)
-        print(torch.sum(y_cent_a.argmax(dim=-1) == 2).item()/len(y_cent_a))
+        print('acc:', torch.sum(y_cent_a.argmax(dim=-1) == 2).item()/len(y_cent_a))
         return y_cent, x_prob, gt_labels
 
     def inference_batch_wise(self, x):
