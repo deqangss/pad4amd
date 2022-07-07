@@ -137,12 +137,9 @@ class AMalwareDetectionDLA(nn.Module, DetectorTemplate):
 
         measurement(y_true, y_pred)
         if indicator_masking:
-            # filter out examples with low likelihood
-            # y_pred = y_pred[indicator_flag]
-            # y_true = y_true[indicator_flag]
-            flag_of_retaining = indicator_flag | (y_pred == 1.)  # excluding the examples with ``not sure'' response
-            y_pred = y_pred[flag_of_retaining]
-            y_true = y_true[flag_of_retaining]
+            # excluding the examples with ``not sure'' response
+            y_pred = y_pred[indicator_flag]
+            y_true = y_true[indicator_flag]
         else:
             # instead filtering out examples, here resets the prediction as 1
             y_pred[~indicator_flag] = 1.
