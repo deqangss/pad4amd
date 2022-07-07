@@ -155,8 +155,6 @@ class AMalwareDetectionDNNPlus(nn.Module, DetectorTemplate):
         y_cent, x_prob = [], []
         gt_labels = []
         self.eval()
-
-        y_cent_a = []
         with torch.no_grad():
             for x, y in test_data_producer:
                 x, y = utils.to_device(x.double(), y.long(), self.device)
@@ -164,14 +162,10 @@ class AMalwareDetectionDNNPlus(nn.Module, DetectorTemplate):
                 y_cent.append(F.softmax(logits, dim=-1)[:, :2])
                 x_prob.append(x_cent)
                 gt_labels.append(y)
-                y_cent_a.append(F.softmax(logits))
 
         gt_labels = torch.cat(gt_labels, dim=0)
         y_cent = torch.cat(y_cent, dim=0)
         x_prob = torch.cat(x_prob, dim=0)
-
-        y_cent_a = torch.cat(y_cent_a, dim=0)
-        print('acc:', torch.sum(y_cent_a.argmax(dim=-1) == 2).item()/len(y_cent_a))
         return y_cent, x_prob, gt_labels
 
     def inference_batch_wise(self, x):
@@ -179,6 +173,9 @@ class AMalwareDetectionDNNPlus(nn.Module, DetectorTemplate):
         self.eval()
         logits, g = self.forward(x)
         x_cent = torch.softmax(logits, dim=-1).detach().cpu().numpy()[:, :2]
+
+        print('acc:', torch.sum(logits.argmax(dim=-1) == 2).item() / len(logits))
+
         return x_cent, g.detach().cpu().numpy()
 
     def get_tau_sample_wise(self, y_pred=None):
