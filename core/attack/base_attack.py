@@ -128,7 +128,7 @@ class BaseAttack(Module):
         y_pred = logits_f.argmax(1)
         if hasattr(model, 'is_detector_enabled') and (not self.oblivion):
             assert lambda_ is not None
-            tau = model.get_tau_sample_wise(torch.ones_like(y_pred).to(self.device))
+            tau = model.get_tau_sample_wise(y_pred)
             if self.is_attacker:
                 loss_no_reduction = ce + lambda_ * (torch.clamp(tau - prob_g,
                                                                 max=self.kappa)
@@ -146,10 +146,13 @@ class BaseAttack(Module):
             logits_f, prob_g = model.forward(pertb_x)
         else:
             logits_f = model.forward(pertb_x)
-
+        y_pred = logits_f.argmax(1)
         ce = F.cross_entropy(logits_f, label, reduction='none')
         if hasattr(model, 'is_detector_enabled') and (not self.oblivion):
+            tau = model.get_tau_sample_wise(y_pred)
             loss_no_reduction = ce - lmda * prob_g
+            done = (y_pred != label) & (prob_g <= tau)
         else:
             loss_no_reduction = ce
-        return loss_no_reduction
+            done = y_pred != label
+        return loss_no_reduction, done
