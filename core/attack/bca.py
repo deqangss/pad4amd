@@ -106,7 +106,7 @@ class BCA(BaseAttack):
         while self.lambda_ <= max_lambda_:
             with torch.no_grad():
                 _, done = self.get_loss(model, adv_x, label, self.lambda_)
-                score = self.get_scores(model, adv_x, label)
+                score, _ = self.get_scores(model, adv_x, label)
             if torch.all(done):
                 break
             pert_x = self._perturb(model, adv_x[~done], label[~done],
