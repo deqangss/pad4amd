@@ -128,7 +128,7 @@ class Groose(BaseAttack):
         softmax_loss = torch.softmax(logits_f, dim=-1)[torch.arange(tar_label.size()[0]), tar_label]
         y_pred = logits_f.argmax(1)
         if hasattr(model, 'is_detector_enabled') and (not self.oblivion):
-            tau = model.get_tau_sample_wise(tar_label)
+            tau = model.get_tau_sample_wise(y_pred)
             if self.is_attacker:
                 loss_no_reduction = softmax_loss + self.lambda_ * (torch.clamp(tau - prob_g, max=self.kappa))
             else:
