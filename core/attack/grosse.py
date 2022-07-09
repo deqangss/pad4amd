@@ -135,7 +135,7 @@ class Groose(BaseAttack):
                 loss_no_reduction = softmax_loss + self.lambda_ * (tau - prob_g)
 
             done = (y_pred == tar_label) & (prob_g <= tau)
-            print(self.lambda_, tau[:10], prob_g[:10], (prob_g <= tau)[:10])
+            print(self.lambda_, y_pred[:10], tau[:10], prob_g[:10], (prob_g <= tau)[:10])
         else:
             loss_no_reduction = softmax_loss
             done = y_pred == tar_label
