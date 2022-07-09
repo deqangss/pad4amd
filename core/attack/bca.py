@@ -64,7 +64,7 @@ class BCA(BaseAttack):
         adv_x = x
         worst_x = x.detach().clone()
         if highest_score is None:
-            highest_score = self.get_scores(model, adv_x, label).data
+            highest_score, _ = self.get_scores(model, adv_x, label).data
         model.eval()
         adv_x = get_x0(adv_x, rounding_threshold=0.5, is_sample=use_sample)
         for t in range(steps):
@@ -80,8 +80,8 @@ class BCA(BaseAttack):
 
             adv_x = torch.clamp(adv_x + perturbation, min=0., max=1.)
             # select adv x
-            scores = self.get_scores(model, adv_x, label).data
-            replace_flag = (scores > highest_score)
+            scores, done = self.get_scores(model, adv_x, label).data
+            replace_flag = (scores > highest_score) | done
             highest_score[replace_flag] = scores[replace_flag]
             worst_x[replace_flag] = adv_x[replace_flag]
         return worst_x
