@@ -136,6 +136,7 @@ class BaseAttack(Module):
             else:
                 loss_no_reduction = ce + lambda_ * (tau - prob_g)
             done = (y_pred != label) & (prob_g <= tau)
+            print(y_pred[:10], prob_g[:10], tau[:10])
         else:
             loss_no_reduction = ce
             done = y_pred != label
