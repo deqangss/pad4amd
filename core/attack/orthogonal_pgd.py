@@ -76,7 +76,7 @@ class OrthogonalPGD(PGD):
             logits_classifier, logits_detector = model.forward(var_adv_x)
             ce = torch.mean(F.cross_entropy(logits_classifier, label, reduction='none'))
             ce.backward(retain_graph=True)
-            grad_classifier = var_adv_x.grad.detach().data  # we do not put it on cpu
+            grad_classifier = var_adv_x.grad.detach().data
             grad_classifier = self.trans_grads(grad_classifier, adv_x)
 
             var_adv_x.grad = None
@@ -91,8 +91,8 @@ class OrthogonalPGD(PGD):
                 # then grad_d' = grad_d - (project grad_d onto grad_c)
                 grad_detector_proj = grad_detector - torch.bmm(
                     (torch.bmm(grad_detector.view(batch_size, 1, -1), grad_classifier.view(batch_size, -1, 1))) / (
-                            1e-20 + torch.bmm(grad_classifier.view(batch_size, 1, -1),
-                                              grad_classifier.view(batch_size, -1, 1))).view(-1, 1, 1),
+                            1e-120 + torch.bmm(grad_classifier.view(batch_size, 1, -1),
+                                               grad_classifier.view(batch_size, -1, 1))).view(-1, 1, 1),
                     grad_classifier.view(batch_size, 1, -1)).view(grad_detector.shape)
             else:
                 grad_detector_proj = grad_detector
@@ -103,17 +103,17 @@ class OrthogonalPGD(PGD):
                 # then grad_c' = grad_c - (project grad_c onto grad_d)
                 grad_classifier_proj = grad_classifier - torch.bmm(
                     (torch.bmm(grad_classifier.view(batch_size, 1, -1), grad_detector.view(batch_size, -1, 1))) / (
-                            1e-20 + torch.bmm(grad_detector.view(batch_size, 1, -1),
-                                              grad_detector.view(batch_size, -1, 1))).view(-1, 1, 1),
+                            1e-120 + torch.bmm(grad_detector.view(batch_size, 1, -1),
+                                               grad_detector.view(batch_size, -1, 1))).view(-1, 1, 1),
                     grad_detector.view(batch_size, 1, -1)).view(grad_classifier.shape)
             else:
                 grad_classifier_proj = grad_classifier
 
             disc_logits_classifier, disc_logits_detector = model.forward(round_x(adv_x))
             if self.project_detector:
-                has_attack_succeeded = (disc_logits_classifier.argmax(1) == 0.)[:, None].float()
+                has_attack_succeeded = (disc_logits_classifier.argmax(1) == 0.)[:, None].float()  # customized label
             else:
-                tau = model.get_tau_sample_wise(torch.zeros_like(label).to(self.device))
+                tau = model.get_tau_sample_wise(torch.zeros_like(label).to(self.device))  # customized label
                 has_attack_succeeded = (disc_logits_detector < tau)[:, None].float()
 
             if self.k:
@@ -156,8 +156,7 @@ class OrthogonalPGD(PGD):
                 raise ValueError("Expect 'l2', 'linf' or 'l1' norm.")
             adv_x = torch.clamp(adv_x + perturbation * step_length, min=0., max=1.)
         # round
-        round_threshold = 0.5
-        return round_x(adv_x, round_threshold)
+        return round_x(adv_x)
 
     def perturb(self, model, x, label=None,
                 steps=10,
