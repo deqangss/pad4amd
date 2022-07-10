@@ -65,6 +65,7 @@ class RFGSM(BaseAttack):
         adv_x = x.clone()
         model.eval()
         adv_x = get_x0(adv_x, rounding_threshold=0.5, is_sample=use_sample)
+        loss_natural = 0.
         for t in range(steps):
             var_adv_x = torch.autograd.Variable(adv_x, requires_grad=True)
             loss, done = self.get_loss(model, var_adv_x, label, lmda)
