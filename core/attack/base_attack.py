@@ -147,12 +147,9 @@ class BaseAttack(Module):
         else:
             logits_f = model.forward(pertb_x)
         y_pred = logits_f.argmax(1)
-        ce = F.cross_entropy(logits_f, label, reduction='none')
         if hasattr(model, 'is_detector_enabled') and (not self.oblivion):
             tau = model.get_tau_sample_wise(y_pred)
-            loss_no_reduction = ce - lmda * prob_g
             done = (y_pred != label) & (prob_g <= tau)
         else:
-            loss_no_reduction = ce
             done = y_pred != label
-        return loss_no_reduction, done
+        return done
