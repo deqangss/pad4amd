@@ -44,7 +44,6 @@ class BGA(BaseAttack):
         self.lambda_ = 1.
 
     def _perturb(self, model, x, label=None,
-                 highest_score=None,
                  m=10,
                  lmda=1.,
                  use_sample=False):
@@ -67,13 +66,12 @@ class BGA(BaseAttack):
 
         adv_x = x.clone()
         worst_x = x.detach().clone()
-        if highest_score is None:
-            highest_score = self.get_scores(model, adv_x, label).data
         model.eval()
         adv_x = get_x0(adv_x, rounding_threshold=0.5, is_sample=use_sample)
         for t in range(m):
             var_adv_x = torch.autograd.Variable(adv_x, requires_grad=True)
-            loss, _1 = self.get_loss(model, var_adv_x, label, lmda)
+            loss, done = self.get_loss(model, var_adv_x, label, lmda)
+            worst_x[done] = adv_x[done]
             grad = torch.autograd.grad(loss.mean(), var_adv_x)[0].data
 
             # filtering un-considered graphs & positions
@@ -87,10 +85,8 @@ class BGA(BaseAttack):
             adv_x = or_tensors(adv_x, x)
 
             # select adv x
-            scores = self.get_scores(model, adv_x, label).data
-            replace_flag = (scores > highest_score)
-            highest_score[replace_flag] = scores[replace_flag]
-            worst_x[replace_flag] = adv_x[replace_flag]
+            done = self.get_scores(model, adv_x, label).data
+            worst_x[done] = adv_x[done]
         return worst_x
 
     def perturb(self, model, x, label=None,
@@ -113,11 +109,9 @@ class BGA(BaseAttack):
         while self.lambda_ <= max_lambda_:
             with torch.no_grad():
                 _, done = self.get_loss(model, adv_x, label, self.lambda_)
-                score = self.get_scores(model, adv_x, label)
             if torch.all(done):
                 break
             pert_x = self._perturb(model, adv_x[~done], label[~done],
-                                   score[~done],
                                    steps,
                                    lmda=self.lambda_,
                                    use_sample=use_sample
