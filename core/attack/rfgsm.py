@@ -43,7 +43,6 @@ class RFGSM(BaseAttack):
         self.random = random
 
     def _perturb(self, model, x, label=None,
-                 highest_score=None,
                  steps=10,
                  step_length=0.02,
                  lmda=1.,
@@ -64,13 +63,11 @@ class RFGSM(BaseAttack):
         if x is None or x.shape[0] <= 0:
             return []
         adv_x = x.clone()
-        if highest_score is None:
-            highest_score = self.get_scores(model, adv_x, label).data
         model.eval()
         adv_x = get_x0(adv_x, rounding_threshold=0.5, is_sample=use_sample)
         for t in range(steps):
             var_adv_x = torch.autograd.Variable(adv_x, requires_grad=True)
-            loss, _1 = self.get_loss(model, var_adv_x, label, lmda)
+            loss, done = self.get_loss(model, var_adv_x, label, lmda)
             grad = torch.autograd.grad(loss.mean(), var_adv_x)[0].data
 
             # filtering un-considered graphs & positions
@@ -88,9 +85,8 @@ class RFGSM(BaseAttack):
         adv_x = round_x(adv_x, round_threshold)
         # feasible projection
         adv_x = or_tensors(adv_x, x)
-
-        scores = self.get_scores(model, adv_x, label).data
-        replace_flag = (scores < highest_score)
+        # The below line is different from official codes because it is challenging to design a proper score
+        replace_flag = self.get_scores(model, adv_x, label).data
         adv_x[replace_flag] = x[replace_flag]
         return adv_x
 
@@ -115,11 +111,9 @@ class RFGSM(BaseAttack):
         while self.lmba <= max_lambda_:
             with torch.no_grad():
                 _, done = self.get_loss(model, adv_x, label, self.lmba)
-                score = self.get_scores(model, adv_x, label)
             if torch.all(done):
                 break
             pert_x = self._perturb(model, adv_x[~done], label[~done],
-                                   score[~done],
                                    steps,
                                    step_length,
                                    lmda=self.lmba,
