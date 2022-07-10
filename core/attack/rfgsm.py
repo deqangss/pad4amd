@@ -68,6 +68,8 @@ class RFGSM(BaseAttack):
         for t in range(steps):
             var_adv_x = torch.autograd.Variable(adv_x, requires_grad=True)
             loss, done = self.get_loss(model, var_adv_x, label, lmda)
+            if t == 0:
+                loss_natural = loss
             grad = torch.autograd.grad(loss.mean(), var_adv_x)[0].data
 
             # filtering un-considered graphs & positions
@@ -86,8 +88,9 @@ class RFGSM(BaseAttack):
         # feasible projection
         adv_x = or_tensors(adv_x, x)
         # The below line is different from official codes because it is challenging to design a proper score
-        # replace_flag = self.get_scores(model, adv_x, label).data
-        # adv_x[replace_flag] = x[replace_flag]
+        loss_adv = self.get_loss(model, adv_x, label, lmda)
+        replace_flag = (loss_adv < loss_natural).unsqueeze(1).expand_as(adv_x)
+        adv_x[replace_flag] = x[replace_flag]
         return adv_x
 
     def perturb(self, model, x, label=None,
