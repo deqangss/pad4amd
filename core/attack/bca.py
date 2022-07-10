@@ -78,7 +78,7 @@ class BCA(BaseAttack):
 
             adv_x = torch.clamp(adv_x + perturbation, min=0., max=1.)
         # select adv x
-        _1, done = self.get_scores(model, adv_x, label)
+        done = self.get_scores(model, adv_x, label)
         worst_x[done] = adv_x[done]
         return worst_x
 
