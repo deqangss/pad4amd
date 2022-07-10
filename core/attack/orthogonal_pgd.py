@@ -109,12 +109,8 @@ class OrthogonalPGD(PGD):
             else:
                 grad_classifier_proj = grad_classifier
 
-            if self.project_detector:
-                logits_classifier[range(batch_size), 0] = logits_classifier[range(batch_size), 0] - 20.
-                has_attack_succeeded = (logits_classifier.argmax(1) == 0.)[:, None].float()
-            else:
-                tau = model.get_tau_sample_wise(logits_classifier.argmax(1))
-                has_attack_succeeded = (logits_detector + tau / 2. <= tau)[:, None].float()
+            logits_classifier[range(batch_size), 0] = logits_classifier[range(batch_size), 0] - 20.
+            has_attack_succeeded = (logits_classifier.argmax(1) == 0.)[:, None].float()
 
             if self.k:
                 # take gradients of g onto f every kth step
@@ -123,12 +119,8 @@ class OrthogonalPGD(PGD):
                 else:
                     grad = grad_classifier_proj
             else:
-                if self.project_detector:
-                    grad = grad_classifier_proj * (
-                            1. - has_attack_succeeded) + grad_detector_proj * has_attack_succeeded
-                else:
-                    grad = grad_classifier_proj * has_attack_succeeded + grad_detector_proj * (
-                            1. - has_attack_succeeded)
+                grad = grad_classifier_proj * (
+                        1. - has_attack_succeeded) + grad_detector_proj * has_attack_succeeded
 
             # if torch.any(torch.isnan(grad)):
             #     print(torch.mean(torch.isnan(grad)))
