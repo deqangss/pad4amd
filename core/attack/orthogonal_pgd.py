@@ -109,8 +109,9 @@ class OrthogonalPGD(PGD):
             else:
                 grad_classifier_proj = grad_classifier
 
-            logits_classifier[range(batch_size), 0] = logits_classifier[range(batch_size), 0] - 20.
-            has_attack_succeeded = (logits_classifier.argmax(1) == 0.)[:, None].float()
+            disc_logits_classifier, disc_logits_detector = model.forward(round_x(adv_x))
+            disc_logits_classifier[range(batch_size), 0] = disc_logits_classifier[range(batch_size), 0] - 20.
+            has_attack_succeeded = (disc_logits_classifier.argmax(1) == 0.)[:, None].float()  # customized label
 
             if self.k:
                 # take gradients of g onto f every kth step
