@@ -86,8 +86,8 @@ class RFGSM(BaseAttack):
         # feasible projection
         adv_x = or_tensors(adv_x, x)
         # The below line is different from official codes because it is challenging to design a proper score
-        replace_flag = self.get_scores(model, adv_x, label).data
-        adv_x[replace_flag] = x[replace_flag]
+        # replace_flag = self.get_scores(model, adv_x, label).data
+        # adv_x[replace_flag] = x[replace_flag]
         return adv_x
 
     def perturb(self, model, x, label=None,
