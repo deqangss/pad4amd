@@ -110,6 +110,7 @@ class OrthogonalPGD(PGD):
                 grad_classifier_proj = grad_classifier
 
             disc_logits_classifier, disc_logits_detector = model.forward(round_x(adv_x))
+            logits_classifier[range(batch_size), 0] = logits_classifier[range(batch_size), 0] - 20.
             has_attack_succeeded = (disc_logits_classifier.argmax(1) == 0.)[:, None].float()  # customized label
 
             if self.k:
@@ -148,7 +149,7 @@ class OrthogonalPGD(PGD):
                 raise ValueError("Expect 'l2', 'linf' or 'l1' norm.")
             adv_x = torch.clamp(adv_x + perturbation * step_length, min=0., max=1.)
         # round
-        # print(torch.sum(torch.abs(round_x(adv_x) - x), dim=-1))
+        print(torch.sum(torch.abs(round_x(adv_x) - x), dim=-1))
         return round_x(adv_x)
 
     def perturb(self, model, x, label=None,
