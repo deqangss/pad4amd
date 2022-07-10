@@ -91,7 +91,7 @@ class OrthogonalPGD(PGD):
                 # then grad_d' = grad_d - (project grad_d onto grad_c)
                 grad_detector_proj = grad_detector - torch.bmm(
                     (torch.bmm(grad_detector.view(batch_size, 1, -1), grad_classifier.view(batch_size, -1, 1))) / (
-                            1e-120 + torch.bmm(grad_classifier.view(batch_size, 1, -1),
+                            1e-20 + torch.bmm(grad_classifier.view(batch_size, 1, -1),
                                                grad_classifier.view(batch_size, -1, 1))).view(-1, 1, 1),
                     grad_classifier.view(batch_size, 1, -1)).view(grad_detector.shape)
             else:
@@ -103,7 +103,7 @@ class OrthogonalPGD(PGD):
                 # then grad_c' = grad_c - (project grad_c onto grad_d)
                 grad_classifier_proj = grad_classifier - torch.bmm(
                     (torch.bmm(grad_classifier.view(batch_size, 1, -1), grad_detector.view(batch_size, -1, 1))) / (
-                            1e-120 + torch.bmm(grad_detector.view(batch_size, 1, -1),
+                            1e-20 + torch.bmm(grad_detector.view(batch_size, 1, -1),
                                                grad_detector.view(batch_size, -1, 1))).view(-1, 1, 1),
                     grad_detector.view(batch_size, 1, -1)).view(grad_classifier.shape)
             else:
