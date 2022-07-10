@@ -156,6 +156,7 @@ class OrthogonalPGD(PGD):
                 raise ValueError("Expect 'l2', 'linf' or 'l1' norm.")
             adv_x = torch.clamp(adv_x + perturbation * step_length, min=0., max=1.)
         # round
+        print(torch.sum(torch.abs(round_x(adv_x) - x), dim=-1))
         return round_x(adv_x)
 
     def perturb(self, model, x, label=None,
