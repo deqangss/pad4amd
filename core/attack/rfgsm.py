@@ -88,7 +88,7 @@ class RFGSM(BaseAttack):
         # feasible projection
         adv_x = or_tensors(adv_x, x)
         # The below line is different from official codes because it is challenging to design a proper score
-        loss_adv = self.get_loss(model, adv_x, label, lmda)
+        loss_adv, _1 = self.get_loss(model, adv_x, label, lmda)
         replace_flag = (loss_adv < loss_natural).unsqueeze(1).expand_as(adv_x)
         adv_x[replace_flag] = x[replace_flag]
         return adv_x
