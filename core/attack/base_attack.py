@@ -128,7 +128,7 @@ class BaseAttack(Module):
         y_pred = logits_f.argmax(1)
         if hasattr(model, 'is_detector_enabled') and (not self.oblivion):
             assert lambda_ is not None
-            tau = model.get_tau_sample_wise(y_pred)
+            tau = model.get_tau_sample_wise(torch.ones_like(y_pred).to(self.device))
             if self.is_attacker:
                 loss_no_reduction = ce + lambda_ * (torch.clamp(tau - prob_g,
                                                                 max=self.kappa)
