@@ -236,7 +236,7 @@ def _main():
                                   )
 
     attack = Max(attack_list=[pgdlinf, pgdl2, pgdl1],
-                 varepsilon=1e-9,
+                 varepsilon=1e-20,
                  oblivion=args.oblivion,
                  device=model.device
                  )

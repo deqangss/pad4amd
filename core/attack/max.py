@@ -18,7 +18,7 @@ class Max(BaseAttack):
     @param attack_list: List, a list of instantiated attack object
     @param varepsilon: Float, a scaler for justifying the convergence
     """
-    def __init__(self, attack_list, varepsilon=1e-9,
+    def __init__(self, attack_list, varepsilon=1e-20,
                  is_attacker=True, oblivion=False, kappa=1., manipulation_x=None, omega=None, device=None):
         super(Max, self).__init__(is_attacker, oblivion, kappa, manipulation_x, omega, device)
         assert len(attack_list) > 0, 'Expect one attack at least.'
