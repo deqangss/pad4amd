@@ -96,8 +96,8 @@ class StepwiseMax(BaseAttack):
                     pertbx = torch.vstack(pertb_x_list)
                     label_ext = torch.cat([label[~done]] * n_attacks)
                     scores, _done = self.get_scores(model, round_x(pertbx, self.round_threshold), label_ext)
-                    # max_v = scores.amax() if scores.amax() > 0 else 1.
-                    # scores[done] += max_v
+                    max_v = scores.amax() if scores.amax() > 0 else 1.
+                    scores[_done] += max_v
                     pertbx = pertbx.reshape(n_attacks, num_sample_red, *red_n).permute([1, 0, *red_ind])
                     scores = scores.reshape(n_attacks, num_sample_red).permute(1, 0)
                     _, s_idx = scores.max(dim=-1)
