@@ -193,7 +193,6 @@ def _main():
                                 step_length=1.0,
                                 verbose=False
                                 )
-        print('okokok')
 
     if not args.orthogonal_v:
         pgdl2 = PGD(norm='l2', use_random=args.random_start, rounding_threshold=args.round_threshold,
@@ -211,7 +210,7 @@ def _main():
                               use_random=args.random_start,
                               rounding_threshold=args.round_threshold,
                               device=model.device)
-        pgdl1.perturb = partial(pgdl1.perturb,
+        pgdl2.perturb = partial(pgdl2.perturb,
                                 steps=args.steps_l2,
                                 step_length=args.step_length_l2,
                                 verbose=False
