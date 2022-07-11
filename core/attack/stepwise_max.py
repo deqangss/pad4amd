@@ -95,7 +95,9 @@ class StepwiseMax(BaseAttack):
                     n_attacks = len(pertb_x_list)
                     pertbx = torch.vstack(pertb_x_list)
                     label_ext = torch.cat([label[~done]] * n_attacks)
-                    scores = self.get_scores(model, round_x(pertbx, self.round_threshold), label_ext, self.lambda_)
+                    scores, done = self.get_scores(model, round_x(pertbx, self.round_threshold), label_ext)
+                    max_v = scores.amax() if scores.amax() > 0 else 1.
+                    scores[done] += max_v
                     pertbx = pertbx.reshape(n_attacks, num_sample_red, *red_n).permute([1, 0, *red_ind])
                     scores = scores.reshape(n_attacks, num_sample_red).permute(1, 0)
                     _, s_idx = scores.max(dim=-1)
@@ -200,3 +202,19 @@ class StepwiseMax(BaseAttack):
         for t in range(steps):
             adv_x_linf = one_iteration(adv_x_linf, norm_type='linf')
         return adv_x_l1, adv_x_l2, adv_x_linf
+
+    def get_scores(self, model, pertb_x, label):
+        if hasattr(model, 'is_detector_enabled'):
+            logits_f, prob_g = model.forward(pertb_x)
+        else:
+            logits_f = model.forward(pertb_x)
+        y_pred = logits_f.argmax(1)
+        ce = F.cross_entropy(logits_f, label, reduction='none')
+        if hasattr(model, 'is_detector_enabled') and (not self.oblivion):
+            tau = model.get_tau_sample_wise(y_pred)
+            loss_no_reduction = ce - self.lambda_ * prob_g
+            done = (y_pred != label) & (prob_g <= tau)
+        else:
+            loss_no_reduction = ce
+            done = y_pred != label
+        return loss_no_reduction, done
