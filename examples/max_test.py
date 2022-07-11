@@ -193,6 +193,7 @@ def _main():
                                 step_length=1.0,
                                 verbose=False
                                 )
+        print('okokok')
 
     if not args.orthogonal_v:
         pgdl2 = PGD(norm='l2', use_random=args.random_start, rounding_threshold=args.round_threshold,
