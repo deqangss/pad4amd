@@ -91,11 +91,13 @@ class StepwiseMax(BaseAttack):
                                                                   lambda_=self.lambda_
                                                                   )
                 with torch.no_grad():
-                    pertb_x_list = [pert_x_l1, pert_x_l2, pert_x_linf]
+                    pertb_x_list = [pert_x_linf, pert_x_l2, pert_x_l1]
                     n_attacks = len(pertb_x_list)
                     pertbx = torch.vstack(pertb_x_list)
                     label_ext = torch.cat([label[~done]] * n_attacks)
-                    scores, _1 = self.get_scores(model, round_x(pertbx, self.round_threshold), label_ext)
+                    scores, _done = self.get_scores(model, round_x(pertbx, self.round_threshold), label_ext)
+                    max_v = scores.amax() if scores.amax() > 0 else 0.
+                    scores[_done] += max_v
                     pertbx = pertbx.reshape(n_attacks, num_sample_red, *red_n).permute([1, 0, *red_ind])
                     scores = scores.reshape(n_attacks, num_sample_red).permute(1, 0)
                     _2, s_idx = scores.max(dim=-1)
