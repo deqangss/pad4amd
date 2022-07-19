@@ -78,6 +78,9 @@ class AMalwareDetectionPAD(object):
         optimizer = optim.Adam(self.model.parameters(), lr=lr, weight_decay=weight_decay)
         total_time = 0.
         nbatches = len(train_data_producer)
+        lmda_space = np.logspace(np.log10(lmda_lower_bound),
+                                 np.log10(lmda_upper_bound),
+                                 num=int(np.log10(lmda_upper_bound / lmda_lower_bound)) + 1)
         logger.info("Max adversarial training is starting ...")
         best_acc_val = 0.
         acc_val_adv_be = 0.
@@ -112,7 +115,7 @@ class AMalwareDetectionPAD(object):
                 # adversarial examples as much as possible
                 self.model.eval()
                 pertb_mal_x = self.attack.perturb(self.model, mal_x_batch, mal_y_batch,
-                                                  min_lambda_=lmda_lower_bound,
+                                                  min_lambda_=np.random.choice(lmda_space),
                                                   # when lambda is small, we cannot get effective attacks
                                                   max_lambda_=lmda_upper_bound,
                                                   **self.attack_param
