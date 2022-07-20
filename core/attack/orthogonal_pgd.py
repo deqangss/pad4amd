@@ -109,7 +109,7 @@ class OrthogonalPGD(PGD):
             else:
                 grad_classifier_proj = grad_classifier
 
-            # logits_classifier[range(batch_size), 0] = logits_classifier[range(batch_size), 0] - 20.
+            # logits_classifier[range(batch_size), 0] = logits_classifier[range(batch_size), 0]
             # has_attack_succeeded = (logits_classifier.argmax(1) == 0.)[:, None].float()
             disc_logits_classifier, _1 = model.forward(round_x(adv_x))
             disc_logits_classifier[range(batch_size), 0] = disc_logits_classifier[range(batch_size), 0] - 20.
