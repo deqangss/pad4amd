@@ -223,6 +223,7 @@ class AMalwareDetectionPAD(object):
                 best_acc_val = acc_val
                 acc_val_adv_be = acc_val_adv
                 best_epoch = i + 1
+                self.model.get_threshold(validation_data_producer)
                 self.save_to_disk(best_epoch, optimizer, self.model_save_path)
             if verbose:
                 logger.info(
@@ -241,6 +242,6 @@ class AMalwareDetectionPAD(object):
             utils.mkdir(path.dirname(save_path))
         torch.save({'model': self.model.state_dict(),
                     'epoch': epoch,
-                    'optimizer_state_dict': optimizer
+                    'optimizer_state_dict': optimizer.state_dict()
                     },
                    save_path)
