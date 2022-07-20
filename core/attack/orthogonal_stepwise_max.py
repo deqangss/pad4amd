@@ -19,8 +19,6 @@ class OrthogonalStepwiseMax(StepwiseMax):
     @param use_random, Boolean,  whether use random start point
     @param rounding_threshold, float, a threshold for rounding real scalars
     @param is_attacker, Boolean, play the role of attacker (note: the defender conducts adversarial training)
-    @param oblivion, Boolean, whether know the adversary indicator or not
-    @param kappa, attack confidence
     @param manipulation_x, manipulations
     @param omega, the indices of interdependent apis corresponding to each api
     @param device, 'cpu' or 'cuda'
@@ -54,8 +52,6 @@ class OrthogonalStepwiseMax(StepwiseMax):
         red_ind = list(range(2, len(x.size()) + 1))
         mini_steps = [step_check] * (steps // step_check)
         mini_steps = mini_steps + [steps % step_check] if steps % step_check != 0 else mini_steps
-        n, red_n = x.size()[0], x.size()[1:]
-        red_ind = list(range(2, len(x.size()) + 1))
 
         adv_x = x.detach().clone()
         pert_x_cont = None
