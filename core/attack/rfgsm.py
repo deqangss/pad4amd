@@ -85,6 +85,7 @@ class RFGSM(BaseAttack):
             round_threshold = torch.rand(adv_x.size()).to(self.device)
         else:
             round_threshold = 0.5
+        print(round_threshold)
         adv_x = round_x(adv_x, round_threshold)
         print('1::::', torch.sum(adv_x - x, dim=-1))
         # feasible projection
