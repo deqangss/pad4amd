@@ -111,7 +111,7 @@ class OrthogonalPGD(PGD):
 
             # has_attack_succeeded = (logits_classifier.argmax(1) == 0.)[:, None].float()
             disc_logits_classifier, _1 = model.forward(round_x(adv_x))
-            disc_logits_classifier[range(batch_size), 0] = disc_logits_classifier[range(batch_size), 0] - 20
+            disc_logits_classifier[range(batch_size), 0] = disc_logits_classifier[range(batch_size), 0] - 10
             has_attack_succeeded = (disc_logits_classifier.argmax(1) == 0.)[:, None].float()  # customized label
 
             if self.k:
