@@ -133,9 +133,6 @@ def _main():
         dump_pickle(vars(args), path.join(path.dirname(max_adv_training_model.model_save_path), "hparam.pkl"))
     # test: accuracy
     max_adv_training_model.load()
-    print(max_adv_training_model.model.tau)
-    import sys
-    sys.exit(1)
     max_adv_training_model.model.get_threshold(val_dataset_producer, ratio=args.ratio)
     max_adv_training_model.model.predict(test_dataset_producer)
 
