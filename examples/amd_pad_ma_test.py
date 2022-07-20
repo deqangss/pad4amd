@@ -127,6 +127,11 @@ def _main():
                                    under_sampling_ratio=args.under_sampling,
                                    weight_decay=args.weight_decay
                                    )
+        # get threshold
+        max_adv_training_model.load()
+        max_adv_training_model.model.get_threshold(val_dataset_producer)
+        max_adv_training_model.save_to_disk()
+
         # human readable parameters
         save_args(path.join(path.dirname(max_adv_training_model.model_save_path), "hparam"), vars(args))
         # save parameters for rebuilding the neural nets
@@ -134,6 +139,9 @@ def _main():
     # test: accuracy
     max_adv_training_model.load()
     max_adv_training_model.model.get_threshold(val_dataset_producer, ratio=args.ratio)
+    max_adv_training_model.save_to_disk()
+    import sys
+    sys.exit(1)
     max_adv_training_model.model.predict(test_dataset_producer)
 
     # attr_cls, attr_de = max_adv_training_model.model.get_important_attributes(test_dataset_producer)
