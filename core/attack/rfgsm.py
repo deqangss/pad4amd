@@ -79,7 +79,7 @@ class RFGSM(BaseAttack):
 
             # find the next sample
             adv_x = torch.clamp(adv_x + step_length * torch.sign(grad4ins_), min=0., max=1.)
-
+        print('steps:', steps, torch.amax(adv_x - x))
         # select adv x
         if self.random:
             round_threshold = torch.rand(adv_x.size()).to(self.device)
@@ -129,6 +129,7 @@ class RFGSM(BaseAttack):
                                    )
             adv_x[~done] = pert_x
             self.lmba *= base
+            break
         with torch.no_grad():
             _, done = self.get_loss(model, adv_x, label, self.lmba)
             if verbose:
