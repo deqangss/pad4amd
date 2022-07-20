@@ -79,20 +79,14 @@ class RFGSM(BaseAttack):
 
             # find the next sample
             adv_x = torch.clamp(adv_x + step_length * torch.sign(grad4ins_), min=0., max=1.)
-        print('steps:', steps, torch.amax(adv_x - x))
         # select adv x
         if self.random:
             round_threshold = torch.rand(adv_x.size()).to(self.device)
         else:
             round_threshold = 0.5
-        print(round_threshold)
         adv_x = round_x(adv_x, round_threshold)
-        print('1::::', torch.sum(adv_x - x, dim=-1))
         # feasible projection
         adv_x = or_tensors(adv_x, x)
-
-        print(torch.sum(adv_x - x, dim=-1))
-
         # The below line is different from official codes because it is challenging to design a proper score measurement
         loss_adv, _1 = self.get_loss(model, adv_x, label, lmda)
         replace_flag = (loss_adv < loss_natural).unsqueeze(1).expand_as(adv_x)
@@ -130,7 +124,6 @@ class RFGSM(BaseAttack):
                                    )
             adv_x[~done] = pert_x
             self.lmba *= base
-            break
         with torch.no_grad():
             _, done = self.get_loss(model, adv_x, label, self.lmba)
             if verbose:
