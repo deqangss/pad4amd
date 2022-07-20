@@ -241,6 +241,6 @@ class AMalwareDetectionPAD(object):
             utils.mkdir(path.dirname(save_path))
         torch.save({'model': self.model.state_dict(),
                     'epoch': epoch,
-                    'optimizer_state_dict': optimizer.state_dict()
+                    'optimizer_state_dict': optimizer
                     },
                    save_path)
