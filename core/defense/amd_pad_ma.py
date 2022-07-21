@@ -242,7 +242,7 @@ class AMalwareDetectionPAD(object):
         if epoch is not None and optimizer is not None:
             torch.save({'model': self.model.state_dict(),
                         'epoch': epoch,
-                        'optimizer_state_dict': optimizer
+                        'optimizer_state_dict': optimizer.state_dict()
                         },
                        save_path)
         else:
