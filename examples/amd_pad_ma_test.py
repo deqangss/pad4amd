@@ -139,6 +139,15 @@ def _main():
     # test: accuracy
     max_adv_training_model.load()
     max_adv_training_model.model.get_threshold(val_dataset_producer, ratio=args.ratio)
+
+    import torch
+    ckpt = torch.load(max_adv_training_model.model_save_path)
+    max_adv_training_model.save_to_disk(max_adv_training_model.model_save_path,
+                                        ckpt['epoch'], ckpt['optimizer_state_dict'],
+                                        )
+    import sys
+    sys.exit(1)
+
     max_adv_training_model.model.predict(test_dataset_producer)
 
     # attr_cls, attr_de = max_adv_training_model.model.get_important_attributes(test_dataset_producer)
