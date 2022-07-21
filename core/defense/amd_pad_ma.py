@@ -185,7 +185,7 @@ class AMalwareDetectionPAD(object):
                 logger.info(
                     f'Training loss (epoch level): {np.mean(losses):.4f} | Train accuracy: {np.mean(accuracies) * 100:.2f}')
 
-            self.save_to_disk(i + 1, optimizer, self.model_save_path + '.tmp')
+            self.save_to_disk(self.model_save_path + '.tmp', i + 1, optimizer)
             # select model
             self.model.eval()
             self.attack.is_attacker = True
@@ -223,8 +223,7 @@ class AMalwareDetectionPAD(object):
                 best_acc_val = acc_val
                 acc_val_adv_be = acc_val_adv
                 best_epoch = i + 1
-                self.model.get_threshold(validation_data_producer)
-                self.save_to_disk(best_epoch, optimizer, self.model_save_path)
+                self.save_to_disk(self.model_save_path)
             if verbose:
                 logger.info(
                     f"\tVal accuracy {acc_val * 100:.4}% with accuracy {acc_val_adv * 100:.4}% under attack.")
@@ -237,11 +236,14 @@ class AMalwareDetectionPAD(object):
         ckpt = torch.load(self.model_save_path)
         self.model.load_state_dict(ckpt['model'])
 
-    def save_to_disk(self, epoch, optimizer, save_path=None):
-        if not path.exists(save_path):
+    def save_to_disk(self, save_path, epoch=None, optimizer=None):
+        if not path.exists(path.dirname(save_path)):
             utils.mkdir(path.dirname(save_path))
-        torch.save({'model': self.model.state_dict(),
-                    'epoch': epoch,
-                    'optimizer_state_dict': optimizer.state_dict()
-                    },
-                   save_path)
+        if epoch is not None and optimizer is not None:
+            torch.save({'model': self.model.state_dict(),
+                        'epoch': epoch,
+                        'optimizer_state_dict': optimizer.state_dict()
+                        },
+                       save_path)
+        else:
+            torch.save({'model': self.model.state_dict()}, save_path)

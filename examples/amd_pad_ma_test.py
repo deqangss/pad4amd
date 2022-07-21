@@ -128,6 +128,10 @@ def _main():
                                    weight_decay=args.weight_decay
                                    )
 
+        # get threshold
+        max_adv_training_model.load()
+        max_adv_training_model.model.get_threshold(val_dataset_producer)
+        max_adv_training_model.save_to_disk(max_adv_training_model.model_save_path)
         # human readable parameters
         save_args(path.join(path.dirname(max_adv_training_model.model_save_path), "hparam"), vars(args))
         # save parameters for rebuilding the neural nets
