@@ -139,7 +139,7 @@ def _main():
     # test: accuracy
     max_adv_training_model.load()
     max_adv_training_model.model.get_threshold(val_dataset_producer, ratio=args.ratio)
-
+    print(max_adv_training_model.model.tau)
     import torch
     ckpt = torch.load(max_adv_training_model.model_save_path)
     max_adv_training_model.save_to_disk(max_adv_training_model.model_save_path,
