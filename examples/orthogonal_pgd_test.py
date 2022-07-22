@@ -33,6 +33,8 @@ atta_argparse.add_argument('--round_threshold', type=float, default=0.5,
                            help='threshold for rounding real scalars at the initialization step.')
 atta_argparse.add_argument('--real', action='store_true', default=False,
                            help='whether produce the perturbed apks.')
+atta_argparse.add_argument('--batch_size', type=int, default=128,
+                           help='number of examples loaded in per batch.')
 atta_argparse.add_argument('--model', type=str, default='maldet',
                            choices=['md_dnn', 'md_at_pgd', 'md_at_ma',
                                     'amd_kde', 'amd_icnn', 'amd_dla', 'amd_dnn_plus', 'amd_pad_ma'],
@@ -77,7 +79,7 @@ def _main():
     if mal_count <= 0:
         return
     mal_test_dataset_producer = dataset.get_input_producer(mal_test_x, mal_testy,
-                                                           batch_size=hp_params['batch_size'],
+                                                           batch_size=args.batch_size,
                                                            name='test')
     assert dataset.n_classes == 2
 

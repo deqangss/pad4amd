@@ -43,6 +43,8 @@ atta_argparse.add_argument('--n_sample_times', type=int, default=1,
                            help='data sampling times when waging attacks')
 atta_argparse.add_argument('--real', action='store_true', default=False,
                            help='whether produce the perturbed apks.')
+atta_argparse.add_argument('--batch_size', type=int, default=128,
+                           help='number of examples loaded in per batch.')
 atta_argparse.add_argument('--model', type=str, default='maldet',
                            choices=['md_dnn', 'md_at_pgd', 'md_at_ma',
                                     'amd_kde', 'amd_icnn', 'amd_dla', 'amd_dnn_plus', 'amd_pad_ma'],
@@ -89,10 +91,10 @@ def _main():
     if mal_count <= 0 and ben_count <= 0:
         return
     mal_test_dataset_producer = dataset.get_input_producer(mal_test_x, mal_testy,
-                                                           batch_size=hp_params['batch_size'],
+                                                           batch_size=args.batch_size,
                                                            name='test')
     ben_test_dataset_producer = dataset.get_input_producer(ben_test_x, ben_testy,
-                                                           batch_size=hp_params['batch_size'],
+                                                           batch_size=args.batch_size,
                                                            name='test'
                                                            )
 
