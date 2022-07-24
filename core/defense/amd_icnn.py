@@ -255,15 +255,22 @@ class AdvMalwareDetectorICNN(nn.Module, DetectorTemplate):
         ratio = ratio if ratio is not None else self.ratio
         assert 0 <= ratio <= 1
         probabilities = []
+        labels = []
         with torch.no_grad():
             for x_val, y_val in validation_data_producer:
                 x_val, y_val = utils.to_tensor(x_val.double(), y_val.long(), self.device)
                 x_logits = self.forward_g(x_val)
                 probabilities.append(x_logits)
+                labels.append(y_val)
             s, _ = torch.sort(torch.cat(probabilities, dim=0))
             i = int((s.shape[0] - 1) * ratio)
             assert i >= 0
             self.tau[0] = s[i]
+
+            prob_np = torch.cat(probabilities, dim=0).detach().cpu().numpy()
+            y_np = torch.cat(labels, dim=0).detach().cpu().numpy()
+            np.save('./prob.npz', prob_np)
+            np.save('./y.npz', y_np)
 
     def reset_threshold(self):
         self.tau[0] = 0.
