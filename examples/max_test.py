@@ -257,7 +257,6 @@ def _main():
         y_cent_list.append(y_cent_batch)
         x_density_list.append(x_density_batch)
         x_mod_integrated.append((adv_x_batch - x).detach().cpu().numpy())
-        break
     y_pred = np.argmax(np.concatenate(y_cent_list), axis=-1)
     logger.info(f'The mean accuracy on perturbed malware is {sum(y_pred == 1.) / mal_count * 100:.3f}%')
     if 'indicator' in type(model).__dict__.keys():

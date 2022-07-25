@@ -102,9 +102,6 @@ class Max(BaseAttack):
         y_pred = logits_f.argmax(1)
         if hasattr(model, 'is_detector_enabled') and (not self.oblivion):
             tau = model.get_tau_sample_wise(y_pred)
-            print(ce)
-            print(prob_g)
-            print('--------')
             loss_no_reduction = -prob_g
             done = (y_pred != label) & (prob_g <= tau)
         else:
