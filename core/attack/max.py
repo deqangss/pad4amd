@@ -76,7 +76,7 @@ class Max(BaseAttack):
                 loss = loss.reshape(len(self.attack_list), num_sample_red).permute(1, 0)
                 done = done.reshape(len(self.attack_list), num_sample_red).permute(1, 0)
                 success_flag = torch.any(done, dim=-1)
-                # for a sample, if there is at least one successful attack, we will select a one with maximum loss;
+                # for a sample, if there is at least one successful attack, we will select the one with maximum loss;
                 # while if no attacks evade the victim successful, all perturbed examples are reminded for selection
                 done[~torch.any(done, dim=-1)] = 1
                 loss = (loss * done.to(torch.float)) + torch.min(loss) * (~done).to(torch.float)
@@ -102,6 +102,9 @@ class Max(BaseAttack):
         y_pred = logits_f.argmax(1)
         if hasattr(model, 'is_detector_enabled') and (not self.oblivion):
             tau = model.get_tau_sample_wise(y_pred)
+            print(ce)
+            print(prob_g)
+            print('--------')
             loss_no_reduction = ce - prob_g
             done = (y_pred != label) & (prob_g <= tau)
         else:
