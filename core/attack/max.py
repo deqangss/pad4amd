@@ -105,7 +105,7 @@ class Max(BaseAttack):
             print(ce)
             print(prob_g)
             print('--------')
-            loss_no_reduction = ce - prob_g
+            loss_no_reduction = -prob_g
             done = (y_pred != label) & (prob_g <= tau)
         else:
             loss_no_reduction = ce
