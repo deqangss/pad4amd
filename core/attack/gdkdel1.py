@@ -168,9 +168,11 @@ class GDKDEl1(BaseAttack):
             logits_f = model.forward(adv_x)
         ce = F.cross_entropy(logits_f, label, reduction='none')
         y_pred = logits_f.argmax(1)
-        square = torch.sum(torch.square(self.benign_feat.float().unsqueeze(dim=0) -
-                                        adv_x.float().unsqueeze(dim=1)),
-                           dim=-1)
+        # square = torch.sum(torch.square(self.benign_feat.float().unsqueeze(dim=0) -
+        #                                 adv_x.float().unsqueeze(dim=1)),
+        #                    dim=-1)
+        square = torch.stack([torch.sum(torch.square(ben_x - adv_x.float()), dim=-1) for ben_x in self.benign_feat.float()],
+                             dim=-1)
         kde = torch.mean(torch.exp(-square / (self.bandwidth ** 2)), dim=-1)
         print(kde)
         loss_no_reduction = ce + self.penalty_factor * kde
