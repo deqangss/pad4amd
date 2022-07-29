@@ -137,6 +137,7 @@ class BaseAttack(Module):
                 loss_no_reduction = ce + lambda_ * (tau - prob_g)
             done = (y_pred != label) & (prob_g <= tau)
         else:
+            print('okokokok')
             loss_no_reduction = ce
             done = y_pred != label
         return loss_no_reduction, done
