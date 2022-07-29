@@ -64,7 +64,7 @@ class Groose(BaseAttack):
             var_adv_x = torch.autograd.Variable(adv_x, requires_grad=True)
             loss, _done = self.get_loss(model, var_adv_x, 1 - label)
             worst_x[_done] = adv_x[_done]
-            if torch.all(done):
+            if torch.all(_done):
                 break
             grad = torch.autograd.grad(torch.mean(loss), var_adv_x)[0].data
             grad4insertion = (grad > 0) * grad * (adv_x <= 0.5)
@@ -73,12 +73,12 @@ class Groose(BaseAttack):
             _2, pos = torch.max(grad4ins_, dim=-1)
             perturbation = F.one_hot(pos, num_classes=grad4ins_.shape[-1]).float().reshape(x.shape)
             # stop perturbing the examples that are successful to evade the victim
-            perturbation[done] = 0.
+            perturbation[_done] = 0.
             adv_x = torch.clamp(adv_x + perturbation, min=0., max=1.)
 
-            # select adv x
-            done = self.get_scores(model, adv_x, label).data
-            worst_x[done] = adv_x[done]
+        # select adv x
+        done = self.get_scores(model, adv_x, label).data
+        worst_x[done] = adv_x[done]
         return worst_x
 
     def perturb(self, model, x, label=None,
