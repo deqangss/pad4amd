@@ -67,7 +67,7 @@ class PGDl1(BaseAttack):
                 break
             grad = torch.autograd.grad(torch.mean(loss), var_adv_x)[0]
             perturbation, direction = self.get_perturbation(grad, x, adv_x)
-            # avoid to perturb the examples that are successful to evade the victim
+            # stop perturbing the examples that are successful to evade the victim
             perturbation[done] = 0.
             adv_x = torch.clamp(adv_x + perturbation * direction, min=0., max=1.)
         done = self.get_scores(model, adv_x, label)

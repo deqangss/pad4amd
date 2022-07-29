@@ -72,7 +72,7 @@ class Groose(BaseAttack):
 
             _2, pos = torch.max(grad4ins_, dim=-1)
             perturbation = F.one_hot(pos, num_classes=grad4ins_.shape[-1]).float().reshape(x.shape)
-            # avoid to perturb the examples that are successful to evade the victim
+            # stop perturbing the examples that are successful to evade the victim
             perturbation[done] = 0.
             adv_x = torch.clamp(adv_x + perturbation, min=0., max=1.)
 
