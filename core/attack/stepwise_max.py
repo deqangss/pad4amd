@@ -43,6 +43,7 @@ class StepwiseMax(BaseAttack):
                 sl_linf=0.01,
                 min_lambda_=1e-5,
                 max_lambda_=1e5,
+                is_score_round=True,
                 base=10.,
                 verbose=False):
         """
@@ -95,7 +96,7 @@ class StepwiseMax(BaseAttack):
                     n_attacks = len(pertb_x_list)
                     pertbx = torch.vstack(pertb_x_list)
                     label_ext = torch.cat([label[~done]] * n_attacks)
-                    if not self.is_attacker:
+                    if (not self.is_attacker) and (not is_score_round):
                         scores, _done = self.get_scores(model, pertbx, label_ext)
                     else:
                         scores, _done = self.get_scores(model, round_x(pertbx, self.round_threshold), label_ext)

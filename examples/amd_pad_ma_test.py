@@ -35,6 +35,8 @@ max_adv_argparse.add_argument('--random_start', action='store_true', default=Fal
                               help='randomly initialize the start points.')
 max_adv_argparse.add_argument('--round_threshold', type=float, default=0.5,
                               help='threshold for rounding real scalars at the initialization step.')
+max_adv_argparse.add_argument('--is_score_round', action='store_true', default=False,
+                              help='whether scoring rule takes as input with rounding operation or not.')
 max_adv_argparse.add_argument('--use_cont_pertb', action='store_true', default=False,
                               help='whether use the continuous perturbations for adversarial training.')
 
@@ -110,6 +112,7 @@ def _main():
             'sl_l1': 1.,
             'sl_l2': args.step_length_l2,
             'sl_linf': args.step_length_linf,
+            'is_score_round': args.is_score_round,
             'verbose': True
         }
     else:
