@@ -58,8 +58,7 @@ def _main():
 
     hp_params = utils.read_pickle(os.path.join(save_dir, 'hparam.pkl'))
     dataset = Dataset(feature_ext_args={'proc_number': hp_params['proc_number']})
-    # test_x, testy = dataset.test_dataset
-    test_x, testy = dataset.train_dataset
+    test_x, testy = dataset.test_dataset
     val_dataset_producer = dataset.get_input_producer(*dataset.validation_dataset, batch_size=hp_params['batch_size'],
                                                       name='val')
     mal_save_path = os.path.join(config.get('dataset', 'dataset_dir'), 'attack.idx')
@@ -158,7 +157,6 @@ def _main():
     attack = Mimicry(ben_feature_vectors, oblivion=args.oblivion, device=model.device)
     success_flag_list = []
     x_mod_list = []
-    x_adv_list = []
     for x, y in mal_test_dataset_producer:
         x, y = utils.to_tensor(x.double(), y.long(), model.device)
         _flag, x_mod = attack.perturb(model,
@@ -171,13 +169,8 @@ def _main():
         logger.info(
             f"The attack effectiveness under mimicry attack is {np.sum(_flag) / float(len(_flag)) * 100}%.")
         x_mod_list.append(x_mod)
-        x_adv_list.append(x.detach().cpu().numpy() + x_mod)
     success_flag = np.concatenate(success_flag_list)
     logger.info(f"The mean accuracy on perturbed malware is {(1. - np.sum(success_flag) / float(mal_count)) * 100}%.")
-    x_adv = np.vstack(x_adv_list)
-    utils.dump_pickle_frd_space(x_adv, './mimicry.npy')
-
-    return
 
     if args.real:
         save_dir = os.path.join(config.get('experiments', 'mimicry'), args.model)
