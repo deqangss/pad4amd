@@ -142,6 +142,8 @@ def _main():
     # test: accuracy
     max_adv_training_model.load()
     max_adv_training_model.model.get_threshold(val_dataset_producer, ratio=args.ratio)
+    max_adv_training_model.model.get_threshold(val_dataset_producer)
+    max_adv_training_model.save_to_disk(max_adv_training_model.model_save_path)
     max_adv_training_model.model.predict(test_dataset_producer)
 
     # attr_cls, attr_de = max_adv_training_model.model.get_important_attributes(test_dataset_producer)
