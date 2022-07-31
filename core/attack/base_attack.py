@@ -99,18 +99,18 @@ class BaseAttack(Module):
         else:
             raise ValueError("Expect app directory or a list of paths, but got {}.".format(type(app_dir)))
         assert np.all([os.path.exists(app_path) for app_path in app_path_list]), "Unable to find all app paths."
-        for x_mod_instr, feature_path, app_path in zip(x_mod_instructions, feature_path_list, app_path_list):
-            InverseDroidFeature.modify(x_mod_instr, feature_path, app_path, save_dir)
+        # for x_mod_instr, feature_path, app_path in zip(x_mod_instructions, feature_path_list, app_path_list):
+        #     InverseDroidFeature.modify(x_mod_instr, feature_path, app_path, save_dir)
 
-        # pargs = [(x_mod_instr, feature_path, app_path, save_dir) for x_mod_instr, feature_path, app_path in
-        #          zip(x_mod_instructions, feature_path_list, app_path_list) if not os.path.exists(os.path.join(save_dir, os.path.splitext(os.path.basename(app_path))[0] + '_adv'))]
-        # cpu_count = multiprocessing.cpu_count() - 2 if multiprocessing.cpu_count() - 2 > 1 else 1
-        # pool = multiprocessing.Pool(cpu_count, initializer=utils.pool_initializer)
-        # for res in pool.map(InverseDroidFeature.modify_wrapper, pargs):  # keep in order
-        #     if isinstance(res, Exception):
-        #         logger.exception(res)
-        # pool.close()
-        # pool.join()
+        pargs = [(x_mod_instr, feature_path, app_path, save_dir) for x_mod_instr, feature_path, app_path in
+                 zip(x_mod_instructions, feature_path_list, app_path_list) if not os.path.exists(os.path.join(save_dir, os.path.splitext(os.path.basename(app_path))[0] + '_adv'))]
+        cpu_count = multiprocessing.cpu_count() - 2 if multiprocessing.cpu_count() - 2 > 1 else 1
+        pool = multiprocessing.Pool(cpu_count, initializer=utils.pool_initializer)
+        for res in pool.map(InverseDroidFeature.modify_wrapper, pargs):  # keep in order
+            if isinstance(res, Exception):
+                logger.exception(res)
+        pool.close()
+        pool.join()
 
     def check_lambda(self, model):
         if hasattr(model, 'is_detector_enabled') and (not self.oblivion):
