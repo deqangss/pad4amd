@@ -139,6 +139,22 @@ def _main():
         save_args(path.join(path.dirname(max_adv_training_model.model_save_path), "hparam"), vars(args))
         # save parameters for rebuilding the neural nets
         dump_pickle(vars(args), path.join(path.dirname(max_adv_training_model.model_save_path), "hparam.pkl"))
+    # retrain
+    from tools import utils
+    import torch
+    mal_adv_np = utils.read_pickle_frd_space('./mimicry.npy')
+    mal_adv_tensor = torch.from_numpy(mal_adv_np).to(dv).double()
+    max_adv_training_model.fit2(train_dataset_producer,
+                                val_dataset_producer,
+                                mal_adv_tensor,
+                                adv_epochs=10,
+                                beta_1=args.beta_1,
+                                beta_2=args.beta_2,
+                                use_continuous_pert=args.use_cont_pertb,
+                                lr=args.lr,
+                                under_sampling_ratio=args.under_sampling,
+                                weight_decay=args.weight_decay
+                                )
     # test: accuracy
     max_adv_training_model.load()
     max_adv_training_model.model.get_threshold(val_dataset_producer, ratio=args.ratio)
