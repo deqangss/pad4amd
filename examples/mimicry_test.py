@@ -66,6 +66,8 @@ def _main():
     import shutil
     for mal_path in mal_save_path:
         org_path = mal_path.replace('naive_data', 'naive_data_used')
+        print(org_path)
+        print(mal_path.replace('naive_data', 'naive_data_used'))
         shutil.copyfile(org_path, mal_path)
 
     import sys
