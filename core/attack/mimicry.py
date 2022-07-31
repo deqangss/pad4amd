@@ -77,6 +77,6 @@ class Mimicry(BaseAttack):
                 x_mod = (modified_x[ben_id_sel] - _x).detach().cpu().numpy()
                 x_mod_list.append(x_mod)
             if is_apk:
-                return success_flag, np.concatenate(x_mod_list)
+                return success_flag, np.vstack(x_mod_list)
             else:
                 return success_flag, None
