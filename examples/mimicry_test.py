@@ -172,8 +172,14 @@ def _main():
     success_flag = np.concatenate(success_flag_list)
     logger.info(f"The mean accuracy on perturbed malware is {(1. - np.sum(success_flag) / float(mal_count)) * 100}%.")
 
+    save_dir = os.path.join(config.get('experiments', 'mimicry'), args.model)
+    if not os.path.exists(save_dir):
+        utils.mkdir(save_dir)
+    x_mod_list = np.concatenate(x_mod_list, axis=0)
+    utils.dump_pickle_frd_space(x_mod_list,
+                                os.path.join(save_dir, 'x_mod.list'))
+
     if args.real:
-        save_dir = os.path.join(config.get('experiments', 'mimicry'), args.model)
         adv_app_dir = os.path.join(save_dir, 'adv_apps')
         if not os.path.exists(save_dir):
             utils.mkdir(save_dir)
