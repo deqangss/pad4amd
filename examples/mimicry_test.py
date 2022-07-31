@@ -62,6 +62,14 @@ def _main():
     val_dataset_producer = dataset.get_input_producer(*dataset.validation_dataset, batch_size=hp_params['batch_size'],
                                                       name='val')
     mal_save_path = os.path.join(config.get('dataset', 'dataset_dir'), 'attack.idx')
+
+    import shutil
+    for mal_path in mal_save_path:
+        org_path = mal_path.replace('naive_data', 'naive_data_used')
+        shutil.copyfile(org_path, mal_path)
+
+    import sys
+    sys.exit(1)
     if not os.path.exists(mal_save_path):
         mal_test_x, mal_testy = test_x[testy == 1], testy[testy == 1]
         utils.dump_pickle_frd_space((mal_test_x, mal_testy), mal_save_path)
