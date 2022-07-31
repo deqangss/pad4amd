@@ -62,9 +62,9 @@ def _main():
     val_dataset_producer = dataset.get_input_producer(*dataset.validation_dataset, batch_size=hp_params['batch_size'],
                                                       name='val')
     mal_save_path = os.path.join(config.get('dataset', 'dataset_dir'), 'attack.idx')
-
+    mal_test_x, mal_testy = utils.read_pickle_frd_space(mal_save_path)
     import shutil
-    for mal_path in mal_save_path:
+    for mal_path in mal_test_x:
         org_path = mal_path.replace('naive_data', 'naive_data_used')
         print(org_path)
         print(mal_path.replace('naive_data', 'naive_data_used'))
