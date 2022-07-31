@@ -410,6 +410,7 @@ class AMalwareDetectionPAD(object):
                     indicator_flag = np.ones([x_density_batch.shape[0], ]).astype(np.bool)
                 y_pred = np.argmax(y_cent_batch, axis=-1)
                 res_val.append((~indicator_flag) | ((y_pred == 1.) & indicator_flag))
+
             assert len(res_val) > 0
             res_val = np.concatenate(res_val)
             acc_val_adv = np.sum(res_val).astype(np.float) / res_val.shape[0]
