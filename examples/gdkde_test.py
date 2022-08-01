@@ -161,7 +161,7 @@ def _main():
     else:
         model.load()
     logger.info("Load model parameters from {}.".format(model.model_save_path))
-    model.predict(mal_test_dataset_producer)
+    model.predict(mal_test_dataset_producer, indicator_masking=False)
 
     ben_feature_vectors = []
     with torch.no_grad():
@@ -223,7 +223,7 @@ def _main():
                                                                batch_size=hp_params['batch_size'],
                                                                name='test'
                                                                )
-        model.predict(ben_test_dataset_producer, indicator_masking=True)
+        model.predict(ben_test_dataset_producer, indicator_masking=False)
 
 
 if __name__ == '__main__':

@@ -158,7 +158,7 @@ def _main():
     else:
         model.load()
     logger.info("Load model parameters from {}.".format(model.model_save_path))
-    model.predict(mal_test_dataset_producer, indicator_masking=True)
+    model.predict(mal_test_dataset_producer, indicator_masking=False)
 
     ben_feature_vectors = []
     with torch.no_grad():

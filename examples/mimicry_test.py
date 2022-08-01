@@ -143,7 +143,7 @@ def _main():
         model.load()
     logger.info("Load model parameters from {}.".format(model.model_save_path))
     model.eval()
-    model.predict(mal_test_dataset_producer)
+    model.predict(mal_test_dataset_producer, indicator_masking=False)
     ben_feature_vectors = []
     with torch.no_grad():
         c = args.n_ben if args.n_ben < ben_count else ben_count

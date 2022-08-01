@@ -175,7 +175,7 @@ def _main():
         model.load()
         model = model.to(dv).double()
     logger.info("Load model parameters from {}.".format(model.model_save_path))
-    model.predict(mal_test_dataset_producer)
+    model.predict(mal_test_dataset_producer, indicator_masking=False)
 
     if not args.orthogonal_v:
         pgdl1 = PGDl1(oblivion=args.oblivion, kappa=args.kappa, device=model.device)
@@ -288,7 +288,7 @@ def _main():
         #                                                        batch_size=hp_params['batch_size'],
         #                                                        name='test'
         #                                                        )
-        # model.predict(adv_test_dataset_producer, indicator_masking=True)
+        # model.predict(adv_test_dataset_producer, indicator_masking=False)
 
 
 if __name__ == '__main__':

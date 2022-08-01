@@ -113,7 +113,7 @@ def _main():
     # test: accuracy
     cls_plus_model.load()
     cls_plus_model.get_threshold(val_dataset_producer, ratio=args.ratio)
-    cls_plus_model.predict(test_dataset_producer)
+    cls_plus_model.predict(test_dataset_producer, indicator_masking=False)
 
 
 if __name__ == '__main__':

@@ -144,7 +144,7 @@ def _main():
         model.load()
 
     logger.info("Load model parameters from {}.".format(model.model_save_path))
-    model.predict(mal_test_dataset_producer, indicator_masking=True)
+    model.predict(mal_test_dataset_producer, indicator_masking=False)
 
     attack = RFGSM(is_attacker=True,
                    random=args.random,

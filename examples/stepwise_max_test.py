@@ -154,7 +154,7 @@ def _main():
         model.load()
     logger.info("Load model parameters from {}.".format(model.model_save_path))
 
-    model.predict(mal_test_dataset_producer, indicator_masking=True)
+    model.predict(mal_test_dataset_producer, indicator_masking=False)
     attack = StepwiseMax(use_random=args.random_start,
                          rounding_threshold=args.round_threshold,
                          oblivion=args.oblivion,
@@ -211,7 +211,7 @@ def _main():
                                                                batch_size=hp_params['batch_size'],
                                                                name='test'
                                                                )
-        model.predict(adv_test_dataset_producer, indicator_masking=True)
+        model.predict(adv_test_dataset_producer, indicator_masking=False)
 
 
 if __name__ == '__main__':

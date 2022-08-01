@@ -71,11 +71,7 @@ def _main():
     model.load()
     model.get_threshold(val_dataset_producer, ratio=args.ratio)
     # test: accuracy
-    model.predict(test_dataset_producer)
-    # attr_cls, attr_de = model.get_important_attributes(test_dataset_producer)
-    # import numpy as np
-    # np.save("./attributions-gmm-cls", attr_cls)
-    # np.save("./attributions-gmm-de", attr_de)
+    model.predict(test_dataset_producer, indicator_masking=False)
 
 
 if __name__ == '__main__':
