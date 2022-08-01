@@ -144,11 +144,6 @@ def _main():
     max_adv_training_model.model.get_threshold(val_dataset_producer, ratio=args.ratio)
     max_adv_training_model.model.predict(test_dataset_producer, indicator_masking=True)
 
-    # attr_cls, attr_de = max_adv_training_model.model.get_important_attributes(test_dataset_producer)
-    # import numpy as np
-    # np.save("./attributions-mad-cls", attr_cls)
-    # np.save("./attributions-mad-de", attr_de)
-
 
 if __name__ == '__main__':
     _main()
