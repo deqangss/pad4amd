@@ -196,7 +196,7 @@ def _main():
                                                                batch_size=hp_params['batch_size'],
                                                                name='test'
                                                                )
-        atta_suss_flag = model.predict(adv_test_dataset_producer)
+        atta_suss_flag = model.predict(adv_test_dataset_producer, indicator_masking=False)
         adv_features_names = [os.path.basename(name) for name in adv_feature_paths]
         for i, feature_path in enumerate(mal_test_x):
             base_name = os.path.splitext(os.path.basename(feature_path))[0]
