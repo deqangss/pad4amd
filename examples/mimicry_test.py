@@ -185,8 +185,8 @@ def _main():
             utils.mkdir(save_dir)
 
         # x_mod_list = utils.read_pickle_frd_space(os.path.join(save_dir, 'x_mod.list'))
-
-        attack.produce_adv_mal(x_mod_list, mal_test_x.tolist(),
+        print(mal_test_x.tolist()[19:20])
+        attack.produce_adv_mal(x_mod_list[19:20], mal_test_x.tolist()[19:20],
                                config.get('dataset', 'malware_dir'),
                                save_dir=adv_app_dir)
 
