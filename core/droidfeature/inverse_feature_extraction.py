@@ -493,7 +493,7 @@ def insert_api(api_name, method_location):
         invoke_types.append(_match.group('invokeType'))
         return_classes.append(_match.group('invokeReturn'))
         arguments.append(_match.group('invokeArgument'))
-
+    print('okokok', invoke_types)
     api_idx = 0
     is_simplified_vars_register = False
     if 'invoke-virtual' in invoke_types:
@@ -534,7 +534,7 @@ def insert_api(api_name, method_location):
     else:
         # logger.warning('Neglect invocation type(s):{}'.format(' '.join(invoke_types)))
         return
-    print('okokok')
+
     assert len(invoke_types) > 0, 'No api details.'
     return_class = return_classes[api_idx]
     argument = arguments[api_idx]
