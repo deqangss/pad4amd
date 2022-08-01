@@ -143,7 +143,7 @@ def _main():
         model.load()
     logger.info("Load model parameters from {}.".format(model.model_save_path))
     model.eval()
-    model.predict(mal_test_dataset_producer, indicator_masking=True)
+    model.predict(mal_test_dataset_producer)
     ben_feature_vectors = []
     with torch.no_grad():
         c = args.n_ben if args.n_ben < ben_count else ben_count
@@ -176,8 +176,8 @@ def _main():
     if not os.path.exists(save_dir):
         utils.mkdir(save_dir)
     x_mod_list = np.concatenate(x_mod_list, axis=0)
-    utils.dump_pickle_frd_space(x_mod_list,
-                                os.path.join(save_dir, 'x_mod.list'))
+    # utils.dump_pickle_frd_space(x_mod_list,
+    #                             os.path.join(save_dir, 'x_mod.list'))
 
     if args.real:
         adv_app_dir = os.path.join(save_dir, 'adv_apps')
@@ -186,9 +186,9 @@ def _main():
 
         # x_mod_list = utils.read_pickle_frd_space(os.path.join(save_dir, 'x_mod.list'))
 
-        attack.produce_adv_mal(x_mod_list, mal_test_x.tolist(),
-                               config.get('dataset', 'malware_dir'),
-                               save_dir=adv_app_dir)
+        # attack.produce_adv_mal(x_mod_list, mal_test_x.tolist(),
+        #                        config.get('dataset', 'malware_dir'),
+        #                        save_dir=adv_app_dir)
         adv_feature_paths = dataset.apk_preprocess(adv_app_dir, update_feature_extraction=False)
         # dataset.feature_preprocess(adv_feature_paths)
         ben_test_dataset_producer = dataset.get_input_producer(adv_feature_paths,
@@ -196,7 +196,7 @@ def _main():
                                                                batch_size=hp_params['batch_size'],
                                                                name='test'
                                                                )
-        model.predict(ben_test_dataset_producer, indicator_masking=True)
+        model.predict(ben_test_dataset_producer)
 
 
 if __name__ == '__main__':
