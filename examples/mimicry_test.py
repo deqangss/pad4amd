@@ -176,15 +176,15 @@ def _main():
     if not os.path.exists(save_dir):
         utils.mkdir(save_dir)
     x_mod_list = np.concatenate(x_mod_list, axis=0)
-    # utils.dump_pickle_frd_space(x_mod_list,
-    #                             os.path.join(save_dir, 'x_mod.list'))
+    utils.dump_pickle_frd_space(x_mod_list,
+                                os.path.join(save_dir, 'x_mod.list'))
 
     if args.real:
         adv_app_dir = os.path.join(save_dir, 'adv_apps')
         if not os.path.exists(save_dir):
             utils.mkdir(save_dir)
 
-        x_mod_list = utils.read_pickle_frd_space(os.path.join(save_dir, 'x_mod.list'))
+        # x_mod_list = utils.read_pickle_frd_space(os.path.join(save_dir, 'x_mod.list'))
 
         attack.produce_adv_mal(x_mod_list[:100], mal_test_x.tolist()[:100],
                                config.get('dataset', 'malware_dir'),
