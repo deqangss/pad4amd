@@ -161,6 +161,8 @@ class AdvMalwareDetectorICNN(nn.Module, DetectorTemplate):
             logger.info(MSG.format(fnr * 100, fpr * 100, f1 * 100))
 
         measurement(y_true, y_pred)
+        return (y_pred == 0) & indicator_flag
+
         if indicator_masking:
             # excluding the examples with ``not sure'' response
             y_pred = y_pred[indicator_flag]
@@ -171,7 +173,6 @@ class AdvMalwareDetectorICNN(nn.Module, DetectorTemplate):
         logger.info('The indicator is turning on...')
         logger.info('The threshold is {:.5}'.format(self.tau.item()))
         measurement(y_true, y_pred)
-        return (y_pred == 0) & indicator_flag
 
     def inference(self, test_data_producer):
         y_cent, x_prob = [], []
