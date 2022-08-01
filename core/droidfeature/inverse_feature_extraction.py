@@ -484,7 +484,6 @@ def insert_api(api_name, method_location):
 
     if method_name != '<init>':
         return
-    print(method_name)
 
     invoke_types, return_classes, arguments = list(), list(), list()
     for info in list(api_info):
@@ -641,7 +640,7 @@ def insert_api(api_name, method_location):
             returnType=return_class,
             varEndCont=var_end_content
         )
-
+    print('okokok')
     print(new_method_body)
 
     smali_path, class_name, a_method_statement = method_location
