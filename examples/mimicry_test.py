@@ -196,7 +196,20 @@ def _main():
                                                                batch_size=hp_params['batch_size'],
                                                                name='test'
                                                                )
-        model.predict(adv_test_dataset_producer)
+        atta_suss_flag = model.predict(adv_test_dataset_producer)
+        adv_features_names = [os.path.basename(name) for name in adv_feature_paths]
+        for i, feature_path in enumerate(mal_test_x):
+            base_name = os.path.splitext(os.path.basename(feature_path))[0]
+            if base_name + '_adv.feat' in adv_features_names:
+                idx = adv_features_names.index(base_name + '_adv.feat')
+                if success_flag[i] != atta_suss_flag[idx]:
+                    print(success_flag[i], atta_suss_flag[idx], feature_path)
+                else:
+                    pass
+            else:
+                print('no app:', feature_path)
+
+
 
 
 if __name__ == '__main__':
