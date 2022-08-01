@@ -483,8 +483,8 @@ def insert_api(api_name, method_location):
     class_name, method_name = api_name.split('->')
 
     if method_name != '<init>':
-        print(method_name)
         return
+    print(method_name)
 
     invoke_types, return_classes, arguments = list(), list(), list()
     for info in list(api_info):
