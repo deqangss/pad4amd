@@ -71,7 +71,7 @@ def _main():
     model.load()
     model.get_threshold(val_dataset_producer, ratio=args.ratio)
     # test: accuracy
-    model.predict(test_dataset_producer, indicator_masking=False)
+    model.predict(test_dataset_producer, indicator_masking=True)
 
 
 if __name__ == '__main__':

@@ -113,7 +113,7 @@ def _main():
     # test: accuracy
     dla_model.load()
     dla_model.get_threshold(val_dataset_producer, ratio=args.ratio)
-    dla_model.predict(test_dataset_producer, indicator_masking=False)
+    dla_model.predict(test_dataset_producer, indicator_masking=True)
 
     # attr_cls, attr_de = max_adv_training_model.model.get_important_attributes(test_dataset_producer)
     # import numpy as np
