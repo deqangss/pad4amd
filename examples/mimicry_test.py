@@ -197,7 +197,6 @@ def _main():
                                                                name='test'
                                                                )
         model.predict(adv_test_dataset_producer)
-        model.predict(mal_test_dataset_producer)
 
 
 if __name__ == '__main__':
