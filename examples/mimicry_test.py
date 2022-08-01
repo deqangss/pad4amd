@@ -185,31 +185,29 @@ def _main():
             utils.mkdir(save_dir)
 
         # x_mod_list = utils.read_pickle_frd_space(os.path.join(save_dir, 'x_mod.list'))
-        print(mal_test_x.tolist()[19:20])
-        attack.produce_adv_mal(x_mod_list[19:20], mal_test_x.tolist()[19:20],
+        attack.produce_adv_mal(x_mod_list, mal_test_x.tolist(),
                                config.get('dataset', 'malware_dir'),
                                save_dir=adv_app_dir)
 
-        return
-        adv_feature_paths = dataset.apk_preprocess(adv_app_dir, update_feature_extraction=False)
+        adv_feature_paths = dataset.apk_preprocess(adv_app_dir, update_feature_extraction=True)
         # dataset.feature_preprocess(adv_feature_paths)
         adv_test_dataset_producer = dataset.get_input_producer(adv_feature_paths,
                                                                np.ones((len(adv_feature_paths, ))),
                                                                batch_size=hp_params['batch_size'],
                                                                name='test'
                                                                )
-        atta_suss_flag = model.predict(adv_test_dataset_producer, indicator_masking=False)
-        adv_features_names = [os.path.basename(name) for name in adv_feature_paths]
-        for i, feature_path in enumerate(mal_test_x):
-            base_name = os.path.splitext(os.path.basename(feature_path))[0]
-            if base_name + '_adv.feat' in adv_features_names:
-                idx = adv_features_names.index(base_name + '_adv.feat')
-                if success_flag[i] != atta_suss_flag[idx]:
-                    print(success_flag[i], atta_suss_flag[idx], feature_path)
-                else:
-                    pass
-            else:
-                print('no app:', feature_path)
+        model.predict(adv_test_dataset_producer, indicator_masking=False)
+        # adv_features_names = [os.path.basename(name) for name in adv_feature_paths]
+        # for i, feature_path in enumerate(mal_test_x):
+        #     base_name = os.path.splitext(os.path.basename(feature_path))[0]
+        #     if base_name + '_adv.feat' in adv_features_names:
+        #         idx = adv_features_names.index(base_name + '_adv.feat')
+        #         if success_flag[i] != atta_suss_flag[idx]:
+        #             print(success_flag[i], atta_suss_flag[idx], feature_path)
+        #         else:
+        #             pass
+        #     else:
+        #         print('no app:', feature_path)
 
 
 

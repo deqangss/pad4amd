@@ -272,16 +272,16 @@ def _main():
     # x_mod_integrated = np.concatenate(x_mod_integrated, axis=0)
     # utils.dump_pickle_frd_space(x_mod_integrated,
     #                             os.path.join(save_dir, 'x_mod.list'))
-    # x_mod_integrated = utils.read_pickle_frd_space(os.path.join(save_dir, 'x_mod.list'))
+    x_mod_integrated = utils.read_pickle_frd_space(os.path.join(save_dir, 'x_mod.list'))
 
     if args.real:
         adv_app_dir = os.path.join(save_dir, 'adv_apps')
 
-        # attack.produce_adv_mal(x_mod_integrated, mal_test_x.tolist(),
-        #                        config.get('dataset', 'malware_dir'),
-        #                        save_dir=adv_app_dir)
+        attack.produce_adv_mal(x_mod_integrated, mal_test_x.tolist(),
+                               config.get('dataset', 'malware_dir'),
+                               save_dir=adv_app_dir)
 
-        adv_feature_paths = dataset.apk_preprocess(adv_app_dir, update_feature_extraction=False)
+        adv_feature_paths = dataset.apk_preprocess(adv_app_dir, update_feature_extraction=True)
         # dataset.feature_preprocess(adv_feature_paths)
         adv_test_dataset_producer = dataset.get_input_producer(adv_feature_paths,
                                                                np.ones((len(adv_feature_paths, ))),
