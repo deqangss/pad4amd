@@ -530,6 +530,10 @@ def insert_api(api_name, method_location):
         logger.warning('Neglect invocation type(s):{}'.format(' '.join(invoke_types)))
         return
 
+    if method_name is '<init>':
+        logger.warning('Unable to add <init> method:{}'.format(' '.join(api_name)))
+        return
+
     assert len(invoke_types) > 0, 'No api details.'
     return_class = return_classes[api_idx]
     argument = arguments[api_idx]
