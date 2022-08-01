@@ -531,7 +531,7 @@ def insert_api(api_name, method_location):
         return
 
     if method_name == '<init>':
-        logger.warning('Unable to add <init> method:{}'.format(' '.join(api_name)))
+        logger.warning('Unable to add <init> method:{}'.format(api_name))
         return
 
     assert len(invoke_types) > 0, 'No api details.'
