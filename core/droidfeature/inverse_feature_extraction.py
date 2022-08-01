@@ -333,6 +333,7 @@ class InverseDroidFeature(object):
                             if len(methods) <= 0:
                                 warnings.warn("No space for method injection.")
                             method = random.choice(methods)[0]
+                            print(feature)
                             insert_api(feature, method)
 
             dst_file_apk = os.path.join(save_dir, os.path.splitext(os.path.basename(app_path))[0] + '_adv')
