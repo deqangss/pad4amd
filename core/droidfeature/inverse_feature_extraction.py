@@ -481,6 +481,10 @@ def insert_api(api_name, method_location):
     """
     api_info = InverseDroidFeature.vocab_info[InverseDroidFeature.vocab.index(api_name)]
     class_name, method_name = api_name.split('->')
+
+    if method_name != '<init>':
+        return
+
     invoke_types, return_classes, arguments = list(), list(), list()
     for info in list(api_info):
         _match = re.search(
@@ -637,12 +641,14 @@ def insert_api(api_name, method_location):
             varEndCont=var_end_content
         )
 
+    print(new_method_body)
+
     smali_path, class_name, a_method_statement = method_location
     if smali_path is None:
         logger.warning('smali file {} is absent.'.format(smali_path))
 
     method_finder_flag = False
-    fh = dex_manip.read_file_by_fileinput(smali_path, inplace=True)
+    fh = dex_manip.read_file_by_fileinput(smali_path, inplace=False)
     for line in fh:
         print(line.rstrip())
 
