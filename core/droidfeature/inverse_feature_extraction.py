@@ -481,8 +481,9 @@ def insert_api(api_name, method_location):
     """
     api_info = InverseDroidFeature.vocab_info[InverseDroidFeature.vocab.index(api_name)]
     class_name, method_name = api_name.split('->')
-    print(api_name, class_name, method_name)
+
     if method_name != '<init>':
+        print(method_name)
         return
 
     invoke_types, return_classes, arguments = list(), list(), list()
