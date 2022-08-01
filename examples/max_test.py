@@ -246,37 +246,36 @@ def _main():
     model.eval()
     y_cent_list, x_density_list = [], []
     x_mod_integrated = []
-    # for x, y in mal_test_dataset_producer:
-    #     x, y = utils.to_tensor(x, y.long(), model.device)
-    #     adv_x_batch = attack.perturb(model, x.double(), y,
-    #                                  steps_max=args.steps_max,
-    #                                  min_lambda_=1e-5,
-    #                                  max_lambda_=1e5,
-    #                                  verbose=True)
-    #     y_cent_batch, x_density_batch = model.inference_batch_wise(adv_x_batch)
-    #     y_cent_list.append(y_cent_batch)
-    #     x_density_list.append(x_density_batch)
-    #     x_mod_integrated.append((adv_x_batch - x).detach().cpu().numpy())
-    # y_pred = np.argmax(np.concatenate(y_cent_list), axis=-1)
-    # logger.info(f'The mean accuracy on perturbed malware is {sum(y_pred == 1.) / mal_count * 100:.3f}%')
-    # if 'indicator' in type(model).__dict__.keys():
-    #     indicator_flag = model.indicator(np.concatenate(x_density_list), y_pred)
-    #     logger.info(f"The effectiveness of indicator is {sum(~indicator_flag) / mal_count * 100:.3f}%")
-    #     acc_w_indicator = (sum(~indicator_flag) + sum((y_pred == 1.) & indicator_flag)) / mal_count * 100
-    #     logger.info(f'The mean accuracy on adversarial malware (w/ indicator) is {acc_w_indicator:.3f}%.')
+    for x, y in mal_test_dataset_producer:
+        x, y = utils.to_tensor(x, y.long(), model.device)
+        adv_x_batch = attack.perturb(model, x.double(), y,
+                                     steps_max=args.steps_max,
+                                     min_lambda_=1e-5,
+                                     max_lambda_=1e5,
+                                     verbose=True)
+        y_cent_batch, x_density_batch = model.inference_batch_wise(adv_x_batch)
+        y_cent_list.append(y_cent_batch)
+        x_density_list.append(x_density_batch)
+        x_mod_integrated.append((adv_x_batch - x).detach().cpu().numpy())
+    y_pred = np.argmax(np.concatenate(y_cent_list), axis=-1)
+    logger.info(f'The mean accuracy on perturbed malware is {sum(y_pred == 1.) / mal_count * 100:.3f}%')
+    if 'indicator' in type(model).__dict__.keys():
+        indicator_flag = model.indicator(np.concatenate(x_density_list), y_pred)
+        logger.info(f"The effectiveness of indicator is {sum(~indicator_flag) / mal_count * 100:.3f}%")
+        acc_w_indicator = (sum(~indicator_flag) + sum((y_pred == 1.) & indicator_flag)) / mal_count * 100
+        logger.info(f'The mean accuracy on adversarial malware (w/ indicator) is {acc_w_indicator:.3f}%.')
 
     dir_name = 'max' if not args.orthogonal_v else 'orthogonal_max'
     save_dir = os.path.join(config.get('experiments', dir_name), args.model)
     if not os.path.exists(save_dir):
         utils.mkdir(save_dir)
-    # x_mod_integrated = np.concatenate(x_mod_integrated, axis=0)
-    # utils.dump_pickle_frd_space(x_mod_integrated,
-    #                             os.path.join(save_dir, 'x_mod.list'))
-    x_mod_integrated = utils.read_pickle_frd_space(os.path.join(save_dir, 'x_mod.list'))
+    x_mod_integrated = np.concatenate(x_mod_integrated, axis=0)
+    utils.dump_pickle_frd_space(x_mod_integrated,
+                                os.path.join(save_dir, 'x_mod.list'))
 
     if args.real:
         adv_app_dir = os.path.join(save_dir, 'adv_apps')
-
+        # x_mod_integrated = utils.read_pickle_frd_space(os.path.join(save_dir, 'x_mod.list'))
         attack.produce_adv_mal(x_mod_integrated, mal_test_x.tolist(),
                                config.get('dataset', 'malware_dir'),
                                save_dir=adv_app_dir)
