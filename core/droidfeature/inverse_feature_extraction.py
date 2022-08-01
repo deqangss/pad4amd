@@ -534,7 +534,7 @@ def insert_api(api_name, method_location):
     else:
         # logger.warning('Neglect invocation type(s):{}'.format(' '.join(invoke_types)))
         return
-
+    print('okokok')
     assert len(invoke_types) > 0, 'No api details.'
     return_class = return_classes[api_idx]
     argument = arguments[api_idx]
@@ -640,7 +640,7 @@ def insert_api(api_name, method_location):
             returnType=return_class,
             varEndCont=var_end_content
         )
-    print('okokok')
+
     print(new_method_body)
 
     smali_path, class_name, a_method_statement = method_location
