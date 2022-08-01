@@ -482,9 +482,6 @@ def insert_api(api_name, method_location):
     api_info = InverseDroidFeature.vocab_info[InverseDroidFeature.vocab.index(api_name)]
     class_name, method_name = api_name.split('->')
 
-    if method_name != '<init>':
-        return
-
     invoke_types, return_classes, arguments = list(), list(), list()
     for info in list(api_info):
         _match = re.search(
@@ -493,7 +490,7 @@ def insert_api(api_name, method_location):
         invoke_types.append(_match.group('invokeType'))
         return_classes.append(_match.group('invokeReturn'))
         arguments.append(_match.group('invokeArgument'))
-    print('okokok', invoke_types)
+
     api_idx = 0
     is_simplified_vars_register = False
     if 'invoke-virtual' in invoke_types:
@@ -515,24 +512,22 @@ def insert_api(api_name, method_location):
     elif 'invoke-static/range' in invoke_types:
         invoke_type = 'invoke-static/range'
         is_simplified_vars_register = True
-    # elif 'invoke-super' in invoke_types:
-    #     invoke_type = 'invoke-super'
-    #     api_idx = invoke_types.index('invoke-super')
-    #     return
-    # elif 'invoke-super/range' in invoke_types:
-    #     invoke_type = 'invoke-super/range'
-    #     api_idx = invoke_types.index('invoke-super/range')
-    #     is_simplified_vars_register = True
-    #     return
-    # elif 'invoke-direct' in invoke_types:
-    #     invoke_type = 'invoke-direct'
-    #     api_idx = invoke_types.index('invoke-direct')
-    # elif 'invoke-direct/range' in invoke_types:
-    #     invoke_type = 'invoke-direct/range'
-    #     api_idx = invoke_types.index('invoke-direct/range')
-    #     is_simplified_vars_register = True
+    elif 'invoke-super' in invoke_types:
+        invoke_type = 'invoke-super'
+        api_idx = invoke_types.index('invoke-super')
+    elif 'invoke-super/range' in invoke_types:
+        invoke_type = 'invoke-super/range'
+        api_idx = invoke_types.index('invoke-super/range')
+        is_simplified_vars_register = True
+    elif 'invoke-direct' in invoke_types:
+        invoke_type = 'invoke-direct'
+        api_idx = invoke_types.index('invoke-direct')
+    elif 'invoke-direct/range' in invoke_types:
+        invoke_type = 'invoke-direct/range'
+        api_idx = invoke_types.index('invoke-direct/range')
+        is_simplified_vars_register = True
     else:
-        # logger.warning('Neglect invocation type(s):{}'.format(' '.join(invoke_types)))
+        logger.warning('Neglect invocation type(s):{}'.format(' '.join(invoke_types)))
         return
 
     assert len(invoke_types) > 0, 'No api details.'
@@ -641,14 +636,12 @@ def insert_api(api_name, method_location):
             varEndCont=var_end_content
         )
 
-    print(new_method_body)
-
     smali_path, class_name, a_method_statement = method_location
     if smali_path is None:
         logger.warning('smali file {} is absent.'.format(smali_path))
 
     method_finder_flag = False
-    fh = dex_manip.read_file_by_fileinput(smali_path, inplace=False)
+    fh = dex_manip.read_file_by_fileinput(smali_path, inplace=True)
     for line in fh:
         print(line.rstrip())
 
