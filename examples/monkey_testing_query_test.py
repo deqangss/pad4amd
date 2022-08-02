@@ -14,10 +14,11 @@ logger.addHandler(ErrorHandler)
 monkeyt_argparse = argparse.ArgumentParser(description='arguments for mimicry attack')
 monkeyt_argparse.add_argument('--n_samples', type=int, default=20,
                               help='samples for functionality testing.')
-monkeyt_argparse.add_argument('--attacks', type=str, default='max,mimicry,gdkde',
-                              help="attacks:max, mimicry, gdkde, pgdlinf, etc.")
-monkeyt_argparse.add_argument('--models', type=str, default='madvtrain',
-                              help="model type, either of 'maldet', 'kde', 'gmm', 'madvtrain', 'padvtrain'.")
+monkeyt_argparse.add_argument('--attacks', type=str, default='max,mimicry,stepwise_max',
+                              help="attacks:max, mimicry, stepwise_max, pgdlinf, etc.")
+monkeyt_argparse.add_argument('--models', type=str, default='amd_pad_ma',
+                              help="model type, either of 'md_dnn', 'md_at_pgd', 'md_at_ma', 'amd_kde', 'amd_icnn', "
+                                   "'amd_dla', 'amd_dnn_plus', 'amd_pad_ma'.")
 
 
 def _main():
@@ -55,7 +56,6 @@ def _main():
             if not os.path.exists(dup_sample_dir):
                 os.mkdir(dup_sample_dir)
             shutil.copy(os.path.join(adv_save_dir, app_name), dup_sample_dir)
-    return
     #
     n_samples = args.n_samples if len(inter_apps) >= args.n_samples else len(inter_apps)
     app_names = np.random.choice(inter_apps, n_samples, replace=False).tolist()
