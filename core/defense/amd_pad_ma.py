@@ -202,8 +202,8 @@ class AMalwareDetectionPAD(object):
                 if null_flag:
                     continue
                 pertb_mal_x = self.attack.perturb(self.model, mal_x_batch, mal_y_batch,
-                                                  min_lambda_=lmda_lower_bound,
-                                                  max_lambda_=lmda_upper_bound,
+                                                  min_lambda_=1e-3,
+                                                  max_lambda_=1e3,
                                                   **self.attack_param
                                                   )
                 y_cent_batch, x_density_batch = self.model.inference_batch_wise(pertb_mal_x)
