@@ -14,6 +14,10 @@ from examples.amd_icnn_test import cmd_md
 max_adv_argparse = cmd_md.add_argument_group(title='max adv training')
 max_adv_argparse.add_argument('--beta_1', type=float, default=0.1, help='penalty factor on adversarial loss.')
 max_adv_argparse.add_argument('--beta_2', type=float, default=1., help='penalty factor on adversary detector.')
+max_adv_argparse.add_argument('--lambda_lb', type=float, default=1e-3,
+                              help='the lower bound of penalty factor on adversary detector for looking for attacks.')
+max_adv_argparse.add_argument('--lambda_ub', type=float, default=1e3,
+                              help='the upper bound of penalty factor on adversary detector for looking for attacks.')
 max_adv_argparse.add_argument('--detector', type=str, default='icnn',
                               choices=['none', 'icnn'],
                               help="detector type, either of 'icnn' and 'none'.")
@@ -125,6 +129,8 @@ def _main():
                                    adv_epochs=args.epochs,
                                    beta_1=args.beta_1,
                                    beta_2=args.beta_2,
+                                   lmda_lower_bound=args.lambda_lb,
+                                   lmda_upper_bound=args.lambda_ub,
                                    use_continuous_pert=args.use_cont_pertb,
                                    lr=args.lr,
                                    under_sampling_ratio=args.under_sampling,
