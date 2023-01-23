@@ -129,8 +129,6 @@ def _main():
                                    adv_epochs=args.epochs,
                                    beta_1=args.beta_1,
                                    beta_2=args.beta_2,
-                                   lmda_lower_bound=args.lambda_lb,
-                                   lmda_upper_bound=args.lambda_ub,
                                    use_continuous_pert=args.use_cont_pertb,
                                    lr=args.lr,
                                    under_sampling_ratio=args.under_sampling,
