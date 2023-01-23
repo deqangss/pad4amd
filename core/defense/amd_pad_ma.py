@@ -49,8 +49,8 @@ class AMalwareDetectionPAD(object):
     def fit(self, train_data_producer, validation_data_producer=None, adv_epochs=50,
             beta_1=0.1,
             beta_2=1,
-            lmda_lower_bound=1.,
-            lmda_upper_bound=1.,
+            lmda_lower_bound=1e-3,
+            lmda_upper_bound=1e3,
             use_continuous_pert=True,
             lr=0.001,
             under_sampling_ratio=1.,
@@ -202,8 +202,8 @@ class AMalwareDetectionPAD(object):
                 if null_flag:
                     continue
                 pertb_mal_x = self.attack.perturb(self.model, mal_x_batch, mal_y_batch,
-                                                  min_lambda_=1e-3,
-                                                  max_lambda_=1e3,
+                                                  min_lambda_=1e-5,
+                                                  max_lambda_=1e5,
                                                   **self.attack_param
                                                   )
                 y_cent_batch, x_density_batch = self.model.inference_batch_wise(pertb_mal_x)
