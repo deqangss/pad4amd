@@ -175,11 +175,12 @@ def _main():
     save_dir = os.path.join(config.get('experiments', 'mimicry'), args.model)
     if not os.path.exists(save_dir):
         utils.mkdir(save_dir)
-    x_mod_list = np.concatenate(x_mod_list, axis=0)
-    utils.dump_pickle_frd_space(x_mod_list,
-                                os.path.join(save_dir, 'x_mod.list'))
 
     if args.real:
+        x_mod_list = np.concatenate(x_mod_list, axis=0)
+        utils.dump_pickle_frd_space(x_mod_list,
+                                    os.path.join(save_dir, 'x_mod.list'))
+
         adv_app_dir = os.path.join(save_dir, 'adv_apps')
         if not os.path.exists(save_dir):
             utils.mkdir(save_dir)
