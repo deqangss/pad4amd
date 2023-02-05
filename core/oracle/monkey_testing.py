@@ -62,10 +62,16 @@ class APKTestADB(object):
                 pkg_name = \
                     [info.lstrip('name=').strip("'") for info in full_pkg_name.split(' ') if info.startswith('name')][0]
                 return pkg_name
+            elif 'package: name' in full_pkg_name:
+                pkg_name = \
+                    [info.lstrip('name=').strip("'") for info in full_pkg_name.split(' ') if info.startswith('name')][0]
+                return pkg_name
+            else:
+                logger.error("No package name found: " + apk_path)
+                return 'no-pkg-name-return'
         except subprocess.CalledProcessError as e:
             logger.error(str(e) + ": " + apk_path)
             return 'no-pkg-name-return'
-
 
     def _get_saving_path(self, apk_path):
         return os.path.join(self.temp_res_dir, 
@@ -109,7 +115,6 @@ class APKTestADB(object):
             os.system('adb' + ' logcat -d >>' + log_fpath)
             logger.error("Command '{}' return with error (code {}):{}".format(e.cmd, e.returncode, e.output))
             return False
-
 
     def remove_apk(self, apk_path):
         self._check_file_existence(apk_path)
@@ -162,7 +167,7 @@ class APKTestADB(object):
             try:
                 proc_out = subprocess.check_output(
                     ['adb', 'shell', 'monkey', '-p', pkg_name, '--ignore-crashes', '--ignore-timeouts',
-                     '--ignore-security-exceptions', '--pct-appswitch', '50', '-s', str(seed), '-v', '-v',
+                     '--ignore-security-exceptions', '--pct-appswitch', '80', '-s', str(seed), '-v', '-v',
                      '-v', str(count)]).decode('utf-8')
             except subprocess.CalledProcessError as e:
                 raise RuntimeError(
@@ -219,37 +224,40 @@ class APKTestADB(object):
         :return: None
         """
         while True:
-            apk_names = os.listdir(self.temp_apk_dir)
-            for i, n in enumerate(apk_names):
-                apk_path = os.path.join(self.temp_apk_dir, n)
-                save_path = self._get_saving_path(apk_path)
-                if os.path.exists(save_path):
-                    os.remove(apk_path)
-                    continue
-                info = defaultdict()
-                info['install'] = ''
-                info['components'] = ''
-                info['exceptions'] = ''
-                res = self.install_apk(apk_path)
-                if res:
-                    info['install'] = 'success'
-                    try:
-                        cmps, exps = self.run_monkey(apk_path)
-                        self.remove_apk(apk_path)
-                        info['components'] = ','.join(cmps)
-                        info['exceptions'] = ','.join(exps)
-                        utils.dump_json(info, save_path)
-
+            try:
+                apk_names = os.listdir(self.temp_apk_dir)
+                for i, n in enumerate(apk_names):
+                    apk_path = os.path.join(self.temp_apk_dir, n)
+                    save_path = self._get_saving_path(apk_path)
+                    if os.path.exists(save_path):
                         os.remove(apk_path)
-                    except Exception as e:
+                        continue
+                    info = defaultdict()
+                    info['install'] = ''
+                    info['components'] = ''
+                    info['exceptions'] = ''
+                    res = self.install_apk(apk_path)
+                    if res:
+                        info['install'] = 'success'
+                        try:
+                            cmps, exps = self.run_monkey(apk_path)
+                            self.remove_apk(apk_path)
+                            info['components'] = ','.join(cmps)
+                            info['exceptions'] = ','.join(exps)
+                            utils.dump_json(info, save_path)
+
+                            os.remove(apk_path)
+                        except Exception as e:
+                            utils.dump_json(info, save_path)
+                            logger.error(str(e))
+                    else:
+                        info['install'] = 'failure'
                         utils.dump_json(info, save_path)
-                        logger.error(str(e))
-                else:
-                    info['install'] = 'failure'
-                    utils.dump_json(info, save_path)
-                    logger.error("Cannot install application {}.".format(os.path.basename(apk_path)))
-                    # sys.exit(1)
-            print("No queries. Press Ctrl+Z to Exit!")
+                        logger.error("Cannot install application {}.".format(os.path.basename(apk_path)))
+                        # sys.exit(1)
+            except Exception as e:
+                logger.error(str(e))
+            print("No queries.")
             time.sleep(5)
 
     def get_state(self, apk_path):
