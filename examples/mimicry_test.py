@@ -57,7 +57,7 @@ def _main():
                         "'amd_dla', 'amd_dnn_plus', and 'amd_pad_ma'.")
 
     hp_params = utils.read_pickle(os.path.join(save_dir, 'hparam.pkl'))
-    dataset = Dataset(feature_ext_args={'proc_number': hp_params['proc_number']})
+    dataset = Dataset(feature_ext_args={'proc_number': 1})
     test_x, testy = dataset.test_dataset
     val_dataset_producer = dataset.get_input_producer(*dataset.validation_dataset, batch_size=hp_params['batch_size'],
                                                       name='val')
@@ -80,10 +80,11 @@ def _main():
                                                            name='test'
                                                            )
     # test
-    if not hp_params['cuda']:
-        dv = 'cpu'
-    else:
-        dv = 'cuda'
+    # if not hp_params['cuda']:
+    #     dv = 'cpu'
+    # else:
+    #     dv = 'cuda'
+    dv = 'cpu'
     model = MalwareDetectionDNN(dataset.vocab_size,
                                 dataset.n_classes,
                                 device=dv,
@@ -186,9 +187,9 @@ def _main():
             utils.mkdir(save_dir)
 
         # x_mod_list = utils.read_pickle_frd_space(os.path.join(save_dir, 'x_mod.list'))
-        attack.produce_adv_mal(x_mod_list, mal_test_x.tolist(),
-                               config.get('dataset', 'malware_dir'),
-                               save_dir=adv_app_dir)
+        # attack.produce_adv_mal(x_mod_list, mal_test_x.tolist(),
+        #                        config.get('dataset', 'malware_dir'),
+        #                        save_dir=adv_app_dir)
 
         adv_feature_paths = dataset.apk_preprocess(adv_app_dir, update_feature_extraction=True)
         # dataset.feature_preprocess(adv_feature_paths)
