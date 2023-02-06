@@ -80,10 +80,11 @@ def _main():
                                                            name='test'
                                                            )
     # test
-    if not hp_params['cuda']:
-        dv = 'cpu'
-    else:
-        dv = 'cuda'
+    # if not hp_params['cuda']:
+    #     dv = 'cpu'
+    # else:
+    #     dv = 'cuda'
+    dv = 'cpu'
     model = MalwareDetectionDNN(dataset.vocab_size,
                                 dataset.n_classes,
                                 device=dv,
