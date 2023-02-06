@@ -15,8 +15,10 @@ monkeyt_argparse = argparse.ArgumentParser(description='arguments for monkey tes
 monkeyt_argparse.add_argument('--n_samples', type=int, default=100,
                               help='samples for functionality testing.')
 monkeyt_argparse.add_argument('--attacks', type=str, default='max,mimicry,stepwise_max',
-                              help="attacks:max, mimicry, stepwise_max, pgdlinf, etc.")
+                              help="attacks:max, mimicry, stepwise_max, etc.")
 monkeyt_argparse.add_argument('--models', type=str, default='amd_pad_ma',
+                              choices=['md_dnn', 'md_at_pgd', 'md_at_ma',
+                                       'amd_kde', 'amd_icnn', 'amd_dla', 'amd_dnn_plus', 'amd_pad_ma'],
                               help="model type, either of 'md_dnn', 'md_at_pgd', 'md_at_ma', 'amd_kde', 'amd_icnn', "
                                    "'amd_dla', 'amd_dnn_plus', 'amd_pad_ma'.")
 
@@ -90,9 +92,9 @@ def _main():
             org_func_flag = True
             if len(org_activities) <= 1 and '' in org_activities and \
                     len(org_exceptions) <= 1 and '' in org_exceptions:
-                logger.info("Unperturbed example {} and need manual analysis: No activities and exceptions.".format(app_name_))
+                logger.info("Unperturbed example {}: No activities and exceptions.".format(app_name_))
                 org_func_flag = False
-                print("Monkey failed and need manual analysis:", app_name_, org_activities, org_exceptions)
+                print("False:", org_activities, org_exceptions)
             if org_func_flag:
                 org_sample_function += 1
             install_flag_list = []
@@ -104,15 +106,16 @@ def _main():
                 adv_install_flag, adv_activities, adv_exceptions = apk_test_adb.get_report(tmp_path)
                 install_flag_list.append(adv_install_flag)
                 if org_func_flag:
-                    func_flag = (org_activities == adv_activities) | (len(adv_activities) >= len(org_activities))
+                    # func_flag = (org_activities == adv_activities) & (org_exceptions == adv_exceptions)
+                    func_flag = org_activities == adv_activities
                 else:
                     func_flag = False  #
                 if not func_flag:
                     logger.info("Ruin the functionality: " + apk_path)
-                logger.info('\t Original activities: {}'.format(','.join(list(org_activities))))
-                logger.info('\t Perturbed activities: {}'.format(','.join(list(adv_activities))))
-                logger.info('\t Original exceptions: {}'.format(','.join(list(org_exceptions))))
-                logger.info('\t Perturbed exceptions: {}'.format(','.join(list(adv_exceptions))))
+                    logger.info('\t Original activities: {}'.format(','.join(list(org_activities))))
+                    logger.info('\t Perturbed activities: {}'.format(','.join(list(adv_activities))))
+                    # logger.info('\t Original exceptions: {}'.format(','.join(list(org_exceptions))))
+                    #logger.info('\t Perturbed exceptions: {}'.format(','.join(list(adv_exceptions))))
                 func_flag_list.append(func_flag)
 
             install_flag_2dlist.append(install_flag_list)
@@ -120,11 +123,7 @@ def _main():
 
         install_count = np.sum(np.array(install_flag_2dlist), axis=0).tolist()
         func_count = np.sum(np.array(functionality_flag_2dlist), axis=0).tolist()
-        logger.info("Installable apps: {}; runnable apps: {}; needing further analysis: {}.".format(
-            org_sample_installed,
-            org_sample_function,
-            org_sample_installed - org_sample_function
-        ))
+        logger.info("Installable apps: {}; runnable apps: {}.".format(org_sample_installed, org_sample_function))
         for i, attack in enumerate(attack_names):
             logger.info("Attack {}: number of installable apks {} and runnable apks {}.".format(attack,
                                                                                                 install_count[i],
