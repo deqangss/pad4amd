@@ -74,7 +74,7 @@ class APKTestADB(object):
             return 'no-pkg-name-return'
 
     def _get_saving_path(self, apk_path):
-        return os.path.join(self.temp_res_dir, 
+        return os.path.join(self.temp_res_dir,
                             self._get_pkg_name(apk_path) + utils.get_sha256(apk_path) + '.json')
 
     def _check_apk_on_device(self, pkg_name):
@@ -174,10 +174,12 @@ class APKTestADB(object):
                     "Command '{}' return with error (code {}):{}".format(e.cmd, e.returncode, e.output))
             logger.info('Handling the apk {}.'.format(os.path.basename(apk_path)))
             logger.info('Done: {}'.format(os.path.basename(apk_path)))
-            proc_adb_log = subprocess.check_output('adb logcat -d',
-                                                   shell=True,
-                                                   stderr=subprocess.STDOUT
-                                                   ).decode('utf-8')
+            proc_adb_log = subprocess.run('adb logcat -d',
+                                          shell=True,
+                                          stdout=subprocess.PIPE,
+                                          stderr=subprocess.STDOUT,
+                                          timeout=500,
+                                          ).stdout.decode('utf-8')
         except subprocess.CalledProcessError as e:
             log_fpath = os.path.join(m_log_dir, sha256 + ".monkey")
             os.system('adb' + ' logcat -d >>' + log_fpath)
@@ -298,9 +300,12 @@ def _main():
     # apk_test_adb.remove_apk("/local_disk/data/Android//drebin/malicious_samples/2dd94e49e75467cb055099319fc90d0f93d0868e531593f857cf91f6f3220c87.apk")
     # apk_test_adb.submit('/local_disk/data/Android//drebin/malicious_samples/2dd94e49e75467cb055099319fc90d0f93d0868e531593f857cf91f6f3220c87.apk')
     apk_test_adb.run()
-    apk_test_adb.get_state("/local_disk/data/Android//drebin/malicious_samples/2dd94e49e75467cb055099319fc90d0f93d0868e531593f857cf91f6f3220c87.apk")
-    cmps, exps = apk_test_adb.get_report("/local_disk/data/Android//drebin/malicious_samples/2dd94e49e75467cb055099319fc90d0f93d0868e531593f857cf91f6f3220c87.apk")
+    apk_test_adb.get_state(
+        "/local_disk/data/Android//drebin/malicious_samples/2dd94e49e75467cb055099319fc90d0f93d0868e531593f857cf91f6f3220c87.apk")
+    cmps, exps = apk_test_adb.get_report(
+        "/local_disk/data/Android//drebin/malicious_samples/2dd94e49e75467cb055099319fc90d0f93d0868e531593f857cf91f6f3220c87.apk")
     print(cmps, exps)
+
 
 if __name__ == "__main__":
     _main()
