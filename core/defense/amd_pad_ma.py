@@ -170,7 +170,7 @@ class AMalwareDetectionPAD(object):
                 accuracies.append(acc_f_train)
                 losses.append(loss_train.item())
                 if verbose:
-                    print(
+                    logger.info(
                         f'Mini batch: {i * nbatches + idx_batch + 1}/{adv_epochs * nbatches} | training time in {mins:.0f} minutes, {secs} seconds.')
                 if hasattr(self.model, 'forward_g'):
                     acc_g_train = ((torch.sigmoid(logits_g) >= 0.5) == y_batch_).sum().item()

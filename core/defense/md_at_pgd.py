@@ -104,7 +104,7 @@ class PGDAdvTraining(object):
                 accuracies.append(acc_train)
                 losses.append(loss_train.item())
                 if verbose:
-                    print(
+                    logger.info(
                         f'Mini batch: {i * nbatches + idx_batch + 1}/{adv_epochs * nbatches} | training time in {mins:.0f} minutes, {secs} seconds.')
                     logger.info(
                         f'Training loss (batch level): {losses[-1]:.4f} | Train accuracy: {acc_train * 100:.2f}%.')

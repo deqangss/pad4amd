@@ -341,7 +341,7 @@ class AdvMalwareDetectorICNN(nn.Module, DetectorTemplate):
                 accuracies.append(acc_f_train)
                 accuracies.append(acc_g_train)
                 if verbose:
-                    print(
+                    logger.info(
                         f'Mini batch: {i * nbatches + idx_batch + 1}/{epochs * nbatches} | training time in {mins:.0f} minutes, {secs} seconds.')
                     logger.info(
                         f'Training loss (batch level): {losses[-1]:.4f} | Train accuracy: {acc_f_train * 100:.2f}% & {acc_g_train * 100:.2f}%.')
