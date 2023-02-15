@@ -91,12 +91,12 @@ class MaxAdvTraining(object):
                 if null_flag:
                     continue
                 start_time = time.time()
-                total_time += time.time() - start_time
                 self.model.eval()
                 pertb_mal_x = self.attack.perturb(self.model, mal_x_batch, mal_y_batch,
                                                   **self.attack_param
                                                   )
                 pertb_mal_x = utils.round_x(pertb_mal_x, 0.5)
+                total_time += time.time() - start_time
                 x_batch = torch.cat([x_batch, pertb_mal_x], dim=0)
                 y_batch = torch.cat([y_batch, mal_y_batch])
                 start_time = time.time()
