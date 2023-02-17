@@ -1,0 +1,11 @@
+python -m examples.feature_extraction_test --update --proc_number 10 --number_of_smali_files 1000000 --max_vocab_size 10000
+python -m examples.md_nn_test --cuda --cache --seed 0 --batch_size 128 --proc_number 10 --epochs 50 --max_vocab_size 10000 --dense_hidden_units "200,200" --weight_decay 0.0 --lr 0.001 --dropout 0.6
+python -m examples.md_at_pgd_test --cuda --cache --beta 1.0 --seed 0 --batch_size 128 --proc_number 10 --epochs 50 --max_vocab_size 10000 --dense_hidden_units "200,200" --weight_decay 0.0 --lr 0.001 --dropout 0.6 --steps_linf 50 --step_length_linf 0.02
+python -m examples.md_at_ma_test --cuda --cache --beta 0.01 --seed 0 --batch_size 128 --proc_number 10 --epochs 50 --max_vocab_size 10000 --dense_hidden_units "200,200" --weight_decay 0.0 --lr 0.001 --dropout 0.6  --ma "max" --steps_l1 50 --steps_linf 50 --step_length_linf 0.02 --steps_l2 50 --step_length_l2 0.5
+# python -m examples.amd_kde_test --ratio 0.95 --n_centers 1000 --bandwidth 16. --model_name "20220629-224059"
+python -m examples.amd_dla_test --cuda --cache --ratio 0.95 --seed 0 --batch_size 128 --proc_number 10 --epochs 50 --max_vocab_size 10000 --dense_hidden_units "200,200" --weight_decay 0.0 --dropout 0.6  --ma "max" --steps_l1 50 --steps_linf 50 --step_length_linf 0.02 --steps_l2 50 --step_length_l2 0.5
+python -m examples.amd_nn_plus_test --cuda --cache --ratio 0.95 --seed 0 --batch_size 128 --proc_number 10 --epochs 50 --max_vocab_size 10000 --dense_hidden_units "200,200" --weight_decay 0.0 --dropout 0.6  --ma "max" --steps_l1 50 --steps_linf 50 --step_length_linf 0.02 --steps_l2 50 --step_length_l2 0.5
+python -m examples.amd_icnn_test --cuda --cache --ratio 0.95 --seed 0 --batch_size 128 --proc_number 10 --epochs 50 --max_vocab_size 10000 --dense_hidden_units "200,200" --weight_decay 0.0 --lr 0.001 --dropout 0.6
+python -m examples.amd_pad_ma_test --cuda --use_cont_pertb --beta_1 0.1 --beta_2 1.0 --lambda_lb 1.0 --lambda_ub 1.0 --seed 0 --batch_size 128 --proc_number 10 --epochs 50 --max_vocab_size 10000 --dense_hidden_units "200,200" --weight_decay 0.0 --lr 0.001 --dropout 0.6  --ma "stepwise_max" --steps_l1 50 --steps_linf 50 --step_length_linf 0.02 --steps_l2 50 --step_length_l2 0.5 --is_score_round
+
+

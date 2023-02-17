@@ -1,3 +1,0 @@
-# python -m examples.feature_extraction_test --update --proc_number 10 --number_of_smali_files 1000000 --max_vocab_size 5000
-python -m examples.nn_maldet_test --cuda --use_top_disc_features --smooth --seed 0 --batch_size 64 --proc_number 10 --epochs 50 --max_vocab_size 5000 --dense_hidden_units "200,200" --weight_decay 0.0
-python -m examples.nn_mulmod_test --cuda --use_top_disc_features --smooth --seed 0 --batch_size 64 --proc_number 10 --epochs 50 --max_vocab_size 5000 --embedding_dim 64 --hidden_units "128,128" --dense_hidden_units "200,200" --lr 0.005 --weight_decay 0.0005
