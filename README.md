@@ -1,5 +1,5 @@
 # Principled Adversarial Malware Detection
-This code repository is for the paper, entitled **PAD:Towards Principled Adversarial Malware Detection** by Deqiang Li, Shicheng Cui, Yun Li, Jia Xu, Xiao Fu, Shouhuai Xu (Accepted by IEEE TDSC; To appear in future coming issue). Please check out the arxiv version [here](https://arxiv.org/abs/2302.11328). 
+This code repository is for the paper, entitled **PAD:Towards Principled Adversarial Malware Detection** by Deqiang Li, Shicheng Cui, Yun Li, Jia Xu, Xiao Fu, Shouhuai Xu (Accepted by IEEE TDSC; To appear in future coming issue). Please check out the latext version on arxiv [here](https://arxiv.org/abs/2302.11328). 
 
 ## Overview
 Our research motivation is to propose an adversarial training method for malware detection with provable and effective robustness. 
