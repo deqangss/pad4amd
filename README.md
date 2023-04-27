@@ -81,7 +81,7 @@ python -m examples.mimicry_test --trials 10 --model "amd_pad_ma" --model_name "2
 
 ## Learned Parameters
 
-All learned model will be saved into the current directory under `save` folder that can be redirected by settings in the file of `conf`. We also provides some defenses models, which can be obtained for research (please contact me via e-mail: `lideqiang@njupt.edu.cn'). Indeed, we do not tune our models very carefully to achieve high robustness or detection accuracy. 
+All learned model will be saved into the current directory under `save` folder that can be redirected by settings in the file of `conf`. We also provides some defenses models, which can be obtained for research (please contact me via e-mail: `lideqiang@njupt.edu.cn`). Indeed, we do not tune our models very carefully to achieve high robustness or detection accuracy. 
 
 
 ## Contacts
